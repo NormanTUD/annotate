@@ -28,7 +28,7 @@
 <?php
 		foreach ($img_files as $f => $k) {
 ?>
-			<a target="_blank" href="index.php?move_to_offtopic=<?php print $f; ?>"><img class="images" id="<?php print uniqid(); ?>" src="images/<?php print $f; ?>">
+			<a target="_blank" href="index.php?move_to_offtopic=<?php print $f; ?>"><img class="images" id="<?php print uniqid(); ?>" src="images/<?php print $f; ?>"></a>
 <?php
 		}
 ?>
