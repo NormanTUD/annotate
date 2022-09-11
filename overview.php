@@ -22,15 +22,6 @@
 		}
 
 		asort($img_files);
-		$j = 0;
-		foreach ($img_files as $f => $k) {
-			if($j != 0) {
-				continue;
-			}
-			$imgfile = $f;
-			$j++;
-		}
-
 		print_header();
 ?>
 	<div id="content">
