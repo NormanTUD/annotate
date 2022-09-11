@@ -19,13 +19,11 @@
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
 				$img_files[] = $file;
-				//$img_files[$file] = nr_of_annotations($file);
-				#die(">>".nr_of_annotations($file));
-				//$imgfile = $file;
 			}
 		}
 
 		shuffle($img_files);
+		asort($img_files);
 
 		$imgfile = $img_files[0];
 
