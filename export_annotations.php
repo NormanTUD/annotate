@@ -98,6 +98,7 @@
 							//dier($images[$file]);
 							foreach ($struct["body"] as $anno) {
 								if($anno["purpose"] == "tagging") {
+									$anno["value"] = strtolower($anno["value"]);
 									if(!in_array($anno["value"], $categories)) {
 										$categories[] = $anno["value"];
 									}
