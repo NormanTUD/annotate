@@ -2,7 +2,7 @@
 A simple image annotation tool in PHP/JS
 
 # Setup
-Install Apache+PHP. Copy this dir to `/var/www/html/annotate/`.
+Install Apache+PHP+zip. Copy this dir to `/var/www/html/annotate/`.
 
 ```command
 sudo mkdir tmp images annotations
