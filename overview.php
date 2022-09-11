@@ -21,7 +21,6 @@
 			}
 		}
 
-		$img_files = shuffle_assoc($img_files);
 		asort($img_files);
 		$j = 0;
 		foreach ($img_files as $f => $k) {
