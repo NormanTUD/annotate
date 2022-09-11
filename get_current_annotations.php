@@ -16,10 +16,13 @@
 			}
 			print json_encode($jsons);
 		} else {
-			die("$dir does not exist");
+			//die("$dir does not exist");
+			print("[]");
+			exit(1);
 		}
 	} else {
-		die("Keine Source angegeben");
+		print("[]");
+		exit(2);
 	}
 
 ?>
