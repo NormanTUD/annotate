@@ -72,4 +72,24 @@
 
 		return $my_array;
 	}
+
+	function get_number_of_annotated_imgs() {
+		$files = scandir("images");
+
+		$annotated = 0;
+		$not_annotated = 0;
+
+		foreach($files as $file) {
+			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
+				$file_hash = hash("sha256", $file);
+				if(is_dir("annotations/$file_hash/")) {
+					$annotated++;
+				} else {
+					$not_annotated++;
+				}
+			}
+		}
+
+		return [$annotated, $not_annotated];
+	}
 ?>
