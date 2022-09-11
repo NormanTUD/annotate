@@ -21,6 +21,12 @@
 			}
 		}
 
+		if(array_key_exists("move_to_offtopic", $_GET)) {
+			if(!preg_match("/\.\./", $_GET["move_to_offtopic"]) && preg_match("/\.jpg/", $_GET["move_to_offtopic"])) {
+				rename("images/".$_GET["move_to_offtopic"], "offtopic/".$_GET["move_to_offtopic"]);
+			}
+		}
+
 		$img_files = shuffle_assoc($img_files);
 		asort($img_files);
 		$j = 0;
@@ -38,7 +44,7 @@
 		}
 		$annotation_stat = get_number_of_annotated_imgs();
 ?>
-	<a href='tutorial.mp4' target="_blank">Video-Anleitung</a>, Anzahl annotierter Bilder: <?php print htmlentities($annotation_stat[0] ?? ""); ?>, Anzahl unannotierter Bilder: <?php print htmlentities($annotation_stat[1] ?? ""); ?>
+		<a href='tutorial.mp4' target="_blank">Video-Anleitung</a>, Anzahl annotierter Bilder: <?php print htmlentities($annotation_stat[0] ?? ""); ?>, Anzahl unannotierter Bilder: <?php print htmlentities($annotation_stat[1] ?? ""); ?>
 <?php
 		if($annotation_stat[1] != 0) {
 			$percent = sprintf("%0.2f", ($annotation_stat[0] / $annotation_stat[1]) * 100);
@@ -48,6 +54,7 @@
 	<br>
 	<div id="content">
 		<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
+		<p><button><a href="index.php?move_to_offtopic=<?php print $imgfile; ?>">Bild ist Off Topic</a></button><br></p>
 		<img id="image" src="images/<?php print $imgfile; ?>">
 		<br><?php print $imgfile; ?>
 	</div>
