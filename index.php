@@ -44,7 +44,7 @@
 			$percent = sprintf("%0.2f", ($annotation_stat[0] / $annotation_stat[1]) * 100);
 			print " ($percent%)";
 		}
-?>
+?>, <a href="overview.php">Übersicht über meine annotierten Bilder</a>
 	<br>
 	<div id="content">
 		<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
