@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <head>
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@recogito/annotorious@2.7.7/dist/annotorious.min.css">
-	<script src="https://cdn.jsdelivr.net/npm/@recogito/annotorious@2.7.7/dist/annotorious.min.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<link rel="stylesheet" href="annotorious.min.css">
+	<script src="annotorious.min.js"></script>
+	<script src="jquery.min.js"></script>
 </head>
 
 <body>
