@@ -32,6 +32,7 @@
 			die("Cannot find an image");
 		}
 ?>
+	<a href='tutorial.mp4' target="_blank">Video-Anleitung</a>
 	<div id="content">
 		<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
 		<img id="image" src="images/<?php print $imgfile; ?>">
@@ -123,4 +124,3 @@
 		}
 	</script>
 </body>
-
