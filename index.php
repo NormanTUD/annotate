@@ -12,20 +12,26 @@
 
 		$files = scandir("images");
 
-		$imgfile = "";
-
 		$img_files = array();
 
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$img_files[] = $file;
+				$annotations = number_of_annotations($user_id, $file);
+				$img_files[$file] = $annotations;
 			}
 		}
 
-		shuffle($img_files);
+		$img_files = shuffle_assoc($img_files);
 		asort($img_files);
-
-		$imgfile = $img_files[0];
+		$j = 0;
+		$imgfile = "";
+		foreach ($img_files as $f => $k) {
+			if($j != 0) {
+				continue;
+			}
+			$imgfile = $f;
+			$j++;
+		}
 
 		if(!$imgfile) {
 			die("Cannot find an image");

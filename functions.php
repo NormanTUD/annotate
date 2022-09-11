@@ -11,10 +11,30 @@
 		exit(1);
 	}
 
-	function img_has_annotation ($uid, $img) {
+	function number_of_annotations ($uid, $img) {
 		$img = hash("sha256", $img);
 		$dir = "annotations/$img/$uid/";
 
+		if(is_dir($dir)) {
+			$files = scandir($dir);
+
+			$i = 0;
+
+			foreach($files as $file) {
+				if(preg_match("/\.json$/", $file)) {
+					$i++;
+				}
+			}
+
+			return $i;
+		}
+		return 0;
+	}
+
+
+	function img_has_annotation ($uid, $img) {
+		$img = hash("sha256", $img);
+		$dir = "annotations/$img/$uid/";
 
 		$files = scandir($dir);
 
@@ -37,5 +57,19 @@
 		$dir = "annotations/$img/";
 		$res = number_of_files_in_dir($dir);
 		return $res;
+	}
+
+	function shuffle_assoc($my_array) {
+		$keys = array_keys($my_array);
+
+		shuffle($keys);
+
+		foreach($keys as $key) {
+			$new[$key] = $my_array[$key];
+		}
+
+		$my_array = $new;
+
+		return $my_array;
 	}
 ?>
