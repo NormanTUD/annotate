@@ -43,7 +43,6 @@
 ?>
 	<br>
 	<div id="content">
-		<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
 <?php
 		foreach ($img_files as $f => $k) {
 			if(number_of_annotations($user_id, $f)) {
