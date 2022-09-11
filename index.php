@@ -49,6 +49,7 @@
 	<div id="content">
 		<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
 		<img id="image" src="images/<?php print $imgfile; ?>">
+		<br><?php print $imgfile; ?>
 	</div>
 	<script>
 		function log (msg) {
