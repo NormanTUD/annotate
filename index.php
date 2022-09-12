@@ -51,7 +51,7 @@
 	<br>
 	<table>
 		<tr>
-			<td>
+			<td style="vertical-align: baseline;">
 				<div id="content" style="padding: 30px;">
 					<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
 					<!-- <p><button><a href="index.php?move_to_offtopic=<?php print $imgfile; ?>">Bild ist Off Topic</a></button><br></p> -->
