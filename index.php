@@ -60,16 +60,16 @@
 				</div>
 			</td>
 			<td>
+				Aktuelle Tags (anklicken für Beispieldaten):
 <?php
-				#Aktuelle Tags:
 				$tags = get_current_tags();
 				$tags_as_array = [];
-				#print "<ul>";
+				print "<ul>";
 				foreach ($tags as $tag => $nr) {
-				#	print "<li>$tag</li>";
+					print "<li><a target='_blank' href='categories.php?searchtag=".htmlentities(urlencode($tag))."'>$tag</li>";
 					$tags[] = $tag;
 				}
-				#print "</ul>";
+				print "</ul>";
 
 
 ?>

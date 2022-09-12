@@ -11,6 +11,33 @@
 		exit(1);
 	}
 
+	function number_of_annotations_total ($img) {
+		$img = hash("sha256", $img);
+		$imgdir = "annotations/$img/";
+		$i = 0;
+		if(is_dir($imgdir)) {
+			$userdir = scandir($imgdir);
+			foreach ($userdir as $k => $uid) {
+				if($uid != "." && $uid != "..") {
+					$dir = "annotations/$img/$uid/";
+
+					if(is_dir($dir)) {
+						$files = scandir($dir);
+
+						foreach($files as $file) {
+							if(preg_match("/\.json$/", $file)) {
+								$i++;
+							}
+						}
+
+					}
+				}
+			}
+		}
+		return $i;
+	}
+
+
 	function number_of_annotations ($uid, $img) {
 		$img = hash("sha256", $img);
 		$dir = "annotations/$img/$uid/";
@@ -102,7 +129,7 @@
 				$percent = sprintf("%0.2f", ($annotation_stat[0] / $annotation_stat[1]) * 100);
 				print " ($percent%)";
 			}
-	?>, <a href="overview.php">Übersicht über meine eigenen annotierten Bilder</a>
+	?>, <a href="overview.php">Übersicht über meine eigenen annotierten Bilder</a>, <a href="export_annotations.php">Annotationen exportieren</a>
 		<br>
 <?php
 	}
@@ -148,5 +175,34 @@
 		arsort($annos);
 
 		return $annos;
+	}
+
+	function image_has_tag($img, $tag) {
+		$file_hash = hash("sha256", $img);
+		$mdir = "annotations/$file_hash/";
+		if(is_dir($mdir)) {
+			$users = scandir($mdir);
+			foreach($users as $a_user) {
+				if(!preg_match("/^\.(?:\.)?$/", $a_user)) {
+					$tdir = "annotations/$file_hash/$a_user/";
+					$an = scandir($tdir);
+					foreach($an as $a_file) {
+						if(!preg_match("/^\.(?:\.)?$/", $a_file)) {
+							$path = "$tdir/$a_file";
+							$anno = json_decode(file_get_contents($path), true);
+							foreach ($anno["body"] as $item) {
+								if($item["purpose"] == "tagging") {
+									$value = strtolower($item["value"]);
+									if($value == strtolower($tag)) {
+										return true;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return false;
 	}
 ?>
