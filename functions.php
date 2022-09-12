@@ -129,7 +129,7 @@
 
 									foreach ($anno["body"] as $item) {
 										if($item["purpose"] == "tagging") {
-											$value = $item["value"];
+											$value = strtolower($item["value"]);
 											if(!array_key_exists($value, $annos)) {
 												$annos[$value] = 1;
 											} else {
