@@ -85,8 +85,9 @@
 			var anno = Annotorious.init({
 				image: 'image',
 					widgets: [
-						'COMMENT',
-						{ widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', $tags).'"'; ?> ] }
+						{
+							widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', $tags).'"'; ?> ]
+						}
 					]
 			});
 
