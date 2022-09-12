@@ -66,7 +66,7 @@
 				$tags_as_array = [];
 				print "<ul>";
 				foreach ($tags as $tag => $nr) {
-					print "<li><a target='_blank' href='categories.php?searchtag=".htmlentities(urlencode($tag))."'>$tag</li>";
+					print "<li><a target='_blank' href='categories.php?searchtag=".htmlentities(urlencode($tag))."'>$tag ($nr)</li>";
 					$tags[] = $tag;
 				}
 				print "</ul>";
