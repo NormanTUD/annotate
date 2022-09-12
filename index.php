@@ -67,16 +67,16 @@
 				</div>
 			</td>
 			<td>
-				Aktuelle Tags:
 <?php
+				#Aktuelle Tags:
 				$tags = get_current_tags();
 				$tags_as_array = [];
-				print "<ul>";
+				#print "<ul>";
 				foreach ($tags as $tag => $nr) {
-					print "<li>$tag</li>";
+				#	print "<li>$tag</li>";
 					$tags[] = $tag;
 				}
-				print "</ul>";
+				#print "</ul>";
 
 
 ?>
