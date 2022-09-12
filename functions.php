@@ -106,4 +106,47 @@
 		<br>
 <?php
 	}
+
+	function get_current_tags () {
+		$files = scandir("images");
+
+		$annos = [];
+
+		foreach($files as $file) {
+			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !preg_match("/^\.(?:\.)?$/", $file)) {
+				$file_hash = hash("sha256", $file);
+				$base_dir = "annotations/$file_hash/";
+				if(is_dir($base_dir)) {
+					$users = scandir("annotations/$file_hash/");
+					foreach($users as $a_user) {
+						if(!preg_match("/^\.(?:\.)?$/", $a_user)) {
+							$tdir = "annotations/$file_hash/$a_user/";
+							$an = scandir($tdir);
+							foreach($an as $a_file) {
+								if(!preg_match("/^\.(?:\.)?$/", $a_file)) {
+									$path = "$tdir/$a_file";
+									$anno = json_decode(file_get_contents($path), true);
+
+									foreach ($anno["body"] as $item) {
+										if($item["purpose"] == "tagging") {
+											$value = $item["value"];
+											if(!array_key_exists($value, $annos)) {
+												$annos[$value] = 1;
+											} else {
+												$annos[$value]++;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		arsort($annos);
+
+		return $annos;
+	}
 ?>

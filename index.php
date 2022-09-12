@@ -39,6 +39,10 @@
 			$j++;
 		}
 
+		if(array_key_exists("edit", $_GET)) {
+			$imgfile = $_GET["edit"];
+		}
+
 		if(!$imgfile) {
 			die("Cannot find an image");
 		}
@@ -52,12 +56,30 @@
 		}
 ?>, <a href="overview.php">Übersicht über meine annotierten Bilder</a>
 	<br>
-	<div id="content">
-		<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
-		<p><button><a href="index.php?move_to_offtopic=<?php print $imgfile; ?>">Bild ist Off Topic</a></button><br></p>
-		<img id="image" src="images/<?php print $imgfile; ?>">
-		<br><?php print $imgfile; ?>
-	</div>
+	<table>
+		<tr>
+			<td>
+				<div id="content">
+					<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
+					<p><button><a href="index.php?move_to_offtopic=<?php print $imgfile; ?>">Bild ist Off Topic</a></button><br></p>
+					<img id="image" src="images/<?php print $imgfile; ?>">
+					<br><?php print $imgfile; ?>
+				</div>
+			</td>
+			<td>
+				Aktuelle Tags:
+<?php
+				$tags = get_current_tags();
+				print "<ul>";
+				foreach ($tags as $tag => $nr) {
+					print "<li>$tag</li>";
+				}
+				print "</ul>";
+?>
+			</td>
+		</tr>
+	</table>
+
 	<script>
 		function log (msg) {
 			console.log(msg);
