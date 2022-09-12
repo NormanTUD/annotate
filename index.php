@@ -59,7 +59,7 @@
 	<table>
 		<tr>
 			<td>
-				<div id="content">
+				<div id="content" style="padding: 30px;">
 					<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
 					<p><button><a href="index.php?move_to_offtopic=<?php print $imgfile; ?>">Bild ist Off Topic</a></button><br></p>
 					<img id="image" src="images/<?php print $imgfile; ?>">
@@ -70,11 +70,15 @@
 				Aktuelle Tags:
 <?php
 				$tags = get_current_tags();
+				$tags_as_array = [];
 				print "<ul>";
 				foreach ($tags as $tag => $nr) {
 					print "<li>$tag</li>";
+					$tags[] = $tag;
 				}
 				print "</ul>";
+
+
 ?>
 			</td>
 		</tr>
@@ -86,7 +90,11 @@
 		}
 		(function() {
 			var anno = Annotorious.init({
-				image: 'image' // image element or ID
+				image: 'image',
+					widgets: [
+						'COMMENT',
+						{ widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', $tags).'"'; ?> ] }
+					]
 			});
 
 			anno.loadAnnotations('get_current_annotations.php?source=' + $("#image")[0].src.replace(/.*\//, ""));
@@ -160,7 +168,12 @@
 					}
 				});
 			});
+			//anno.readOnly = true;
 		})()
+
+		function write_to_current_inputfield (msg) {
+			$($($(".r6o-autocomplete").children()[0]).children()[0]).val(msg + "\n").trigger("change");
+		}
 
 		function refresh(){
 			window.location.reload("Refresh")
