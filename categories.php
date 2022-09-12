@@ -59,7 +59,7 @@
 			});
 			anno.readOnly = true;
 
-			anno.loadAnnotations('get_current_annotations.php?source=' + elem.src.replace(/.*\//, ""));
+			anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
 
 			// Add event handlers using .on  
 			anno.on('createAnnotation', function(annotation) {
