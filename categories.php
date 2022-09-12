@@ -57,7 +57,7 @@
 			var anno = Annotorious.init({
 				image: elem
 			});
-			anno.readOnly = true;
+			//anno.readOnly = true;
 
 			anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
 
