@@ -10,7 +10,7 @@
 <?php
 		include_once("functions.php");
 
-		$files = scandir("images");
+		$files = scandir("offtopic");
 
 		$img_files = array();
 
@@ -21,83 +21,31 @@
 			}
 		}
 
-		if(array_key_exists("move_from_offtopic", $_GET)) {
-			if(!preg_match("/\.\./", $_GET["move_from_offtopic"]) && preg_match("/\.jpg/", $_GET["move_from_offtopic"])) {
-				rename("offtopic/".$_GET["move_from_offtopic"], "images/".$_GET["move_from_offtopic"]);
-			}
-		}
-
-		if(array_key_exists("move_to_offtopic", $_GET)) {
-			if(!preg_match("/\.\./", $_GET["move_to_offtopic"]) && preg_match("/\.jpg/", $_GET["move_to_offtopic"])) {
-				rename("images/".$_GET["move_to_offtopic"], "offtopic/".$_GET["move_to_offtopic"]);
-			}
-		}
-
-		$img_files = shuffle_assoc($img_files);
 		asort($img_files);
-		$j = 0;
-		$imgfile = "";
-		foreach ($img_files as $f => $k) {
-			if($j != 0) {
-				continue;
-			}
-			$imgfile = $f;
-			$j++;
-		}
-
-		if(array_key_exists("edit", $_GET)) {
-			$imgfile = $_GET["edit"];
-		}
-
-		if(!$imgfile) {
-			die("Cannot find an image");
-		}
 		print_header();
 ?>
-	<br>
-	<table>
-		<tr>
-			<td style="vertical-align: baseline;">
-				<div id="content" style="padding: 30px;">
-					<p><button onClick="refresh(this)">N&auml;chstes Bild</button><br></p>
-					<!-- <p><button><a href="index.php?move_to_offtopic=<?php print $imgfile; ?>">Bild ist Off Topic</a></button><br></p> -->
-					<img id="image" src="images/<?php print $imgfile; ?>">
-					<br><?php print $imgfile; ?>
-				</div>
-			</td>
-			<td>
-				Aktuelle Tags (anklicken für Beispieldaten):
+	<div id="content">
 <?php
-				$tags = get_current_tags();
-				$tags_as_array = [];
-				print "<ul>";
-				foreach ($tags as $tag => $nr) {
-					print "<li><a target='_blank' href='categories.php?searchtag=".htmlentities(urlencode($tag))."'>$tag ($nr)</li>";
-					$tags[] = $tag;
-				}
-				print "</ul>";
-
-
+		foreach ($img_files as $f => $k) {
 ?>
-			</td>
-		</tr>
-	</table>
-
+			<!--<a target="_blank" href="index.php?move_to_offtopic=<?php print $f; ?>"><img class="images" id="<?php print uniqid(); ?>" src="images/<?php print $f; ?>"></a>-->
+			<a target="_blank" href="index.php?move_from_offtopic=<?php print $f; ?>"><img class="images" id="<?php print uniqid(); ?>" src="offtopic/<?php print $f; ?>"></a>
+<?php
+		}
+?>
+	</div>
 	<script>
+/*
 		function log (msg) {
 			console.log(msg);
 		}
-		(function() {
+		function make_item_anno(elem) {
+			log(elem);
 			var anno = Annotorious.init({
-				image: 'image',
-					widgets: [
-						{
-							widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', $tags).'"'; ?> ]
-						}
-					]
+				image: elem
 			});
 
-			anno.loadAnnotations('get_current_annotations.php?source=' + $("#image")[0].src.replace(/.*\//, ""));
+			anno.loadAnnotations('get_current_annotations.php?source=' + elem.src.replace(/.*\//, ""));
 
 			// Add event handlers using .on  
 			anno.on('createAnnotation', function(annotation) {
@@ -168,15 +116,16 @@
 					}
 				});
 			});
-			//anno.readOnly = true;
-		})()
-
-		function write_to_current_inputfield (msg) {
-			$($($(".r6o-autocomplete").children()[0]).children()[0]).val(msg + "\n").trigger("change");
 		}
 
 		function refresh(){
 			window.location.reload("Refresh")
 		}
+
+		var items = $(".images");
+		for (var i = 0; i < items.length; i++) {
+			make_item_anno(items[i]);
+		}
+ */
 	</script>
 </body>
