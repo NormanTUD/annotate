@@ -189,11 +189,7 @@
 				});
 			});
 			//anno.readOnly = true;
-		})()
-
-		function write_to_current_inputfield (msg) {
-			$($($(".r6o-autocomplete").children()[0]).children()[0]).val(msg + "\n").trigger("change");
-		}
+		})();
 
 		function next_img () {
 			window.location.href = "index.php";
