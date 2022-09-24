@@ -1,9 +1,4 @@
 <?php
-	header("Content-type: application/zip"); 
-	header("Content-Disposition: attachment; filename=data.zip"); 
-	header("Pragma: no-cache"); 
-	header("Expires: 0"); 
-
 	include_once("functions.php");
 
 	function generateRandomString($length = 10) {
@@ -15,8 +10,6 @@
 		}
 		return $randomString;
 	}
-
-	$tmp_name = generateRandomString(20);
 
 	function parse_position_rel ($pos, $w, $h) {
 		//xywh=pixel:579,354,58,41
@@ -56,6 +49,7 @@
 		return $res;
 	}
 
+	$tmp_name = generateRandomString(20);
 	$tmp_dir = "tmp/$tmp_name";
 	while (is_dir($tmp_dir)) {
 		$tmp_name = generateRandomString(20);
@@ -160,6 +154,7 @@
 					$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
 				}
 			}
+
 			if($str) {
 				file_put_contents("$tmp_dir/$fn_txt", $str);
 			}
@@ -170,6 +165,11 @@
 		system("cd $tmp_dir; zip -r yolo_export.zip .");
 		ob_clean();
 
+		header("Content-type: application/zip"); 
+		header("Content-Disposition: attachment; filename=data.zip"); 
+		header("Pragma: no-cache"); 
+		header("Expires: 0"); 
+
 		readfile($tmp_zip);
 
 		ob_start();
@@ -177,6 +177,6 @@
 		ob_clean();
 		exit(0);
 	} else {
-		print "Der Ordner $tmp_name konnte nicht erstellt werden."
+		print "Der Ordner $tmp_name konnte nicht erstellt werden.";
 	}
 ?>
