@@ -12,7 +12,11 @@
 			# sudo mkdir annotations
 			# cd annotations
 			# sudo chown -R www-data:s3811141 .
+			ob_start();
 			system("rm $filename");
+			ob_clean();
+
+
 		} else {
 			die("No ID given");
 		}
