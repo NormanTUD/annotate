@@ -58,35 +58,48 @@
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
 				$imgsz = getimagesize("images/$file");
-				$images[$file] = array(
-					"fn" => $file, 
-					"hash" => hash("sha256", $file),
-					"w" => $imgsz[0],
-					"h" => $imgsz[1]
-				);
+				$hash = hash("sha256", $file);
+				$dir = "annotations/$hash";
+
+				if(is_dir($dir)) {
+					$images[$file] = array(
+						"fn" => $file, 
+						"hash" => $hash,
+						"dir" => $dir,
+						"w" => $imgsz[0],
+						"h" => $imgsz[1]
+					);
+				}
 			}
 		}
 
 		$categories = array();
 		$annos = array();
 
+		$k = 0;
 		foreach($images as $item) {
-			$dir = "annotations/".$item["hash"];
-			if(is_dir($dir)) {
-				$user_annotations = scandir($dir);
+			/*
+			if($k > 4) {
+				continue;
+			}
+			 */
+			if(is_dir($item["dir"])) {
+				$user_annotations = scandir($item["dir"]);
 				foreach($user_annotations as $user_annotation_dir) {
 					if(!preg_match("/^\.\.?$/", $user_annotation_dir)) {
-						$tdir = "$dir/$user_annotation_dir";
+						$tdir = $item["dir"]."/$user_annotation_dir";
 						$single_user_annotations = scandir($tdir);
 						foreach($single_user_annotations as $single_user_annotation_file) {
 							if(preg_match("/\.json$/", $single_user_annotation_file)) {
+								#print "<pre>$single_user_annotation_file</pre>";
 								$struct = json_decode(file_get_contents("$tdir/$single_user_annotation_file"), true);
+								#dier($struct);
 								$file = $struct["source"];
+								//mywarn($file."\n");
 								#dier($images[$file]);
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
-								//dier($images[$file]);
 								foreach ($struct["body"] as $anno) {
 									if($anno["purpose"] == "tagging") {
 										$anno["value"] = strtolower($anno["value"]);
@@ -95,18 +108,32 @@
 										}
 										$index = array_search($anno["value"], $categories);
 										$images[$file]["tags"][] = $index;
+										$images[$file]["anno_name"][] = $anno["value"];
 										//dier($index);
 										//dier($anno["value"]);
 									}
 								}
+
+								#print("===>><pre>".print_r($images[$file], true)."</pre><<==");
 							}
 						}
 					}
 				}
+			} else {
+				/*
+				print($dir);
+				dier($images[$file]);
+				die("$dir");
+				 */
 			}
 
 			//dier($item);
+			$k++;
 		}
+
+		//dier($images["002215398dcba50ac5d89290c27301c1.jpg"]);
+		//dier($images);
+
 
 		/*
 		path: ../datasets/coco128  # dataset root dir
@@ -149,11 +176,12 @@
 					$pos = $img["position_rel"][$i];
 					$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
 				}
+			} else {
+				//dier($img);
 			}
 
-			copy("images/$fn", "$tmp_dir/images/$fn");
-
 			if($str) {
+				copy("images/$fn", "$tmp_dir/images/$fn");
 				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 			}
 		}

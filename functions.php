@@ -17,7 +17,9 @@
 	}
 
 	function dier($msg) {
+		print "<pre>";
 		print_r($msg);
+		print "</pre>";
 		exit(1);
 	}
 
