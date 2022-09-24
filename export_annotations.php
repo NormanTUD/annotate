@@ -134,13 +134,14 @@
 		  79: toothbrush
 		*/
 
-		$dataset_yaml = "path: images/\ntrain: images/train2017\nval: images/train2017\nnames:\n";
+		$dataset_yaml = "path: ./\ntrain: images/\nval: images/\nnames:\n";
 		foreach ($categories as $i => $cat) {
 			$dataset_yaml .= "  $i: $cat\n";
 		}
 
 		ob_start();
 		mkdir("$tmp_dir/labels/");
+		mkdir("$tmp_dir/images/");
 		ob_clean();
 
 		file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
@@ -158,6 +159,8 @@
 					$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
 				}
 			}
+
+			copy("images/$fn", "$tmp_dir/images/$fn");
 
 			if($str) {
 				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
