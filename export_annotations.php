@@ -139,6 +139,10 @@
 			$dataset_yaml .= "  $i: $cat\n";
 		}
 
+		ob_start();
+		mkdir("$tmp_dir/labels/");
+		ob_clean();
+
 		file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
 		//dier($dataset_yaml);
@@ -156,7 +160,7 @@
 			}
 
 			if($str) {
-				file_put_contents("$tmp_dir/$fn_txt", $str);
+				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 			}
 		}
 		
