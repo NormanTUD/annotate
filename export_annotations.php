@@ -1,16 +1,6 @@
 <?php
 	include_once("functions.php");
 
-	function generateRandomString($length = 10) {
-		$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-		$charactersLength = strlen($characters);
-		$randomString = '';
-		for ($i = 0; $i < $length; $i++) {
-			$randomString .= $characters[rand(0, $charactersLength - 1)];
-		}
-		return $randomString;
-	}
-
 	function parse_position_rel ($pos, $w, $h) {
 		//xywh=pixel:579,354,58,41
 		$res = null;
@@ -61,6 +51,7 @@
 	ob_clean();
 
 	if(is_dir($tmp_dir)) {
+		ini_set('memory_limit', '-1');
 		$files = scandir("images");
 		$images = array();
 
@@ -182,6 +173,7 @@
 		ob_start();
 		system("rm -rf $tmp_dir");
 		ob_clean();
+		ini_set('memory_limit', 512000000);
 		exit(0);
 	} else {
 		print "Der Ordner $tmp_name konnte nicht erstellt werden.";
