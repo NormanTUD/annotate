@@ -67,6 +67,9 @@
 
 		if(array_key_exists("edit", $_GET)) {
 			$imgfile = $_GET["edit"];
+		} else {
+			header('Location:'.$_SERVER['PHP_SELF'].'?edit='.urlencode($imgfile));
+			exit(0);
 		}
 
 		if(!$imgfile) {
