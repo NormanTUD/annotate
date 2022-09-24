@@ -100,89 +100,10 @@
 
 	<script>
 
-		(function() {
-			var anno = Annotorious.init({
-				image: 'image',
-					widgets: [
-						{
-							widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', $tags).'"'; ?> ]
-						}
-					]
-			});
-
-			anno.loadAnnotations('get_current_annotations.php?source=' + $("#image")[0].src.replace(/.*\//, ""));
-
-			// Add event handlers using .on  
-			anno.on('createAnnotation', function(annotation) {
-				// Do something
-				log(annotation);
-				var a = {
-					"position": annotation.target.selector.value,
-					"body": annotation.body,
-					"id": annotation.id,
-					"source": annotation.target.source.replace(/.*\//, ""),
-					"full": JSON.stringify(annotation)
-				};
-				log(a);
-				$.ajax({
-					url: "submit.php",
-					type: "post",
-					data: a,
-					success: function (response) {
-						log(response)
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(textStatus, errorThrown);
-					}
-				});
-			});
-
-			anno.on('updateAnnotation', function(annotation) {
-				var a = {
-					"position": annotation.target.selector.value,
-					"body": annotation.body,
-					"id": annotation.id,
-					"source": annotation.target.source.replace(/.*\//, ""),
-					"full": JSON.stringify(annotation)
-				};
-				log(a);
-				$.ajax({
-					url: "submit.php",
-					type: "post",
-					data: a,
-					success: function (response) {
-						log(response)
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(textStatus, errorThrown);
-					}
-				});
-			});
-
-
-			anno.on('deleteAnnotation', function(annotation) {
-				var a = {
-					"position": annotation.target.selector.value,
-					"body": annotation.body,
-					"id": annotation.id,
-					"source": annotation.target.source.replace(/.*\//, ""),
-					"full": JSON.stringify(annotation)
-				};
-				log(a);
-				$.ajax({
-					url: "delete_annotation.php",
-					type: "post",
-					data: a,
-					success: function (response) {
-						log(response)
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(textStatus, errorThrown);
-					}
-				});
-			});
-			//anno.readOnly = true;
-		})();
-
+		make_item_anno($("#image")[0], [
+			{
+				widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', $tags).'"'; ?> ]
+			}
+		]);
 	</script>
 </body>
