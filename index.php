@@ -23,13 +23,33 @@
 
 		if(array_key_exists("move_from_offtopic", $_GET)) {
 			if(!preg_match("/\.\./", $_GET["move_from_offtopic"]) && preg_match("/\.jpg/", $_GET["move_from_offtopic"])) {
-				rename("offtopic/".$_GET["move_from_offtopic"], "images/".$_GET["move_from_offtopic"]);
+				$f = "offtopic/".$_GET["move_from_offtopic"];
+				$t = "images/".$_GET["move_from_offtopic"];
+				if(file_exists($f)) {
+					if(!file_exists($t)) {
+						rename($f, $t);
+					} else {
+						mywarn("$f wurde gefunden, aber $t exitiert bereits");
+					}
+				} else {
+					mywarn("$f wurde nicht gefunden");
+				}
 			}
 		}
 
 		if(array_key_exists("move_to_offtopic", $_GET)) {
 			if(!preg_match("/\.\./", $_GET["move_to_offtopic"]) && preg_match("/\.jpg/", $_GET["move_to_offtopic"])) {
-				rename("images/".$_GET["move_to_offtopic"], "offtopic/".$_GET["move_to_offtopic"]);
+				$f = "images/".$_GET["move_to_offtopic"];
+				$t = "offtopic/".$_GET["move_to_offtopic"];
+				if(file_exists($f)) {
+					if(!file_exists($t)) {
+						rename($f, $t);
+					} else {
+						mywarn("$f wurde gefunden, aber $t exitiert bereits");
+					}
+				} else {
+					mywarn("$f wurde nicht gefunden");
+				}
 			}
 		}
 

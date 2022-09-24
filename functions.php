@@ -205,4 +205,8 @@
 		}
 		return false;
 	}
+
+	function mywarn ($msg) {
+		file_put_contents('php://stderr', $msg);
+	}
 ?>
