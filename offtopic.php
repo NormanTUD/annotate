@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<head>
-	<title>Bildannotationstool</title>
-	<link rel="stylesheet" href="annotorious.min.css">
-	<script src="annotorious.min.js"></script>
-	<script src="jquery.min.js"></script>
-</head>
-
-<body>
 <?php
+		include_once("header.php");
 		include_once("functions.php");
 
 		$files = scandir("offtopic");
@@ -28,104 +20,9 @@
 <?php
 		foreach ($img_files as $f => $k) {
 ?>
-			<!--<a target="_blank" href="index.php?move_to_offtopic=<?php print $f; ?>"><img class="images" id="<?php print uniqid(); ?>" src="images/<?php print $f; ?>"></a>-->
 			<a target="_blank" href="index.php?edit=<?php print $f; ?>&move_from_offtopic=<?php print $f; ?>"><img class="images" id="<?php print uniqid(); ?>" src="offtopic/<?php print $f; ?>"></a>
 <?php
 		}
 ?>
 	</div>
-	<script>
-/*
-		function log (msg) {
-			console.log(msg);
-		}
-		function make_item_anno(elem) {
-			log(elem);
-			var anno = Annotorious.init({
-				image: elem
-			});
-
-			anno.loadAnnotations('get_current_annotations.php?source=' + elem.src.replace(/.*\//, ""));
-
-			// Add event handlers using .on  
-			anno.on('createAnnotation', function(annotation) {
-				// Do something
-				log(annotation);
-				var a = {
-					"position": annotation.target.selector.value,
-					"body": annotation.body,
-					"id": annotation.id,
-					"source": annotation.target.source.replace(/.*\//, ""),
-					"full": JSON.stringify(annotation)
-				};
-				log(a);
-				$.ajax({
-					url: "submit.php",
-					type: "post",
-					data: a,
-					success: function (response) {
-						log(response)
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(textStatus, errorThrown);
-					}
-				});
-			});
-
-			anno.on('updateAnnotation', function(annotation) {
-				var a = {
-					"position": annotation.target.selector.value,
-					"body": annotation.body,
-					"id": annotation.id,
-					"source": annotation.target.source.replace(/.*\//, ""),
-					"full": JSON.stringify(annotation)
-				};
-				log(a);
-				$.ajax({
-					url: "submit.php",
-					type: "post",
-					data: a,
-					success: function (response) {
-						log(response)
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(textStatus, errorThrown);
-					}
-				});
-			});
-
-
-			anno.on('deleteAnnotation', function(annotation) {
-				var a = {
-					"position": annotation.target.selector.value,
-					"body": annotation.body,
-					"id": annotation.id,
-					"source": annotation.target.source.replace(/.*\//, ""),
-					"full": JSON.stringify(annotation)
-				};
-				log(a);
-				$.ajax({
-					url: "delete_annotation.php",
-					type: "post",
-					data: a,
-					success: function (response) {
-						log(response)
-					},
-					error: function(jqXHR, textStatus, errorThrown) {
-						console.log(textStatus, errorThrown);
-					}
-				});
-			});
-		}
-
-		function refresh(){
-			window.location.reload("Refresh")
-		}
-
-		var items = $(".images");
-		for (var i = 0; i < items.length; i++) {
-			make_item_anno(items[i]);
-		}
- */
-	</script>
 </body>

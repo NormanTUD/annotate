@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<head>
-	<title>Bildannotationstool</title>
-	<link rel="stylesheet" href="annotorious.min.css">
-	<script src="annotorious.min.js"></script>
-	<script src="jquery.min.js"></script>
-</head>
-
-<body>
 <?php
+		include("header.php");
 		include_once("functions.php");
 
 		$files = scandir("images");
@@ -107,9 +99,7 @@
 	</table>
 
 	<script>
-		function log (msg) {
-			console.log(msg);
-		}
+
 		(function() {
 			var anno = Annotorious.init({
 				image: 'image',
@@ -194,12 +184,5 @@
 			//anno.readOnly = true;
 		})();
 
-		function next_img () {
-			window.location.href = "index.php";
-		}
-
-		function refresh(){
-			window.location.reload("Refresh")
-		}
 	</script>
 </body>

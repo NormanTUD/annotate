@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<head>
-	<title>Bildannotationstool</title>
-	<link rel="stylesheet" href="annotorious.min.css">
-	<script src="annotorious.min.js"></script>
-	<script src="jquery.min.js"></script>
-</head>
-
-<body>
 <?php
+		include("header.php");
 		include_once("functions.php");
 
 		$searchtag = "";
@@ -49,9 +41,6 @@
 ?>
 	</div>
 	<script>
-		function log (msg) {
-			console.log(msg);
-		}
 		function make_item_anno(elem) {
 			log(elem);
 			var anno = Annotorious.init({
@@ -132,13 +121,6 @@
 			});
 		}
 
-		function refresh(){
-			window.location.reload("Refresh")
-		}
-
-		var items = $(".images");
-		for (var i = 0; i < items.length; i++) {
-			make_item_anno(items[i]);
-		}
+		create_annos();
 	</script>
 </body>
