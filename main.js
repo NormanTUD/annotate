@@ -15,6 +15,52 @@ function next_img () {
 	window.location.href = "index.php";
 }
 
+function success (title, msg) {
+	toastr.options = {
+		"closeButton": false,
+		"debug": false,
+		"newestOnTop": true,
+		"progressBar": true,
+		"positionClass": "toast-bottom-center",
+		"preventDuplicates": true,
+		"onclick": null,
+		"showDuration": "300",
+		"hideDuration": "1000",
+		"timeOut": "5000",
+		"extendedTimeOut": "1000",
+		"showEasing": "swing",
+		"hideEasing": "linear",
+		"showMethod": "fadeIn",
+		"hideMethod": "fadeOut"
+	};
+
+	toastr["success"](title, msg);
+}
+
+
+
+function error (title, msg) {
+	toastr.options = {
+		"closeButton": false,
+		"debug": false,
+		"newestOnTop": true,
+		"progressBar": true,
+		"positionClass": "toast-bottom-center",
+		"preventDuplicates": true,
+		"onclick": null,
+		"showDuration": "300",
+		"hideDuration": "1000",
+		"timeOut": "5000",
+		"extendedTimeOut": "1000",
+		"showEasing": "swing",
+		"hideEasing": "linear",
+		"showMethod": "fadeIn",
+		"hideMethod": "fadeOut"
+	};
+
+	toastr["error"](title, msg);
+}
+
 function make_item_anno(elem, widgets={}) {
 	log(elem);
 	var anno = Annotorious.init({
@@ -28,7 +74,6 @@ function make_item_anno(elem, widgets={}) {
 	// Add event handlers using .on  
 	anno.on('createAnnotation', function(annotation) {
 		// Do something
-		log(annotation);
 		var a = {
 			"position": annotation.target.selector.value,
 			"body": annotation.body,
@@ -36,16 +81,15 @@ function make_item_anno(elem, widgets={}) {
 			"source": annotation.target.source.replace(/.*\//, ""),
 			"full": JSON.stringify(annotation)
 		};
-		log(a);
 		$.ajax({
 			url: "submit.php",
 			type: "post",
 			data: a,
 			success: function (response) {
-				log(response)
+				success("OK", response);
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				console.log(textStatus, errorThrown);
+				error(textStatus, errorThrown);
 			}
 		});
 	});
@@ -58,16 +102,15 @@ function make_item_anno(elem, widgets={}) {
 			"source": annotation.target.source.replace(/.*\//, ""),
 			"full": JSON.stringify(annotation)
 		};
-		log(a);
 		$.ajax({
 			url: "submit.php",
 			type: "post",
 			data: a,
 			success: function (response) {
-				log(response)
+				success("OK", response)
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				console.log(textStatus, errorThrown);
+				error(textStatus, errorThrown);
 			}
 		});
 	});
@@ -87,10 +130,10 @@ function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: function (response) {
-				log(response)
+				success("OK", response)
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				console.log(textStatus, errorThrown);
+				error(textStatus, errorThrown);
 			}
 		});
 	});
