@@ -11,10 +11,21 @@
 
 			# sudo mkdir annotations
 			# cd annotations
-			# sudo chown -R www-data:s3811141 .
+			# sudo chown -R www-data:$USER .
+			ob_start();
 			system("mkdir -p $dir");
+			ob_clean();
 
-			file_put_contents($filename, json_encode($_POST));
+			if(is_dir($dir)) {
+				file_put_contents($filename, json_encode($_POST));
+				if(file_exists($filename)) {
+					print "OK";
+				} else {
+					die("$filename could not be created");
+				}
+			} else {
+				die("$dir could not be created");
+			}
 		} else {
 			die("No ID given");
 		}
