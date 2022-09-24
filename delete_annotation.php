@@ -16,7 +16,7 @@
 			system("rm $filename");
 			ob_clean();
 
-
+			print("OK");
 		} else {
 			die("No ID given");
 		}
