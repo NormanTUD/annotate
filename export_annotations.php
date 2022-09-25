@@ -252,6 +252,8 @@
 
 			$annos_strings = array();
 
+			$annotated_imgs_by_name = array();
+
 			// <object-class> <x> <y> <width> <height>
 			foreach ($images as $img) {
 				if($img["disabled"]) {
@@ -300,6 +302,11 @@
 				';
 
 				$annos_strings[] = $base_struct;
+				for ($i = 0; $i < count($img["anno_name"]); $i++) {
+					$ttag = $img["anno_name"][$i];
+					$annotated_imgs_by_name[$ttag][] = $base_struct;
+				}
+
 				#dier(htmlentities($base_struct));
 
 				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
@@ -318,9 +325,21 @@
 				}
 			}
 
-			$annos_str = join("", $annos_strings);
+			$last = "";
+			$new_html = "";
+			foreach ($annotated_imgs_by_name as $n => $s) {
+				if($last != $n) {
+					$new_html .= "<h2>".htmlentities($n)."</h2>";
+					$last = $n;
+				}
+				foreach ($s as $i) {
+					$new_html .= $i;
+				}
+			}
 
-			$html = preg_replace("/REPLACEME/", $annos_str, $html);
+			#$annos_str = join("", $annos_strings);
+
+			$html = preg_replace("/REPLACEME/", $new_html, $html);
 
 			#file_put_contents("$tmp_dir/index.html", $html);
 
