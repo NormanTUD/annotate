@@ -50,6 +50,13 @@
 	system("mkdir -p $tmp_dir");
 	ob_clean();
 
+	$show_categories = array();
+
+	if(isset($_GET["show_categories"])) {
+		$show_categories = $_GET["show_categories"];
+	}
+	#dier(in_array("rsdasdaketenspirale", $show_categories));
+
 	if(is_dir($tmp_dir)) {
 		ini_set('memory_limit', '-1');
 		$files = scandir("images");
@@ -67,7 +74,8 @@
 						"hash" => $hash,
 						"dir" => $dir,
 						"w" => $imgsz[0],
-						"h" => $imgsz[1]
+						"h" => $imgsz[1],
+						"disabled" => false
 					);
 				}
 			}
@@ -97,6 +105,12 @@
 								$file = $struct["source"];
 								//mywarn($file."\n");
 								#dier($images[$file]);
+
+								$has_valid_category = false;
+								if(!count($show_categories)) {
+									$has_valid_category = true;
+								}
+
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
@@ -109,9 +123,22 @@
 										$index = array_search($anno["value"], $categories);
 										$images[$file]["tags"][] = $index;
 										$images[$file]["anno_name"][] = $anno["value"];
+
+										#print $anno["value"];
+										#print "<br>\n";
+										#print_r($show_categories);
+										#print "<br>\n";
+										if(!$has_valid_category && in_array($anno["value"], $show_categories)) {
+											$has_valid_category = true;
+										}
 										//dier($index);
 										//dier($anno["value"]);
 									}
+								}
+
+								if(!$has_valid_category) {
+									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
+									$images[$file]["disabled"] = true;
 								}
 
 								#print("===>><pre>".print_r($images[$file], true)."</pre><<==");
@@ -168,7 +195,13 @@
 
 		// <object-class> <x> <y> <width> <height>
 		foreach ($images as $img) {
+			if($img["disabled"]) {
+				continue;
+			}
+
 			$fn = $img["fn"];
+			//dier($img);
+			#print "<br>$fn<br>";
 			$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
 			$str = "";
 			if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
@@ -185,6 +218,8 @@
 				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 			}
 		}
+
+		#die("a");
 		
 		$tmp_zip = "$tmp_dir/yolo_export.zip";
 		ob_start();
