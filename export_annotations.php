@@ -212,6 +212,8 @@
 			pip3 install "albumentations>=1.0.3"
 			wget https://raw.githubusercontent.com/ultralytics/yolov5/b94b59e199047aa8bf2cdd4401ae9f5f42b929e6/data/hyps/hyp.scratch-low.yaml
 
+			pip install wandb
+
 			python3 train.py --batch 8 --data dataset.yaml --epochs 10 --cache --img 512 --nosave --hyp hyp.VOC.yaml --hyp hyp.scratch-low.yaml
 		 */
 
@@ -251,6 +253,46 @@
 					file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 				}
 			}
+
+			$train_bash = '#!/bin/bash
+if [ ! -d "yolov5" ]; then
+	git clone --depth 1 https://github.com/ultralytics/yolov5.git
+fi
+cd yolov5
+python3 -m venv ~/.yoloenv
+if [ -d "$HOME/.yoloenv" ]; then
+	echo "~/.yoloenv already exists"
+	source ~/env/bin/activate
+else
+	source ~/yoloenv/bin/activate
+	pip3 install -r requirements.txt
+	pip3 install "albumentations>=1.0.3"
+	pip3 install tensorboard
+	pip3 install -r requirements.txt
+fi
+
+mkdir -p dataset
+if [ -d "../images" ]; then
+	mv ../images/ dataset/
+fi
+if [ -d "../labels" ]; then
+	mv ../labels/ dataset/
+fi
+if [ -e "../dataset.yaml" ]; then
+	mv ../dataset.yaml  data/
+fi
+
+
+wget -nc https://raw.githubusercontent.com/ultralytics/yolov5/b94b59e199047aa8bf2cdd4401ae9f5f42b929e6/data/hyps/hyp.scratch-low.yaml
+
+echo "source ~/.yoloenv/bin/activate"
+echo "cd yolov5"
+echo "python3 train.py --batch 8 --data dataset.yaml --epochs 10 --cache --img 512 --nosave --hyp hyp.VOC.yaml --hyp hyp.scratch-low.yaml"
+
+echo "run tensorboard --logdir runs/train to follow visually"
+';
+
+			file_put_contents("$tmp_dir/runme.sh", $train_bash);
 		} else if ($format == "html") {
 			ob_start();
 			mkdir("$tmp_dir/labels/");
