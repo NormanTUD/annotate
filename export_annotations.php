@@ -296,6 +296,8 @@ mixup: 0.1  # image mixup (probability)
 copy_paste: 0.1  # segment copy-paste (probability)
 ';
 
+			file_put_contents("$tmp_dir/hyperparams.yaml", $hyperparams);
+
 			$train_bash = '#!/bin/bash
 if [ ! -d "yolov5" ]; then
 	git clone --depth 1 https://github.com/ultralytics/yolov5.git
@@ -330,7 +332,7 @@ fi
 
 echo "source ~/.yoloenv/bin/activate"
 echo "cd yolov5"
-echo "python3 train.py --batch 8 --data dataset.yaml --weights ''  --epochs 500 --cache --img 1024 --nosave --hyp hyperparams.yaml"
+echo "python3 train.py --cfg yolov5n6.yaml --batch 8 --data dataset.yaml --weights \\"\\"  --epochs 500 --cache --img 1024 --nosave --hyp hyperparams.yaml"
 
 echo "run tensorboard --logdir runs/train to follow visually"
 ';
