@@ -53,8 +53,17 @@
 	$show_categories = array();
 
 	if(isset($_GET["show_categories"])) {
-		$show_categories = $_GET["show_categories"];
+		$show_categories = array_filter($_GET["show_categories"]);
 	}
+
+	$valid_formats = array(
+		"ultralytics_yolov5", "html"
+	);
+	$format = "ultralytics_yolov5";
+	if(isset($_GET["format"]) && in_array($_GET["format"], $valid_formats)) {
+		$format = $_GET["format"];
+	}
+
 	#dier(in_array("rsdasdaketenspirale", $show_categories));
 
 	if(is_dir($tmp_dir)) {
@@ -180,43 +189,53 @@
 		*/
 
 		$dataset_yaml = "path: ./\ntrain: images/\nval: images/\nnames:\n";
+		$j = 0;
 		foreach ($categories as $i => $cat) {
-			$dataset_yaml .= "  $i: $cat\n";
+			if(!count($show_categories) || in_array($cat, $show_categories)) {
+				$dataset_yaml .= "  $j: $cat\n";
+				$j++;
+			}
 		}
 
 		ob_start();
-		mkdir("$tmp_dir/labels/");
 		mkdir("$tmp_dir/images/");
 		ob_clean();
 
-		file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
+		if($format == "ultralytics_yolov5") {
+			ob_start();
+			mkdir("$tmp_dir/labels/");
+			ob_clean();
 
-		//dier($dataset_yaml);
+			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
-		// <object-class> <x> <y> <width> <height>
-		foreach ($images as $img) {
-			if($img["disabled"]) {
-				continue;
-			}
+			//dier($dataset_yaml);
 
-			$fn = $img["fn"];
-			//dier($img);
-			#print "<br>$fn<br>";
-			$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
-			$str = "";
-			if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
-				foreach ($img["tags"] as $i => $t) {
-					$pos = $img["position_rel"][$i];
-					$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+			// <object-class> <x> <y> <width> <height>
+			foreach ($images as $img) {
+				if($img["disabled"]) {
+					continue;
 				}
-			} else {
-				//dier($img);
-			}
 
-			if($str) {
-				copy("images/$fn", "$tmp_dir/images/$fn");
-				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
+				$fn = $img["fn"];
+				//dier($img);
+				#print "<br>$fn<br>";
+				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
+				$str = "";
+				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
+					foreach ($img["tags"] as $i => $t) {
+						$pos = $img["position_rel"][$i];
+						$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+					}
+				} else {
+					//dier($img);
+				}
+
+				if($str) {
+					copy("images/$fn", "$tmp_dir/images/$fn");
+					file_put_contents("$tmp_dir/labels/$fn_txt", $str);
+				}
 			}
+		} else {
 		}
 
 		#die("a");

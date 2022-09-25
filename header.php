@@ -34,6 +34,7 @@ print_home();
 	
 	if(isset($_GET["searchtag"])) {
 		print "<br><a href='export_annotations.php?show_categories[]=".urlencode($searchtag)."'>Diese Kategorie exportieren</a>";
+		print "<br><a href='export_annotations.php?format=html&show_categories[]=".urlencode($searchtag)."'>Diese Kategorie exportieren (HTML Overview)</a>";
 	}
 ?>
 </div>
