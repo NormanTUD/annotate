@@ -293,7 +293,7 @@
 				$base_struct = '
 				<div style="position: relative; display: inline-block;">
 					<img class="images" src="images/'.$fn.'" style="display: block;">
-					<svg class="a9s-annotationlayer" viewBox="0 0 '.$w.' '.$h.'">
+					<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$h.' '.$w.'">
 						<g>
 							'.$annotations_string.'
 						</g>
@@ -344,6 +344,7 @@
 			#file_put_contents("$tmp_dir/index.html", $html);
 
 			print($html);
+			include("footer.php");
 			exit;
 		} else {
 			die("This should never happen. Sorry.");
