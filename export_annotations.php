@@ -195,7 +195,7 @@
 		  79: toothbrush
 		*/
 
-		$dataset_yaml = "path: ./\ntrain: images/\nval: images/\nnames:\n";
+		$dataset_yaml = "path: ./\ntrain: dataset/images/\nval: dataset/images/\ntest: dataset/images/\nnames:\n";
 		$j = 0;
 		foreach ($categories as $i => $cat) {
 			if(!count($show_categories) || in_array($cat, $show_categories)) {
@@ -242,7 +242,13 @@
 				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_rel"][$i];
-						$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+						if(!count($show_categories)) {
+							$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+						} else {
+							$k = array_search($img["anno_name"][$i], $show_categories);
+
+							$str .= "$k ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+						}
 					}
 				} else {
 					//dier($img);
