@@ -208,7 +208,37 @@
 
 			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
-			//dier($dataset_yaml);
+			// <object-class> <x> <y> <width> <height>
+			foreach ($images as $img) {
+				if($img["disabled"]) {
+					continue;
+				}
+
+				$fn = $img["fn"];
+				//dier($img);
+				#print "<br>$fn<br>";
+				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
+				$str = "";
+				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
+					foreach ($img["tags"] as $i => $t) {
+						$pos = $img["position_rel"][$i];
+						$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+					}
+				} else {
+					//dier($img);
+				}
+
+				if($str) {
+					copy("images/$fn", "$tmp_dir/images/$fn");
+					file_put_contents("$tmp_dir/labels/$fn_txt", $str);
+				}
+			}
+		} else if ($format == "html") {
+			ob_start();
+			mkdir("$tmp_dir/labels/");
+			ob_clean();
+
+			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
 			// <object-class> <x> <y> <width> <height>
 			foreach ($images as $img) {
@@ -235,7 +265,9 @@
 					file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 				}
 			}
+			die("hallo");
 		} else {
+			die("This should never happen. Sorry.");
 		}
 
 		#die("a");
