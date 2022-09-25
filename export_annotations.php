@@ -314,7 +314,7 @@
 				}
 
 				if($str) {
-					copy("images/$fn", "$tmp_dir/images/$fn");
+					#copy("images/$fn", "$tmp_dir/images/$fn");
 				}
 			}
 
@@ -322,7 +322,10 @@
 
 			$html = preg_replace("/REPLACEME/", $annos_str, $html);
 
-			file_put_contents("$tmp_dir/index.html", $html);
+			#file_put_contents("$tmp_dir/index.html", $html);
+
+			print($html);
+			exit;
 		} else {
 			die("This should never happen. Sorry.");
 		}
