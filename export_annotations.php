@@ -204,6 +204,17 @@
 			}
 		}
 
+		/*
+			git clone --depth 1 https://github.com/ultralytics/yolov5.git
+			python3 -m venv env
+			source env/bin/activate
+			pip3 install -r requirements.txt
+			pip3 install "albumentations>=1.0.3"
+			wget https://raw.githubusercontent.com/ultralytics/yolov5/b94b59e199047aa8bf2cdd4401ae9f5f42b929e6/data/hyps/hyp.scratch-low.yaml
+
+			python3 train.py --batch 8 --data dataset.yaml --epochs 10 --cache --img 512 --nosave --hyp hyp.VOC.yaml --hyp hyp.scratch-low.yaml
+		 */
+
 		ob_start();
 		mkdir("$tmp_dir/images/");
 		ob_clean();
