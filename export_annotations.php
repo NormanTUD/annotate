@@ -120,6 +120,8 @@
 									$has_valid_category = 1;
 								}
 
+								$images[$file]["w"] = $item["w"];
+
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
@@ -245,7 +247,10 @@
 
 			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
+			$html = file_get_contents("export_base.html");
 			$html_images = array();
+
+			$annos_strings = array();
 
 			// <object-class> <x> <y> <width> <height>
 			foreach ($images as $img) {
@@ -254,19 +259,19 @@
 				}
 
 				$fn = $img["fn"];
+				$w = $img["w"];
+				$h = $img["h"];
 
 				$anno_struct = json_decode($img["anno_struct"]["full"], true);
 
 				$id = $anno_struct["id"];
 
 				$annotation_base = '
-							<g class="a9s-annotation" data-id="${id}">
+							<g class="a9s-annotation">
 								<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
 							</g>
 				';
 				$this_annos = array();
-				dier($anno_struct);
-
 
 				foreach ($img["position_xywh"] as $this_anno_data) {
 					$this_anno = $annotation_base;
@@ -282,17 +287,20 @@
 
 				$annotations_string = join("\n", $this_annos);
 
+
 				$base_struct = '
 				<div style="position: relative; display: inline-block;">
-					<img class="images" id="633057df7e67a" src="images/'.$fn.'" style="display: block;">
-					<svg class="a9s-annotationlayer" viewBox="0 0 800 471">
+					<img class="images" src="images/'.$fn.'" style="display: block;">
+					<svg class="a9s-annotationlayer" viewBox="0 0 '.$w.' '.$height.'">
 						<g>
 							'.$annotations_string.'
 						</g>
 					</svg>
 				</div>
 				';
-				dier(htmlentities($base_struct));
+
+				$annos_strings[] = $base_struct;
+				#dier(htmlentities($base_struct));
 
 				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
 				$str = "";
@@ -307,10 +315,14 @@
 
 				if($str) {
 					copy("images/$fn", "$tmp_dir/images/$fn");
-					file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 				}
 			}
-			die("hallo");
+
+			$annos_str = join("", $annos_strings);
+
+			$html = preg_replace("/REPLACEME/", $annos_str, $html);
+
+			file_put_contents("$tmp_dir/index.html", $html);
 		} else {
 			die("This should never happen. Sorry.");
 		}
