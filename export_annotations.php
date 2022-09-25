@@ -332,7 +332,7 @@ fi
 
 echo "source ~/.yoloenv/bin/activate"
 echo "cd yolov5"
-echo "python3 train.py --cfg yolov5n6.yaml --batch 8 --data dataset.yaml --weights \\"\\"  --epochs 500 --cache --img 1024 --nosave --hyp hyperparams.yaml"
+echo "python3 train.py --cfg yolov5n6.yaml --multi-scale --batch 8 --data dataset.yaml --weights \\"\\"  --epochs 500 --cache --img 1024 --nosave --hyp hyperparams.yaml" --evolve
 
 echo "run tensorboard --logdir runs/train to follow visually"
 ';
