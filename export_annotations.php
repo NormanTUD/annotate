@@ -115,21 +115,24 @@
 								//mywarn($file."\n");
 								#dier($images[$file]);
 
-								$has_valid_category = false;
+								$has_valid_category = 0;
 								if(!count($show_categories)) {
-									$has_valid_category = true;
+									$has_valid_category = 1;
 								}
 
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
+								$images[$file]["anno_struct"] = $struct;
 								foreach ($struct["body"] as $anno) {
 									if($anno["purpose"] == "tagging") {
 										$anno["value"] = strtolower($anno["value"]);
 										if(!in_array($anno["value"], $categories)) {
 											$categories[] = $anno["value"];
 										}
+
 										$index = array_search($anno["value"], $categories);
+
 										$images[$file]["tags"][] = $index;
 										$images[$file]["anno_name"][] = $anno["value"];
 
@@ -138,8 +141,10 @@
 										#print_r($show_categories);
 										#print "<br>\n";
 										if(!$has_valid_category && in_array($anno["value"], $show_categories)) {
-											$has_valid_category = true;
+											$has_valid_category = 1;
 										}
+										#dier($images[$file]);
+										#die($has_valid_category);
 										//dier($index);
 										//dier($anno["value"]);
 									}
@@ -240,6 +245,8 @@
 
 			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
+			$html_images = array();
+
 			// <object-class> <x> <y> <width> <height>
 			foreach ($images as $img) {
 				if($img["disabled"]) {
@@ -247,8 +254,46 @@
 				}
 
 				$fn = $img["fn"];
-				//dier($img);
-				#print "<br>$fn<br>";
+
+				$anno_struct = json_decode($img["anno_struct"]["full"], true);
+
+				$id = $anno_struct["id"];
+
+				$annotation_base = '
+							<g class="a9s-annotation" data-id="${id}">
+								<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
+							</g>
+				';
+				$this_annos = array();
+				dier($anno_struct);
+
+
+				foreach ($img["position_xywh"] as $this_anno_data) {
+					$this_anno = $annotation_base;
+					$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
+					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
+					$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
+					$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y"], $this_anno);
+					$this_anno = preg_replace('/\$\{y_1\}/', $this_anno_data["h"], $this_anno);
+
+					$this_annos[] = $this_anno;
+				}
+
+
+				$annotations_string = join("\n", $this_annos);
+
+				$base_struct = '
+				<div style="position: relative; display: inline-block;">
+					<img class="images" id="633057df7e67a" src="images/'.$fn.'" style="display: block;">
+					<svg class="a9s-annotationlayer" viewBox="0 0 800 471">
+						<g>
+							'.$annotations_string.'
+						</g>
+					</svg>
+				</div>
+				';
+				dier(htmlentities($base_struct));
+
 				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
 				$str = "";
 				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
