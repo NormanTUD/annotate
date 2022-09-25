@@ -22,9 +22,15 @@
 
 		asort($img_files);
 		print_header();
+
+		if($searchtag) {
+			print "<a href='export_annotations.php?show_categories[]=".urlencode($searchtag)."'>Diese Kategorie exportieren</a>";
+		}
 ?>
 	<div id="content">
+
 <?php
+
 		$i = 0;
 		foreach ($img_files as $f => $k) {
 			if($k) {
