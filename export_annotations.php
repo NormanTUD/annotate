@@ -291,7 +291,7 @@
 				$base_struct = '
 				<div style="position: relative; display: inline-block;">
 					<img class="images" src="images/'.$fn.'" style="display: block;">
-					<svg class="a9s-annotationlayer" viewBox="0 0 '.$w.' '.$height.'">
+					<svg class="a9s-annotationlayer" viewBox="0 0 '.$w.' '.$h.'">
 						<g>
 							'.$annotations_string.'
 						</g>
