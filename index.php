@@ -67,7 +67,7 @@
 		if(!$imgfile) {
 			die("Cannot find an image");
 		}
-		print_header();
+		#print_header();
 ?>
 	<br>
 	<table>
@@ -106,4 +106,4 @@
 			}
 		]);
 	</script>
-</body>
+<?php include_once("footer.php"); ?>

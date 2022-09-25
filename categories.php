@@ -21,11 +21,8 @@
 		}
 
 		asort($img_files);
-		print_header();
+		#print_header();
 
-		if($searchtag) {
-			print "<a href='export_annotations.php?show_categories[]=".urlencode($searchtag)."'>Diese Kategorie exportieren</a>";
-		}
 ?>
 	<div id="content">
 
@@ -49,4 +46,4 @@
 	<script>
 		create_annos();
 	</script>
-</body>
+<?php include_once("footer.php"); ?>

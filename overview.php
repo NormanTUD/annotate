@@ -14,7 +14,7 @@
 		}
 
 		asort($img_files);
-		print_header();
+		#print_header();
 ?>
 	<div id="content">
 <?php
@@ -30,4 +30,4 @@
 	<script>
 		create_annos();
 	</script>
-</body>
+<?php include_once("footer.php"); ?>
