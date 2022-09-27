@@ -373,7 +373,7 @@ echo "run tensorboard --logdir runs/train to follow visually"
 				';
 				$this_annos = array();
 
-				foreach ($img["position_xyxy"] as $this_anno_data) {
+				foreach ($img["position_rel"] as $this_anno_data) {
 					$this_anno = $annotation_base;
 					$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
 					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
