@@ -24,23 +24,14 @@
 			$width = abs($x_0 - $x_1);
 			$height = abs($y_0 - $y_1);
 
-			$half_width =  $width / 2;
-			$half_height = $height / 2;
+			$x_center = $x_0 + ($width / 2);
+			$y_center = $y_0 + ($height / 2);
 
-			$rel_width = abs($x_0 - $x_1) / $w;
-			$rel_height = abs($y_0 - $y_1) / $h;
+			$res["x_center"] = ($x_center / $w);
+			$res["y_center"] = ($y_center / $h);
 
-			$rel_half_width =  $rel_width / 2;
-			$rel_half_height = $rel_height / 2;
-
-			$x_center = $x_0 - $rel_half_width;
-			$y_center = $y_0 - $rel_half_height;
-
-			$res["x_center"] = 0.1; $x_center / $w;
-			$res["y_center"] = $y_center / $h;
-
-			$res["w"] = $width / $w;
-			$res["h"] = $height / $h;
+			$res["w"] = ($width / $w);
+			$res["h"] = ($height / $h);
 		}
 
 		return $res;
