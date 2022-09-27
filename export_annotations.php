@@ -17,11 +17,14 @@
 			$half_width =  $width / 2;
 			$half_height = $height / 2;
 
-			$res["width"] = $width;
-			$res["height"] = $height;
-
 			$x_center = $x_0 - ($half_width / $w);
 			$y_center = $y_0 - ($half_height / $h);
+
+			$rel_width = abs($x_0 - $x_1) / $w;
+			$rel_height = abs($y_0 - $y_1) / $h;
+
+			$rel_half_width =  $rel_width / 2;
+			$rel_half_height = $rel_height / 2;
 
 			$res["x_center"] = $x_center;
 			$res["y_center"] = $y_center;
@@ -33,9 +36,10 @@
 			$res["y_1"] = $y_1 / $h;
 
 			$res["x"] = $x_0;
-			$res["h"] = $height;
+			$res["w"] = $x_1;
+
 			$res["y"] = $y_0;
-			$res["w"] = $width;
+			$res["h"] = $y_1;
 		}
 
 		return $res;
@@ -270,11 +274,11 @@
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_rel"][$i];
 						if(!count($show_categories)) {
-							$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['width']." ".$pos['height']."\n";
+							$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['w']." ".$pos['h']."\n";
 						} else {
 							$k = array_search($img["anno_name"][$i], $show_categories);
 
-							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['width']." ".$pos['height']."\n";
+							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w']." ".$pos['h']."\n";
 						}
 					}
 				} else {
