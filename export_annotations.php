@@ -5,10 +5,32 @@
 		//xywh=pixel:579,354,58,41
 		$res = null;
 		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
-			$res["x_0"] = $matches[1] / $w;
-			$res["y_0"] = $matches[2] / $h;
-			$res["x_1"] = $matches[3] / $w;
-			$res["y_1"] = $matches[4] / $h;
+			$x_0 = $matches[1];
+			$y_0 = $matches[2];
+
+			$x_1 = $matches[3];
+			$y_1 = $matches[4];
+
+			$width = abs($x_0 - $x_1);
+			$height = abs($y_0 - $y_1);
+
+			$half_width =  $width / 2;
+			$half_height = abs($y_0 - $y_1) / 2;
+
+			$res["width"] = $width;
+			$res["height"] = $height;
+
+			$x_center = $x_0 - $half_width;
+			$y_center = $y_0 - $half_height;
+
+			$res["x_center"] = $x_center;
+			$res["y_center"] = $y_center;
+
+			$res["x_0"] = $x_0 / $h;
+			$res["x_1"] = $x_1 / $h;
+
+			$res["y_0"] = $y_0 / $w;
+			$res["y_1"] = $y_1 / $w;
 		}
 
 		return $res;
@@ -243,11 +265,11 @@
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_rel"][$i];
 						if(!count($show_categories)) {
-							$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+							$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['width']." ".$pos['height']."\n";
 						} else {
 							$k = array_search($img["anno_name"][$i], $show_categories);
 
-							$str .= "$k ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['width']." ".$pos['height']."\n";
 						}
 					}
 				} else {
@@ -412,7 +434,7 @@ echo "run tensorboard --logdir runs/train to follow visually"
 				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_rel"][$i];
-						$str .= "$t ".$pos['x_0']." ".$pos['y_0']." ".$pos['x_1']." ".$pos['x_1']."\n";
+						$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['width']." ".$pos['height']."\n";
 					}
 				} else {
 					//dier($img);
