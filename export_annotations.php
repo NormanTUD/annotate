@@ -15,22 +15,27 @@
 			$height = abs($y_0 - $y_1);
 
 			$half_width =  $width / 2;
-			$half_height = abs($y_0 - $y_1) / 2;
+			$half_height = $height / 2;
 
 			$res["width"] = $width;
 			$res["height"] = $height;
 
-			$x_center = $x_0 - $half_width;
-			$y_center = $y_0 - $half_height;
+			$x_center = $x_0 - ($half_width / $w);
+			$y_center = $y_0 - ($half_height / $h);
 
 			$res["x_center"] = $x_center;
 			$res["y_center"] = $y_center;
 
-			$res["x_0"] = $x_0 / $h;
-			$res["x_1"] = $x_1 / $h;
+			$res["x_0"] = $x_0 / $w;
+			$res["x_1"] = $x_1 / $w;
 
-			$res["y_0"] = $y_0 / $w;
-			$res["y_1"] = $y_1 / $w;
+			$res["y_0"] = $y_0 / $h;
+			$res["y_1"] = $y_1 / $h;
+
+			$res["x"] = $x_0;
+			$res["h"] = $height;
+			$res["y"] = $y_0;
+			$res["w"] = $width;
 		}
 
 		return $res;
@@ -434,7 +439,8 @@ echo "run tensorboard --logdir runs/train to follow visually"
 				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_rel"][$i];
-						$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['width']." ".$pos['height']."\n";
+						$str .= "$t ".$pos['x_0']." ".$pos['x_1']." ".$pos['x_0']." ".$pos['y_1']."\n";
+						#dier($str);
 					}
 				} else {
 					//dier($img);
