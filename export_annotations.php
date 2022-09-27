@@ -11,6 +11,16 @@
 			$x_1 = $matches[3];
 			$y_1 = $matches[4];
 
+			$res["x"] = $x_0;
+			$res["y"] = $y_0;
+
+			$res["x_0"] = $x_0 / $w;
+			$res["x_1"] = $x_1 / $w;
+
+			$res["y_0"] = $y_0 / $h;
+			$res["y_1"] = $y_1 / $h;
+
+
 			$width = abs($x_0 - $x_1);
 			$height = abs($y_0 - $y_1);
 
@@ -26,20 +36,11 @@
 			$rel_half_width =  $rel_width / 2;
 			$rel_half_height = $rel_height / 2;
 
-			$res["x_center"] = $x_center;
-			$res["y_center"] = $y_center;
+			$res["x_center"] = $x_center / $w;
+			$res["y_center"] = $y_center / $h;
 
-			$res["x_0"] = $x_0 / $w;
-			$res["x_1"] = $x_1 / $w;
-
-			$res["y_0"] = $y_0 / $h;
-			$res["y_1"] = $y_1 / $h;
-
-			$res["x"] = $x_0;
-			$res["w"] = $x_1;
-
-			$res["y"] = $y_0;
-			$res["h"] = $y_1;
+			$res["w"] = $width / $w;
+			$res["h"] = $height / $h;
 		}
 
 		return $res;
@@ -279,6 +280,7 @@
 							$k = array_search($img["anno_name"][$i], $show_categories);
 
 							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w']." ".$pos['h']."\n";
+							//dier($str);
 						}
 					}
 				} else {
