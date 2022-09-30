@@ -31,7 +31,7 @@
 			$res["y_center"] = ($y_center / $h);
 
 			$res["w"] = ($width / $w);
-			$res["h"] = ($height / $h);
+			$res["h"] = ($height / $h) / 2;
 		}
 
 		return $res;
