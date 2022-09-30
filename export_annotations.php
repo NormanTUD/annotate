@@ -5,14 +5,19 @@
 		//xywh=pixel:579,354,58,41
 		$res = null;
 		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
-			$x_0 = $matches[1];
-			$y_0 = $matches[2];
+			$x = $matches[1];
+			$y = $matches[2];
 
-			$x_1 = $matches[3];
-			$y_1 = $matches[4];
+			$w = $matches[3];
+			$h = $matches[4];
 
-			$res["x"] = $x_0;
-			$res["y"] = $y_0;
+			$width = abs($x_0 - $x_1);
+			$height = abs($y_0 - $y_1);
+
+			$res["x"] = $x;
+			$res["y"] = $y;
+
+			/*
 
 			$res["x_0"] = $x_0 / $w;
 			$res["x_1"] = $x_1 / $w;
@@ -21,17 +26,16 @@
 			$res["y_1"] = $y_1 / $h;
 
 
-			$width = abs($x_0 - $x_1);
-			$height = abs($y_0 - $y_1);
-
 			$x_center = $x_0 + ($width / 2);
 			$y_center = $y_0 + ($height / 2);
 
 			$res["x_center"] = ($x_center / $w);
 			$res["y_center"] = ($y_center / $h);
+			 */
 
-			$res["w"] = ($width / $w);
-			$res["h"] = ($height / $h) / 2;
+			$res["w"] = $w;
+			$res["h"] = $h;
+			#dier($res);
 		}
 
 		return $res;
@@ -407,7 +411,6 @@ echo "run tensorboard --logdir runs/train to follow visually"
 
 					$this_annos[] = $this_anno;
 				}
-
 
 				$annotations_string = join("\n", $this_annos);
 
