@@ -1,7 +1,7 @@
 <?php
 	include_once("functions.php");
 
-	function parse_position_rel ($pos, $w, $h) {
+	function parse_position_rel ($pos, $imgw, $imgh) {
 		//xywh=pixel:579,354,58,41
 		$res = null;
 		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
@@ -11,30 +11,27 @@
 			$w = $matches[3];
 			$h = $matches[4];
 
-			$width = abs($x_0 - $x_1);
-			$height = abs($y_0 - $y_1);
+			$x_center = (($x + $w) / 2) / $imgw;
+			$y_center = (($y + $h) / 2) / $imgh;
 
 			$res["x"] = $x;
 			$res["y"] = $y;
 
-			/*
+			$res["x_0"] = $x;
+			$res["x_1"] = $x + $w;
 
-			$res["x_0"] = $x_0 / $w;
-			$res["x_1"] = $x_1 / $w;
-
-			$res["y_0"] = $y_0 / $h;
-			$res["y_1"] = $y_1 / $h;
-
-
-			$x_center = $x_0 + ($width / 2);
-			$y_center = $y_0 + ($height / 2);
-
-			$res["x_center"] = ($x_center / $w);
-			$res["y_center"] = ($y_center / $h);
-			 */
+			$res["y_0"] = $y;
+			$res["y_1"] = $y + $h;
 
 			$res["w"] = $w;
 			$res["h"] = $h;
+
+			$res["x_center"] = $x_center;
+			$res["y_center"] = $y_center;
+
+			$res["wrel"] = $w / $imgw;
+			$res["hrel"] = $h / $imgh;
+
 			#dier($res);
 		}
 
@@ -270,11 +267,11 @@
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_rel"][$i];
 						if(!count($show_categories)) {
-							$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['w']." ".$pos['h']."\n";
+							$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
 						} else {
 							$k = array_search($img["anno_name"][$i], $show_categories);
 
-							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w']." ".$pos['h']."\n";
+							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
 							//dier($str);
 						}
 					}
