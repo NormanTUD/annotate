@@ -11,26 +11,35 @@
 			$w = $matches[3];
 			$h = $matches[4];
 
-			$x_center = (($x + $w) / 2) / $imgw;
-			$y_center = (($y + $h) / 2) / $imgh;
+		}
+	}
 
-			$res["x"] = $x;
-			$res["y"] = $y;
+	function parse_position_yolo ($pos, $imgw, $imgh) {
+		//xywh=pixel:579,354,58,41
+		$res = null;
+		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
+			$x = $matches[1];
+			$y = $matches[2];
 
-			$res["x_0"] = $x;
-			$res["x_1"] = $x + $w;
+			$w = $matches[3];
+			$h = $matches[4];
 
-			$res["y_0"] = $y;
-			$res["y_1"] = $y + $h;
+			$dw = 1./$imgw;
+			$dh = 1./$imgh;
+			$xrel = ($x + $x + $w)/2.0;
+			$yrel = ($y + $y + $h)/2.0;
+			$wrel = $h;
+			$hrel = $y;
+			$xrel = $xrel*$dw;
+			$wrel = $wrel*$dw;
+			$yrel = $yrel*$dh;
+			$hrel = $h*$dh;
 
-			$res["w"] = $w;
-			$res["h"] = $h;
+			$res["x_center"] = $xrel;
+			$res["y_center"] = $yrel;
 
-			$res["x_center"] = $x_center;
-			$res["y_center"] = $y_center;
-
-			$res["wrel"] = $w / $imgw;
-			$res["hrel"] = $h / $imgh;
+			$res["wrel"] = $wrel;
+			$res["hrel"] = $hrel;
 
 			#dier($res);
 		}
@@ -147,6 +156,7 @@
 								$images[$file]["w"] = $item["w"];
 
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
+								$images[$file]["position_yolo"][] = parse_position_yolo($struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
 								$images[$file]["anno_struct"] = $struct;
@@ -265,9 +275,10 @@
 				$str = "";
 				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
 					foreach ($img["tags"] as $i => $t) {
-						$pos = $img["position_rel"][$i];
+						$pos = $img["position_yolo"][$i];
 						if(!count($show_categories)) {
 							$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
+							dier($str);
 						} else {
 							$k = array_search($img["anno_name"][$i], $show_categories);
 
@@ -398,7 +409,7 @@ echo "run tensorboard --logdir runs/train to follow visually"
 				';
 				$this_annos = array();
 
-				foreach ($img["position_rel"] as $this_anno_data) {
+				foreach ($img["position_yolo"] as $this_anno_data) {
 					$this_anno = $annotation_base;
 					$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
 					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
@@ -437,7 +448,6 @@ echo "run tensorboard --logdir runs/train to follow visually"
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_rel"][$i];
 						$str .= "$t ".$pos['x_0']." ".$pos['x_1']." ".$pos['x_0']." ".$pos['y_1']."\n";
-						#dier($str);
 					}
 				} else {
 					//dier($img);
