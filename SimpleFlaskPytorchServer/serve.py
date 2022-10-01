@@ -39,7 +39,7 @@ model = torch.hub.load("yolov5", 'custom', path="sterne.pt", source='local')
 def index():
     return """
     <h2>Upload a file<h2>
-    <form action="/annotarious" method="post" enctype="multipart/form-data">
+    <form action="/" method="post" enctype="multipart/form-data">
         Select image to upload:
         <input type="file" name="image" id="image">
         <input type="submit" value="Upload Image" name="submit">
