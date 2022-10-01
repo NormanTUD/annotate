@@ -204,6 +204,46 @@ function toc () {
     document.getElementById("toc").innerHTML += toc;
 };
 
-function ai_file (fn) {
-	alert(fn);
+const toDataURL = url => fetch(url)
+  .then(response => response.blob())
+  .then(blob => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result.split(',')[1])
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  }))
+
+async function ai_file (fn) {
+	var loc = window.location.pathname;
+
+	var data_url = await toDataURL(fn);
+
+	var port = 5000;
+	var host = window.location.host;
+
+	var serve_model_url = window.location.protocol + "//" + host + ":" + port + "/annotarious";
+
+	//alert("loading serve_model_url" + serve_model_url);
+
+	var r = {
+		url: serve_model_url,
+		type: "POST",
+		dataType : 'json',
+		crossDomain: true,
+		processData: false,
+		contentType: false,
+		data: JSON.stringify({
+			image: data_url
+		}),
+		success: function (a, msg) {
+			toastr["success"]("Fehler", msg);
+		},
+		error: function (a, msg) {
+			toastr["error"]("Fehler", msg);
+		}
+	};
+
+	log(r);
+
+	var request = $.ajax(r);
 }
