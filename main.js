@@ -248,7 +248,8 @@ async function ai_file (elem) {
 	var port = 12000;
 	var host = window.location.host;
 
-	var serve_model_url = window.location.protocol + "//" + host + ":" + port + "/annotarious";
+	var prot = window.location.protocol;
+	var serve_model_url = prot + "//" + host + ":" + port + "/annotarious";
 
 	//alert("loading serve_model_url" + serve_model_url);
 
