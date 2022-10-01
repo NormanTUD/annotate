@@ -278,7 +278,7 @@
 						$pos = $img["position_yolo"][$i];
 						if(!count($show_categories)) {
 							$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
-							dier($str);
+							#dier($str);
 						} else {
 							$k = array_search($img["anno_name"][$i], $show_categories);
 
