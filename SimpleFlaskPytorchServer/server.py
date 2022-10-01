@@ -33,7 +33,7 @@ CORS(app)
 
 #model = torch.hub.load('ultralytics/yolov5', 'yolov5x')  # or yolov5n - yolov5x6, custom
 # git clone --depth 1 https://github.com/ultralytics/yolov5.git
-model = torch.hub.load("yolov5", 'custom', path="sterne.pt", source='local')
+model = torch.hub.load("/var/www/html/annotate/SimpleFlaskPytorchServer/yolov5", 'custom', path="/var/www/html/annotate/SimpleFlaskPytorchServer/sterne.pt", source='local')
 
 @app.route('/',  methods = ['GET'])
 def index():
@@ -142,5 +142,4 @@ def reveice_ufo_image():
         return str(e)
 
 
-context = ('/etc/letsencrypt/live/ufo-ki.de/cert.pem', '/etc/letsencrypt/live/ufo-ki.de/privkey.pem')
 app.run(host='0.0.0.0', port=12000, ssl_context=context)
