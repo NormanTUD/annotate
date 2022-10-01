@@ -96,7 +96,7 @@
 <?php
 				$tags = get_current_tags();
 				$tags_as_array = [];
-				print "<ul>";
+				print "<ul style='list-style: conic-gradient'>";
 				foreach ($tags as $tag => $nr) {
 					print "<li><a target='_blank' href='categories.php?searchtag=".htmlentities(urlencode($tag))."'>$tag ($nr)</li>";
 					$tags[] = $tag;
