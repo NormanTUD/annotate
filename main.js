@@ -213,10 +213,10 @@ const toDataURL = url => fetch(url)
     reader.readAsDataURL(blob)
   }))
 
-async function ai_file (fn) {
+async function ai_file (f) {
 	var loc = window.location.pathname;
 
-	var data_url = await toDataURL(fn);
+	var data_url = await toDataURL(f);
 
 	var port = 5000;
 	var host = window.location.host;
