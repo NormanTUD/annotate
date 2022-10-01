@@ -142,4 +142,5 @@ def reveice_ufo_image():
         return str(e)
 
 
-app.run(host='0.0.0.0', port=12000)
+context = ('/etc/letsencrypt/live/ufo-ki.de/cert.pem', '/etc/letsencrypt/live/ufo-ki.de/privkey.pem')
+app.run(host='0.0.0.0', port=12000, ssl_context=context)
