@@ -231,8 +231,10 @@
 
 		$dataset_yaml = "path: ./\ntrain: dataset/images/\nval: dataset/images/\ntest: dataset/images/\nnames:\n";
 		$j = 0;
+		$category_numbers = array();
 		foreach ($categories as $i => $cat) {
 			if(!count($show_categories) || in_array($cat, $show_categories)) {
+				$category_numbers[$cat] = $j;
 				$dataset_yaml .= "  $j: $cat\n";
 				$j++;
 			}
@@ -277,10 +279,10 @@
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_yolo"][$i];
 						if(!count($show_categories)) {
-							$str .= "$t ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
+							$str .= "$i ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
 							#dier($str);
 						} else {
-							$k = array_search($img["anno_name"][$i], $show_categories);
+							$k = $category_numbers[$img["anno_name"][$i]];
 
 							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
 							//dier($str);
@@ -328,8 +330,8 @@ perspective: 0.001  # image perspective (+/- fraction), range 0-0.001
 flipud: 0.3  # image flip up-down (probability)
 fliplr: 0.5  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
-mixup: 0.1  # image mixup (probability)
-copy_paste: 0.1  # segment copy-paste (probability)
+mixup: 0.3  # image mixup (probability)
+copy_paste: 0.4  # segment copy-paste (probability)
 ';
 
 			file_put_contents("$tmp_dir/hyperparams.yaml", $hyperparams);
