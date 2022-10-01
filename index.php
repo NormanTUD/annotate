@@ -8,7 +8,7 @@
 
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$annotations = number_of_annotations($user_id, $file);
+				$annotations = number_of_annotations_total($file);
 				$img_files[$file] = $annotations;
 			}
 		}
@@ -47,6 +47,7 @@
 
 		$img_files = shuffle_assoc($img_files);
 		asort($img_files);
+
 		$j = 0;
 		$imgfile = "";
 		foreach ($img_files as $f => $k) {
