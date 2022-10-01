@@ -217,6 +217,28 @@ const toDataURL = url => fetch(url)
 
 var xxx;
 
+function save_anno (annotation) {
+	// Do something
+	var a = {
+		"position": annotation.target.selector.value,
+		"body": annotation.body,
+		"id": annotation.id,
+		"source": annotation.target.source.replace(/.*\//, ""),
+			"full": JSON.stringify(annotation)
+		};
+	$.ajax({
+		url: "submit.php",
+		type: "post",
+		data: a,
+		success: function (response) {
+			success("OK", response);
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			error(textStatus, errorThrown);
+		}
+	});
+}
+
 async function ai_file (elem) {
 	var src = elem.src;
 	var loc = window.location.pathname;
@@ -246,6 +268,11 @@ async function ai_file (elem) {
 			//log(a);
 
 			await anno.setAnnotations(a);
+
+			var new_annos = anno.getAnnotations();
+			for (var i = 0; i < new_annos.length; i++) {
+				save_anno(new_annos[i]);
+			}
 		},
 		error: function (a, msg) {
 			toastr["error"]("Fehler", msg);
