@@ -213,10 +213,13 @@ const toDataURL = url => fetch(url)
     reader.readAsDataURL(blob)
   }))
 
-async function ai_file (f) {
+var xxx;
+
+async function ai_file (elem) {
+	var src = elem.src;
 	var loc = window.location.pathname;
 
-	var data_url = await toDataURL(f);
+	var data_url = await toDataURL(src);
 
 	var port = 5000;
 	var host = window.location.host;
@@ -233,10 +236,20 @@ async function ai_file (f) {
 		processData: false,
 		contentType: false,
 		data: JSON.stringify({
+			src: src,
 			image: data_url
 		}),
-		success: function (a, msg) {
-			toastr["success"]("Fehler", msg);
+		success: async function (a, msg) {
+			toastr["success"]("Success!", msg);
+			log(a);
+
+			var anno = Annotorious.init({
+				image: elem
+			});
+			//anno.readOnly = true;
+
+			await anno.setAnnotations(a);
+			log(anno)
 		},
 		error: function (a, msg) {
 			toastr["error"]("Fehler", msg);
