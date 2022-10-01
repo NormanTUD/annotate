@@ -1,5 +1,7 @@
 "use strict";
 
+var anno;
+
 function log (...msg) {
 	for (var i = 0; i < msg.length; i++) {
 		console.log(msg[i]);
@@ -62,7 +64,7 @@ function error (title, msg) {
 }
 
 function make_item_anno(elem, widgets={}) {
-	var anno = Annotorious.init({
+	anno = Annotorious.init({
 		image: elem,
 		widgets: widgets
 	});
@@ -241,22 +243,16 @@ async function ai_file (elem) {
 		}),
 		success: async function (a, msg) {
 			toastr["success"]("Success!", msg);
-			log(a);
-
-			var anno = Annotorious.init({
-				image: elem
-			});
-			//anno.readOnly = true;
+			//log(a);
 
 			await anno.setAnnotations(a);
-			log(anno)
 		},
 		error: function (a, msg) {
 			toastr["error"]("Fehler", msg);
 		}
 	};
 
-	log(r);
+	//log(r);
 
 	var request = $.ajax(r);
 }

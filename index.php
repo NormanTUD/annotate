@@ -108,7 +108,6 @@
 	</table>
 
 	<script>
-
 		make_item_anno($("#image")[0], [
 			{
 				widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', $tags).'"'; ?> ]
