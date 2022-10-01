@@ -245,7 +245,7 @@ async function ai_file (elem) {
 
 	var data_url = await toDataURL(src);
 
-	var port = 5000;
+	var port = 12000;
 	var host = window.location.host;
 
 	var serve_model_url = window.location.protocol + "//" + host + ":" + port + "/annotarious";
