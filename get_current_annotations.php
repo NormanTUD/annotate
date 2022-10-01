@@ -24,7 +24,7 @@
 				print json_encode($jsons);
 			} else {
 				print("[]");
-				exit(1);
+				exit(0);
 			}
 		} else {
 			$users = scandir($base_dir);
@@ -40,18 +40,20 @@
 								$jsons[] = json_decode(json_decode(file_get_contents("$dir/$file"), true)["full"]);
 							}
 						}
+
 						print json_encode($jsons);
 						exit(0);
 					} else {
 						print("[]");
-						exit(1);
+						exit(0);
 					}
 				}
 			}
+			print("[]");
+			exit(0);
 		}
 	} else {
 		print("[]");
-		exit(2);
+		exit(0);
 	}
-
 ?>

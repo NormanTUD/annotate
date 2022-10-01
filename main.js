@@ -62,7 +62,6 @@ function error (title, msg) {
 }
 
 function make_item_anno(elem, widgets={}) {
-	log(elem);
 	var anno = Annotorious.init({
 		image: elem,
 		widgets: widgets
@@ -205,3 +204,6 @@ function toc () {
     document.getElementById("toc").innerHTML += toc;
 };
 
+function ai_file (fn) {
+	alert(fn);
+}
