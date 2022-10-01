@@ -68,6 +68,13 @@
 		if(!$imgfile) {
 			die("Cannot find an image");
 		}
+
+		if(!file_exists("images/$imgfile")) {
+			print("Cannot find given image");
+			header('Location:'.$_SERVER['PHP_SELF']);
+			exit();
+		}
+
 		#print_header();
 ?>
 	<br>
