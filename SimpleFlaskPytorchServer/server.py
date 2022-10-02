@@ -1,3 +1,4 @@
+import os
 import sys
 import io
 import json
@@ -33,7 +34,8 @@ CORS(app)
 
 #model = torch.hub.load('ultralytics/yolov5', 'yolov5x')  # or yolov5n - yolov5x6, custom
 # git clone --depth 1 https://github.com/ultralytics/yolov5.git
-model = torch.hub.load("/var/www/html/annotate/SimpleFlaskPytorchServer/yolov5", 'custom', path="/var/www/html/annotate/SimpleFlaskPytorchServer/sterne.pt", source='local')
+script_dir = os.path.dirname(os.path.realpath(__file__))
+model = torch.hub.load(script_dir + "/yolov5", 'custom', path=script_dir+"/mehr.pt", source='local')
 
 @app.route('/',  methods = ['GET'])
 def index():
