@@ -287,7 +287,7 @@ async function ai_file (elem) {
 			if(ki_names.length) {
 				$("#ki_detected_names").html("Von der KI gefundene Objekte: " + ki_names.join(", "));
 			} else {
-				$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen"));
+				$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen");
 			}
 
 			await anno.setAnnotations(a);
