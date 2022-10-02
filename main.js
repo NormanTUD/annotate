@@ -243,6 +243,19 @@ function save_anno (annotation) {
 	});
 }
 
+function get_names_from_ki_anno (anno) {
+	var names = [];
+	for (var i = 0; i < anno.length; i++) {
+		for (var k = 0; k < anno[i].body.length; k++) {
+			names.push(anno[i]["body"][k]["value"]);
+		}
+	}
+
+	var uniq = [...new Set(names)];
+
+	return uniq;
+}
+
 async function ai_file (elem) {
 	var src = elem.src;
 	var loc = window.location.pathname;
@@ -270,7 +283,7 @@ async function ai_file (elem) {
 		}),
 		success: async function (a, msg) {
 			toastr["success"]("Success!", msg);
-			//log(a);
+			$("#ki_detected_names").html("Von der KI gefundene Objekte: " + get_names_from_ki_anno(a).join(", "));
 
 			await anno.setAnnotations(a);
 
