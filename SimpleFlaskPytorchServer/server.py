@@ -66,57 +66,53 @@ def reveice_ufo_image_annotarious():
         #return pprint.pformat(results.pandas().xywh[0])
 
         r = results.pandas().xywh[0]
-        dir(results.pandas())
+        npa = results.pandas().xywh[0].to_numpy()
+
+        debug("===================")
+        debug(npa)
+        debug("===================")
 
         part_strings = []
+        #0                      1               2                   3                   4                 5     6
+        #280.02264404296875, 85.78663635253906, 49.54310607910156, 58.41455841064453, 0.3505318760871887, 3, 'raketenspirale'
 
-        i = 0
-        for line in str(r).splitlines():
-            if i != 0:
-                m = REMatcher(line)
+        for item in npa:
+            xcenter = float(item[0])
+            ycenter = float(item[2])
+            width = float(item[3])
+            height = float(item[4])
+            confidence = float(item[4])
+            name = item[6]
 
-                # 0  519.995667  77.812920  77.668060  72.964615    0.609547      0  stern
-                if m.match(r"^\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(.*)\s*$"):
-                    nr = int(m.group(1))
-                    xcenter = float(m.group(2))
-                    ycenter = float(m.group(3))
-                    width = float(m.group(4))
-                    height = float(m.group(5))
-                    confidence = float(m.group(6))
-                    classnr = float(m.group(7))
-                    name = m.group(8)
+            xstart = xcenter - (width / 2)
+            ystart = ycenter - (height / 2)
 
-                    xstart = xcenter - (width / 2)
-                    ystart = ycenter - (height / 2)
+            debug(name)
 
-                    debug(name)
+            item_uuid = str(uuid.uuid4())
 
-                    item_uuid = str(uuid.uuid4())
-
-                    ps = """ {
-                        "type": "Annotation",
-                        "body": [
-                          {
-                            "type": "TextualBody",
-                            "value": "%s",
-                            "purpose": "tagging"
-                          }
-                        ],
-                        "target": {
-                          "source": "%s",
-                          "selector": {
-                            "type": "FragmentSelector",
-                            "conformsTo": "http://www.w3.org/TR/media-frags/",
-                            "value": "xywh=pixel:%d,%d,%d,%d"
-                          }
-                        },
-                        "@context": "http://www.w3.org/ns/anno.jsonld",
-                        "id": "#%s"
-                      }
-                    """ % (name, src, round(xstart), round(ystart), round(width), round(height), item_uuid)
-                    part_strings.append(ps)
-
-            i = i + 1
+            ps = """ {
+                "type": "Annotation",
+                "body": [
+                  {
+                    "type": "TextualBody",
+                    "value": "%s",
+                    "purpose": "tagging"
+                  }
+                ],
+                "target": {
+                  "source": "%s",
+                  "selector": {
+                    "type": "FragmentSelector",
+                    "conformsTo": "http://www.w3.org/TR/media-frags/",
+                    "value": "xywh=pixel:%d,%d,%d,%d"
+                  }
+                },
+                "@context": "http://www.w3.org/ns/anno.jsonld",
+                "id": "#%s"
+              }
+            """ % (name, src, round(xstart), round(ystart), round(width), round(height), item_uuid)
+            part_strings.append(ps)
 
 
         res_json = "[" + ", ".join(part_strings) + "]"
