@@ -27,25 +27,27 @@
 				exit(0);
 			}
 		} else {
-			$users = scandir($base_dir);
-			foreach($users as $user) {
-				if($user != "." && $user != "..") {
-					$dir = "$base_dir/$user";
-					if(is_dir($dir)) {
-						$files = scandir($dir);
-						$jsons = array();
+			if(is_dir($base_dir)) {
+				$users = scandir($base_dir);
+				foreach($users as $user) {
+					if($user != "." && $user != "..") {
+						$dir = "$base_dir/$user";
+						if(is_dir($dir)) {
+							$files = scandir($dir);
+							$jsons = array();
 
-						foreach($files as $file) {
-							if(preg_match("/\.json$/", $file)) {
-								$jsons[] = json_decode(json_decode(file_get_contents("$dir/$file"), true)["full"]);
+							foreach($files as $file) {
+								if(preg_match("/\.json$/", $file)) {
+									$jsons[] = json_decode(json_decode(file_get_contents("$dir/$file"), true)["full"]);
+								}
 							}
-						}
 
-						print json_encode($jsons);
-						exit(0);
-					} else {
-						print("[]");
-						exit(0);
+							print json_encode($jsons);
+							exit(0);
+						} else {
+							print("[]");
+							exit(0);
+						}
 					}
 				}
 			}
