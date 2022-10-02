@@ -89,6 +89,7 @@ def reveice_ufo_image_annotarious():
                     xstart = xcenter - (width / 2)
                     ystart = ycenter - (height / 2)
 
+                    debug(name)
 
                     item_uuid = str(uuid.uuid4())
 
