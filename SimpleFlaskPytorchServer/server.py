@@ -78,9 +78,9 @@ def reveice_ufo_image_annotarious():
 
         for item in npa:
             xcenter = float(item[0])
-            ycenter = float(item[2])
-            width = float(item[3])
-            height = float(item[4])
+            ycenter = float(item[1])
+            width = float(item[2])
+            height = float(item[3])
             confidence = float(item[4])
             name = item[6]
 
