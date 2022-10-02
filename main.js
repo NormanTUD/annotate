@@ -138,6 +138,10 @@ function make_item_anno(elem, widgets={}) {
 			}
 		});
 	});
+
+	anno.on('cancelSelected', function(selection) {
+		log(selection);
+	})
 }
 
 function create_annos () {
