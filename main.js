@@ -283,7 +283,12 @@ async function ai_file (elem) {
 		}),
 		success: async function (a, msg) {
 			toastr["success"]("Success!", msg);
-			$("#ki_detected_names").html("Von der KI gefundene Objekte: " + get_names_from_ki_anno(a).join(", "));
+			var ki_names = get_names_from_ki_anno(a);
+			if(ki_names.length) {
+				$("#ki_detected_names").html("Von der KI gefundene Objekte: " + ki_names.join(", "));
+			} else {
+				$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen"));
+			}
 
 			await anno.setAnnotations(a);
 
