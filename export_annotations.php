@@ -280,13 +280,11 @@
 						$pos = $img["position_yolo"][$i];
 						if(!count($show_categories)) {
 							$k = $category_numbers[$img["anno_name"][$i]];
-							$str .= "$i ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
-							#dier($str);
+							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
 						} else {
 							$k = $category_numbers[$img["anno_name"][$i]];
 
 							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
-							//dier($str);
 						}
 					}
 				} else {
