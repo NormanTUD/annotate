@@ -1,4 +1,5 @@
 <?php
+	ini_set('memory_limit', '1024M');
 	include_once("functions.php");
 
 	function parse_position_rel ($pos, $imgw, $imgh) {
@@ -100,7 +101,6 @@
 	#dier(in_array("rsdasdaketenspirale", $show_categories));
 
 	if(is_dir($tmp_dir)) {
-		ini_set('memory_limit', '-1');
 		$files = scandir("images");
 		$images = array();
 
@@ -501,7 +501,6 @@ echo "run tensorboard --logdir runs/train to follow visually"
 		ob_start();
 		system("rm -rf $tmp_dir");
 		ob_clean();
-		ini_set('memory_limit', 512000000);
 		exit(0);
 	} else {
 		print "Der Ordner $tmp_name konnte nicht erstellt werden.";
