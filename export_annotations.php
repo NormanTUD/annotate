@@ -31,8 +31,8 @@
 			$w = $matches[3];
 			$h = $matches[4];
 
-			$res["x_center"] = (((1 * $x) + $w) / 2) / $imgw;
-			$res["y_center"] = (((1 * $y) + $h) / 2) / $imgh;
+			$res["x_center"] = (((2 * $x) + $w) / 2) / $imgw;
+			$res["y_center"] = (((2 * $y) + $h) / 2) / $imgh;
 
 			$res["w_rel"] = $w / $imgw;
 			$res["h_rel"] = $h / $imgh;
