@@ -13,10 +13,42 @@ foreach($files as $file) {
 	}
 }
 
+if(array_key_exists("move_from_identifiable", $_GET)) {
+	if(!preg_match("/\.\./", $_GET["move_from_identifiable"]) && preg_match("/\.jpg/", $_GET["move_from_identifiable"])) {
+		$f = "identifiable/".$_GET["move_from_identifiable"];
+		$t = "images/".$_GET["move_from_identifiable"];
+		if(file_exists($f)) {
+			if(!file_exists($t)) {
+				rename($f, $t);
+			} else {
+				mywarn("$f wurde gefunden, aber $t exitiert bereits");
+			}
+		} else {
+			mywarn("$f wurde nicht gefunden");
+		}
+	}
+}
+
 if(array_key_exists("move_from_offtopic", $_GET)) {
 	if(!preg_match("/\.\./", $_GET["move_from_offtopic"]) && preg_match("/\.jpg/", $_GET["move_from_offtopic"])) {
 		$f = "offtopic/".$_GET["move_from_offtopic"];
 		$t = "images/".$_GET["move_from_offtopic"];
+		if(file_exists($f)) {
+			if(!file_exists($t)) {
+				rename($f, $t);
+			} else {
+				mywarn("$f wurde gefunden, aber $t exitiert bereits");
+			}
+		} else {
+			mywarn("$f wurde nicht gefunden");
+		}
+	}
+}
+
+if(array_key_exists("move_to_unidentifiable", $_GET)) {
+	if(!preg_match("/\.\./", $_GET["move_to_unidentifiable"]) && preg_match("/\.jpg/", $_GET["move_to_unidentifiable"])) {
+		$f = "images/".$_GET["move_to_unidentifiable"];
+		$t = "unidentifiable/".$_GET["move_to_unidentifiable"];
 		if(file_exists($f)) {
 			if(!file_exists($t)) {
 				rename($f, $t);
@@ -86,6 +118,7 @@ if(!file_exists("images/$imgfile")) {
 						<button onClick="next_img()">N&auml;chstes Bild</button>
 						<button><a onclick="ai_file($('#image')[0])">KI-Labelling</a></button>
 						<button><a href="index.php?move_to_offtopic=<?php print $imgfile; ?>">Bild ist Off Topic</a></button>
+						<button><a href="index.php?move_to_unidentifiable=<?php print $imgfile; ?>">Bild ist nicht identifizierbar</a></button>
 					</p>
 					<div id="ki_detected_names"></div>
 					<img id="image" src="images/<?php print $imgfile; ?>">
