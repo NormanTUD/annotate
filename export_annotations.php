@@ -299,15 +299,15 @@
 				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
 					foreach ($img["tags"] as $i => $t) {
 						$pos = $img["position_yolo"][$i];
+						$k = $category_numbers[$img["anno_name"][$i]];
 						if(!count($show_categories)) {
-							$k = $category_numbers[$img["anno_name"][$i]];
 							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 						} else {
-							$k = $category_numbers[$img["anno_name"][$i]];
-
 							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 						}
 					}
+
+					$str = implode('\n',array_unique(explode('\n', $str)));
 				} else {
 					//dier($img);
 				}
