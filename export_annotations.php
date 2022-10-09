@@ -403,7 +403,7 @@ echo "run tensorboard --logdir runs/train to follow visually"
 #SBATCH -n 1
 #SBATCH --time=32:00:00
 #SBATCH --mem-per-cpu=12000
-#SBATCH --partition=hpdlf
+#SBATCH --partition=gpu2
 #SBATCH --gres=gpu:1
 
 source /scratch/ws/0/s3811141-tftest3/yolov5/.yoloenv/bin/activate
