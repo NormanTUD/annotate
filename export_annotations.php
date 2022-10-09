@@ -408,7 +408,7 @@ echo "run tensorboard --logdir runs/train to follow visually"
 
 source /scratch/ws/0/s3811141-tftest3/yolov5/.yoloenv/bin/activate
 
-python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --weights ""  --epochs 1500 --cache --img 512 --hyp hyperparams.yaml --patience 200
+python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --weights ''  --epochs 1500 --cache --img 512 --hyp hyperparams.yaml --patience 200
 ";
 
 			file_put_contents("$tmp_dir/runme.sh", $train_bash);
