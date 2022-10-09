@@ -15,7 +15,7 @@
 		}
 	}
 
-	function parse_position_yolo ($pos, $imgw, $imgh) {
+	function parse_position_yolo ($file, $pos, $imgw, $imgh) {
 		//xywh=pixel:579,354,58,41
 		$res = null;
 		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
@@ -27,14 +27,12 @@
 
 			$dw = 1./$imgw;
 			$dh = 1./$imgh;
-			$xrel = ($x + $x + $w)/2.0;
-			$yrel = ($y + $y + $h)/2.0;
-			$wrel = $h;
-			$hrel = $y;
-			$xrel = $xrel*$dw;
-			$wrel = $wrel*$dw;
-			$yrel = $yrel*$dh;
-			$hrel = $h*$dh;
+
+			$xrel = (($x + $x + $w)/2.0) * $dw;
+			$yrel = (($y + $y + $h)/2.0) * $dh;
+
+			$wrel = $w * $dw;
+			$hrel = $h * $dh;
 
 			$res["x_center"] = $xrel;
 			$res["y_center"] = $yrel;
@@ -42,7 +40,12 @@
 			$res["wrel"] = $wrel;
 			$res["hrel"] = $hrel;
 
-			#dier($res);
+			/*
+			if($res["wrel"] > 1) {
+				print("$file\n");
+				dier($res);
+			}
+			 */
 		}
 
 		return $res;
@@ -156,7 +159,7 @@
 								$images[$file]["w"] = $item["w"];
 
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
-								$images[$file]["position_yolo"][] = parse_position_yolo($struct["position"], $images[$file]["w"], $images[$file]["h"]);
+								$images[$file]["position_yolo"][] = parse_position_yolo($file, $struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
 								$images[$file]["anno_struct"] = $struct;
