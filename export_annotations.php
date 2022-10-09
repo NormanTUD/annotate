@@ -22,7 +22,7 @@
 		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
 			$exif = exif_read_data("images/$file");
 			if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
-				list($imgw,$imgh) = array($imgh,$imgw);
+				list($imgw, $imgh) = array($imgh, $imgw);
 			}
 
 			$x = $matches[1];
@@ -383,6 +383,9 @@ fi
 if [ -e "../dataset.yaml" ]; then
 	mv ../dataset.yaml data/
 fi
+if [ -e "../run.sh" ]; then
+	mv ../run.sh .
+fi
 if [ -e "../hyperparams.yaml" ]; then
 	mv ../hyperparams.yaml data/hyps/
 fi
@@ -395,7 +398,22 @@ echo "python3 train.py --cfg yolov5n6.yaml --multi-scale --batch 8 --data datase
 echo "run tensorboard --logdir runs/train to follow visually"
 ';
 
+			$run_sh = "#!/bin/bash
+
+#SBATCH -n 1
+#SBATCH --time=32:00:00
+#SBATCH --mem-per-cpu=12000
+#SBATCH --partition=hpdlf
+#SBATCH --gres=gpu:1
+
+source /scratch/ws/0/s3811141-tftest3/yolov5/.yoloenv/bin/activate
+
+python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --weights ""  --epochs 1500 --cache --img 512 --hyp hyperparams.yaml --patience 200
+";
+
 			file_put_contents("$tmp_dir/runme.sh", $train_bash);
+
+			file_put_contents("$tmp_dir/run.sh", $run_sh);
 		} else if ($format == "html") {
 			ob_start();
 			mkdir("$tmp_dir/labels/");
