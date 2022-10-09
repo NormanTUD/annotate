@@ -15,37 +15,44 @@
 		}
 	}
 
-	function parse_position_yolo ($file, $pos, $imgw, $imgh) {
+	function parse_position_yolo ($file, $img_file, $pos, $imgw, $imgh) {
 		//xywh=pixel:579,354,58,41
-		$res = null;
+		$res = array();
+
 		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
+			$exif = exif_read_data("images/$file");
+			if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
+				list($imgw,$imgh) = array($imgh,$imgw);
+			}
+
 			$x = $matches[1];
 			$y = $matches[2];
 
 			$w = $matches[3];
 			$h = $matches[4];
 
-			$dw = 1./$imgw;
-			$dh = 1./$imgh;
+			$res["x_center"] = (((1 * $x) + $w) / 2) / $imgw;
+			$res["y_center"] = (((1 * $y) + $h) / 2) / $imgh;
 
-			$xrel = (($x + $x + $w)/2.0) * $dw;
-			$yrel = (($y + $y + $h)/2.0) * $dh;
+			$res["w_rel"] = $w / $imgw;
+			$res["h_rel"] = $h / $imgh;
 
-			$wrel = $w * $dw;
-			$hrel = $h * $dh;
+/*
+			if($res["y_center"] > 1 || $rel["x_center"] > 1 || $res["w_rel"] > 1 || $res["h_rel"] > 1) {
+				#dier(getimagesize("images/$file"));
+				#dier($exif['Orientation']);
 
-			$res["x_center"] = $xrel;
-			$res["y_center"] = $yrel;
+				print("$file\n\n$pos\n\n".$img_file["wh_string"]."\n\nimgw = $imgw\nimgh = $imgh\n\nx = $x\ny = $y\nw = $w\nh = $h\n\n");
 
-			$res["wrel"] = $wrel;
-			$res["hrel"] = $hrel;
+				print("\$h_rel = \$h / \$imgh\n");
+				print($res['h_rel']." = $h / $imgh\n\n");
 
-			/*
-			if($res["wrel"] > 1) {
-				print("$file\n");
+				print("\$y_center = (((2 * \$y) + \$h) / 2.0) / \$imgh\n");
+				print($res["y_center"]." = (((2 * $y) + $h) / 2.0) / $imgh\n\n");
+
 				dier($res);
 			}
-			 */
+*/
 		}
 
 		return $res;
@@ -109,7 +116,17 @@
 
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$imgsz = getimagesize("images/$file");
+				$imgfn = "images/$file";
+				$imgsz = getimagesize($imgfn);
+
+				$width = null;
+				$height = null;
+
+				$width = $imgsz[0];
+				$height = $imgsz[1];
+
+				#dier($imgsz);
+				#dier($file);
 				$hash = hash("sha256", $file);
 				$dir = "annotations/$hash";
 
@@ -118,8 +135,9 @@
 						"fn" => $file, 
 						"hash" => $hash,
 						"dir" => $dir,
-						"w" => $imgsz[0],
-						"h" => $imgsz[1],
+						"w" => $width,
+						"h" => $height,
+						"wh_string" => $imgsz[3],
 						"disabled" => false
 					);
 				}
@@ -159,7 +177,7 @@
 								$images[$file]["w"] = $item["w"];
 
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
-								$images[$file]["position_yolo"][] = parse_position_yolo($file, $struct["position"], $images[$file]["w"], $images[$file]["h"]);
+								$images[$file]["position_yolo"][] = parse_position_yolo($file, $images[$file], $struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
 								$images[$file]["anno_struct"] = $struct;
@@ -283,11 +301,11 @@
 						$pos = $img["position_yolo"][$i];
 						if(!count($show_categories)) {
 							$k = $category_numbers[$img["anno_name"][$i]];
-							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
+							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 						} else {
 							$k = $category_numbers[$img["anno_name"][$i]];
 
-							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['wrel']." ".$pos['hrel']."\n";
+							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 						}
 					}
 				} else {
