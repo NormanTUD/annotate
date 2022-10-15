@@ -449,7 +449,7 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 				';
 				$this_annos = array();
 
-				foreach ($img["position_yolo"] as $this_anno_data) {
+				foreach ($img["position_xywh"] as $this_anno_data) {
 					$this_anno = $annotation_base;
 					$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
 					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
