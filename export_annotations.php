@@ -20,7 +20,12 @@
 		$res = array();
 
 		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
-			$exif = exif_read_data("images/$file");
+			try {
+				$exif = @exif_read_data("images/$file");
+			} catch (\Throwable $e) {
+				//;
+			}
+
 			if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
 				list($imgw, $imgh) = array($imgh, $imgw);
 			}
@@ -437,6 +442,10 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 				$fn = $img["fn"];
 				$w = $img["w"];
 				$h = $img["h"];
+
+				if(!isset($img["anno_struct"]["full"])) {
+					continue;
+				}
 
 				$anno_struct = json_decode($img["anno_struct"]["full"], true);
 
