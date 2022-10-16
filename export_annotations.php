@@ -509,13 +509,18 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 
 			$last = "";
 			$new_html = "";
+			$hashes = array();
 			foreach ($annotated_imgs_by_name as $n => $s) {
 				if($last != $n) {
 					$new_html .= "<h2>".htmlentities($n)."</h2>";
 					$last = $n;
 				}
 				foreach ($s as $i) {
-					$new_html .= $i;
+					$h = hash('md5', htmlentities($i));
+					if(!in_array($h, $hashes)) {
+						$new_html .= $i;
+						$hashes[] = $h;
+					}
 				}
 			}
 
