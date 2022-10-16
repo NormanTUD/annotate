@@ -20,7 +20,12 @@
 		$res = array();
 
 		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
-			$exif = exif_read_data("images/$file");
+			try {
+				$exif = @exif_read_data("images/$file");
+			} catch (\Throwable $e) {
+				//;
+			}
+
 			if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
 				list($imgw, $imgh) = array($imgh, $imgw);
 			}
@@ -438,6 +443,10 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 				$w = $img["w"];
 				$h = $img["h"];
 
+				if(!isset($img["anno_struct"]["full"])) {
+					continue;
+				}
+
 				$anno_struct = json_decode($img["anno_struct"]["full"], true);
 
 				$id = $anno_struct["id"];
@@ -449,7 +458,7 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 				';
 				$this_annos = array();
 
-				foreach ($img["position_yolo"] as $this_anno_data) {
+				foreach ($img["position_xywh"] as $this_anno_data) {
 					$this_anno = $annotation_base;
 					$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
 					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
