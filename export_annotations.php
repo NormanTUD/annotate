@@ -167,7 +167,7 @@
 						$single_user_annotations = scandir($tdir);
 						foreach($single_user_annotations as $single_user_annotation_file) {
 							if(preg_match("/\.json$/", $single_user_annotation_file)) {
-								#print "<pre>$single_user_annotation_file</pre>";
+								#die("<pre>$single_user_annotation_file</pre>");
 								$struct = json_decode(file_get_contents("$tdir/$single_user_annotation_file"), true);
 								#dier($struct);
 								$file = $struct["source"];
@@ -175,6 +175,7 @@
 								#dier($images[$file]);
 
 								$has_valid_category = 0;
+
 								if(!count($show_categories)) {
 									$has_valid_category = 1;
 								}
@@ -206,7 +207,7 @@
 											$has_valid_category = 1;
 										}
 										#dier($images[$file]);
-										#die($has_valid_category);
+										#die(">$has_valid_category<");
 										//dier($index);
 										//dier($anno["value"]);
 									}
@@ -214,7 +215,7 @@
 
 								if(!$has_valid_category) {
 									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
-									$images[$file]["disabled"] = true;
+									$images[$file]["disabled"] = 1;
 								}
 
 								#print("===>><pre>".print_r($images[$file], true)."</pre><<==");
