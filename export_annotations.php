@@ -439,13 +439,14 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 					continue;
 				}
 
-				$fn = $img["fn"];
-				$w = $img["w"];
-				$h = $img["h"];
-
 				if(!isset($img["anno_struct"]["full"])) {
 					continue;
 				}
+
+
+				$fn = $img["fn"];
+				$w = $img["w"];
+				$h = $img["h"];
 
 				$anno_struct = json_decode($img["anno_struct"]["full"], true);
 

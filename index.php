@@ -132,7 +132,7 @@ if(!file_exists("images/$imgfile")) {
 				$tags_as_array = [];
 				print "<ul style='list-style: conic-gradient'>";
 				foreach ($tags as $tag => $nr) {
-					print "<li><a target='_blank' href='categories.php?searchtag=".htmlentities(urlencode($tag))."'>$tag ($nr)</li>";
+					print "<li><a target='_blank' href='export_annotations.php?format=html&show_categories[]=".htmlentities(urlencode($tag))."'>$tag ($nr)</li>";
 					$tags[] = $tag;
 				}
 				print "</ul>";
