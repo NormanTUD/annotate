@@ -151,6 +151,8 @@
 		$categories = array();
 		$annos = array();
 
+		$filtered_imgs = array();
+
 		$k = 0;
 		foreach($images as $item) {
 			/*
@@ -219,6 +221,7 @@
 									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
 									unset($images[$file]["disabled"]);
 								} else {
+									$filtered_imgs[$file] = $images[$file];
 								}
 
 								if(preg_match("/jupiter/", $bla)) {
@@ -297,7 +300,7 @@
 			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
 			// <object-class> <x> <y> <width> <height>
-			foreach ($images as $img) {
+			foreach ($filtered_imgs as $img) {
 				$fn = $img["fn"];
 				//dier($img);
 				#print "<br>$fn<br>";
@@ -436,7 +439,7 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 			$annotated_imgs_by_name = array();
 
 			// <object-class> <x> <y> <width> <height>
-			foreach ($images as $img) {
+			foreach ($filtered_imgs as $img) {
 				if(!isset($img["anno_struct"]["full"])) {
 					continue;
 				}
