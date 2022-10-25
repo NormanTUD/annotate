@@ -142,8 +142,7 @@
 						"dir" => $dir,
 						"w" => $width,
 						"h" => $height,
-						"wh_string" => $imgsz[3],
-						"disabled" => false
+						"wh_string" => $imgsz[3]
 					);
 				}
 			}
@@ -187,6 +186,8 @@
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
 								$images[$file]["anno_struct"] = $struct;
+								$bla = print_r($struct["body"], true);
+
 								foreach ($struct["body"] as $anno) {
 									if($anno["purpose"] == "tagging") {
 										$anno["value"] = strtolower($anno["value"]);
@@ -203,7 +204,7 @@
 										#print "<br>\n";
 										#print_r($show_categories);
 										#print "<br>\n";
-										if(!$has_valid_category && in_array($anno["value"], $show_categories)) {
+										if(in_array($anno["value"], $show_categories)) {
 											$has_valid_category = 1;
 										}
 										#dier($images[$file]);
@@ -213,11 +214,16 @@
 									}
 								}
 
+
 								if(!$has_valid_category) {
 									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
-									$images[$file]["disabled"] = 1;
+									unset($images[$file]["disabled"]);
+								} else {
 								}
 
+								if(preg_match("/jupiter/", $bla)) {
+									#dier("has_valid_category: $has_valid_category\nss:\n$bla");
+								}
 								#print("===>><pre>".print_r($images[$file], true)."</pre><<==");
 							}
 						}
@@ -237,7 +243,6 @@
 
 		//dier($images["002215398dcba50ac5d89290c27301c1.jpg"]);
 		//dier($images);
-
 
 		/*
 		path: ../datasets/coco128  # dataset root dir
@@ -293,10 +298,6 @@
 
 			// <object-class> <x> <y> <width> <height>
 			foreach ($images as $img) {
-				if($img["disabled"]) {
-					continue;
-				}
-
 				$fn = $img["fn"];
 				//dier($img);
 				#print "<br>$fn<br>";
@@ -436,10 +437,6 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 
 			// <object-class> <x> <y> <width> <height>
 			foreach ($images as $img) {
-				if($img["disabled"]) {
-					continue;
-				}
-
 				if(!isset($img["anno_struct"]["full"])) {
 					continue;
 				}
@@ -486,9 +483,11 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 				';
 
 				$annos_strings[] = $base_struct;
-				for ($i = 0; $i < count($img["anno_name"]); $i++) {
-					$ttag = $img["anno_name"][$i];
-					$annotated_imgs_by_name[$ttag][] = $base_struct;
+				if(is_array($img["anno_name"])) {
+					for ($i = 0; $i < count($img["anno_name"]); $i++) {
+						$ttag = $img["anno_name"][$i];
+						$annotated_imgs_by_name[$ttag][] = $base_struct;
+					}
 				}
 
 				#dier(htmlentities($base_struct));
