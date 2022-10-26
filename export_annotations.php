@@ -142,8 +142,7 @@
 						"dir" => $dir,
 						"w" => $width,
 						"h" => $height,
-						"wh_string" => $imgsz[3],
-						"disabled" => false
+						"wh_string" => $imgsz[3]
 					);
 				}
 			}
@@ -151,6 +150,8 @@
 
 		$categories = array();
 		$annos = array();
+
+		$filtered_imgs = array();
 
 		$k = 0;
 		foreach($images as $item) {
@@ -167,7 +168,7 @@
 						$single_user_annotations = scandir($tdir);
 						foreach($single_user_annotations as $single_user_annotation_file) {
 							if(preg_match("/\.json$/", $single_user_annotation_file)) {
-								#print "<pre>$single_user_annotation_file</pre>";
+								#die("<pre>$single_user_annotation_file</pre>");
 								$struct = json_decode(file_get_contents("$tdir/$single_user_annotation_file"), true);
 								#dier($struct);
 								$file = $struct["source"];
@@ -175,6 +176,7 @@
 								#dier($images[$file]);
 
 								$has_valid_category = 0;
+
 								if(!count($show_categories)) {
 									$has_valid_category = 1;
 								}
@@ -186,6 +188,8 @@
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
 								$images[$file]["anno_struct"] = $struct;
+								$bla = print_r($struct["body"], true);
+
 								foreach ($struct["body"] as $anno) {
 									if($anno["purpose"] == "tagging") {
 										$anno["value"] = strtolower($anno["value"]);
@@ -202,21 +206,27 @@
 										#print "<br>\n";
 										#print_r($show_categories);
 										#print "<br>\n";
-										if(!$has_valid_category && in_array($anno["value"], $show_categories)) {
+										if(in_array($anno["value"], $show_categories)) {
 											$has_valid_category = 1;
 										}
 										#dier($images[$file]);
-										#die($has_valid_category);
+										#die(">$has_valid_category<");
 										//dier($index);
 										//dier($anno["value"]);
 									}
 								}
 
+
 								if(!$has_valid_category) {
 									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
-									$images[$file]["disabled"] = true;
+									unset($images[$file]["disabled"]);
+								} else {
+									$filtered_imgs[$file] = $images[$file];
 								}
 
+								if(preg_match("/jupiter/", $bla)) {
+									#dier("has_valid_category: $has_valid_category\nss:\n$bla");
+								}
 								#print("===>><pre>".print_r($images[$file], true)."</pre><<==");
 							}
 						}
@@ -236,7 +246,6 @@
 
 		//dier($images["002215398dcba50ac5d89290c27301c1.jpg"]);
 		//dier($images);
-
 
 		/*
 		path: ../datasets/coco128  # dataset root dir
@@ -291,11 +300,7 @@
 			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
 			// <object-class> <x> <y> <width> <height>
-			foreach ($images as $img) {
-				if($img["disabled"]) {
-					continue;
-				}
-
+			foreach ($filtered_imgs as $img) {
 				$fn = $img["fn"];
 				//dier($img);
 				#print "<br>$fn<br>";
@@ -434,18 +439,15 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 			$annotated_imgs_by_name = array();
 
 			// <object-class> <x> <y> <width> <height>
-			foreach ($images as $img) {
-				if($img["disabled"]) {
+			foreach ($filtered_imgs as $img) {
+				if(!isset($img["anno_struct"]["full"])) {
 					continue;
 				}
+
 
 				$fn = $img["fn"];
 				$w = $img["w"];
 				$h = $img["h"];
-
-				if(!isset($img["anno_struct"]["full"])) {
-					continue;
-				}
 
 				$anno_struct = json_decode($img["anno_struct"]["full"], true);
 
@@ -484,9 +486,11 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 				';
 
 				$annos_strings[] = $base_struct;
-				for ($i = 0; $i < count($img["anno_name"]); $i++) {
-					$ttag = $img["anno_name"][$i];
-					$annotated_imgs_by_name[$ttag][] = $base_struct;
+				if(is_array($img["anno_name"])) {
+					for ($i = 0; $i < count($img["anno_name"]); $i++) {
+						$ttag = $img["anno_name"][$i];
+						$annotated_imgs_by_name[$ttag][] = $base_struct;
+					}
 				}
 
 				#dier(htmlentities($base_struct));
@@ -512,8 +516,10 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml
 			$hashes = array();
 			foreach ($annotated_imgs_by_name as $n => $s) {
 				if($last != $n) {
-					$new_html .= "<h2>".htmlentities($n)."</h2>";
-					$last = $n;
+					if(in_array($n, $show_categories)) {
+						$new_html .= "<h2>".htmlentities($n)."</h2>";
+						$last = $n;
+					}
 				}
 				foreach ($s as $i) {
 					$h = hash('md5', htmlentities($i));
