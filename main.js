@@ -251,7 +251,20 @@ function get_names_from_ki_anno (anno) {
 		}
 	}
 
-	var uniq = [...new Set(names)];
+	var sorted = names.sort();
+	//var uniq = [...new Set(names)];
+	
+	var counts = {};
+	for (var i = 0; i < sorted.length; i++) {
+		counts[sorted[i]] = 1 + (counts[sorted[i]] || 0);
+	}
+
+	var uniq = [];
+
+	var keys = Object.keys(counts);
+	for (var i = 0; i < keys.length; i++) {
+		uniq.push(keys[i] + " (" + counts[keys[i]] + ")")
+	}
 
 	return uniq;
 }
@@ -305,4 +318,23 @@ async function ai_file (elem) {
 	//log(r);
 
 	var request = $.ajax(r);
+}
+
+function set_all_current_annotations_to (name) {
+	var current = anno.getAnnotations();
+
+	for (var i = 0; i < current.length; i++) {
+		var old = current[i]["body"][0]["value"];
+		if(old != name) {
+			current[i]["body"][0]["value"] = name;
+			log("changed " + old + " to " + name);
+		}
+	}
+
+	anno.setAnnotations(current);
+
+	var new_annos = anno.getAnnotations();
+	for (var i = 0; i < new_annos.length; i++) {
+		save_anno(new_annos[i]);
+	}
 }
