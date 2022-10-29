@@ -251,7 +251,20 @@ function get_names_from_ki_anno (anno) {
 		}
 	}
 
-	var uniq = [...new Set(names)];
+	var sorted = names.sort();
+	//var uniq = [...new Set(names)];
+	
+	var counts = {};
+	for (var i = 0; i < sorted.length; i++) {
+		counts[sorted[i]] = 1 + (counts[sorted[i]] || 0);
+	}
+
+	var uniq = [];
+
+	var keys = Object.keys(counts);
+	for (var i = 0; i < keys.length; i++) {
+		uniq.push(keys[i] + " (" + counts[keys[i]] + ")")
+	}
 
 	return uniq;
 }
