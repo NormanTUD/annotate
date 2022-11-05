@@ -274,7 +274,7 @@ async function ai_file (elem) {
 	var prot = window.location.protocol;
 	var serve_model_url = prot + "//" + host + ":" + port + "/annotarious";
 
-	//alert("loading serve_model_url" + serve_model_url);
+	log("loading serve_model_url" + serve_model_url);
 
 	var r = {
 		url: serve_model_url,
@@ -308,7 +308,7 @@ async function ai_file (elem) {
 		}
 	};
 
-	//log(r);
+	log(r);
 
 	var request = $.ajax(r);
 }
