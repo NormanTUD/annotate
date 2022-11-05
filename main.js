@@ -320,6 +320,25 @@ async function ai_file (elem) {
 	var request = $.ajax(r);
 }
 
+function set_all_current_annotations_from_to (from, name) {
+	var current = anno.getAnnotations();
+
+	for (var i = 0; i < current.length; i++) {
+		var old = current[i]["body"][0]["value"];
+		if(from == old && old != name) {
+			current[i]["body"][0]["value"] = name;
+			log("changed " + old + " to " + name);
+		}
+	}
+
+	anno.setAnnotations(current);
+
+	var new_annos = anno.getAnnotations();
+	for (var i = 0; i < new_annos.length; i++) {
+		save_anno(new_annos[i]);
+	}
+}
+
 function set_all_current_annotations_to (name) {
 	var current = anno.getAnnotations();
 
