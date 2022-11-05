@@ -2,6 +2,7 @@
 
 var anno;
 var available_tags = [];
+var previous = [];
 
 function log (...msg) {
 	for (var i = 0; i < msg.length; i++) {
@@ -300,14 +301,12 @@ async function ai_file (elem) {
 				var ki_names_keys = Object.keys(ki_names);
 
 				for (var i = 0; i < ki_names_keys.length; i++) {
-					var this_select = "<select>";
+					previous[i] = ki_names_keys[i];
+					var this_select = "<select data-nr='" + i + "' class='ki_select_box'>";
 					for (var j = 0; j < available_tags.length; j++) {
-						if(ki_names_keys[i] == available_tags[j]) {
-							this_select += '<option selected value="' + available_tags[j] + '">' + available_tags[j] + '</option>'
-						} else {
-							this_select += '<option value="' + available_tags[j] + '">' + available_tags[j] + '</option>'
-						}
+						this_select += '<option ' + ((ki_names_keys[i] == available_tags[j]) ? 'selected' : '') + ' value="' + available_tags[j] + '">' + available_tags[j] + '</option>'
 					}
+
 					this_select += "<select> (" + ki_names[ki_names_keys[i]] + ")";
 
 					selects.push(this_select);
@@ -316,6 +315,18 @@ async function ai_file (elem) {
 				html += selects.join(", ");
 
 				$("#ki_detected_names").html(html);
+
+				$(".ki_select_box").change(function (x, y, z) {
+					log("ki_select_box: ", x);
+					var old_value = previous[$(this).data("nr")];
+					var new_value = x.currentTarget.value
+
+					log("from " + old_value + " to " + new_value);
+
+					set_all_current_annotations_from_to(old_value, new_value);
+
+					previous[$(this).data("nr")] = new_value;
+				});
 			} else {
 				$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen");
 			}
@@ -344,7 +355,7 @@ function set_all_current_annotations_from_to (from, name) {
 		var old = current[i]["body"][0]["value"];
 		if(from == old && old != name) {
 			current[i]["body"][0]["value"] = name;
-			log("changed " + old + " to " + name);
+			success("changed " + old + " to " + name);
 		}
 	}
 

@@ -1,4 +1,3 @@
-hallo
 <script>
 	$(document).ready(function () {
 		try {
