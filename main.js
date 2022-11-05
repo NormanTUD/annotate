@@ -252,11 +252,11 @@ function get_names_from_ki_anno (anno) {
 		counts[sorted[i]] = 1 + (counts[sorted[i]] || 0);
 	}
 
-	var uniq = [];
+	var uniq = {};
 
 	var keys = Object.keys(counts);
 	for (var i = 0; i < keys.length; i++) {
-		uniq.push(keys[i] + " (" + counts[keys[i]] + ")")
+		uniq[keys[i]] = counts[keys[i]];
 	}
 
 	return uniq;
@@ -290,8 +290,32 @@ async function ai_file (elem) {
 		success: async function (a, msg) {
 			toastr["success"]("Success!", msg);
 			var ki_names = get_names_from_ki_anno(a);
-			if(ki_names.length) {
-				$("#ki_detected_names").html("Von der KI gefundene Objekte: " + ki_names.join(", "));
+			if(Object.keys(ki_names).length) {
+				var html = "Von der KI gefundene Objekte: ";
+
+				var selects = [];
+
+				log(ki_names);
+
+				var ki_names_keys = Object.keys(ki_names);
+
+				for (var i = 0; i < ki_names_keys.length; i++) {
+					var this_select = "<select>";
+					for (var j = 0; j < available_tags.length; j++) {
+						if(ki_names_keys[i] == available_tags[j]) {
+							this_select += '<option selected value="' + available_tags[j] + '">' + available_tags[j] + '</option>'
+						} else {
+							this_select += '<option value="' + available_tags[j] + '">' + available_tags[j] + '</option>'
+						}
+					}
+					this_select += "<select> (" + ki_names[ki_names_keys[i]] + ")";
+
+					selects.push(this_select);
+				}
+
+				html += selects.join(", ");
+
+				$("#ki_detected_names").html(html);
 			} else {
 				$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen");
 			}
