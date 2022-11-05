@@ -1,6 +1,7 @@
 "use strict";
 
 var anno;
+var available_tags = [];
 
 function log (...msg) {
 	for (var i = 0; i < msg.length; i++) {

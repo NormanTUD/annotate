@@ -133,7 +133,7 @@ if(!file_exists("images/$imgfile")) {
 				print "<ul style='list-style: conic-gradient'>";
 				foreach ($tags as $tag => $nr) {
 					print "<li><a target='_blank' href='export_annotations.php?format=html&show_categories[]=".htmlentities(urlencode($tag))."'>$tag ($nr)</li>";
-					$tags[] = $tag;
+					//$tags[] = $tag;
 				}
 				print "</ul>";
 
@@ -146,8 +146,10 @@ if(!file_exists("images/$imgfile")) {
 	<script>
 		make_item_anno($("#image")[0], [
 			{
-				widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', $tags).'"'; ?> ]
+				widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', array_keys($tags)).'"'; ?> ]
 			}
 		]);
 	</script>
-<?php include_once("footer.php"); ?>
+<?php
+	include_once("footer.php");
+?>
