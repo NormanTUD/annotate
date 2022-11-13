@@ -411,17 +411,20 @@ echo "run tensorboard --logdir runs/train to follow visually"
 			$run_sh = "#!/bin/bash
 
 #SBATCH -n 1
-#SBATCH --time=32:00:00
-#SBATCH --mem-per-cpu=12000
+#SBATCH --time=64:00:00
+#SBATCH --mem-per-cpu=18000
 #SBATCH --partition=gpu2
 #SBATCH --gres=gpu:1
 
+ml Python/3.9.5-GCCcore-10.3.0
+
 source ~/ufo_yolo_env/bin/activate
 
+
 if [ -e best.pt ]; then
-	python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --weights best.pt  --epochs 1500 --cache --img 512 --hyp hyperparams.yaml --patience 200
+	ython3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --epochs 1000 --cache --img 512 --hyp hyperparams.yaml --patience 200 --weights best.pt 
 else
-	python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --weights ''  --epochs 1500 --cache --img 512 --hyp hyperparams.yaml --patience 200
+	ython3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --epochs 1000 --cache --img 512 --hyp hyperparams.yaml --patience 200
 fi
 
 # export to TFJS:
