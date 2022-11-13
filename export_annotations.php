@@ -408,7 +408,7 @@ echo "python3 train.py --cfg yolov5n6.yaml --multi-scale --batch 8 --data datase
 echo "run tensorboard --logdir runs/train to follow visually"
 ';
 
-			$run_sh = "#!/bin/bash
+			$run_sh = "#!/bin/bash -l
 
 #SBATCH -n 1
 #SBATCH --time=64:00:00
