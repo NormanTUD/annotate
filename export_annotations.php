@@ -422,9 +422,9 @@ source ~/ufo_yolo_env/bin/activate
 
 
 if [ -e best.pt ]; then
-	ython3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --epochs 1000 --cache --img 512 --hyp hyperparams.yaml --patience 200 --weights best.pt 
+	python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --epochs 1000 --cache --img 512 --hyp hyperparams.yaml --patience 200 --weights best.pt 
 else
-	ython3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --epochs 1000 --cache --img 512 --hyp hyperparams.yaml --patience 200
+	python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data dataset.yaml --epochs 1000 --cache --img 512 --hyp hyperparams.yaml --patience 200
 fi
 
 # export to TFJS:
