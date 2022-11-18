@@ -1,4 +1,6 @@
 <?php
+	$GLOBALS["get_current_tags_cache"] = array();
+
 	function generateRandomString($length = 10) {
 		$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		$charactersLength = strlen($characters);
@@ -163,6 +165,10 @@
 	}
 
 	function get_current_tags () {
+		if(is_array($GLOBALS["get_current_tags_cache"]) && count($GLOBALS["get_current_tags_cache"])) {
+			return $GLOBALS["get_current_tags_cache"];
+		}
+
 		$files = scandir("images");
 
 		$annos = [];
@@ -201,6 +207,8 @@
 		}
 
 		arsort($annos);
+
+		$GLOBALS["get_current_tags_cache"] = $annos;
 
 		return $annos;
 	}

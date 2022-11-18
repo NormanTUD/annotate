@@ -1,6 +1,3 @@
-<?php
-
-?>
 <script>
 	$(document).ready(function () {
 		try {
@@ -45,6 +42,8 @@
 
 	    document.getElementById("toc").innerHTML += toc;
 	};
+
+	available_tags = ['<?php print join("', '", array_keys(get_current_tags())); ?>'];
 </script>
 </body>
 </html>

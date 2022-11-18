@@ -1,6 +1,8 @@
 "use strict";
 
 var anno;
+var available_tags = [];
+var previous = [];
 
 function log (...msg) {
 	for (var i = 0; i < msg.length; i++) {
@@ -151,28 +153,22 @@ function create_annos () {
 	}
 }
 
- function open_tab(evt, cityName) {
-  // Declare all variables
-  var i, tabcontent, tablinks;
+function open_tab(evt, cityName) {
+	var i, tabcontent, tablinks;
 
-  // Get all elements with class="tabcontent" and hide them
-  tabcontent = document.getElementsByClassName("tabcontent");
-  for (i = 0; i < tabcontent.length; i++) {
-    tabcontent[i].style.display = "none";
-  }
+	tabcontent = document.getElementsByClassName("tabcontent");
+	for (i = 0; i < tabcontent.length; i++) {
+		tabcontent[i].style.display = "none";
+	}
 
-  // Get all elements with class="tablinks" and remove the class "active"
-  tablinks = document.getElementsByClassName("tablinks");
-  for (i = 0; i < tablinks.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace(" active", "");
-  }
+	tablinks = document.getElementsByClassName("tablinks");
+	for (i = 0; i < tablinks.length; i++) {
+		tablinks[i].className = tablinks[i].className.replace(" active", "");
+	}
 
-  // Show the current tab, and add an "active" class to the button that opened the tab
-  document.getElementById(cityName).style.display = "block";
-  evt.currentTarget.className += " active";
+	document.getElementById(cityName).style.display = "block";
+	evt.currentTarget.className += " active";
 }
-
-
 
 function toc () {
     var toc = "";
@@ -211,15 +207,13 @@ function toc () {
 };
 
 const toDataURL = url => fetch(url)
-  .then(response => response.blob())
-  .then(blob => new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result.split(',')[1])
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  }))
-
-var xxx;
+	.then(response => response.blob())
+	.then(blob => new Promise((resolve, reject) => {
+		const reader = new FileReader()
+		reader.onloadend = () => resolve(reader.result.split(',')[1])
+		reader.onerror = reject
+		reader.readAsDataURL(blob)
+	}));
 
 function save_anno (annotation) {
 	// Do something
@@ -259,11 +253,11 @@ function get_names_from_ki_anno (anno) {
 		counts[sorted[i]] = 1 + (counts[sorted[i]] || 0);
 	}
 
-	var uniq = [];
+	var uniq = {};
 
 	var keys = Object.keys(counts);
 	for (var i = 0; i < keys.length; i++) {
-		uniq.push(keys[i] + " (" + counts[keys[i]] + ")")
+		uniq[keys[i]] = counts[keys[i]];
 	}
 
 	return uniq;
@@ -281,7 +275,7 @@ async function ai_file (elem) {
 	var prot = window.location.protocol;
 	var serve_model_url = prot + "//" + host + ":" + port + "/annotarious";
 
-	//alert("loading serve_model_url" + serve_model_url);
+	log("loading serve_model_url" + serve_model_url);
 
 	var r = {
 		url: serve_model_url,
@@ -297,8 +291,42 @@ async function ai_file (elem) {
 		success: async function (a, msg) {
 			toastr["success"]("Success!", msg);
 			var ki_names = get_names_from_ki_anno(a);
-			if(ki_names.length) {
-				$("#ki_detected_names").html("Von der KI gefundene Objekte: " + ki_names.join(", "));
+			if(Object.keys(ki_names).length) {
+				var html = "Von der KI gefundene Objekte: ";
+
+				var selects = [];
+
+				log(ki_names);
+
+				var ki_names_keys = Object.keys(ki_names);
+
+				for (var i = 0; i < ki_names_keys.length; i++) {
+					previous[i] = ki_names_keys[i];
+					var this_select = "<select data-nr='" + i + "' class='ki_select_box'>";
+					for (var j = 0; j < available_tags.length; j++) {
+						this_select += '<option ' + ((ki_names_keys[i] == available_tags[j]) ? 'selected' : '') + ' value="' + available_tags[j] + '">' + available_tags[j] + '</option>'
+					}
+
+					this_select += "<select> (" + ki_names[ki_names_keys[i]] + ")";
+
+					selects.push(this_select);
+				}
+
+				html += selects.join(", ");
+
+				$("#ki_detected_names").html(html);
+
+				$(".ki_select_box").change(function (x, y, z) {
+					log("ki_select_box: ", x);
+					var old_value = previous[$(this).data("nr")];
+					var new_value = x.currentTarget.value
+
+					log("from " + old_value + " to " + new_value);
+
+					set_all_current_annotations_from_to(old_value, new_value);
+
+					previous[$(this).data("nr")] = new_value;
+				});
 			} else {
 				$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen");
 			}
@@ -315,9 +343,28 @@ async function ai_file (elem) {
 		}
 	};
 
-	//log(r);
+	log(r);
 
 	var request = $.ajax(r);
+}
+
+function set_all_current_annotations_from_to (from, name) {
+	var current = anno.getAnnotations();
+
+	for (var i = 0; i < current.length; i++) {
+		var old = current[i]["body"][0]["value"];
+		if(from == old && old != name) {
+			current[i]["body"][0]["value"] = name;
+			success("changed " + old + " to " + name);
+		}
+	}
+
+	anno.setAnnotations(current);
+
+	var new_annos = anno.getAnnotations();
+	for (var i = 0; i < new_annos.length; i++) {
+		save_anno(new_annos[i]);
+	}
 }
 
 function set_all_current_annotations_to (name) {
