@@ -16,6 +16,7 @@ function refresh(){
 
 
 function next_img () {
+	log("reloading index.php");
 	window.location.href = "index.php";
 }
 
@@ -383,5 +384,24 @@ function set_all_current_annotations_to (name) {
 	var new_annos = anno.getAnnotations();
 	for (var i = 0; i < new_annos.length; i++) {
 		save_anno(new_annos[i]);
+	}
+}
+
+document.onkeydown = function (e) {
+	if($(":focus").length) {
+		return;
+	}
+
+	e = e || window.event;
+	log("detected " + e.which);
+	switch (e.which) {
+		case 78:
+			next_img()
+			break;
+		case 75:
+			ai_file($('#image')[0]);
+			break;
+		default:
+			break;
 	}
 }
