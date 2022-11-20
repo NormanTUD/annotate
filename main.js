@@ -26,10 +26,6 @@ async function load_model () {
 	log("load_model done");
 	await tf.setBackend('wasm');
 	log("set wasm");
-	/*
-	tf.setBackend('webgl');
-	log("set webgl");
-	 */
 
 	await tf.ready();
 
@@ -302,22 +298,10 @@ function get_names_from_ki_anno (anno) {
 }
 
 async function ai_file (elem) {
-	var src = elem.src;
-	var loc = window.location.pathname;
-
-	var data_url = await toDataURL(src);
-
-	var port = 12000;
-	var host = window.location.host;
-
-	var prot = window.location.protocol;
-	var serve_model_url = prot + "//" + host + ":" + port + "/annotarious";
-
-	log("loading serve_model_url" + serve_model_url);
-
 	await load_model();
-	var [modelWidth, modelHeight] = model.inputs[0].shape.slice(1, 3);
 	await tf.ready();
+
+	var [modelWidth, modelHeight] = model.inputs[0].shape.slice(1, 3);
 
 	var res = await model.executeAsync(tf.browser.fromPixels($("#image")[0]).resizeBilinear([modelWidth,modelHeight]).div(255).expandDims());
 
@@ -375,8 +359,6 @@ async function ai_file (elem) {
 			a.push(this_elem);
 		}
 	}
-
-	log(a);
 
 	var msg = "KI erfolgreich durchgelaufen";
 
@@ -486,7 +468,3 @@ document.onkeydown = function (e) {
 			break;
 	}
 }
-
-$(document).ready(async function () {
-	await load_model();
-});
