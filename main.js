@@ -1,5 +1,13 @@
 "use strict";
 
+var model;
+
+function uuidv4() {
+	return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+		(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+	);
+}
+
 async function load_model () {
 	if(model) {
 		return;
@@ -16,7 +24,7 @@ async function load_model () {
 	);
 
 	log("load_model done");
-	tf.setBackend('wasm');
+	await tf.setBackend('wasm');
 	log("set wasm");
 	/*
 	tf.setBackend('webgl');
@@ -307,75 +315,119 @@ async function ai_file (elem) {
 
 	log("loading serve_model_url" + serve_model_url);
 
-	var r = {
-		url: serve_model_url,
-		type: "POST",
-		dataType : 'json',
-		crossDomain: true,
-		processData: false,
-		contentType: false,
-		data: JSON.stringify({
-			src: src,
-			image: data_url
-		}),
-		success: async function (a, msg) {
-			toastr["success"]("Success!", msg);
-			var ki_names = get_names_from_ki_anno(a);
-			if(Object.keys(ki_names).length) {
-				var html = "Von der KI gefundene Objekte: ";
+	await load_model();
+	var [modelWidth, modelHeight] = model.inputs[0].shape.slice(1, 3);
+	await tf.ready();
 
-				var selects = [];
+	var res = await model.executeAsync(tf.browser.fromPixels($("#image")[0]).resizeBilinear([modelWidth,modelHeight]).div(255).expandDims());
 
-				log(ki_names);
+	const [boxes, scores, classes] = res.slice(0, 3);
 
-				var ki_names_keys = Object.keys(ki_names);
+	const boxes_data = await boxes.arraySync()[0];
+	const scores_data = await scores.arraySync()[0];
+	const classes_data = await classes.arraySync()[0];
 
-				for (var i = 0; i < ki_names_keys.length; i++) {
-					previous[i] = ki_names_keys[i];
-					var this_select = "<select data-nr='" + i + "' class='ki_select_box'>";
-					for (var j = 0; j < available_tags.length; j++) {
-						this_select += '<option ' + ((ki_names_keys[i] == available_tags[j]) ? 'selected' : '') + ' value="' + available_tags[j] + '">' + available_tags[j] + '</option>'
-					}
+	var a = [];
 
-					this_select += "<select> (" + ki_names[ki_names_keys[i]] + ")";
+	for (var i = 0; i < boxes_data.length; i++) {
+		var this_box = boxes_data[i];
+		var this_score = scores_data[i];
+		var this_class = classes_data[i];
 
-					selects.push(this_select);
-				}
+		if(this_class != -1) {
+			var this_label = labels[this_class];
 
-				html += selects.join(", ");
+			var name = this_label + " (" + (this_score * 100).toFixed(0) + "%)";
 
-				$("#ki_detected_names").html(html);
+			var img_width = $("#image")[0].width;
+			var img_height = $("#image")[0].height;
+			
+			var x_start = parseInt(this_box[0] * img_width);
+			var y_start = parseInt(this_box[1] * img_height);
 
-				$(".ki_select_box").change(function (x, y, z) {
-					log("ki_select_box: ", x);
-					var old_value = previous[$(this).data("nr")];
-					var new_value = x.currentTarget.value
+			var x_end = Math.abs(x_start - parseInt(this_box[2] * img_width));
+			var y_end = Math.abs(y_start - parseInt(this_box[3] * img_height));
 
-					log("from " + old_value + " to " + new_value);
+			var w = Math.abs(x_end - x_start);
+			var h = Math.abs(y_end - y_start);
 
-					set_all_current_annotations_from_to(old_value, new_value);
+			var this_elem = {
+				"type": "Annotation", 
+				"body": [ 
+					{
+						"type": "TextualBody", 
+							"value": this_label,
+							"purpose": "tagging"
+					} 
+				], 
+				"target": { 
+					"source": $("#image")[0].src,
+					"selector": { 
+						"type": "FragmentSelector", 
+						"conformsTo": "http://www.w3.org/TR/media-frags/", 
+						"value": `xywh=pixel:${x_start},${y_start},${w},${h}`
+					} 
+				}, 
+				"@context": "http://www.w3.org/ns/anno.jsonld", 
+				"id": "#" + uuidv4()
+			};
 
-					previous[$(this).data("nr")] = new_value;
-				});
-			} else {
-				$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen");
-			}
-
-			await anno.setAnnotations(a);
-
-			var new_annos = anno.getAnnotations();
-			for (var i = 0; i < new_annos.length; i++) {
-				save_anno(new_annos[i]);
-			}
-		},
-		error: function (a, msg) {
-			toastr["error"]("Fehler", msg);
+			a.push(this_elem);
 		}
-	};
+	}
 
-	log(r);
+	log(a);
 
-	var request = $.ajax(r);
+	var msg = "KI erfolgreich durchgelaufen";
+
+	toastr["success"]("Success!", msg);
+	var ki_names = get_names_from_ki_anno(a);
+	if(Object.keys(ki_names).length) {
+		var html = "Von der KI gefundene Objekte: ";
+
+		var selects = [];
+
+		log(ki_names);
+
+		var ki_names_keys = Object.keys(ki_names);
+
+		for (var i = 0; i < ki_names_keys.length; i++) {
+			previous[i] = ki_names_keys[i];
+			var this_select = "<select data-nr='" + i + "' class='ki_select_box'>";
+			for (var j = 0; j < available_tags.length; j++) {
+				this_select += '<option ' + ((ki_names_keys[i] == available_tags[j]) ? 'selected' : '') + ' value="' + available_tags[j] + '">' + available_tags[j] + '</option>'
+			}
+
+			this_select += "<select> (" + ki_names[ki_names_keys[i]] + ")";
+
+			selects.push(this_select);
+		}
+
+		html += selects.join(", ");
+
+		$("#ki_detected_names").html(html);
+
+		$(".ki_select_box").change(function (x, y, z) {
+			log("ki_select_box: ", x);
+			var old_value = previous[$(this).data("nr")];
+			var new_value = x.currentTarget.value
+
+			log("from " + old_value + " to " + new_value);
+
+			set_all_current_annotations_from_to(old_value, new_value);
+
+			previous[$(this).data("nr")] = new_value;
+		});
+	} else {
+		$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen");
+	}
+
+	await anno.setAnnotations(a);
+
+	var new_annos = anno.getAnnotations();
+	for (var i = 0; i < new_annos.length; i++) {
+		save_anno(new_annos[i]);
+	}
 }
 
 function set_all_current_annotations_from_to (from, name) {
@@ -434,3 +486,7 @@ document.onkeydown = function (e) {
 			break;
 	}
 }
+
+$(document).ready(async function () {
+	await load_model();
+});
