@@ -298,6 +298,7 @@ function get_names_from_ki_anno (anno) {
 }
 
 async function ai_file (elem) {
+	$("body").css("cursor", "progress");
 	toastr["success"]("Success!", "KI gestartet... Bitte warten");
 	await load_model();
 	await tf.ready();
@@ -413,6 +414,8 @@ async function ai_file (elem) {
 	for (var i = 0; i < new_annos.length; i++) {
 		save_anno(new_annos[i]);
 	}
+
+	$("body").css("cursor", "default");
 }
 
 function set_all_current_annotations_from_to (from, name) {
