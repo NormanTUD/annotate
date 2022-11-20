@@ -47,9 +47,17 @@ function refresh(){
 	window.location.reload("Refresh")
 }
 
+function move_to_unidentifiable() {
+	var file = $("#image")[0].src.replace(/.*\//, "");
+	window.location.href = "index.php?move_to_unidentifiable=" + file;
+}
+
+function move_to_offtopic() {
+	var file = $("#image")[0].src.replace(/.*\//, "");
+	window.location.href = "index.php?move_to_offtopic=" + file;
+}
 
 function next_img () {
-	log("reloading index.php");
 	window.location.href = "index.php";
 }
 
@@ -461,7 +469,14 @@ document.onkeydown = function (e) {
 	}
 
 	e = e || window.event;
+	log(e.which);
 	switch (e.which) {
+		case 85:
+			move_to_unidentifiable();
+			break;
+		case 79:
+			move_to_offtopic();
+			break;
 		case 78:
 			next_img()
 			break;

@@ -117,8 +117,8 @@ if(!file_exists("images/$imgfile")) {
 					<p>
 						<button onClick="next_img()">N&auml;chstes Bild</button>
 						<button><a onclick="ai_file($('#image')[0])">KI-Labelling</a></button>
-						<button><a href="index.php?move_to_offtopic=<?php print $imgfile; ?>">Bild ist Off Topic</a></button>
-						<button><a href="index.php?move_to_unidentifiable=<?php print $imgfile; ?>">Bild ist nicht identifizierbar</a></button>
+						<button onclick="move_to_offtopic()">Bild ist Off Topic</button>
+						<button onclick="move_to_unidentifiable()">Bild ist nicht identifizierbar</button>
 					</p>
 					<div id="ki_detected_names"></div>
 					<img id="image" src="images/<?php print $imgfile; ?>">
