@@ -306,6 +306,7 @@ async function ai_file (elem) {
 	var [modelWidth, modelHeight] = model.inputs[0].shape.slice(1, 3);
 
 	var res = await model.executeAsync(tf.browser.fromPixels($("#image")[0]).resizeBilinear([modelWidth,modelHeight]).div(255).expandDims());
+	$("body").css("cursor", "default");
 
 	const [boxes, scores, classes] = res.slice(0, 3);
 
@@ -414,8 +415,6 @@ async function ai_file (elem) {
 	for (var i = 0; i < new_annos.length; i++) {
 		save_anno(new_annos[i]);
 	}
-
-	$("body").css("cursor", "default");
 }
 
 function set_all_current_annotations_from_to (from, name) {
