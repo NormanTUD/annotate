@@ -332,9 +332,8 @@ async function ai_file (elem) {
 			var x_end = Math.abs(x_start - parseInt(this_box[2] * img_width));
 			var y_end = Math.abs(y_start - parseInt(this_box[3] * img_height));
 
-			var w = Math.abs(x_end - x_start);
-			log("w = abs(x_end - x_start)", w, x_end, x_start);
-			var h = Math.abs(y_end - y_start);
+			var w = x_end;
+			var h = y_end;
 
 			var this_elem = {
 				"type": "Annotation", 
