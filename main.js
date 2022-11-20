@@ -333,6 +333,7 @@ async function ai_file (elem) {
 			var y_end = Math.abs(y_start - parseInt(this_box[3] * img_height));
 
 			var w = Math.abs(x_end - x_start);
+			log("w = abs(x_end - x_start)", w, x_end, x_start);
 			var h = Math.abs(y_end - y_start);
 
 			var this_elem = {
@@ -458,7 +459,6 @@ document.onkeydown = function (e) {
 	}
 
 	e = e || window.event;
-	log("detected " + e.which);
 	switch (e.which) {
 		case 78:
 			next_img()
