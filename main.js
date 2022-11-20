@@ -360,6 +360,8 @@ async function ai_file (elem) {
 		}
 	}
 
+	log(a);
+
 	var msg = "KI erfolgreich durchgelaufen";
 
 	toastr["success"]("Success!", msg);
