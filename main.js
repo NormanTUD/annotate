@@ -298,6 +298,7 @@ function get_names_from_ki_anno (anno) {
 }
 
 async function ai_file (elem) {
+	toastr["success"]("Success!", "KI gestartet... Bitte warten");
 	await load_model();
 	await tf.ready();
 
