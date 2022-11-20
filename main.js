@@ -1,5 +1,34 @@
 "use strict";
 
+async function load_model () {
+	if(model) {
+		return;
+	}
+	model = await tf.loadGraphModel(
+		'./model.json',
+		{
+			onProgress: function (p) {
+				var percent = p * 100;
+				percent = percent.toFixed(0);
+				$("#loader").html("Loading Model, " + percent + "%<br>\n");
+			}
+		}
+	);
+
+	log("load_model done");
+	tf.setBackend('wasm');
+	log("set wasm");
+	/*
+	tf.setBackend('webgl');
+	log("set webgl");
+	 */
+
+	await tf.ready();
+
+	$("#loader").hide();
+	$("#upload_button").show();
+}
+
 var anno;
 var available_tags = [];
 var previous = [];

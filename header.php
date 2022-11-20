@@ -14,6 +14,9 @@ include_once("functions.php");
 	<script src="toastr.min.js"></script>
 	<script src='tf.js'></script>
 	<script src='tf-backend-wasm.min.js'></script>
+	<script>
+
+	</script>
 </head>
 
 <body>
