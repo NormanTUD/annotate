@@ -406,7 +406,7 @@ fi
 echo "ml modenv/hiera GCCcore/11.3.0 Python/3.9.6"
 echo "source ~/.alpha_yoloenv/bin/activate"
 echo "cd yolov5"
-echo "python3 train.py --cfg yolov5n6.yaml --multi-scale --batch 8 --data dataset.yaml --weights \\"\\"  --epochs 500 --cache --img 1024 --nosave --hyp hyperparams.yaml" --evolve
+echo "sbatch -n 1 --time=64:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1 run.sh"
 ';
 
 			$run_sh = '#!/bin/bash -l
