@@ -62,6 +62,7 @@
 
 		return $res;
 	}
+
 	function parse_position_xyxy ($pos) {
 		//xywh=pixel:579,354,58,41
 		$res = null;
@@ -124,9 +125,6 @@
 				$imgfn = "images/$file";
 				$imgsz = getimagesize($imgfn);
 
-				$width = null;
-				$height = null;
-
 				$width = $imgsz[0];
 				$height = $imgsz[1];
 
@@ -135,7 +133,7 @@
 				$hash = hash("sha256", $file);
 				$dir = "annotations/$hash";
 
-				if(is_dir($dir)) {
+				if(is_dir($dir) && $width && $height && file_exists($imgfn)) {
 					$images[$file] = array(
 						"fn" => $file, 
 						"hash" => $hash,
@@ -182,6 +180,7 @@
 								}
 
 								$images[$file]["w"] = $item["w"];
+								$images[$file]["h"] = $item["h"];
 
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_yolo"][] = parse_position_yolo($file, $images[$file], $struct["position"], $images[$file]["w"], $images[$file]["h"]);
@@ -301,30 +300,32 @@
 
 			// <object-class> <x> <y> <width> <height>
 			foreach ($filtered_imgs as $img) {
-				$fn = $img["fn"];
-				//dier($img);
-				#print "<br>$fn<br>";
-				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
-				$str = "";
-				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
-					foreach ($img["tags"] as $i => $t) {
-						$pos = $img["position_yolo"][$i];
-						$k = $category_numbers[$img["anno_name"][$i]];
-						if(!count($show_categories)) {
-							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
-						} else {
-							$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
+				if(array_key_exists("fn", $img)) {
+					$fn = $img["fn"];
+					//dier($img);
+					#print "<br>$fn<br>";
+					$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
+					$str = "";
+					if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
+						foreach ($img["tags"] as $i => $t) {
+							$pos = $img["position_yolo"][$i];
+							$k = $category_numbers[$img["anno_name"][$i]];
+							if(!count($show_categories)) {
+								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
+							} else {
+								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
+							}
 						}
+
+						$str = implode('\n',array_unique(explode('\n', $str)));
+					} else {
+						//dier($img);
 					}
 
-					$str = implode('\n',array_unique(explode('\n', $str)));
-				} else {
-					//dier($img);
-				}
-
-				if($str) {
-					copy("images/$fn", "$tmp_dir/images/$fn");
-					file_put_contents("$tmp_dir/labels/$fn_txt", $str);
+					if($str && $fn && $fn_txt) {
+						copy("images/$fn", "$tmp_dir/images/$fn");
+						file_put_contents("$tmp_dir/labels/$fn_txt", $str);
+					}
 				}
 			}
 
@@ -371,12 +372,14 @@ if [ ! -d "yolov5" ]; then
 	git clone --depth 1 https://github.com/ultralytics/yolov5.git
 fi
 cd yolov5
-python3 -m venv ~/.yoloenv
-if [ -d "$HOME/.yoloenv" ]; then
-	echo "~/.yoloenv already exists"
-	source ~/env/bin/activate
+ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
+if [ -d "$HOME/.alpha_yoloenv" ]; then
+	python3 -m venv ~/.alpha_yoloenv
+	echo "~/.alpha_yoloenv already exists"
+	source ~/.alpha_yoloenv/bin/activate
 else
-	source ~/yoloenv/bin/activate
+	python3 -mvenv ~/.alpha_yoloenv/
+	source ~/.alpha_yoloenv/bin/activate
 	pip3 install -r requirements.txt
 	pip3 install "albumentations>=1.0.3"
 	pip3 install tensorboard
@@ -401,8 +404,8 @@ if [ -e "../hyperparams.yaml" ]; then
 fi
 
 
-echo "source ~/.yoloenv/bin/activate"
 echo "ml modenv/hiera GCCcore/11.3.0 Python/3.9.6"
+echo "source ~/.alpha_yoloenv/bin/activate"
 echo "cd yolov5"
 echo "python3 train.py --cfg yolov5n6.yaml --multi-scale --batch 8 --data dataset.yaml --weights \\"\\"  --epochs 500 --cache --img 1024 --nosave --hyp hyperparams.yaml" --evolve
 
