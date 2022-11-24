@@ -215,7 +215,9 @@
 
 	function get_json_cached ($path) {
 		$tmp_dir = "tmp/__json_cache__/";
-		$cache_file = md5($path);
+		$mtime = filemtime($file);
+
+		$cache_file = md5($path.$mtime);
 
 		$cache_path = "$tmp_dir$cache_file";
 
@@ -225,10 +227,8 @@
 
 		$data = array();
 
-		$now   = time();
-		$file_age = $now - filemtime($file);
 
-		if(file_exists($cache_path) && $file_age >= 60 * 60 * 24) {
+		if(file_exists($cache_path)) {
 			$data = unserialize(file_get_contents($cache_path));
 		} else {
 			$data = json_decode(file_get_contents($path), true);
