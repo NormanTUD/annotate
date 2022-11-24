@@ -228,7 +228,7 @@
 		$now   = time();
 		$file_age = $now - filemtime($file);
 
-		if(file_exists($cache_path) && $file_age >= 60 * 60 * 24 * 2) {
+		if(file_exists($cache_path) && $file_age >= 60 * 60 * 24) {
 			$data = unserialize(file_get_contents($cache_path));
 		} else {
 			$data = json_decode(file_get_contents($path), true);
