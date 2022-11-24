@@ -186,7 +186,7 @@
 							foreach($an as $a_file) {
 								if(!preg_match("/^\.(?:\.)?$/", $a_file)) {
 									$path = "$tdir/$a_file";
-									$anno = json_decode(file_get_contents($path), true);
+									$anno = get_json_cached($path);
 
 									foreach ($anno["body"] as $item) {
 										if($item["purpose"] == "tagging") {
@@ -213,6 +213,31 @@
 		return $annos;
 	}
 
+	function get_json_cached ($path) {
+		$tmp_dir = "tmp/__json_cache__/";
+		$cache_file = md5($path);
+
+		$cache_path = "$tmp_dir$cache_file";
+
+		if(!is_dir($tmp_dir)) {
+			mkdir($tmp_dir);
+		}
+
+		$data = array();
+
+		$now   = time();
+		$file_age = $now - filemtime($file);
+
+		if(file_exists($cache_path) && $file_age >= 60 * 60 * 24 * 2) {
+			$data = unserialize(file_get_contents($cache_path));
+		} else {
+			$data = json_decode(file_get_contents($path), true);
+			file_put_contents($cache_path, serialize($data));
+		}
+
+		return;
+	}
+
 	function image_has_tag($img, $tag) {
 		$file_hash = hash("sha256", $img);
 		$mdir = "annotations/$file_hash/";
@@ -225,7 +250,7 @@
 					foreach($an as $a_file) {
 						if(!preg_match("/^\.(?:\.)?$/", $a_file)) {
 							$path = "$tdir/$a_file";
-							$anno = json_decode(file_get_contents($path), true);
+							$anno = get_json_cached($path);
 							foreach ($anno["body"] as $item) {
 								if($item["purpose"] == "tagging") {
 									$value = strtolower($item["value"]);
