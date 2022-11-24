@@ -235,7 +235,7 @@
 			file_put_contents($cache_path, serialize($data));
 		}
 
-		return;
+		return $data;
 	}
 
 	function image_has_tag($img, $tag) {
