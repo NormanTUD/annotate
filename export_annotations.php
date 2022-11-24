@@ -826,7 +826,7 @@ for i in $@; do
 	esac
 done
 
-hyperparams_file_contents=<<EOF
+hyperparams_file_contents="
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Hyperparameters for high-augmentation COCO training from scratch
 # python train.py --batch 32 --cfg yolov5m6.yaml --weights "" --data coco.yaml --img 1280 --epochs 300
@@ -861,7 +861,7 @@ fliplr: $fliplr # image flip left-right (probability)
 mosaic: $mosaic # image mosaic (probability)
 mixup: $mixup # image mixup (probability)
 copy_paste: $copy_paste # segment copy-paste (probability)
-EOF
+"
 
 hyp=data/hyps/hyperparams_$(uuidgen).yaml
 
