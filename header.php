@@ -50,6 +50,7 @@ include_once("functions.php");
 			"regenbogen",
 			"folienballon",
 			"reentry",
+			"led-drohnen",
 			"hole punch cloud",
 			"blitz",
 			"ambosswolke",
@@ -69,9 +70,7 @@ include_once("functions.php");
 			"flare",
 			"grüner blitz",
 			"fledermaus",
-			"led-drohnen",
 			"halo mond",
-			"rakete",
 			"crown flash",
 			"vogelschwarm"
 		];
