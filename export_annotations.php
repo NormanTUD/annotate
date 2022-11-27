@@ -411,12 +411,13 @@ echo "sbatch -n 1 --time=64:00:00 --mem-per-cpu=32000 --partition=alpha --gres=g
 
 			$run_sh = '#!/bin/bash -l
 
-ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
+echo "ml modenv/hiera GCCcore/11.3.0 Python/3.9.6"
 
 if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
-	python3 -mvenv ~/.alpha_yoloenv/
-	source ~/.alpha_yoloenv/bin/activate
-	pip3 install -r requirements.txt
+        echo "python3 -mvenv ~/.alpha_yoloenv/"
+        echo "source ~/.alpha_yoloenv/bin/activate"
+        echo "pip3 install -r requirements.txt"
+    exit
 fi
 
 source ~/.alpha_yoloenv/bin/activate
