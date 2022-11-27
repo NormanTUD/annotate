@@ -167,7 +167,7 @@
 						foreach($single_user_annotations as $single_user_annotation_file) {
 							if(preg_match("/\.json$/", $single_user_annotation_file)) {
 								#die("<pre>$single_user_annotation_file</pre>");
-								$struct = json_decode(file_get_contents("$tdir/$single_user_annotation_file"), true);
+								$struct = get_json_cached("$tdir/$single_user_annotation_file");
 								#dier($struct);
 								$file = $struct["source"];
 								//mywarn($file."\n");
@@ -1013,7 +1013,14 @@ cat $run_log | sed -e "s/.*G//g" | egrep "^\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s+
 		header("Pragma: no-cache"); 
 		header("Expires: 0"); 
 
-		readfile($tmp_zip);
+		#readfile($tmp_zip);
+		$handle = @fopen($tmp_zip, "r");
+		if ($handle) {
+			while (($buffer = fgets($handle, 4096)) !== false) {
+				echo $buffer;
+			}
+			fclose($handle);
+		}
 
 		ob_start();
 		system("rm -rf $tmp_dir");
