@@ -196,7 +196,7 @@
 									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
 									unset($images[$file]["disabled"]);
 								} else {
-									if(file_exists("images/$filename")) {
+									if(file_exists("images/$file")) {
 										if(isset($images[$file])) {
 											if(!array_key_exists("fn", $images[$file])) {
 												$images[$file]["fn"] = $file;
