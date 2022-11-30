@@ -215,7 +215,7 @@
 
 	function get_json_cached ($path) {
 		$tmp_dir = "tmp/__json_cache__/";
-		$mtime = filemtime($file);
+		$mtime = filemtime($path);
 
 		$cache_file = md5($path.$mtime);
 
