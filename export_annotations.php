@@ -41,23 +41,6 @@
 
 			$res["w_rel"] = $w / $imgw;
 			$res["h_rel"] = $h / $imgh;
-
-/*
-			if($res["y_center"] > 1 || $rel["x_center"] > 1 || $res["w_rel"] > 1 || $res["h_rel"] > 1) {
-				#dier(getimagesize("images/$file"));
-				#dier($exif['Orientation']);
-
-				print("$file\n\n$pos\n\n".$img_file["wh_string"]."\n\nimgw = $imgw\nimgh = $imgh\n\nx = $x\ny = $y\nw = $w\nh = $h\n\n");
-
-				print("\$h_rel = \$h / \$imgh\n");
-				print($res['h_rel']." = $h / $imgh\n\n");
-
-				print("\$y_center = (((2 * \$y) + \$h) / 2.0) / \$imgh\n");
-				print($res["y_center"]." = (((2 * $y) + $h) / 2.0) / $imgh\n\n");
-
-				dier($res);
-			}
-*/
 		}
 
 		return $res;
