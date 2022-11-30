@@ -197,7 +197,7 @@
 									unset($images[$file]["disabled"]);
 								} else {
 									if(!array_key_exists("fn", $img)) {
-										error_log("fn not defined:");
+										error_log("fn not defined for $file:");
 										error_log(print_r($img, true));
 									} else {
 										$filtered_imgs[$file] = $images[$file];
