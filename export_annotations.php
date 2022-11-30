@@ -198,11 +198,10 @@
 								} else {
 									if(isset($images[$file])) {
 										if(!array_key_exists("fn", $images[$file])) {
-											error_log("fn not defined for $file:");
-											error_log(print_r($images[$file], true));
-										} else {
-											$filtered_imgs[$file] = $images[$file];
+											$images[$file]["fn"] = $file;
 										}
+
+										$filtered_imgs[$file] = $images[$file];
 									}
 								}
 
