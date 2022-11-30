@@ -102,9 +102,9 @@
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
 				$imgfn = "images/$file";
-				try {
-					$imgsz = getimagesize($imgfn);
+				$imgsz = getimagesize($imgfn);
 
+				if($imgsz) {
 					$width = $imgsz[0];
 					$height = $imgsz[1];
 
@@ -123,8 +123,8 @@
 							"wh_string" => $imgsz[3]
 						);
 					}
-				} catch (\Throwable $e) {
-					error_log($e);
+				} else {
+					error_log("Error reading file $file");
 				}
 			}
 		}
