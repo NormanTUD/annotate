@@ -6,11 +6,6 @@
 	$test_split = get_get("test_split", 0);
 	$max_files = get_get("max_files", 0);
 
-	if($validation_split + $test_split > 0.8) {
-		$validation_split = 0.4;
-		$test_split = 0.4;
-	}
-
 	function get_rand_between_0_and_1 () {
 		return mt_rand() / mt_getrandmax();
 	}
