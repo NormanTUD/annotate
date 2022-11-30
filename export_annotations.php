@@ -320,7 +320,7 @@
 							if(isset($pos['x_center']) && isset($pos['y_center']) &&  isset($pos['w_rel']) && isset($pos['h_rel'])) {
 								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 							} else {
-								die("$fn");
+								error_log("$fn misses x_center, y_center, w_rel or h_rel");
 							}
 						}
 
