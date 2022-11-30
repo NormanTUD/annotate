@@ -244,7 +244,16 @@
 		  79: toothbrush
 		*/
 
-		$dataset_yaml = "path: ./\ntrain: dataset/images/\nval: dataset/images/\ntest: dataset/images/\nnames:\n";
+		$dataset_yaml = "path: ./\n";
+		$dataset_yaml .= "train: dataset/images/\n";
+		if($validation_split) {
+			$dataset_yaml .= "val: dataset/validation/\n";
+		}
+		if($test_split) {
+			$dataset_yaml .= "test: dataset/test/\n";
+		}
+		$dataset_yaml .= "names:\n";
+
 		$j = 0;
 		$category_numbers = array();
 		foreach ($categories as $i => $cat) {
