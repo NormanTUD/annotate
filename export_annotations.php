@@ -299,56 +299,57 @@
 
 			$j = 0;
 			foreach ($filtered_imgs as $img) {
-				if(array_key_exists("fn", $img)) {
-					if($max_files == 0 || $j < $max_files) {
-						$fn = $img["fn"];
-						//dier($img);
-						#print "<br>$fn<br>";
-						$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
-						$str = "";
-						if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
-							foreach ($img["tags"] as $i => $t) {
-								$pos = $img["position_yolo"][$i];
-								$k = $category_numbers[$img["anno_name"][$i]];
-								if(!count($show_categories)) {
-									$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
-								} else {
-									$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
-								}
+				if(!array_key_exists("fn", $img)) {
+					die("fn not defined");
+				}
+				if($max_files == 0 || $j < $max_files) {
+					$fn = $img["fn"];
+					//dier($img);
+					#print "<br>$fn<br>";
+					$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
+					$str = "";
+					if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
+						foreach ($img["tags"] as $i => $t) {
+							$pos = $img["position_yolo"][$i];
+							$k = $category_numbers[$img["anno_name"][$i]];
+							if(!count($show_categories)) {
+								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
+							} else {
+								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 							}
-
-							$str = implode('\n',array_unique(explode('\n', $str)));
-						} else {
-							//dier($img);
 						}
 
-						if($str && $fn && $fn_txt) {
-							$copy_to = "$tmp_dir/images/$fn";
-							if($validation_split || $test_split) {
-								if($validation_split && $test_split) {
-									if(get_rand_between_0_and_1() <= $test_split) {
-										$copy_to = "$tmp_dir/test/$fn";
-									} else if (get_rand_between_0_and_1() <= $validation_split) {
+						$str = implode('\n',array_unique(explode('\n', $str)));
+					} else {
+						//dier($img);
+					}
+
+					if($str && $fn && $fn_txt) {
+						$copy_to = "$tmp_dir/images/$fn";
+						if($validation_split || $test_split) {
+							if($validation_split && $test_split) {
+								if(get_rand_between_0_and_1() <= $test_split) {
+									$copy_to = "$tmp_dir/test/$fn";
+								} else if (get_rand_between_0_and_1() <= $validation_split) {
+									$copy_to = "$tmp_dir/validation/$fn";
+								}
+							} else {
+								if($validation_split) {
+									if(get_rand_between_0_and_1() <= $validation_split) {
 										$copy_to = "$tmp_dir/validation/$fn";
 									}
-								} else {
-									if($validation_split) {
-										if(get_rand_between_0_and_1() <= $validation_split) {
-											$copy_to = "$tmp_dir/validation/$fn";
-										}
-									}
-									if($test_split) {
-										if(get_rand_between_0_and_1() <= $test_split) {
-											$copy_to = "$tmp_dir/test/$fn";
-										}
+								}
+								if($test_split) {
+									if(get_rand_between_0_and_1() <= $test_split) {
+										$copy_to = "$tmp_dir/test/$fn";
 									}
 								}
 							}
-
-							copy("images/$fn", $copy_to);
-							$j++;
-							file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 						}
+
+						copy("images/$fn", $copy_to);
+						$j++;
+						file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 					}
 				}
 			}
