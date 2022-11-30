@@ -323,6 +323,8 @@
 								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 							} else {
 								error_log("$fn misses x_center, y_center, w_rel or h_rel");
+
+								die(print_r($pos, true));
 							}
 						}
 
