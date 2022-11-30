@@ -160,6 +160,11 @@
 								$images[$file]["h"] = $item["h"];
 
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
+
+								#if($file == "lentikularwolke-OiFzWcEWGN4-00028.jpg") {
+								#	die(print_r($struct, true));
+								#}
+
 								$images[$file]["position_yolo"][] = parse_position_yolo($file, $images[$file], $struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["anno_struct"] = $struct;
@@ -323,8 +328,7 @@
 								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 							} else {
 								error_log("$fn misses x_center, y_center, w_rel or h_rel");
-
-								die(print_r($pos, true));
+								die(print_r($img, true));
 							}
 						}
 
