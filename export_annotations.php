@@ -28,7 +28,7 @@
 		//xywh=pixel:579,354,58,41
 		$res = array();
 
-		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
+		if(preg_match("/^xywh=pixel:\s*(-?\d+),\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*$/", $pos, $matches)) {
 			try {
 				$exif = @exif_read_data("images/$file");
 			} catch (\Throwable $e) {
@@ -45,11 +45,18 @@
 			$w = $matches[3];
 			$h = $matches[4];
 
+			if(0 > $x) { $x = 0; }
+			if(0 > $y) { $y = 0; }
+			if(0 > $w) { $w = 0; }
+			if(0 > $h) { $h = 0; }
+
 			$res["x_center"] = (((2 * $x) + $w) / 2) / $imgw;
 			$res["y_center"] = (((2 * $y) + $h) / 2) / $imgh;
 
 			$res["w_rel"] = $w / $imgw;
 			$res["h_rel"] = $h / $imgh;
+		} else {
+			die($pos);
 		}
 
 		return $res;
@@ -328,7 +335,7 @@
 								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 							} else {
 								error_log("$fn misses x_center, y_center, w_rel or h_rel");
-								die(print_r($img, true));
+								#die(print_r($img, true));
 							}
 						}
 
