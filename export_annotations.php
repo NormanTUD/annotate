@@ -11,6 +11,11 @@
 		$test_split = 0.4;
 	}
 
+	function get_rand_between_0_and_1 () {
+		return mt_rand() / mt_getrandmax();
+	}
+
+
 	function parse_position_rel ($pos, $imgw, $imgh) {
 		//xywh=pixel:579,354,58,41
 		$res = null;
@@ -22,10 +27,6 @@
 			$h = $matches[4];
 
 		}
-	}
-
-	function get_rand_between_0_and_1 () {
-		return mt_rand() / mt_getrandmax();
 	}
 
 	function parse_position_yolo ($file, $img_file, $pos, $imgw, $imgh) {
@@ -298,6 +299,9 @@
 			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
 			$j = 0;
+
+			shuffle($filtered_imgs);
+
 			foreach ($filtered_imgs as $img) {
 				if(!array_key_exists("fn", $img)) {
 					die("fn not defined");
@@ -327,20 +331,27 @@
 					if($str && $fn && $fn_txt) {
 						$copy_to = "$tmp_dir/images/$fn";
 						if($validation_split || $test_split) {
+							$max_val = count($filtered_imgs) * $validation_split;
+							$max_test = count($filtered_imgs) * $test_split;
+
 							if($validation_split && $test_split) {
-								if(get_rand_between_0_and_1() <= $test_split) {
-									$copy_to = "$tmp_dir/test/$fn";
-								} else if (get_rand_between_0_and_1() <= $validation_split) {
-									$copy_to = "$tmp_dir/validation/$fn";
+								if(get_rand_between_0_and_1() >= 0.5) {
+									if($j <= $max_val) {
+										$copy_to = "$tmp_dir/validation/$fn";
+									}
+								} else {
+									if ($j <= $max_test) {
+										$copy_to = "$tmp_dir/test/$fn";
+									}
 								}
 							} else {
 								if($validation_split) {
-									if(get_rand_between_0_and_1() <= $validation_split) {
+									if($j <= $max_val) {
 										$copy_to = "$tmp_dir/validation/$fn";
 									}
 								}
 								if($test_split) {
-									if(get_rand_between_0_and_1() <= $test_split) {
+									if($j <= $max_test) {
 										$copy_to = "$tmp_dir/test/$fn";
 									}
 								}
