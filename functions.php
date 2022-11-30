@@ -270,4 +270,11 @@
 	function mywarn ($msg) {
 		file_put_contents('php://stderr', $msg);
 	}
+
+	function get_get ($name, $default = null) {
+		if(isset($_GET[$name])) {
+			return $_GET[$name];
+		}
+		return $default;
+	}
 ?>

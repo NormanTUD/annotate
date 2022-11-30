@@ -2,6 +2,14 @@
 	ini_set('memory_limit', '1024M');
 	include_once("functions.php");
 
+	$validation_split = get_get("validation_split", 0);
+	$test_split = get_get("test_split", 0);
+
+	if($validation_split + $test_split > 0.8) {
+		$validation_split = 0.4;
+		$test_split = 0.4;
+	}
+
 	function parse_position_rel ($pos, $imgw, $imgh) {
 		//xywh=pixel:579,354,58,41
 		$res = null;
