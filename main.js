@@ -186,6 +186,10 @@ function make_item_anno(elem, widgets={}) {
 	anno.on('cancelSelected', function(selection) {
 		log(selection);
 	})
+
+	if(!anno.getAnnotations().length) {
+		ai_file($('#image')[0]);
+	}
 }
 
 function create_annos () {
