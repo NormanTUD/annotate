@@ -196,11 +196,13 @@
 									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
 									unset($images[$file]["disabled"]);
 								} else {
-									if(!array_key_exists("fn", $images[$file])) {
-										error_log("fn not defined for $file:");
-										error_log(print_r($img, true));
-									} else {
-										$filtered_imgs[$file] = $images[$file];
+									if(isset($images[$file])) {
+										if(!array_key_exists("fn", $images[$file])) {
+											error_log("fn not defined for $file:");
+											error_log(print_r($img, true));
+										} else {
+											$filtered_imgs[$file] = $images[$file];
+										}
 									}
 								}
 
