@@ -102,25 +102,29 @@
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
 				$imgfn = "images/$file";
-				$imgsz = getimagesize($imgfn);
+				try {
+					$imgsz = getimagesize($imgfn);
 
-				$width = $imgsz[0];
-				$height = $imgsz[1];
+					$width = $imgsz[0];
+					$height = $imgsz[1];
 
-				#dier($imgsz);
-				#dier($file);
-				$hash = hash("sha256", $file);
-				$dir = "annotations/$hash";
+					#dier($imgsz);
+					#dier($file);
+					$hash = hash("sha256", $file);
+					$dir = "annotations/$hash";
 
-				if(is_dir($dir) && $width && $height && file_exists($imgfn)) {
-					$images[$file] = array(
-						"fn" => $file, 
-						"hash" => $hash,
-						"dir" => $dir,
-						"w" => $width,
-						"h" => $height,
-						"wh_string" => $imgsz[3]
-					);
+					if(is_dir($dir) && $width && $height && file_exists($imgfn)) {
+						$images[$file] = array(
+							"fn" => $file, 
+							"hash" => $hash,
+							"dir" => $dir,
+							"w" => $width,
+							"h" => $height,
+							"wh_string" => $imgsz[3]
+						);
+					}
+				} catch (\Throwable $e) {
+					error_log($e);
 				}
 			}
 		}
