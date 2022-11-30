@@ -317,10 +317,10 @@
 						foreach ($img["tags"] as $i => $t) {
 							$pos = $img["position_yolo"][$i];
 							$k = $category_numbers[$img["anno_name"][$i]];
-							if(!count($show_categories)) {
+							if(isset($pos['x_center']) && isset($pos['y_center']) &&  isset($pos['w_rel']) && isset($pos['h_rel'])) {
 								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
 							} else {
-								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
+								die("$fn");
 							}
 						}
 
