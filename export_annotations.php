@@ -119,8 +119,7 @@
 							"hash" => $hash,
 							"dir" => $dir,
 							"w" => $width,
-							"h" => $height,
-							"wh_string" => $imgsz[3]
+							"h" => $height
 						);
 					}
 				} else {
@@ -136,11 +135,6 @@
 
 		$k = 0;
 		foreach($images as $item) {
-			/*
-			if($k > 4) {
-				continue;
-			}
-			 */
 			if(is_dir($item["dir"])) {
 				$user_annotations = scandir($item["dir"]);
 				foreach($user_annotations as $user_annotation_dir) {
@@ -202,7 +196,12 @@
 									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
 									unset($images[$file]["disabled"]);
 								} else {
-									$filtered_imgs[$file] = $images[$file];
+									if(!array_key_exists("fn", $img)) {
+										error_log("fn not defined:");
+										error_log(print_r($img, true));
+									} else {
+										$filtered_imgs[$file] = $images[$file];
+									}
 								}
 
 								if(preg_match("/jupiter/", $bla)) {
