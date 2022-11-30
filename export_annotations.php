@@ -23,6 +23,10 @@
 		}
 	}
 
+	function get_rand_between_0_and_1 () {
+		return mt_rand() / mt_getrandmax();
+	}
+
 	function parse_position_yolo ($file, $img_file, $pos, $imgw, $imgh) {
 		//xywh=pixel:579,354,58,41
 		$res = array();
@@ -273,6 +277,14 @@
 			mkdir("$tmp_dir/labels/");
 			ob_clean();
 
+			if($validation_split) {
+				mkdir("$tmp_dir/validation/");
+			}
+
+			if($test_split) {
+				mkdir("$tmp_dir/test/");
+			}
+
 			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 
 			// <object-class> <x> <y> <width> <height>
@@ -300,7 +312,28 @@
 					}
 
 					if($str && $fn && $fn_txt) {
-						copy("images/$fn", "$tmp_dir/images/$fn");
+						$copy_to = "$tmp_dir/images/$fn";
+						if($validation_split || $test_split) {
+							if($validation_split && $test_split) {
+								if(get_rand_between_0_and_1() >= 0.5) {
+									$copy_to = "$tmp_dir/test/$fn";
+								} else {
+									$copy_to = "$tmp_dir/validation/$fn";
+								}
+							} else {
+								if($validation_split) {
+									if(get_rand_between_0_and_1() <= $validation_split) {
+										$copy_to = "$tmp_dir/validation/$fn";
+									}
+								}
+								if($test_split) {
+									if(get_rand_between_0_and_1() <= $test_split) {
+										$copy_to = "$tmp_dir/test_split/$fn";
+									}
+								}
+							}
+						}
+						copy("images/$fn", $copy_to);
 						file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 					}
 				}
@@ -938,12 +971,6 @@ cat $run_log | sed -e "s/.*G//g" | egrep "^\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s+
 						$pos = $img["position_rel"][$i];
 						$str .= "$t ".$pos['x_0']." ".$pos['x_1']." ".$pos['x_0']." ".$pos['y_1']."\n";
 					}
-				} else {
-					//dier($img);
-				}
-
-				if($str) {
-					#copy("images/$fn", "$tmp_dir/images/$fn");
 				}
 			}
 
