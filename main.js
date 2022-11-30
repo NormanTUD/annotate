@@ -187,7 +187,7 @@ function make_item_anno(elem, widgets={}) {
 		log(selection);
 	})
 
-	if(!anno.getAnnotations().length) {
+	if(!(anno.getAnnotations().length)) {
 		ai_file($('#image')[0]);
 	}
 }
