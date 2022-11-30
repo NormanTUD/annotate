@@ -63,19 +63,6 @@
 		return $res;
 	}
 
-	function parse_position_xyxy ($pos) {
-		//xywh=pixel:579,354,58,41
-		$res = null;
-		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
-			$res["x_0"] = $matches[1];
-			$res["y_0"] = $matches[2];
-			$res["x_1"] = $matches[3] + $matches[1];
-			$res["y_1"] = $matches[4] + $matches[2];
-		}
-
-		return $res;
-	}
-
 	function parse_position_xywh ($pos) {
 		//xywh=pixel:579,354,58,41
 		$res = null;
@@ -185,7 +172,6 @@
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_yolo"][] = parse_position_yolo($file, $images[$file], $struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
-								$images[$file]["position_xyxy"][] = parse_position_xyxy($struct["position"]);
 								$images[$file]["anno_struct"] = $struct;
 								$bla = print_r($struct["body"], true);
 
