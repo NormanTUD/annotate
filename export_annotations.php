@@ -326,9 +326,9 @@
 							$copy_to = "$tmp_dir/images/$fn";
 							if($validation_split || $test_split) {
 								if($validation_split && $test_split) {
-									if(get_rand_between_0_and_1() >= $test_split) {
+									if(get_rand_between_0_and_1() <= $test_split) {
 										$copy_to = "$tmp_dir/test/$fn";
-									} else if (get_rand_between_0_and_1() >= $validation_split) {
+									} else if (get_rand_between_0_and_1() <= $validation_split) {
 										$copy_to = "$tmp_dir/validation/$fn";
 									}
 								} else {
