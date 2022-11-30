@@ -326,9 +326,9 @@
 							$copy_to = "$tmp_dir/images/$fn";
 							if($validation_split || $test_split) {
 								if($validation_split && $test_split) {
-									if(get_rand_between_0_and_1() >= 0.5) {
+									if(get_rand_between_0_and_1() >= $test_split) {
 										$copy_to = "$tmp_dir/test/$fn";
-									} else if (get_rand_between_0_and_1() >= 0.5) {
+									} else if (get_rand_between_0_and_1() >= $validation_split) {
 										$copy_to = "$tmp_dir/validation/$fn";
 									}
 								} else {
@@ -339,7 +339,7 @@
 									}
 									if($test_split) {
 										if(get_rand_between_0_and_1() <= $test_split) {
-											$copy_to = "$tmp_dir/test_split/$fn";
+											$copy_to = "$tmp_dir/test/$fn";
 										}
 									}
 								}
