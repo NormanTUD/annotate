@@ -299,8 +299,9 @@
 
 			foreach ($filtered_imgs as $img) {
 				if(!array_key_exists("fn", $img)) {
-					error_log("fn not defined");
+					error_log("fn not defined:");
 					error_log(print_r($img, true));
+					continue;
 				}
 				if($max_files == 0 || $j < $max_files) {
 					$fn = $img["fn"];
