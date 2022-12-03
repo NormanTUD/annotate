@@ -442,6 +442,12 @@ mkdir -p dataset
 if [ -d "../images" ]; then
 	mv ../images/ dataset/
 fi
+if [ -d "../validation" ]; then
+	mv ../validation/ dataset/
+fi
+if [ -d "../test" ]; then
+	mv ../test/ dataset/
+fi
 if [ -d "../labels" ]; then
 	mv ../labels/ dataset/
 fi
