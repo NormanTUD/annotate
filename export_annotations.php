@@ -264,7 +264,10 @@
 		$dataset_yaml .= "train: dataset/images/\n";
 		if($validation_split) {
 			$dataset_yaml .= "val: dataset/validation/\n";
+		} else {
+			$dataset_yaml .= "val: dataset/images/\n";
 		}
+
 		if($test_split) {
 			$dataset_yaml .= "test: dataset/test/\n";
 		}
