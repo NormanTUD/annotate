@@ -63,6 +63,7 @@ include_once("functions.php");
 			"planet",
 			"sprite",
 			"milchstraße",
+			"vogelschwarm",
 			"funken",
 			"sonnenstrahlen",
 			"himmelslaterne",
@@ -71,8 +72,7 @@ include_once("functions.php");
 			"grüner blitz",
 			"fledermaus",
 			"halo mond",
-			"crown flash",
-			"vogelschwarm"
+			"crown flash"
 		];
 	</script>
 </head>
