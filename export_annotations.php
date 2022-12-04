@@ -454,6 +454,9 @@ fi
 if [ -e "../dataset.yaml" ]; then
 	mv ../dataset.yaml data/
 fi
+if [ -e "../simple_run.sh" ]; then
+	mv ../simple_run.sh .
+fi
 if [ -e "../run.sh" ]; then
 	mv ../run.sh .
 fi
@@ -940,6 +943,15 @@ cat $run_log | sed -e "s/.*G//g" | egrep "^\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s+
 # python3 export.py --weights runs/train/exp/weights/best.pt --img 640 640 --batch-size 1 --include tfjs
 ';
 			file_put_contents("$tmp_dir/runme.sh", $train_bash);
+
+			$simple_run_bash = '#!/bin/bash
+
+#SBATCH -n 2 --time=16:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
+
+python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
+';
+
+			file_put_contents("$tmp_dir/simple_run.sh", $simple_run_bash);
 
 			file_put_contents("$tmp_dir/run.sh", $run_sh);
 		} else if ($format == "html") {
