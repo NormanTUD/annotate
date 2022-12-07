@@ -949,7 +949,7 @@ cat $run_log | sed -e "s/.*G//g" | egrep "^\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s+
 
 			$simple_run_bash = '#!/bin/bash
 
-#SBATCH -n 2 --time=16:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
+#SBATCH -n 2 --time=32:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
 
 python3 train.py --cfg yolov5s.yaml --multi-scale --batch 32 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
 ';
