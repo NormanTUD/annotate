@@ -191,6 +191,9 @@
 									foreach ($anno["body"] as $item) {
 										if($item["purpose"] == "tagging") {
 											$value = strtolower($item["value"]);
+											#if(preg_match("/^\s*$/", $value)) {
+											#	dier("$path is empty: >$value<");
+											#}
 											if(!array_key_exists($value, $annos)) {
 												$annos[$value] = 1;
 											} else {
