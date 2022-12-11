@@ -500,14 +500,14 @@ async function set_all_current_annotations_to (name) {
 }
 
 async function load_page() {
-	await load_list();
-
 	//nr_cur_anno("make_item_anno in load_page start");
 	await make_item_anno($("#image")[0], [
 		{
 			widget: 'TAG', vocabulary: tags
 		}
 	]);
+
+	await load_list();
 
 	//nr_cur_anno("make_item_anno in load_page end");
 }
