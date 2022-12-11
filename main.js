@@ -140,7 +140,7 @@ async function make_item_anno(elem, widgets={}) {
 			data: a,
 			success: async function (response) {
 				success("OK", response);
-				await load_list();
+				await load_dynamic_content();
 				await create_selects_from_annotation();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -163,7 +163,7 @@ async function make_item_anno(elem, widgets={}) {
 			data: a,
 			success: async function (response) {
 				success("OK", response)
-				await load_list();
+				await load_dynamic_content();
 				await create_selects_from_annotation();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -290,7 +290,7 @@ async function save_anno (annotation) {
 		data: a,
 		success: async function (response) {
 			success("OK", response);
-			await load_list();
+			await load_dynamic_content();
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			error(textStatus, errorThrown);
@@ -477,11 +477,12 @@ async function set_all_current_annotations_from_to (from, name) {
 		await save_anno(new_annos[i]);
 	}
 
+	await load_dynamic_content();
 	await create_selects_from_annotation();
 }
 
 async function load_page() {
-	await load_list();
+	await load_dynamic_content();
 
 	await make_item_anno($("#image")[0], [
 		{
@@ -491,7 +492,7 @@ async function load_page() {
 
 }
 
-async function load_list () {
+async function load_dynamic_content () {
 	await $.ajax({
 		url: "print_home.php",
 		type: "GET",
