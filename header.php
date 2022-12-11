@@ -87,9 +87,6 @@ include_once("functions.php");
 
 <!-- Tab content -->
 <div id="tab_home" class="tabcontent">
-<?php
-print_home();
-?>
 </div>
 
 <div id="tab_export" class="tabcontent">

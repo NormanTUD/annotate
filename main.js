@@ -507,6 +507,19 @@ async function load_page() {
 
 async function load_list () {
 	await $.ajax({
+		url: "print_home.php",
+		type: "GET",
+		dataType: "html",
+		success: function (data) {
+			$('#tab_home').html("");
+			$('#tab_home').html(data);
+		},
+		error: function (xhr, status) {
+			error("Error loading the List", "Sorry, there was a problem!");
+		}
+	});
+
+	await $.ajax({
 		url: "get_current_list.php",
 		type: "GET",
 		dataType: "html",
@@ -551,10 +564,26 @@ function set_image_url (img) {
 }
 
 function set_img_from_filename (fn) {
+	set_image_url(fn);
 	$("#filename").html(fn);
 	$("#image").prop("src", "images/" + fn);
 
+
 	load_page();
+}
+
+function load_next_random_image () {
+	$.ajax({
+		url: "get_random_unannotated_image.php",
+		type: "GET",
+		dataType: "html",
+		success: function (fn) {
+			set_img_from_filename(fn);
+		},
+		error: function (xhr, status) {
+			error("Error loading the List", "Sorry, there was a problem!");
+		}
+	});
 }
 
 document.onkeydown = function (e) {
@@ -572,7 +601,7 @@ document.onkeydown = function (e) {
 			move_to_offtopic();
 			break;
 		case 78:
-			next_img()
+			load_next_random_image()
 			break;
 		case 75:
 			ai_file($('#image')[0]);
