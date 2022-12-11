@@ -145,6 +145,7 @@ async function make_item_anno(elem, widgets={}) {
 				//alert("C");
 				success("OK", response);
 				await load_list();
+				await create_selects_from_annotation();
 				//alert("D");
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -170,6 +171,7 @@ async function make_item_anno(elem, widgets={}) {
 				//nr_cur_anno("updateAnnotation ajax start");
 				success("OK", response)
 				await load_list();
+				await create_selects_from_annotation();
 				//nr_cur_anno("updateAnnotation ajax end");
 				//alert("E");
 			},
@@ -193,10 +195,11 @@ async function make_item_anno(elem, widgets={}) {
 			url: "delete_annotation.php",
 			type: "post",
 			data: a,
-			success: function (response) {
+			success: async function (response) {
 				//alert("H");
 				//nr_cur_anno("deleteAnnotation ajax start");
 				success("OK", response)
+				await create_selects_from_annotation();
 				//nr_cur_anno("deleteAnnotation ajax end");
 				//alert("I");
 			},
