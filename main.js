@@ -176,7 +176,6 @@ async function make_item_anno(elem, widgets={}) {
 			"source": annotation.target.source.replace(/.*\//, ""),
 			"full": JSON.stringify(annotation)
 		};
-		log(a);
 		$.ajax({
 			url: "delete_annotation.php",
 			type: "post",
@@ -321,7 +320,7 @@ function get_names_from_ki_anno (anno) {
 
 async function ai_file (elem) {
 	$("body").css("cursor", "progress");
-	toastr["success"]("Success!", "KI gestartet... Bitte warten");
+	success("Success!", "KI gestartet... Bitte warten");
 	await anno.clearAnnotations();
 
 	await load_model();
@@ -387,14 +386,10 @@ async function ai_file (elem) {
 		}
 	}
 
-	log(a);
-
 	var msg = "KI erfolgreich durchgelaufen";
 
-	toastr["success"]("Success!", msg);
-	log("AAAA", a);
+	success("Success!", msg);
 	await anno.setAnnotations(a);
-
 
 	var new_annos = await anno.getAnnotations();
 	for (var i = 0; i < new_annos.length; i++) {
@@ -406,18 +401,14 @@ async function ai_file (elem) {
 
 async function create_selects_from_annotation() {
 	if(typeof(anno) != "object") {
-		log("X");
 		return;
 	}
-	log("Y");
 	var ki_names = get_names_from_ki_anno(await anno.getAnnotations());
 
 	if(Object.keys(ki_names).length) {
 		var html = "";
 
 		var selects = [];
-
-		log(ki_names);
 
 		var ki_names_keys = Object.keys(ki_names);
 
@@ -438,11 +429,8 @@ async function create_selects_from_annotation() {
 		$("#ki_detected_names").html(html);
 
 		$(".ki_select_box").change(async function (x, y, z) {
-			log("ki_select_box: ", x);
 			var old_value = previous[$(this).data("nr")];
 			var new_value = x.currentTarget.value
-
-			log("from " + old_value + " to " + new_value);
 
 			await set_all_current_annotations_from_to(old_value, new_value);
 
@@ -454,7 +442,6 @@ async function create_selects_from_annotation() {
 }
 
 async function set_all_current_annotations_from_to (from, name) {
-	log("set_all_current_annotations_from_to");
 	var current = await anno.getAnnotations();
 
 	for (var i = 0; i < current.length; i++) {
