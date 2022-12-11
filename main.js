@@ -132,6 +132,7 @@ function make_item_anno(elem, widgets={}) {
 			data: a,
 			success: function (response) {
 				success("OK", response);
+				load_list();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -153,6 +154,7 @@ function make_item_anno(elem, widgets={}) {
 			data: a,
 			success: function (response) {
 				success("OK", response)
+				load_list();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -276,6 +278,7 @@ function save_anno (annotation) {
 		data: a,
 		success: function (response) {
 			success("OK", response);
+			load_list();
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			error(textStatus, errorThrown);
