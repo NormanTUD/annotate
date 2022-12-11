@@ -115,13 +115,10 @@ async function make_item_anno(elem, widgets={}) {
 		anno = undefined;
 	}
 
-	//nr_cur_anno("make_item_anno start Annotorious");
 	anno = await Annotorious.init({
 		image: elem,
 		widgets: widgets
 	});
-	//nr_cur_anno("make_item_anno end Annotorious");
-	//anno.readOnly = true;
 
 	await anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
 	await create_selects_from_annotation();
@@ -142,11 +139,9 @@ async function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: async function (response) {
-				//alert("C");
 				success("OK", response);
 				await load_list();
 				await create_selects_from_annotation();
-				//alert("D");
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -167,13 +162,9 @@ async function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: async function (response) {
-				//alert("D");
-				//nr_cur_anno("updateAnnotation ajax start");
 				success("OK", response)
 				await load_list();
 				await create_selects_from_annotation();
-				//nr_cur_anno("updateAnnotation ajax end");
-				//alert("E");
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -196,12 +187,8 @@ async function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: async function (response) {
-				//alert("H");
-				//nr_cur_anno("deleteAnnotation ajax start");
 				success("OK", response)
 				await create_selects_from_annotation();
-				//nr_cur_anno("deleteAnnotation ajax end");
-				//alert("I");
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -213,19 +200,15 @@ async function make_item_anno(elem, widgets={}) {
 		log(selection);
 	})
 
-	//nr_cur_anno("make_item_anno near end start");
 	if(!(await anno.getAnnotations().length)) {
 		await ai_file($('#image')[0]);
 	}
-	//nr_cur_anno("make_item_anno near end end");
 }
 
 async function create_annos () {
 	var items = $(".images");
 	for (var i = 0; i < items.length; i++) {
-		//nr_cur_anno("create_annos start");
 		await make_item_anno(items[i]);
-		//nr_cur_anno("create_annos end");
 	}
 }
 
@@ -518,14 +501,12 @@ async function set_all_current_annotations_to (name) {
 async function load_page() {
 	await load_list();
 
-	//nr_cur_anno("make_item_anno in load_page start");
 	await make_item_anno($("#image")[0], [
 		{
 			widget: 'TAG', vocabulary: tags
 		}
 	]);
 
-	//nr_cur_anno("make_item_anno in load_page end");
 }
 
 async function load_list () {
@@ -597,31 +578,22 @@ async function set_img_from_filename (fn) {
 }
 
 async function load_next_random_image (fn=false) {
-	//nr_cur_anno("load_next_random_image end");
 	if(fn) {
 		set_img_from_filename(fn);
 	} else {
-		//nr_cur_anno("load_next_random_image start");
 		await $.ajax({
 			url: "get_random_unannotated_image.php",
 			type: "GET",
 			dataType: "html",
 			success: async function (fn) {
-				//alert("F");
-				//nr_cur_anno("inside load_next_random_image ajax start");
 				await set_img_from_filename(fn);
-				//nr_cur_anno("inside load_next_random_image ajax end");
-				//nr_cur_anno("load_next_random_image done ajax");
-				//alert("G");
 			},
 			error: function (xhr, status) {
 				error("Error loading the List", "Sorry, there was a problem!");
 			}
 		});
-		//nr_cur_anno("load_next_random_image end");
 	}
 
-	//nr_cur_anno("load_next_random_image done");
 }
 
 function add_function_debugger () {
@@ -673,14 +645,6 @@ function add_function_debugger () {
                         }
                 }
         }
-}
-
-function nr_cur_anno (n) {
-	if(typeof(anno) == "object") {
-		log(anno.getAnnotations().length + " (" + n + ")");
-	} else {
-		log("0 (no anno object, " + n + ")");
-	}
 }
 
 document.onkeydown = function (e) {
