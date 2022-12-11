@@ -37,14 +37,18 @@ async function load_model () {
 }
 
 function memory_debugger () {
-	var mem = tf.memory();
-	var num_tensors = mem.numTensors;
-	var num_bytes = mem.numBytes;
-	var num_mb = num_bytes / (1024 ** 2);
+	try {
+		var mem = tf.memory();
+		var num_tensors = mem.numTensors;
+		var num_bytes = mem.numBytes;
+		var num_mb = num_bytes / (1024 ** 2);
 
-	var str = `Memory: ${num_mb}MB (${num_tensors} tensors)`;
+		var str = `Memory: ${num_mb}MB (${num_tensors} tensors)`;
 
-	$("#memory_debugger").html(str);
+		$("#memory_debugger").html(str);
+	} catch (e) {
+		$("#memory_debugger").html("");
+	}
 }
 
 var anno;
@@ -339,6 +343,7 @@ async function ai_file (elem) {
 
 	var [modelWidth, modelHeight] = model.inputs[0].shape.slice(1, 3);
 
+	tf.engine().startScope();
 	var res = await model.executeAsync(tf.browser.fromPixels($("#image")[0]).resizeBilinear([modelWidth,modelHeight]).div(255).expandDims());
 	$("body").css("cursor", "default");
 
@@ -347,6 +352,7 @@ async function ai_file (elem) {
 	const boxes_data = await boxes.arraySync()[0];
 	const scores_data = await scores.arraySync()[0];
 	const classes_data = await classes.arraySync()[0];
+	tf.engine().endScope();
 
 	var a = [];
 
