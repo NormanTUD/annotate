@@ -500,6 +500,34 @@ async function load_list () {
 	});
 }
 
+function getNewURL(url, param, paramVal){
+	var newAdditionalURL = "";
+	var tempArray = url.split("?");
+	var baseURL = tempArray[0];
+	var additionalURL = tempArray[1];
+	var temp = "";
+	if (additionalURL) {
+		tempArray = additionalURL.split("&");
+		for (var i=0; i<tempArray.length; i++){
+			if(tempArray[i].split('=')[0] != param){
+				newAdditionalURL += temp + tempArray[i];
+				temp = "&";
+			}
+		}
+	}
+
+	var rows_txt = temp + "" + param + "=" + encodeURIComponent(paramVal);
+	return baseURL + "?" + newAdditionalURL + rows_txt;
+}
+
+function update_url_param(param, val) {
+	window.history.replaceState('', '', getNewURL(window.location.href, param, val));
+}
+
+function set_image_url (img) {
+	update_url_param("edit", img);
+}
+
 document.onkeydown = function (e) {
 	if($(":focus").length) {
 		return;
