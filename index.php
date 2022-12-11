@@ -2,16 +2,7 @@
 include("header.php");
 include_once("functions.php");
 
-$files = scandir("images");
 
-$img_files = array();
-
-foreach($files as $file) {
-	if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-		$annotations = number_of_annotations_total($file);
-		$img_files[$file] = $annotations;
-	}
-}
 
 if(array_key_exists("move_from_identifiable", $_GET)) {
 	if(!preg_match("/\.\./", $_GET["move_from_identifiable"]) && preg_match("/\.jpg/", $_GET["move_from_identifiable"])) {
@@ -77,18 +68,7 @@ if(array_key_exists("move_to_offtopic", $_GET)) {
 	}
 }
 
-$img_files = shuffle_assoc($img_files);
-asort($img_files);
-
-$j = 0;
-$imgfile = "";
-foreach ($img_files as $f => $k) {
-	if($j != 0) {
-		continue;
-	}
-	$imgfile = $f;
-	$j++;
-}
+$imgfile = get_random_unannotated_image();
 
 if(array_key_exists("edit", $_GET)) {
 	$imgfile = $_GET["edit"];
