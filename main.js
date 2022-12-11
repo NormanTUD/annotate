@@ -124,6 +124,7 @@ async function make_item_anno(elem, widgets={}) {
 	//anno.readOnly = true;
 
 	await anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
+	await create_selects_from_annotation();
 
 	// Add event handlers using .on  
 	anno.on('createAnnotation', function(annotation) {
@@ -410,9 +411,28 @@ async function ai_file (elem) {
 	var msg = "KI erfolgreich durchgelaufen";
 
 	toastr["success"]("Success!", msg);
-	var ki_names = get_names_from_ki_anno(a);
+	log("AAAA", a);
+	await anno.setAnnotations(a);
+
+
+	var new_annos = await anno.getAnnotations();
+	for (var i = 0; i < new_annos.length; i++) {
+		await save_anno(new_annos[i]);
+	}
+
+	await create_selects_from_annotation();
+}
+
+async function create_selects_from_annotation() {
+	if(typeof(anno) != "object") {
+		log("X");
+		return;
+	}
+	log("Y");
+	var ki_names = get_names_from_ki_anno(await anno.getAnnotations());
+
 	if(Object.keys(ki_names).length) {
-		var html = "Von der KI gefundene Objekte: ";
+		var html = "";
 
 		var selects = [];
 
@@ -448,14 +468,7 @@ async function ai_file (elem) {
 			previous[$(this).data("nr")] = new_value;
 		});
 	} else {
-		$("#ki_detected_names").html("Die KI konnte keine Objekte erkennen");
-	}
-
-	await anno.setAnnotations(a);
-
-	var new_annos = await anno.getAnnotations();
-	for (var i = 0; i < new_annos.length; i++) {
-		await save_anno(new_annos[i]);
+		$("#ki_detected_names").html("Keine Objekte markiert");
 	}
 }
 
