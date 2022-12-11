@@ -467,6 +467,21 @@ function set_all_current_annotations_to (name) {
 	}
 }
 
+function load_list () {
+	$.ajax({
+		url: "get_current_list.php",
+		type: "GET",
+		dataType: "html",
+		success: function (data) {
+			$('#list').html("");
+			$('#list').html(data);
+		},
+		error: function (xhr, status) {
+			error("Error loading the List", "Sorry, there was a problem!");
+		}
+	});
+}
+
 document.onkeydown = function (e) {
 	if($(":focus").length) {
 		return;

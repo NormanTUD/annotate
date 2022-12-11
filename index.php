@@ -107,18 +107,8 @@ if(!file_exists("images/$imgfile")) {
 			</td>
 			<td>
 				Aktuelle Tags:
-<?php
-				$tags = get_current_tags();
-				$tags_as_array = [];
-				print "<ul style='list-style: conic-gradient'>";
-				foreach ($tags as $tag => $nr) {
-					print "<li><a target='_blank' href='export_annotations.php?format=html&show_categories[]=".htmlentities(urlencode($tag))."'>$tag ($nr)</li>";
-					//$tags[] = $tag;
-				}
-				print "</ul>";
 
-
-?>
+				<div id="list"></div>
 			</td>
 		</tr>
 	</table>
@@ -129,6 +119,8 @@ if(!file_exists("images/$imgfile")) {
 				widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', array_keys($tags)).'"'; ?> ]
 			}
 		]);
+
+		load_list();
 	</script>
 <?php
 	include_once("footer.php");
