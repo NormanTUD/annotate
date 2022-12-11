@@ -14,6 +14,7 @@ async function load_model () {
 	if(model) {
 		return;
 	}
+
 	model = await tf.loadGraphModel(
 		'./model.json',
 		{
@@ -317,10 +318,8 @@ function get_names_from_ki_anno (anno) {
 async function ai_file (elem) {
 	$("body").css("cursor", "progress");
 	toastr["success"]("Success!", "KI gestartet... Bitte warten");
-	alert("C");
-	console.trace();
 	await anno.clearAnnotations();
-	alert("D");
+
 	await load_model();
 	await tf.ready();
 
@@ -497,9 +496,7 @@ function set_all_current_annotations_to (name) {
 
 async function load_page() {
 	if(typeof(anno) == "object") {
-		alert("A");
 		anno.destroy();
-		alert("B");
 	}
 
 	await load_list();
