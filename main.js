@@ -110,11 +110,13 @@ function error (title, msg) {
 	toastr["error"](title, msg);
 }
 
-function make_item_anno(elem, widgets={}) {
+async function make_item_anno(elem, widgets={}) {
+	nr_cur_anno("G");
 	anno = Annotorious.init({
 		image: elem,
 		widgets: widgets
 	});
+	nr_cur_anno("H");
 	//anno.readOnly = true;
 
 	anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
@@ -156,8 +158,10 @@ function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: async function (response) {
+				nr_cur_anno("K");
 				success("OK", response)
 				await load_list();
+				nr_cur_anno("L");
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -180,7 +184,9 @@ function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: function (response) {
+				nr_cur_anno("M");
 				success("OK", response)
+				nr_cur_anno("N");
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -192,15 +198,19 @@ function make_item_anno(elem, widgets={}) {
 		log(selection);
 	})
 
+	nr_cur_anno("I");
 	if(!(anno.getAnnotations().length)) {
-		ai_file($('#image')[0]);
+		await ai_file($('#image')[0]);
 	}
+	nr_cur_anno("J");
 }
 
-function create_annos () {
+async function create_annos () {
 	var items = $(".images");
 	for (var i = 0; i < items.length; i++) {
-		make_item_anno(items[i]);
+		nr_cur_anno("E");
+		await make_item_anno(items[i]);
+		nr_cur_anno("F");
 	}
 }
 
@@ -496,16 +506,20 @@ function set_all_current_annotations_to (name) {
 
 async function load_page() {
 	if(typeof(anno) == "object") {
+		nr_cur_anno("A");
 		anno.destroy();
+		nr_cur_anno("B");
 	}
 
 	await load_list();
 
-	make_item_anno($("#image")[0], [
+	nr_cur_anno("C");
+	await make_item_anno($("#image")[0], [
 		{
 			widget: 'TAG', vocabulary: tags
 		}
 	]);
+	nr_cur_anno("D");
 }
 
 async function load_list () {
@@ -583,7 +597,9 @@ function load_next_random_image (fn=false) {
 			type: "GET",
 			dataType: "html",
 			success: function (fn) {
+				nr_cur_anno("O");
 				set_img_from_filename(fn);
+				nr_cur_anno("P");
 			},
 			error: function (xhr, status) {
 				error("Error loading the List", "Sorry, there was a problem!");
@@ -628,6 +644,13 @@ function add_function_debugger () {
         }
 }
 
+function nr_cur_anno (n) {
+	if(typeof(anno) == "object") {
+		log(n + ": " + anno.getAnnotations().length);
+	} else {
+		log(n + ": 0 (no anno object)");
+	}
+}
 
 document.onkeydown = function (e) {
 	if($(":focus").length) {
