@@ -2,6 +2,8 @@
 
 var model;
 
+var tags = [];
+
 function uuidv4() {
 	return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
 		(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -130,9 +132,9 @@ function make_item_anno(elem, widgets={}) {
 			url: "submit.php",
 			type: "post",
 			data: a,
-			success: function (response) {
+			success: async function (response) {
 				success("OK", response);
-				load_list();
+				await load_list();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -152,9 +154,9 @@ function make_item_anno(elem, widgets={}) {
 			url: "submit.php",
 			type: "post",
 			data: a,
-			success: function (response) {
+			success: async function (response) {
 				success("OK", response)
-				load_list();
+				await load_list();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -276,9 +278,9 @@ function save_anno (annotation) {
 		url: "submit.php",
 		type: "post",
 		data: a,
-		success: function (response) {
+		success: async function (response) {
 			success("OK", response);
-			load_list();
+			await load_list();
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			error(textStatus, errorThrown);
@@ -470,14 +472,27 @@ function set_all_current_annotations_to (name) {
 	}
 }
 
-function load_list () {
-	$.ajax({
+async function load_page() {
+	await load_list();
+
+	//widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', array_keys($tags)).'"'; ?> ]
+	make_item_anno($("#image")[0], [
+		{
+			widget: 'TAG', vocabulary: tags
+		}
+	]);
+}
+
+async function load_list () {
+	await $.ajax({
 		url: "get_current_list.php",
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
+			var d = JSON.parse(data);
+			tags = Object.keys(d.tags);
 			$('#list').html("");
-			$('#list').html(data);
+			$('#list').html(d.html);
 		},
 		error: function (xhr, status) {
 			error("Error loading the List", "Sorry, there was a problem!");
