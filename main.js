@@ -160,10 +160,10 @@ async function make_item_anno(elem, widgets={}) {
 			data: a,
 			success: async function (response) {
 				//alert("D");
-				nr_cur_anno("updateAnnotation ajax start");
+				//nr_cur_anno("updateAnnotation ajax start");
 				success("OK", response)
 				await load_list();
-				nr_cur_anno("updateAnnotation ajax end");
+				//nr_cur_anno("updateAnnotation ajax end");
 				//alert("E");
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -188,9 +188,9 @@ async function make_item_anno(elem, widgets={}) {
 			data: a,
 			success: function (response) {
 				//alert("H");
-				nr_cur_anno("deleteAnnotation ajax start");
+				//nr_cur_anno("deleteAnnotation ajax start");
 				success("OK", response)
-				nr_cur_anno("deleteAnnotation ajax end");
+				//nr_cur_anno("deleteAnnotation ajax end");
 				//alert("I");
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -213,9 +213,9 @@ async function make_item_anno(elem, widgets={}) {
 async function create_annos () {
 	var items = $(".images");
 	for (var i = 0; i < items.length; i++) {
-		nr_cur_anno("create_annos start");
+		//nr_cur_anno("create_annos start");
 		await make_item_anno(items[i]);
-		nr_cur_anno("create_annos end");
+		//nr_cur_anno("create_annos end");
 	}
 }
 
@@ -510,7 +510,7 @@ async function load_page() {
 		}
 	]);
 
-	nr_cur_anno("make_item_anno in load_page end");
+	//nr_cur_anno("make_item_anno in load_page end");
 }
 
 async function load_list () {
@@ -582,7 +582,7 @@ async function set_img_from_filename (fn) {
 }
 
 async function load_next_random_image (fn=false) {
-	nr_cur_anno("load_next_random_image end");
+	//nr_cur_anno("load_next_random_image end");
 	if(fn) {
 		set_img_from_filename(fn);
 	} else {
@@ -596,7 +596,7 @@ async function load_next_random_image (fn=false) {
 				//nr_cur_anno("inside load_next_random_image ajax start");
 				await set_img_from_filename(fn);
 				//nr_cur_anno("inside load_next_random_image ajax end");
-				nr_cur_anno("load_next_random_image done ajax");
+				//nr_cur_anno("load_next_random_image done ajax");
 				//alert("G");
 			},
 			error: function (xhr, status) {
@@ -606,7 +606,7 @@ async function load_next_random_image (fn=false) {
 		//nr_cur_anno("load_next_random_image end");
 	}
 
-	nr_cur_anno("load_next_random_image done");
+	//nr_cur_anno("load_next_random_image done");
 }
 
 function add_function_debugger () {
@@ -631,6 +631,7 @@ function add_function_debugger () {
 						if(typeof(anno) == "object") {
 							old_annotations = anno.getAnnotations().length;
 						}
+
                                                 var result = window["${i}_original_function"](...args);
 
 						if(typeof(anno) == "object") {
@@ -639,8 +640,8 @@ function add_function_debugger () {
 
                                                 var _end_time = + new Date();
 
-						if(typeof(anno) == "object" && old_annotations > new_annotations) {
-							log("========== function ${i} ==========: " + new_annos);
+						if(typeof(anno) == "object" && old_annotations != new_annotations) {
+							log("========== function ${i} ==========: " + new_annotations);
 							console.trace();
 						}
                                                 return result;
