@@ -472,10 +472,32 @@ function set_all_current_annotations_to (name) {
 	}
 }
 
+function set_all_current_annotations_to (name) {
+	var current = anno.getAnnotations();
+
+	for (var i = 0; i < current.length; i++) {
+		var old = current[i]["body"][0]["value"];
+		if(old != name) {
+			current[i]["body"][0]["value"] = name;
+			log("changed " + old + " to " + name);
+		}
+	}
+
+	anno.setAnnotations(current);
+
+	var new_annos = anno.getAnnotations();
+	for (var i = 0; i < new_annos.length; i++) {
+		save_anno(new_annos[i]);
+	}
+}
+
 async function load_page() {
+	if(typeof(anno) == "object") {
+		anno.destroy();
+	}
+
 	await load_list();
 
-	//widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', array_keys($tags)).'"'; ?> ]
 	make_item_anno($("#image")[0], [
 		{
 			widget: 'TAG', vocabulary: tags
@@ -526,6 +548,13 @@ function update_url_param(param, val) {
 
 function set_image_url (img) {
 	update_url_param("edit", img);
+}
+
+function set_img_from_filename (fn) {
+	$("#filename").html(fn);
+	$("#image").prop("src", "images/" + fn);
+
+	load_page();
 }
 
 document.onkeydown = function (e) {

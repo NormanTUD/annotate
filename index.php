@@ -102,7 +102,8 @@ if(!file_exists("images/$imgfile")) {
 					</p>
 					<div id="ki_detected_names"></div>
 					<img id="image" src="images/<?php print $imgfile; ?>">
-					<br><?php print $imgfile; ?>
+					<br>
+					<div id="filename"></div>
 				</div>
 			</td>
 			<td>
