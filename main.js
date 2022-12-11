@@ -110,11 +110,6 @@ function error (title, msg) {
 }
 
 async function make_item_anno(elem, widgets={}) {
-	if(typeof(anno) == "object") {
-		await anno.destroy();
-		anno = undefined;
-	}
-
 	anno = await Annotorious.init({
 		image: elem,
 		widgets: widgets
@@ -482,6 +477,11 @@ async function set_all_current_annotations_from_to (from, name) {
 }
 
 async function load_page() {
+	if(typeof(anno) == "object") {
+		await anno.destroy();
+		anno = undefined;
+	}
+
 	await load_dynamic_content();
 
 	await make_item_anno($("#image")[0], [
