@@ -592,6 +592,43 @@ function load_next_random_image (fn=false) {
 	}
 }
 
+function add_function_debugger () {
+
+        for (var i in window) {
+                if(typeof(window[i]) == "function" && !["log", "$", "getComputedStyle"].includes(i)) {
+
+                        // wenn der Name der Funktion nicht den String "original_function enthält"
+                        if(i.indexOf("original_function") == -1) {
+
+                                // kopiere die Funktion namens "i" nach "i_original_function"
+                                window[i + "_original_function"] = window[i];
+
+                                try {
+                                        var execute_this = `
+                                        window["${i}"] = function (...args) {
+                                                var _start_time = + new Date();
+                                                var result = window["${i}_original_function"](...args);
+                                                var _end_time = + new Date();
+                                                log("========== function ${i} ==========");
+                                                log("result:", result, "args:", args, "time:", _end_time - _start_time);
+                                                console.trace();
+                                                return result;
+                                        }
+                                        `;
+
+                                        eval(execute_this);
+
+                                } catch (e) {
+                                        console.warn(e);
+                                        log(i);
+                                        window[i] = window[i + "_original_function"];
+                                }
+                        }
+                }
+        }
+}
+
+
 document.onkeydown = function (e) {
 	if($(":focus").length) {
 		return;
