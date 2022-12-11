@@ -1,91 +1,70 @@
 <?php
-include("header.php");
-include_once("functions.php");
+	include("header.php");
+	include_once("functions.php");
 
-if(array_key_exists("move_from_identifiable", $_GET)) {
-	if(!preg_match("/\.\./", $_GET["move_from_identifiable"]) && preg_match("/\.jpg/", $_GET["move_from_identifiable"])) {
-		$f = "identifiable/".$_GET["move_from_identifiable"];
-		$t = "images/".$_GET["move_from_identifiable"];
-		if(file_exists($f)) {
-			if(!file_exists($t)) {
-				rename($f, $t);
+	if(array_key_exists("move_from_identifiable", $_GET)) {
+		if(!preg_match("/\.\./", $_GET["move_from_identifiable"]) && preg_match("/\.jpg/", $_GET["move_from_identifiable"])) {
+			$f = "identifiable/".$_GET["move_from_identifiable"];
+			$t = "images/".$_GET["move_from_identifiable"];
+			if(file_exists($f)) {
+				if(!file_exists($t)) {
+					rename($f, $t);
+				} else {
+					mywarn("$f wurde gefunden, aber $t exitiert bereits");
+				}
 			} else {
-				mywarn("$f wurde gefunden, aber $t exitiert bereits");
+				mywarn("$f wurde nicht gefunden");
 			}
-		} else {
-			mywarn("$f wurde nicht gefunden");
 		}
 	}
-}
 
-if(array_key_exists("move_from_offtopic", $_GET)) {
-	if(!preg_match("/\.\./", $_GET["move_from_offtopic"]) && preg_match("/\.jpg/", $_GET["move_from_offtopic"])) {
-		$f = "offtopic/".$_GET["move_from_offtopic"];
-		$t = "images/".$_GET["move_from_offtopic"];
-		if(file_exists($f)) {
-			if(!file_exists($t)) {
-				rename($f, $t);
+	if(array_key_exists("move_from_offtopic", $_GET)) {
+		if(!preg_match("/\.\./", $_GET["move_from_offtopic"]) && preg_match("/\.jpg/", $_GET["move_from_offtopic"])) {
+			$f = "offtopic/".$_GET["move_from_offtopic"];
+			$t = "images/".$_GET["move_from_offtopic"];
+			if(file_exists($f)) {
+				if(!file_exists($t)) {
+					rename($f, $t);
+				} else {
+					mywarn("$f wurde gefunden, aber $t exitiert bereits");
+				}
 			} else {
-				mywarn("$f wurde gefunden, aber $t exitiert bereits");
+				mywarn("$f wurde nicht gefunden");
 			}
-		} else {
-			mywarn("$f wurde nicht gefunden");
 		}
 	}
-}
 
-if(array_key_exists("move_to_unidentifiable", $_GET)) {
-	if(!preg_match("/\.\./", $_GET["move_to_unidentifiable"]) && preg_match("/\.jpg/", $_GET["move_to_unidentifiable"])) {
-		$f = "images/".$_GET["move_to_unidentifiable"];
-		$t = "unidentifiable/".$_GET["move_to_unidentifiable"];
-		if(file_exists($f)) {
-			if(!file_exists($t)) {
-				rename($f, $t);
+	if(array_key_exists("move_to_unidentifiable", $_GET)) {
+		if(!preg_match("/\.\./", $_GET["move_to_unidentifiable"]) && preg_match("/\.jpg/", $_GET["move_to_unidentifiable"])) {
+			$f = "images/".$_GET["move_to_unidentifiable"];
+			$t = "unidentifiable/".$_GET["move_to_unidentifiable"];
+			if(file_exists($f)) {
+				if(!file_exists($t)) {
+					rename($f, $t);
+				} else {
+					mywarn("$f wurde gefunden, aber $t exitiert bereits");
+				}
 			} else {
-				mywarn("$f wurde gefunden, aber $t exitiert bereits");
+				mywarn("$f wurde nicht gefunden");
 			}
-		} else {
-			mywarn("$f wurde nicht gefunden");
 		}
 	}
-}
 
-if(array_key_exists("move_to_offtopic", $_GET)) {
-	if(!preg_match("/\.\./", $_GET["move_to_offtopic"]) && preg_match("/\.jpg/", $_GET["move_to_offtopic"])) {
-		$f = "images/".$_GET["move_to_offtopic"];
-		$t = "offtopic/".$_GET["move_to_offtopic"];
-		if(file_exists($f)) {
-			if(!file_exists($t)) {
-				rename($f, $t);
+	if(array_key_exists("move_to_offtopic", $_GET)) {
+		if(!preg_match("/\.\./", $_GET["move_to_offtopic"]) && preg_match("/\.jpg/", $_GET["move_to_offtopic"])) {
+			$f = "images/".$_GET["move_to_offtopic"];
+			$t = "offtopic/".$_GET["move_to_offtopic"];
+			if(file_exists($f)) {
+				if(!file_exists($t)) {
+					rename($f, $t);
+				} else {
+					mywarn("$f wurde gefunden, aber $t exitiert bereits");
+				}
 			} else {
-				mywarn("$f wurde gefunden, aber $t exitiert bereits");
+				mywarn("$f wurde nicht gefunden");
 			}
-		} else {
-			mywarn("$f wurde nicht gefunden");
 		}
 	}
-}
-
-$imgfile = get_random_unannotated_image();
-
-if(array_key_exists("edit", $_GET)) {
-	$imgfile = $_GET["edit"];
-} else {
-	header('Location:'.$_SERVER['PHP_SELF'].'?edit='.urlencode($imgfile));
-	exit(0);
-}
-
-if(!$imgfile) {
-	die("Cannot find an image");
-}
-
-if(!file_exists("images/$imgfile")) {
-	print("Cannot find given image");
-	header('Location:'.$_SERVER['PHP_SELF']);
-	exit();
-}
-
-#print_header();
 ?>
 	<br>
 
