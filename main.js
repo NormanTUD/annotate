@@ -110,8 +110,13 @@ function error (title, msg) {
 }
 
 async function make_item_anno(elem, widgets={}) {
+	if(typeof(anno) == "object") {
+		await anno.destroy();
+		anno = undefined;
+	}
+
 	//nr_cur_anno("make_item_anno start Annotorious");
-	anno = Annotorious.init({
+	anno = await Annotorious.init({
 		image: elem,
 		widgets: widgets
 	});
@@ -494,13 +499,6 @@ async function set_all_current_annotations_to (name) {
 }
 
 async function load_page() {
-	if(typeof(anno) == "object") {
-		//nr_cur_anno("load_page, anno is object, start");
-		log("destroy anno");
-		anno.destroy();
-		//nr_cur_anno("load_page, anno is object, end");
-	}
-
 	await load_list();
 
 	//nr_cur_anno("make_item_anno in load_page start");
