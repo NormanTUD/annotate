@@ -454,6 +454,7 @@ async function ai_file (elem) {
 }
 
 async function set_all_current_annotations_from_to (from, name) {
+	log("set_all_current_annotations_from_to");
 	var current = anno.getAnnotations();
 
 	for (var i = 0; i < current.length; i++) {
@@ -473,6 +474,7 @@ async function set_all_current_annotations_from_to (from, name) {
 }
 
 async function set_all_current_annotations_to (name) {
+	log("set_all_current_annotations_to");
 	var current = anno.getAnnotations();
 
 	for (var i = 0; i < current.length; i++) {
@@ -494,6 +496,7 @@ async function set_all_current_annotations_to (name) {
 async function load_page() {
 	if(typeof(anno) == "object") {
 		//nr_cur_anno("load_page, anno is object, start");
+		log("destroy anno");
 		anno.destroy();
 		//nr_cur_anno("load_page, anno is object, end");
 	}
@@ -607,9 +610,8 @@ async function load_next_random_image (fn=false) {
 }
 
 function add_function_debugger () {
-
         for (var i in window) {
-                if(typeof(window[i]) == "function" && !["log", "$", "getComputedStyle"].includes(i)) {
+                if(typeof(window[i]) == "function" && !["log", "$", "getComputedStyle", "add_function_debugger", "Or", "N", "wS", "Wc", "Wx", "Or", "Xc", "dispatchEvent", "removeEventListener", "addEventListener", "clearImmediate", "setImmediate", "jQuery", "xi", "h", "$e", "Oi", "Pr", "TS", "DS", "Kc", "queueMicrotask", "createImageBitmap", "clearTimeout", "structuredClone", "requestIdleCallback", "setResizable", "getDefaultComputedStyle", "close", "stop", "focus", "blur", "alert", "open", "prompt", "print", "captureEvents", "moveTo", "getSelection", "matchMedia", "releaseEvents", "confirm", "resizeTo", "resizeBy", "scrollBy", "scroll", "scrollTo", "sizeToContent", "updateCommands", "find", "cancelIdleCallback", "requestAnimationFrame", "cancelAnimationFrame", "reportError", "btoa", "atob", "setTimeout", "setInterval", "clearInterval", "fetch", "PS", "scrollByPages", "postMessage", "moveBy", "dump", "scrollByLines", "scrollByPages"].includes(i)) {
 
                         // wenn der Name der Funktion nicht den String "original_function enthält"
                         if(i.indexOf("original_function") == -1) {
@@ -618,14 +620,29 @@ function add_function_debugger () {
                                 window[i + "_original_function"] = window[i];
 
                                 try {
+					log("Replacing " + i);
                                         var execute_this = `
                                         window["${i}"] = function (...args) {
                                                 var _start_time = + new Date();
+
+						var old_annotations = 0;
+						var new_annotations = 0;
+
+						if(typeof(anno) == "object") {
+							old_annotations = anno.getAnnotations().length;
+						}
                                                 var result = window["${i}_original_function"](...args);
+
+						if(typeof(anno) == "object") {
+							new_annotations = anno.getAnnotations().length;
+						}
+
                                                 var _end_time = + new Date();
-                                                log("========== function ${i} ==========");
-                                                log("result:", result, "args:", args, "time:", _end_time - _start_time);
-                                                console.trace();
+
+						if(typeof(anno) == "object" && old_annotations > new_annotations) {
+							log("========== function ${i} ==========: " + new_annos);
+							console.trace();
+						}
                                                 return result;
                                         }
                                         `;
