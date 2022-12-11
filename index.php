@@ -106,7 +106,7 @@ if(!file_exists("images/$imgfile")) {
 				</div>
 			</td>
 			<td>
-				Aktuelle Tags (anklicken für Beispieldaten):
+				Aktuelle Tags:
 <?php
 				$tags = get_current_tags();
 				$tags_as_array = [];
