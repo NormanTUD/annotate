@@ -131,7 +131,6 @@ async function make_item_anno(elem, widgets={}) {
 	});
 
 	await anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
-	await create_selects_from_annotation();
 
 	// Add event handlers using .on  
 	anno.on('createAnnotation', function(annotation) {
@@ -151,7 +150,6 @@ async function make_item_anno(elem, widgets={}) {
 			success: async function (response) {
 				success("OK", response);
 				await load_dynamic_content();
-				await create_selects_from_annotation();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -174,7 +172,6 @@ async function make_item_anno(elem, widgets={}) {
 			success: async function (response) {
 				success("OK", response)
 				await load_dynamic_content();
-				await create_selects_from_annotation();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -197,7 +194,6 @@ async function make_item_anno(elem, widgets={}) {
 			data: a,
 			success: async function (response) {
 				success("OK", response)
-				await create_selects_from_annotation();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -412,11 +408,16 @@ async function ai_file (elem) {
 	for (var i = 0; i < new_annos.length; i++) {
 		await save_anno(new_annos[i]);
 	}
+}
 
-	await create_selects_from_annotation();
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function create_selects_from_annotation() {
+	if($(":focus").is("select")) {
+		return;
+	}
 	if(typeof(anno) != "object") {
 		return;
 	}
@@ -477,7 +478,6 @@ async function set_all_current_annotations_from_to (from, name) {
 	}
 
 	await load_dynamic_content();
-	await create_selects_from_annotation();
 }
 
 async function load_page() {
@@ -659,4 +659,5 @@ document.onkeydown = function (e) {
 	}
 }
 
-var memdebug_interval = setInterval(memory_debugger,1000);
+setInterval(memory_debugger, 1000);
+setInterval(create_selects_from_annotation, 1000);
