@@ -87,6 +87,8 @@ include_once("functions.php");
 
 <!-- Tab content -->
 <div id="tab_home" class="tabcontent">
+	<div id="tab_home_top"></div>
+	<div id="memory_debugger"></div>
 </div>
 
 <div id="tab_export" class="tabcontent">

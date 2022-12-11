@@ -36,6 +36,17 @@ async function load_model () {
 	$("#upload_button").show();
 }
 
+function memory_debugger () {
+	var mem = tf.memory();
+	var num_tensors = mem.numTensors;
+	var num_bytes = mem.numBytes;
+	var num_mb = num_bytes / (1024 ** 2);
+
+	var str = `Memory: ${num_mb}MB (${num_tensors} tensors)`;
+
+	$("#memory_debugger").html(str);
+}
+
 var anno;
 var previous = [];
 
@@ -485,8 +496,8 @@ async function load_dynamic_content () {
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			$('#tab_home').html("");
-			$('#tab_home').html(data);
+			$('#tab_home_top').html("");
+			$('#tab_home_top').html(data);
 		},
 		error: function (xhr, status) {
 			error("Error loading the List", "Sorry, there was a problem!");
@@ -641,3 +652,5 @@ document.onkeydown = function (e) {
 			break;
 	}
 }
+
+var memdebug_interval = setInterval(memory_debugger,1000);
