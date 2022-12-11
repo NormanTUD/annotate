@@ -114,13 +114,13 @@ if(!file_exists("images/$imgfile")) {
 	</table>
 
 	<script>
+		load_list();
+
 		make_item_anno($("#image")[0], [
 			{
 				widget: 'TAG', vocabulary: [ <?php print '"'.join('", "', array_keys($tags)).'"'; ?> ]
 			}
 		]);
-
-		load_list();
 	</script>
 <?php
 	include_once("footer.php");
