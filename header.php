@@ -72,7 +72,8 @@ include_once("functions.php");
 			"grüner blitz",
 			"fledermaus",
 			"halo mond",
-			"crown flash"
+			"crown flash",
+			"abgaswolke"
 		];
 	</script>
 </head>
