@@ -476,26 +476,8 @@ async function set_all_current_annotations_from_to (from, name) {
 	for (var i = 0; i < new_annos.length; i++) {
 		await save_anno(new_annos[i]);
 	}
-}
 
-async function set_all_current_annotations_to (name) {
-	log("set_all_current_annotations_to");
-	var current = await anno.getAnnotations();
-
-	for (var i = 0; i < current.length; i++) {
-		var old = current[i]["body"][0]["value"];
-		if(old != name) {
-			current[i]["body"][0]["value"] = name;
-			log("changed " + old + " to " + name);
-		}
-	}
-
-	await anno.setAnnotations(current);
-
-	var new_annos = await anno.getAnnotations();
-	for (var i = 0; i < new_annos.length; i++) {
-		await save_anno(new_annos[i]);
-	}
+	await create_selects_from_annotation();
 }
 
 async function load_page() {
