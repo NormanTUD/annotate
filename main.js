@@ -574,18 +574,22 @@ function set_img_from_filename (fn) {
 	load_page();
 }
 
-function load_next_random_image () {
-	$.ajax({
-		url: "get_random_unannotated_image.php",
-		type: "GET",
-		dataType: "html",
-		success: function (fn) {
-			set_img_from_filename(fn);
-		},
-		error: function (xhr, status) {
-			error("Error loading the List", "Sorry, there was a problem!");
-		}
-	});
+function load_next_random_image (fn=false) {
+	if(fn) {
+		set_img_from_filename(fn);
+	} else {
+		$.ajax({
+			url: "get_random_unannotated_image.php",
+			type: "GET",
+			dataType: "html",
+			success: function (fn) {
+				set_img_from_filename(fn);
+			},
+			error: function (xhr, status) {
+				error("Error loading the List", "Sorry, there was a problem!");
+			}
+		});
+	}
 }
 
 document.onkeydown = function (e) {
