@@ -102,7 +102,7 @@ if(!file_exists("images/$imgfile")) {
 						<button onclick="move_to_unidentifiable()">Bild ist nicht identifizierbar (u)</button>
 					</p>
 					<div id="ki_detected_names"></div>
-					<img id="image" src="images/<?php print $imgfile; ?>">
+					<img id="image" />
 					<br>
 					<div id="filename"></div>
 				</div>
@@ -116,7 +116,7 @@ if(!file_exists("images/$imgfile")) {
 	</table>
 
 	<script>
-		load_page();
+		load_next_random_image();
 	</script>
 <?php
 	include_once("footer.php");
