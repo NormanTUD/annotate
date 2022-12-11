@@ -123,7 +123,7 @@ async function make_item_anno(elem, widgets={}) {
 	//nr_cur_anno("make_item_anno end Annotorious");
 	//anno.readOnly = true;
 
-	anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
+	await anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
 
 	// Add event handlers using .on  
 	anno.on('createAnnotation', function(annotation) {
@@ -135,6 +135,7 @@ async function make_item_anno(elem, widgets={}) {
 			"source": annotation.target.source.replace(/.*\//, ""),
 			"full": JSON.stringify(annotation)
 		};
+
 		$.ajax({
 			url: "submit.php",
 			type: "post",
@@ -209,7 +210,7 @@ async function make_item_anno(elem, widgets={}) {
 	})
 
 	//nr_cur_anno("make_item_anno near end start");
-	if(!(anno.getAnnotations().length)) {
+	if(!(await anno.getAnnotations().length)) {
 		await ai_file($('#image')[0]);
 	}
 	//nr_cur_anno("make_item_anno near end end");
@@ -452,7 +453,7 @@ async function ai_file (elem) {
 
 	await anno.setAnnotations(a);
 
-	var new_annos = anno.getAnnotations();
+	var new_annos = await anno.getAnnotations();
 	for (var i = 0; i < new_annos.length; i++) {
 		await save_anno(new_annos[i]);
 	}
@@ -460,7 +461,7 @@ async function ai_file (elem) {
 
 async function set_all_current_annotations_from_to (from, name) {
 	log("set_all_current_annotations_from_to");
-	var current = anno.getAnnotations();
+	var current = await anno.getAnnotations();
 
 	for (var i = 0; i < current.length; i++) {
 		var old = current[i]["body"][0]["value"];
@@ -470,9 +471,9 @@ async function set_all_current_annotations_from_to (from, name) {
 		}
 	}
 
-	anno.setAnnotations(current);
+	await anno.setAnnotations(current);
 
-	var new_annos = anno.getAnnotations();
+	var new_annos = await anno.getAnnotations();
 	for (var i = 0; i < new_annos.length; i++) {
 		await save_anno(new_annos[i]);
 	}
@@ -480,7 +481,7 @@ async function set_all_current_annotations_from_to (from, name) {
 
 async function set_all_current_annotations_to (name) {
 	log("set_all_current_annotations_to");
-	var current = anno.getAnnotations();
+	var current = await anno.getAnnotations();
 
 	for (var i = 0; i < current.length; i++) {
 		var old = current[i]["body"][0]["value"];
@@ -490,9 +491,9 @@ async function set_all_current_annotations_to (name) {
 		}
 	}
 
-	anno.setAnnotations(current);
+	await anno.setAnnotations(current);
 
-	var new_annos = anno.getAnnotations();
+	var new_annos = await anno.getAnnotations();
 	for (var i = 0; i < new_annos.length; i++) {
 		await save_anno(new_annos[i]);
 	}
