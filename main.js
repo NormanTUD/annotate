@@ -414,8 +414,8 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function create_selects_from_annotation() {
-	if($(":focus").is("select")) {
+async function create_selects_from_annotation(force=0) {
+	if($(":focus").is("select") && !force) {
 		return;
 	}
 	if(typeof(anno) != "object") {
