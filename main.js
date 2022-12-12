@@ -451,7 +451,7 @@ async function create_selects_from_annotation(force=0) {
 			var new_value = x.currentTarget.value
 
 			await set_all_current_annotations_from_to(old_value, new_value);
-			await create_selects_from_annotation();
+			await create_selects_from_annotation(1);
 
 			previous[$(this).data("nr")] = new_value;
 		});
