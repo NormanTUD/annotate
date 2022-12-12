@@ -1,5 +1,5 @@
 <?php
-	ini_set('memory_limit', '1024M');
+	ini_set('memory_limit', '4096M');
 	include_once("functions.php");
 
 	$validation_split = get_get("validation_split", 0);
