@@ -2,6 +2,8 @@
 
 var model;
 
+var running_ki = false;
+
 var tags = [];
 
 function uuidv4() {
@@ -330,6 +332,7 @@ function get_names_from_ki_anno (anno) {
 }
 
 async function ai_file (elem) {
+	running_ki = true;
 	$("body").css("cursor", "progress");
 	success("Success!", "KI gestartet... Bitte warten");
 	await anno.clearAnnotations();
@@ -408,6 +411,7 @@ async function ai_file (elem) {
 	for (var i = 0; i < new_annos.length; i++) {
 		await save_anno(new_annos[i]);
 	}
+	running_ki = false;
 }
 
 function sleep(ms) {
@@ -456,7 +460,11 @@ async function create_selects_from_annotation(force=0) {
 			previous[$(this).data("nr")] = new_value;
 		});
 	} else {
-		$("#ki_detected_names").html("Keine Objekte markiert");
+		if(!running_ki) {
+			$("#ki_detected_names").html("Keine Objekte markiert");
+		} else {
+			$("#ki_detected_names").html("Bitte warten, die KI läuft...");
+		}
 	}
 }
 
