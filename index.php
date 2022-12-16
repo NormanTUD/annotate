@@ -75,6 +75,8 @@
 
 	<div id="loader"></div>
 
+	<span style="font-size: 20px; color: red">BITTE KEINE NEUEN KATEGORIEN EINFÜGEN</span>
+
 	<table>
 		<tr>
 			<td style="vertical-align: baseline;">
