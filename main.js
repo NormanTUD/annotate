@@ -44,6 +44,7 @@ function memory_debugger () {
 		var num_tensors = mem.numTensors;
 		var num_bytes = mem.numBytes;
 		var num_mb = num_bytes / (1024 ** 2);
+		num_mb = num_mb.toFixed(2);
 
 		var str = `Memory: ${num_mb}MB (${num_tensors} tensors)`;
 
