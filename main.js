@@ -303,6 +303,8 @@ async function save_anno (annotation) {
 			error(textStatus, errorThrown);
 		}
 	});
+
+	await load_dynamic_content();
 }
 
 function get_names_from_ki_anno (anno) {
