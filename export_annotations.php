@@ -331,19 +331,23 @@
 					#print "<br>$fn<br>";
 					$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
 					$str = "";
+					$strarr = array();
 					if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
 						foreach ($img["tags"] as $i => $t) {
 							$pos = $img["position_yolo"][$i];
 							$k = $category_numbers[$img["anno_name"][$i]];
 							if(isset($pos['x_center']) && isset($pos['y_center']) &&  isset($pos['w_rel']) && isset($pos['h_rel'])) {
-								$str .= "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel']."\n";
+								$this_str = "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel'];
+								if (!in_array($this_str, $strarr)) {
+									$strarr[] = $this_str;
+								}
 							} else {
 								error_log("$fn misses x_center, y_center, w_rel or h_rel");
 								#die(print_r($img, true));
 							}
 						}
 
-						$str = implode('\n', array_unique(explode('\n', $str)));
+						$str = implode("\n", $strarr);
 					} else {
 						//dier($img);
 					}
