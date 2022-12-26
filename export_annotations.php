@@ -343,7 +343,7 @@
 							}
 						}
 
-						$str = implode('\n',array_unique(explode('\n', $str)));
+						$str = implode('\n', array_unique(explode('\n', $str)));
 					} else {
 						//dier($img);
 					}
