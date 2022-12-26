@@ -512,9 +512,9 @@ trap "calltracer" ERR
 function help () {
 	echo "Possible options:"
 	echo "	--cfg"
-	echo "	--batch=INT                                        default value: 100"
+	echo "	--batch=INT                                        default value: 130"
 	echo "	--data                                             default value: dataset.yaml"
-	echo "	--epochs=INT                                       default value: 1000"
+	echo "	--epochs=INT                                       default value: 1500"
 	echo "	--img=INT                                          default value: 512"
 	echo "	--patience=INT                                     default value: 200"
 	echo "	--lr0=FLOAT                                        default value: 0.01"
@@ -551,9 +551,9 @@ function help () {
 }
 
 cfg=yolov5s.yaml
-batch=100
+batch=130
 data=dataset.yaml
-epochs=1000
+epochs=1500
 img=512
 patience=200
 lr0=0.01
@@ -955,7 +955,7 @@ cat $run_log | sed -e "s/.*G//g" | egrep "^\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s+
 
 #SBATCH -n 2 --time=32:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
 
-python3 train.py --cfg yolov5s.yaml --multi-scale --batch 100 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
+python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
 ';
 
 			file_put_contents("$tmp_dir/simple_run.sh", $simple_run_bash);
