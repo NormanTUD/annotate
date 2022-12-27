@@ -220,9 +220,9 @@
 									}
 								}
 
-								if(preg_match("/jupiter/", $bla)) {
-									#dier("has_valid_category: $has_valid_category\nss:\n$bla");
-								}
+								#if(preg_match("/jupiter/", $bla)) {
+								#	dier("has_valid_category: $has_valid_category\nss:\n$bla");
+								#}
 								#print("===>><pre>".print_r($images[$file], true)."</pre><<==");
 							}
 						}
