@@ -137,19 +137,20 @@
 		return [$annotated, $not_annotated];
 	}
 
-	function print_home () {
+	function get_home_string () {
 		$annotation_stat = get_number_of_annotated_imgs();
-?>
-		Anzahl annotierter Bilder: <?php print htmlentities($annotation_stat[0] ?? ""); ?>, Anzahl unannotierter Bilder: <?php print htmlentities($annotation_stat[1] ?? ""); ?>
 
-<?php
-			if($annotation_stat[1] != 0) {
-				$percent = sprintf("%0.2f", ($annotation_stat[0] / ($annotation_stat[0] + $annotation_stat[1])) * 100);
-				print " ($percent%)";
-			}
-?>
-		<br><a href="overview.php">Übersicht über meine eigenen annotierten Bilder</a>
-<?php
+		$str = "Anzahl annotierter Bilder: ".htmlentities($annotation_stat[0] ?? "");
+		$str .= ", Anzahl unannotierter Bilder: ".htmlentities($annotation_stat[1] ?? "");
+
+		if($annotation_stat[1] != 0) {
+			$percent = sprintf("%0.2f", ($annotation_stat[0] / ($annotation_stat[0] + $annotation_stat[1])) * 100);
+			$str .= " ($percent%)";
+		}
+
+		$str .= "<br><a href='overview.php'>Übersicht über meine eigenen annotierten Bilder</a>";
+
+		return $str;
 	}
 
 
