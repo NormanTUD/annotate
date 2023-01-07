@@ -232,12 +232,10 @@
 		$cached = $GLOBALS["memcache"]->get($cache_key);
 
 		if($cached) {
-			error_log("cached for $cache_key");
 			return $cached;
 		} else {
-			error_log("NOT cached for $cache_key");
 			$data = json_decode(file_get_contents($path), true);
-			$GLOBALS["memcache"]->set($cache_path, $data);
+			$GLOBALS["memcache"]->set($cache_key, $data);
 			return $data;
 		}
 
