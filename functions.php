@@ -1,4 +1,7 @@
 <?php
+	$GLOBALS["memcache"] = new Memcache;
+	$GLOBALS["memcache"]->addServer("localhost");
+
 	$GLOBALS["get_current_tags_cache"] = array();
 
 	function generateRandomString($length = 10) {
@@ -224,6 +227,18 @@
 
 		$cache_path = "$tmp_dir$cache_file";
 
+		$cached = $GLOBALS["memcache"]->get($cache_path);
+
+		if($cached) {
+			return $cached;
+		} else {
+			$data = json_decode(file_get_contents($path), true);
+			$GLOBALS["memcache"]->get($cache_path, $data);
+			return $data;
+		}
+
+
+		/*
 		if(!is_dir($tmp_dir)) {
 			mkdir($tmp_dir);
 		}
@@ -239,6 +254,7 @@
 		}
 
 		return $data;
+		 */
 	}
 
 	function image_has_tag($img, $tag) {
