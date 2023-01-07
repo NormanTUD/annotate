@@ -12,8 +12,6 @@
 				} else {
 					mywarn("$f wurde gefunden, aber $t exitiert bereits");
 				}
-			} else {
-				mywarn("$f wurde nicht gefunden");
 			}
 		}
 	}
@@ -28,8 +26,6 @@
 				} else {
 					mywarn("$f wurde gefunden, aber $t exitiert bereits");
 				}
-			} else {
-				mywarn("$f wurde nicht gefunden");
 			}
 		}
 	}
@@ -44,8 +40,6 @@
 				} else {
 					mywarn("$f wurde gefunden, aber $t exitiert bereits");
 				}
-			} else {
-				mywarn("$f wurde nicht gefunden");
 			}
 		}
 	}
@@ -60,8 +54,6 @@
 				} else {
 					mywarn("$f wurde gefunden, aber $t exitiert bereits");
 				}
-			} else {
-				mywarn("$f wurde nicht gefunden");
 			}
 		}
 	}

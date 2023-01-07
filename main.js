@@ -1,9 +1,8 @@
 "use strict";
 
 var model;
-
+var last_load_dynamic_content = false;
 var running_ki = false;
-
 var tags = [];
 
 function uuidv4() {
@@ -507,6 +506,16 @@ async function load_page() {
 }
 
 async function load_dynamic_content () {
+	/*
+	if((Date.now() - last_load_dynamic_content) <= 2000) {
+		log("Not reloading dynamic content");
+		return;
+	}
+
+	log("Reloading dynamic content");
+	last_load_dynamic_content = Date.now()
+	*/
+
 	await $.ajax({
 		url: "print_home.php",
 		type: "GET",
