@@ -151,7 +151,7 @@ async function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: async function (response) {
-				success("OK", response);
+				success("Create Anno: OK", response);
 				await load_dynamic_content();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -173,7 +173,7 @@ async function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: async function (response) {
-				success("OK", response)
+				success("Update Anno: OK", response)
 				await load_dynamic_content();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -196,7 +196,7 @@ async function make_item_anno(elem, widgets={}) {
 			type: "post",
 			data: a,
 			success: async function (response) {
-				success("OK", response)
+				success("Delete Anno: OK", response)
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				error(textStatus, errorThrown);
@@ -297,15 +297,13 @@ async function save_anno (annotation) {
 		type: "post",
 		data: a,
 		success: async function (response) {
-			success("OK", response);
+			success("Save Anno: OK", response);
 			await load_dynamic_content();
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			error(textStatus, errorThrown);
 		}
 	});
-
-	await load_dynamic_content();
 }
 
 function get_names_from_ki_anno (anno) {
