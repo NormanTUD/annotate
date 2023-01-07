@@ -227,13 +227,17 @@
 
 		$cache_path = "$tmp_dir$cache_file";
 
-		$cached = $GLOBALS["memcache"]->get($cache_path);
+		$cache_key = hash("sha256", $cache_path);
+
+		$cached = $GLOBALS["memcache"]->get($cache_key);
 
 		if($cached) {
+			error_log("cached for $cache_key");
 			return $cached;
 		} else {
+			error_log("NOT cached for $cache_key");
 			$data = json_decode(file_get_contents($path), true);
-			$GLOBALS["memcache"]->get($cache_path, $data);
+			$GLOBALS["memcache"]->set($cache_path, $data);
 			return $data;
 		}
 
