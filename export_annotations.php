@@ -56,7 +56,7 @@
 			$res["w_rel"] = $w / $imgw;
 			$res["h_rel"] = $h / $imgh;
 		} else {
-			mywarn("Position is undefined for $file");
+			mywarn("Position is undefined for $file\n");
 			#die($pos);
 		}
 
