@@ -154,7 +154,7 @@ async function make_item_anno(elem, widgets={}) {
 				await load_dynamic_content();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				error(textStatus, errorThrown);
+				error("Create anno: " + textStatus, errorThrown);
 			}
 		});
 	});
@@ -176,7 +176,7 @@ async function make_item_anno(elem, widgets={}) {
 				await load_dynamic_content();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				error(textStatus, errorThrown);
+				error("Update anno: " + textStatus, errorThrown);
 			}
 		});
 	});
@@ -198,7 +198,7 @@ async function make_item_anno(elem, widgets={}) {
 				success("Delete Anno: OK", response)
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				error(textStatus, errorThrown);
+				error("delete Anno: " + textStatus, errorThrown);
 			}
 		});
 	});
