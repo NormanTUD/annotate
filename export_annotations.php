@@ -498,6 +498,8 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/datase
 
 SCRIPT_DIR=$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )
 
+cd \$SCRIPT_DIR
+
 ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
 
 if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
