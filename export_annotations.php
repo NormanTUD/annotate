@@ -1087,6 +1087,7 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/datase
 		header("Content-Disposition: attachment; filename=data.zip"); 
 		header("Pragma: no-cache"); 
 		header("Expires: 0"); 
+		header("Content-Length: ".filesize($tmp_zip));
 
 		#readfile($tmp_zip);
 		$handle = @fopen($tmp_zip, "r");
