@@ -496,6 +496,8 @@ python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/datase
 
 			$omniopt_simple_run = "#!/bin/bash -l
 
+SCRIPT_DIR=$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )
+
 ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
 
 if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
@@ -911,7 +913,7 @@ done
 
 run_uuid=\$(uuidgen)
 
-hyps_file=data/hyps/hyperparam_\${run_uuid}.yaml
+hyps_file=\$SCRIPT_DIR/data/hyps/hyperparam_\${run_uuid}.yaml
 
 hyperparams_file_contents=\"
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
