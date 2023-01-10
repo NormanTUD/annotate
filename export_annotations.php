@@ -960,6 +960,7 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 	| awk '{print;print > \"/dev/stderr\"}' \\
 	| grep '/' \\
 	| grep -v Class \\
+	| sed -e \"s/.*G\s*//\" | egrep \"^[0-9]+\.[0-9]+\" \\
 	| sed -e 's/.*G\s*//' \\
 	| tail -n1 \\
 	| sed -e 's/\s*[0-9]*\s*[0-9]*:.*//' \\
