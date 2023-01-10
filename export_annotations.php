@@ -954,7 +954,7 @@ copy_paste: \$copy_paste # segment copy-paste (probability)
 
 echo \"\$hyperparams_file_contents\" > \"\$hyps_file\"
 
-python3 train.py --cfg \"\$model\" --multi-scale --batch \$batchsize --data data/dataset.yaml --epochs \$epochs --cache --img \$img --hyp \"\$hyps_file\" --patience \$patience \\
+python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsize --data data/dataset.yaml --epochs \$epochs --cache --img \$img --hyp \"\$hyps_file\" --patience \$patience \\
 	| awk '{print;print > \"/dev/stderr\"}' \\
 	| grep '/' \\
 	| grep -v Class \\
