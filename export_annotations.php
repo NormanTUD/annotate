@@ -434,7 +434,7 @@ if [ ! -d "yolov5" ]; then
 	git clone --depth 1 https://github.com/ultralytics/yolov5.git
 fi
 cd yolov5
-[[ $(type  ml) == function ]] && ml modenv/hiera GCCcore/11.3.0 Python/3.9.6 || echo "ml existiert nicht"
+ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
 if [ -d "$HOME/.alpha_yoloenv" ]; then
 	python3 -m venv ~/.alpha_yoloenv
 	echo "~/.alpha_yoloenv already exists"
@@ -500,7 +500,7 @@ SCRIPT_DIR=$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && 
 
 cd \$SCRIPT_DIR
 
-[[ $(type  ml) == function ]] && ml modenv/hiera GCCcore/11.3.0 Python/3.9.6 || echo "ml existiert nicht"
+ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
 
 if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
 	python3 -mvenv ~/.alpha_yoloenv/
@@ -956,16 +956,18 @@ copy_paste: \$copy_paste # segment copy-paste (probability)
 
 echo \"\$hyperparams_file_contents\" > \"\$hyps_file\"
 
-python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsize --data \$SCRIPT_DIR/data/dataset.yaml --epochs \$epochs --cache --img \$img --hyp \"\$hyps_file\" --patience \$patience \\
-	| awk '{print;print > \"/dev/stderr\"}' \\
-	| grep '/' \\
-	| grep -v Class \\
-	| sed -e \"s/.*G\s*//\" \\
-	| egrep \"^[0-9]+\.[0-9]+\" \\
-	| tail -n1 \\
-	| sed -e 's/\s*[0-9]*\s*[0-9]*:.*//' \\
-	| sed -e 's#\s\s*#\\n#g' \\
-	| perl -e '\$i = 1; while (<>) { print qq#RESULT\$i: \$_#; \$i++; }'
+python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsize --data \$SCRIPT_DIR/data/dataset.yaml --epochs \$epochs --cache --img \$img --hyp \"\$hyps_file\" --patience \$patience 2>&1 \
+        | awk '{print;print > \"/dev/stderr\"}' \
+        | egrep '[0-9]G' \
+        | egrep '[0-9]/[0-9]' \
+        | grep -v Class \
+        | sed -e 's/.*G\s*//' \
+        | egrep '^[0-9]+\.[0-9]+' \
+        | tail -n1 \
+        | sed -e 's/\s*[0-9]*\s*[0-9]*:.*//' \
+        | sed -e 's#\s\s*#\\n#g' \
+        | perl -e '\$i = 1; while (<>) { print qq#RESULT\$i: \$_#; \$i++; }'
+
 ";
 
 			file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
