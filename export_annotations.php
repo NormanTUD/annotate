@@ -434,7 +434,7 @@ if [ ! -d "yolov5" ]; then
 	git clone --depth 1 https://github.com/ultralytics/yolov5.git
 fi
 cd yolov5
-ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
+[[ $(type  ml) == function ]] && ml modenv/hiera GCCcore/11.3.0 Python/3.9.6 || echo "ml existiert nicht"
 if [ -d "$HOME/.alpha_yoloenv" ]; then
 	python3 -m venv ~/.alpha_yoloenv
 	echo "~/.alpha_yoloenv already exists"
@@ -500,7 +500,7 @@ SCRIPT_DIR=$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && 
 
 cd \$SCRIPT_DIR
 
-ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
+[[ $(type  ml) == function ]] && ml modenv/hiera GCCcore/11.3.0 Python/3.9.6 || echo "ml existiert nicht"
 
 if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
 	python3 -mvenv ~/.alpha_yoloenv/
