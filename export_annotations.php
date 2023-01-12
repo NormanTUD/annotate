@@ -295,7 +295,7 @@
 
 			pip install wandb
 
-			python3 train.py --cfg yolov5n6.yaml --batch 8 --data dataset.yaml --epochs 10 --cache --img 512 --nosave --hyp hyp.VOC.yaml --hyp hyp.scratch-low.yaml
+			python3 train.py --cfg yolov5n6.yaml --batch 8 --data dataset.yaml --epochs 10 --cache --img 400 --nosave --hyp hyp.VOC.yaml --hyp hyp.scratch-low.yaml
 		 */
 
 		ob_start();
@@ -489,7 +489,7 @@ echo "sbatch -n 1 --time=64:00:00 --mem-per-cpu=32000 --partition=alpha --gres=g
 
 #SBATCH -n 2 --time=32:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
 
-python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
+python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 400 --hyp data/hyps/hyperparams.yaml --patience 200
 ';
 
 			file_put_contents("$tmp_dir/simple_run.sh", $simple_run_bash);
@@ -532,50 +532,49 @@ trap 'calltracer' ERR
 
 function help () {
         echo \"Possible options:\"
-        echo \"  --batchsize=INT                                    default value: 130\"
-        echo \"  --epochs=INT                                       default value: 1500\"
-        echo \"  --img=INT                                          default value: 512\"
-        echo \"  --patience=INT                                     default value: 200\"
-	echo \"	--lr0=FLOAT                                        default value: 0.01\"
-	echo \"	--lrf=FLOAT                                        default value: 0.1\"
-	echo \"	--momentum=FLOAT                                   default value: 0.937\"
-	echo \"	--weight_decay=FLOAT                               default value: 0.0005\"
-	echo \"	--warmup_epochs=FLOAT                              default value: 3.0\"
-	echo \"	--warmup_momentum=FLOAT                            default value: 0.8\"
-	echo \"	--warmup_bias_lr=FLOAT                             default value: 0.1\"
-	echo \"	--box=FLOAT                                        default value: 0.05\"
-	echo \"	--cls=FLOAT                                        default value: 0.3\"
-	echo \"	--cls_pw=FLOAT                                     default value: 1.0\"
-	echo \"	--obj=FLOAT                                        default value: 0.7\"
-	echo \"	--obj_pw=FLOAT                                     default value: 1.0\"
-	echo \"	--iou_t=FLOAT                                      default value: 0.20\"
-	echo \"	--anchor_t=FLOAT                                   default value: 4.0\"
-	echo \"	--fl_gamma=FLOAT                                   default value: 0.0\"
-	echo \"	--hsv_h=FLOAT                                      default value: 0.015\"
-	echo \"	--hsv_s=FLOAT                                      default value: 0.7\"
-	echo \"	--hsv_v=FLOAT                                      default value: 0.4\"
-	echo \"	--degrees=FLOAT                                    default value: 360\"
-	echo \"	--translate=FLOAT                                  default value: 0.1\"
-	echo \"	--scale=FLOAT                                      default value: 0.9\"
-	echo \"	--shear=FLOAT                                      default value: 0.0\"
-	echo \"	--perspective=FLOAT                                default value: 0.001\"
-	echo \"	--flipud=FLOAT                                     default value: 0.3\"
-	echo \"	--fliplr=FLOAT                                     default value: 0.5\"
-	echo \"	--mosaic=FLOAT                                     default value: 1.0\"
-	echo \"	--mixup=FLOAT                                      default value: 0.3\"
-	echo \"	--copy_paste=FLOAT                                 default value: 0.4\"
-        echo \"  --model\"
-        echo \"  --help                                             this help\"
-        echo \"  --debug                                            Enables debug mode (set -x)\"
+        echo \"--batchsize=INT                                    default value: 130\"
+        echo \"--epochs=INT                                       default value: 1500\"
+        echo \"--img=INT                                          default value: 400\"
+        echo \"--patience=INT                                     default value: 200\"
+	echo \"--lr0=FLOAT                                        default value: 0.01\"
+	echo \"--lrf=FLOAT                                        default value: 0.1\"
+	echo \"--momentum=FLOAT                                   default value: 0.937\"
+	echo \"--weight_decay=FLOAT                               default value: 0.0005\"
+	echo \"--warmup_epochs=FLOAT                              default value: 3.0\"
+	echo \"--warmup_momentum=FLOAT                            default value: 0.8\"
+	echo \"--warmup_bias_lr=FLOAT                             default value: 0.1\"
+	echo \"--box=FLOAT                                        default value: 0.05\"
+	echo \"--cls=FLOAT                                        default value: 0.3\"
+	echo \"--cls_pw=FLOAT                                     default value: 1.0\"
+	echo \"--obj=FLOAT                                        default value: 0.7\"
+	echo \"--obj_pw=FLOAT                                     default value: 1.0\"
+	echo \"--iou_t=FLOAT                                      default value: 0.20\"
+	echo \"--anchor_t=FLOAT                                   default value: 4.0\"
+	echo \"--fl_gamma=FLOAT                                   default value: 0.0\"
+	echo \"--hsv_h=FLOAT                                      default value: 0.015\"
+	echo \"--hsv_s=FLOAT                                      default value: 0.7\"
+	echo \"--hsv_v=FLOAT                                      default value: 0.4\"
+	echo \"--degrees=FLOAT                                    default value: 360\"
+	echo \"--translate=FLOAT                                  default value: 0.1\"
+	echo \"--scale=FLOAT                                      default value: 0.9\"
+	echo \"--shear=FLOAT                                      default value: 0.0\"
+	echo \"--perspective=FLOAT                                default value: 0.001\"
+	echo \"--flipud=FLOAT                                     default value: 0.3\"
+	echo \"--fliplr=FLOAT                                     default value: 0.5\"
+	echo \"--mosaic=FLOAT                                     default value: 1.0\"
+	echo \"--mixup=FLOAT                                      default value: 0.3\"
+	echo \"--copy_paste=FLOAT                                 default value: 0.4\"
+        echo \"--model\"
+        echo \"--help                                             this help\"
+        echo \"--debug                                            Enables debug mode (set -x)\"
         exit $1
 }
 
 export batchsize=130
 export epochs=1500
-export img=512
 export patience=200
 export model=yolov5s.yaml
-export img=512
+export img=400
 export patience=200
 export lr0=0.01
 export lrf=0.1
