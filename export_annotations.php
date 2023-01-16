@@ -552,7 +552,7 @@ function help () {
 	echo \"--mosaic=FLOAT                                     default value: 1.0\"
 	echo \"--mixup=FLOAT                                      default value: 0.3\"
 	echo \"--copy_paste=FLOAT                                 default value: 0.4\"
-	echo \"--model\"
+	echo \"--model=STR                                        Name of the model, default: yolov5s.yaml\"
 	echo \"--help                                             this help\"
 	echo \"--debug                                            Enables debug mode (set -x)\"
 	exit $1
