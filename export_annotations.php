@@ -519,11 +519,11 @@ function calltracer () {
 trap 'calltracer' ERR
 
 function help () {
-        echo \"Possible options:\"
-        echo \"--batchsize=INT                                    default value: 130\"
-        echo \"--epochs=INT                                       default value: 1500\"
-        echo \"--img=INT                                          default value: 400\"
-        echo \"--patience=INT                                     default value: 200\"
+	echo \"Possible options:\"
+	echo \"--batchsize=INT                                    default value: 130\"
+	echo \"--epochs=INT                                       default value: 1500\"
+	echo \"--img=INT                                          default value: 400\"
+	echo \"--patience=INT                                     default value: 200\"
 	echo \"--lr0=FLOAT                                        default value: 0.01\"
 	echo \"--lrf=FLOAT                                        default value: 0.1\"
 	echo \"--momentum=FLOAT                                   default value: 0.937\"
@@ -552,10 +552,10 @@ function help () {
 	echo \"--mosaic=FLOAT                                     default value: 1.0\"
 	echo \"--mixup=FLOAT                                      default value: 0.3\"
 	echo \"--copy_paste=FLOAT                                 default value: 0.4\"
-        echo \"--model\"
-        echo \"--help                                             this help\"
-        echo \"--debug                                            Enables debug mode (set -x)\"
-        exit $1
+	echo \"--model\"
+	echo \"--help                                             this help\"
+	echo \"--debug                                            Enables debug mode (set -x)\"
+	exit $1
 }
 
 export batchsize=130
