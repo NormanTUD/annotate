@@ -500,18 +500,6 @@ SCRIPT_DIR=$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && 
 
 cd \$SCRIPT_DIR
 
-ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
-
-if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
-	python3 -mvenv ~/.alpha_yoloenv/
-	source ~/.alpha_yoloenv/bin/activate
-	pip3 install -r requirements.txt
-fi
-
-source ~/.alpha_yoloenv/bin/activate
-
-
-
 function echoerr() {
 	echo \"$@\" 1>&2
 }
@@ -911,6 +899,16 @@ for i in $@; do
                         ;;
         esac
 done
+
+ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
+
+if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
+	python3 -mvenv ~/.alpha_yoloenv/
+	source ~/.alpha_yoloenv/bin/activate
+	pip3 install -r requirements.txt
+fi
+
+source ~/.alpha_yoloenv/bin/activate
 
 run_uuid=\$(uuidgen)
 
