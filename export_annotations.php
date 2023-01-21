@@ -103,6 +103,19 @@
 		$format = $_GET["format"];
 	}
 
+	function cached_img_size ($fn) {
+		$cache_key = hash("sha256", $fn);
+		$cached = $GLOBALS["memcache"]->get($cache_key);
+
+		if($cached) {
+			return $cached;
+		} else {
+			$data = getimagesize($fn);
+			$GLOBALS["memcache"]->set($cache_key, $data);
+			return $data;
+		}
+	}
+
 	if(is_dir($tmp_dir)) {
 		$files = scandir("images");
 		$images = array();
@@ -110,7 +123,7 @@
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
 				$imgfn = "images/$file";
-				$imgsz = getimagesize($imgfn);
+				$imgsz = cached_img_size($imgfn);
 
 				if($imgsz) {
 					$width = $imgsz[0];
