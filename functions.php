@@ -221,14 +221,9 @@
 	}
 
 	function get_json_cached ($path) {
-		$tmp_dir = "tmp/__json_cache__/";
-		$mtime = filemtime($path);
+		$cache_file = md5($path);
 
-		$cache_file = md5($path.$mtime);
-
-		$cache_path = "$tmp_dir$cache_file";
-
-		$cache_key = hash("sha256", $cache_path);
+		$cache_key = hash("sha256", $cache_file);
 
 		$cached = $GLOBALS["memcache"]->get($cache_key);
 
@@ -239,25 +234,6 @@
 			$GLOBALS["memcache"]->set($cache_key, $data);
 			return $data;
 		}
-
-
-		/*
-		if(!is_dir($tmp_dir)) {
-			mkdir($tmp_dir);
-		}
-
-		$data = array();
-
-
-		if(file_exists($cache_path)) {
-			$data = unserialize(file_get_contents($cache_path));
-		} else {
-			$data = json_decode(file_get_contents($path), true);
-			file_put_contents($cache_path, serialize($data));
-		}
-
-		return $data;
-		 */
 	}
 
 	function image_has_tag($img, $tag) {

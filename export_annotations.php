@@ -166,10 +166,7 @@
 							if(preg_match("/\.json$/", $single_user_annotation_file)) {
 								#die("<pre>$single_user_annotation_file</pre>");
 								$struct = get_json_cached("$tdir/$single_user_annotation_file");
-								#dier($struct);
 								$file = $struct["source"];
-								//mywarn($file."\n");
-								#dier($images[$file]);
 
 								$has_valid_category = 0;
 
@@ -181,11 +178,6 @@
 								$images[$file]["h"] = $item["h"];
 
 								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
-
-								#if($file == "lentikularwolke-OiFzWcEWGN4-00028.jpg") {
-								#	die(print_r($struct, true));
-								#}
-
 								$images[$file]["position_yolo"][] = parse_position_yolo($file, $images[$file], $struct["position"], $images[$file]["w"], $images[$file]["h"]);
 								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
 								$images[$file]["anno_struct"] = $struct;
@@ -203,23 +195,14 @@
 										$images[$file]["tags"][] = $index;
 										$images[$file]["anno_name"][] = $anno["value"];
 
-										#print $anno["value"];
-										#print "<br>\n";
-										#print_r($show_categories);
-										#print "<br>\n";
 										if(in_array($anno["value"], $show_categories)) {
 											$has_valid_category = 1;
 										}
-										#dier($images[$file]);
-										#die(">$has_valid_category<");
-										//dier($index);
-										//dier($anno["value"]);
 									}
 								}
 
 
 								if(!$has_valid_category) {
-									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
 									unset($images[$file]["disabled"]);
 								} else {
 									if(file_exists("images/$file")) {
@@ -232,29 +215,14 @@
 										}
 									}
 								}
-
-								#if(preg_match("/jupiter/", $bla)) {
-								#	dier("has_valid_category: $has_valid_category\nss:\n$bla");
-								#}
-								#print("===>><pre>".print_r($images[$file], true)."</pre><<==");
 							}
 						}
 					}
 				}
-			} else {
-				/*
-				print($dir);
-				dier($images[$file]);
-				die("$dir");
-				 */
 			}
 
-			//dier($item);
 			$k++;
 		}
-
-		//dier($images["002215398dcba50ac5d89290c27301c1.jpg"]);
-		//dier($images);
 
 		/*
 		path: ../datasets/coco128  # dataset root dir
