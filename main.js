@@ -489,13 +489,13 @@ async function set_all_current_annotations_from_to (from, name) {
 	await load_dynamic_content();
 }
 
-async function load_page() {
+async function load_page(reload_home_bar) {
 	if(typeof(anno) == "object") {
 		await anno.destroy();
 		anno = undefined;
 	}
 
-	await load_dynamic_content();
+	await load_dynamic_content(reload_home_bar);
 
 	await make_item_anno($("#image")[0], [
 		{
@@ -505,7 +505,7 @@ async function load_page() {
 
 }
 
-async function load_dynamic_content () {
+async function load_dynamic_content (reload_home_bar) {
 	/*
 	if((Date.now() - last_load_dynamic_content) <= 2000) {
 		log("Not reloading dynamic content");
@@ -516,18 +516,20 @@ async function load_dynamic_content () {
 	last_load_dynamic_content = Date.now()
 	*/
 
-	await $.ajax({
-		url: "print_home.php",
-		type: "GET",
-		dataType: "html",
-		success: function (data) {
-			$('#tab_home_top').html("");
-			$('#tab_home_top').html(data);
-		},
-		error: function (xhr, status) {
-			error("Error loading the List", "Sorry, there was a problem!");
-		}
-	});
+	if(reload_home_bar) {
+		await $.ajax({
+			url: "print_home.php",
+			type: "GET",
+			dataType: "html",
+			success: function (data) {
+				$('#tab_home_top').html("");
+				$('#tab_home_top').html(data);
+			},
+			error: function (xhr, status) {
+				error("Error loading the List", "Sorry, there was a problem!");
+			}
+		});
+	}
 
 	await $.ajax({
 		url: "get_current_list.php",
