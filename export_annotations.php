@@ -103,8 +103,6 @@
 		$format = $_GET["format"];
 	}
 
-	#dier(in_array("rsdasdaketenspirale", $show_categories));
-
 	if(is_dir($tmp_dir)) {
 		$files = scandir("images");
 		$images = array();
