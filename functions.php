@@ -415,7 +415,7 @@
 		}
 	}
 
-	function get_image_width_and_height ($fn) {
+	function get_image_width_and_height_from_file ($fn) {
 		$imgsz = getimagesize("./images/".$fn);
 
 		$width = $imgsz[0];
@@ -447,7 +447,7 @@
 		#die($select_query);
 
 		if(is_null($res)) {
-			$width_and_height = get_image_width_and_height($image);
+			$width_and_height = get_image_width_and_height_from_file($image);
 			$width = $width_and_height[0];
 			$height = $width_and_height[1];
 
