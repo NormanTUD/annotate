@@ -118,8 +118,8 @@
 
 		// <object-class> <x> <y> <width> <height>
 		foreach ($images as $fn => $imgname) {
-			$w = $imgname[0]["w"];
-			$h = $imgname[0]["h"];
+			$w = $imgname[0]["width"];
+			$h = $imgname[0]["height"];
 
 			$annotation_base = '
 						<g class="a9s-annotation">
@@ -145,7 +145,7 @@
 				$base_struct = '
 				<div style="position: relative; display: inline-block;">
 					<img class="images" src="images/'.$fn.'" style="display: block;">
-					<svg class="a9s-annotationlayer" width='.$this_anno_data["w"].' height='.$this_anno_data["h"].' viewBox="0 0 '.$w.' '.$h.'">
+					<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
 						<g>
 							'.$annotations_string.'
 						</g>
