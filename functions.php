@@ -202,7 +202,7 @@
 	function get_current_tags () {
 		$annos = [];
 
-		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id group by c.id";
+		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id group by c.id order by anzahl desc";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_row($res)) {
