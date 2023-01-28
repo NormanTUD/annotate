@@ -75,7 +75,7 @@
 
 	$images = [];
 	
-	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id))";
+	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) limit 100";
 	$res = rquery($annotated_image_ids_query);
 
 	$images = [];
@@ -112,31 +112,26 @@
 		$images[$row[0]][] = $this_annotation;
 	}
 
-	dier($images);
-
 	if ($format == "html") {
 		$html = file_get_contents("export_base.html");
 		$annos_strings = array();
 
-		$annotated_imgs_by_name = array();
-
 		// <object-class> <x> <y> <width> <height>
-		foreach ($images as $imgname) {
-			$fn = $img["filename"];
-			$w = $img["w"];
-			$h = $img["h"];
-			$id = $img["id"];
+		foreach ($images as $fn => $imgname) {
+			$w = $imgname[0]["w"];
+			$h = $imgname[0]["h"];
 
 			$annotation_base = '
 						<g class="a9s-annotation">
 							<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
 						</g>
 			';
+
 			$this_annos = array();
 
-			foreach ($img["position_xywh"] as $this_anno_data) {
+			foreach ($imgname as $this_anno_data) {
 				$this_anno = $annotation_base;
-				$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
+				$this_anno = preg_replace('/\$\{id\}/', $this_anno_data["id"], $this_anno);
 				$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
 				$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
 				$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y"], $this_anno);
@@ -146,7 +141,6 @@
 			}
 
 			$annotations_string = join("\n", $this_annos);
-
 
 			$base_struct = '
 			<div style="position: relative; display: inline-block;">
@@ -159,50 +153,12 @@
 			</div>
 			';
 
-			$annos_strings[] = $base_struct;
-			if(is_array($img["anno_name"])) {
-				for ($i = 0; $i < count($img["anno_name"]); $i++) {
-					$ttag = $img["anno_name"][$i];
-					$annotated_imgs_by_name[$ttag][] = $base_struct;
-				}
-			}
-
-			#dier(htmlentities($base_struct));
-
-			$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
-			$str = "";
-			if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
-				foreach ($img["tags"] as $i => $t) {
-					$pos = $img["position_rel"][$i];
-					$str .= "$t ".$pos['x_0']." ".$pos['x_1']." ".$pos['x_0']." ".$pos['y_1']."\n";
-				}
-			}
+			$base_structs[] = $base_struct;
 		}
 
-		$last = "";
-		$new_html = "";
-		$hashes = array();
-		foreach ($annotated_imgs_by_name as $n => $s) {
-			if($last != $n) {
-				if(in_array($n, $show_categories)) {
-					$new_html .= "<h2>".htmlentities($n)."</h2>";
-					$last = $n;
-				}
-			}
-			foreach ($s as $i) {
-				$h = hash('md5', htmlentities($i));
-				if(!in_array($h, $hashes)) {
-					$new_html .= $i;
-					$hashes[] = $h;
-				}
-			}
-		}
-
-		#$annos_str = join("", $annos_strings);
+		$new_html = join("\n", $base_structs);
 
 		$html = preg_replace("/REPLACEME/", $new_html, $html);
-
-		#file_put_contents("$tmp_dir/index.html", $html);
 
 		print($html);
 		include("footer.php");
