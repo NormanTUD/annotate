@@ -120,6 +120,8 @@
 	$imgfile = "";
 	if(isset($_GET["edit"])) {
 		$imgfile = $_GET["edit"];
+	} else {
+		$imgfile = get_next_random_unannotated_image();
 	}
 ?>
 	<br>

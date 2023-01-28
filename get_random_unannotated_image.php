@@ -1,5 +1,5 @@
 <?php
 	include_once("functions.php");
 
-	print get_random_unannotated_image();
+	print get_next_random_unannotated_image();
 ?>

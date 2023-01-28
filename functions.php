@@ -285,34 +285,6 @@
 		return $default;
 	}
 
-	function get_random_unannotated_image () {
-		$files = scandir("images");
-
-		$img_files = array();
-
-		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$annotations = number_of_annotations_total($file);
-				$img_files[$file] = $annotations;
-			}
-		}
-
-		$img_files = shuffle_assoc($img_files);
-		asort($img_files);
-
-		$j = 0;
-		$imgfile = "";
-		foreach ($img_files as $f => $k) {
-			if($j != 0) {
-				continue;
-			}
-			$imgfile = $f;
-			$j++;
-		}
-
-		return $imgfile;
-	}
-
 	function rquery($query){
 		$query_start_time = microtime(true);
 		$result = mysqli_query($GLOBALS['dbh'], $query) or dier(array("query" => $query, "error" => mysqli_error($GLOBALS['dbh'])));
@@ -456,5 +428,18 @@
 		$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
 
 		rquery($query);
+	}
+
+	function get_next_random_unannotated_image () {
+		$query = "select filename from image where id not in (select image_id from annotation) order by rand() limit 1";
+		$res = rquery($query);
+
+		$result = null;
+
+		while ($row = mysqli_fetch_row($res)) {
+			$result = $row[0];
+		}
+
+		return $result;
 	}
 ?>
