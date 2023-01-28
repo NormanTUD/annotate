@@ -9,14 +9,8 @@
 			$dir = "annotations/$hash_filename/$user_id/";
 			$filename = "$dir/$hash_annotation.json";
 
-			# sudo mkdir annotations
-			# cd annotations
-			# sudo chown -R www-data:s3811141 .
-			ob_start();
-			system("rm $filename");
-			ob_clean();
 
-			print("OK");
+			print("OK Ignored");
 		} else {
 			die("No ID given");
 		}
