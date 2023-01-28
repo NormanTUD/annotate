@@ -386,13 +386,35 @@
 		}
 
 		if(is_null($res)) {
-			$insert_query = "insert into category (name) values (".esc($category).")";
-			print($insert_query);
+			$insert_query = "insert into category (name) values (".esc($category).") on duplicate key update name = values(name)";
+			rquery($insert_query);
 			return get_or_create_category_id($category);
 		} else {
 			return $res;
 		}
 	}
 
+	function get_or_create_user_id ($user) {
+		$select_query = "select id from user where name = ".esc($user);		
+		$select_res = rquery($select_query);
+
+		$res = null;
+
+		while ($row = mysqli_fetch_row($select_res)) {
+			$res = $row[0];
+		}
+
+		#die($select_query);
+
+		if(is_null($res)) {
+			$insert_query = "insert into user (name) values (".esc($user).") on duplicate key update name = values(name)";
+			rquery($insert_query);
+			return get_or_create_user_id($user);
+		} else {
+			return $res;
+		}
+	}
+
 	#die(get_or_create_category_id("raketenspiraleaasd"));
+	#die(get_or_create_user_id("raketenspiraleasdadasdfff"));
 ?>
