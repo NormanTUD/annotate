@@ -130,9 +130,6 @@
 			';
 			$this_annos = array();
 
-			print($fn);
-			exit(0);
-
 			foreach ($img["position_xywh"] as $this_anno_data) {
 				$this_anno = $annotation_base;
 				$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
