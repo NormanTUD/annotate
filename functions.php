@@ -315,7 +315,7 @@
 
 	function rquery($query){
 		$query_start_time = microtime(true);
-		$result = mysqli_query($GLOBALS['dbh'], $query) or die(mysqli_error($GLOBALS['dbh']));;
+		$result = mysqli_query($GLOBALS['dbh'], $query) or dier(array("query" => $query, "error" => mysqli_error($GLOBALS['dbh'])));
 		$query_end_time = microtime(true);
 
 		$GLOBALS["queries"][] = array(
@@ -327,9 +327,6 @@
 	}
 
 	function my_mysqli_real_escape_string ($arg) {
-		if(is_array($arg)) {
-			dier($arg);
-		}
 		return mysqli_real_escape_string($GLOBALS['dbh'], $arg ?? "");
 	}
 
@@ -341,7 +338,7 @@
 				return 'NULL';
 			}
 		} else { // Array
-			$str = join(', ', array_map('esc', array_map('my_mysqli_real_escape_string', $parameter)));
+			$str = join(', ', array_map("esc", array_map('my_mysqli_real_escape_string', $parameter)));
 			return $str;
 		}
 	}
