@@ -131,6 +131,7 @@
 
 			foreach ($imgname as $this_anno_data) {
 				$this_anno = $annotation_base;
+
 				$this_anno = preg_replace('/\$\{id\}/', $this_anno_data["id"], $this_anno);
 				$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x_start"], $this_anno);
 				$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
