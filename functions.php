@@ -415,6 +415,48 @@
 		}
 	}
 
+	function get_or_create_image_id ($image) {
+		$select_query = "select id from image where filename = ".esc($image);		
+		$select_res = rquery($select_query);
+
+		$res = null;
+
+		while ($row = mysqli_fetch_row($select_res)) {
+			$res = $row[0];
+		}
+
+		#die($select_query);
+
+		if(is_null($res)) {
+			$insert_query = "insert into image (filename) values (".esc($image).") on duplicate key update filename = values(filename)";
+			rquery($insert_query);
+			return get_or_create_image_id($image);
+		} else {
+			return $res;
+		}
+	}
+
+	function parse_position ($str) {
+		if(preg_match("/xywh=pixel:(\d+),(\d+),(\d+),(\d+)/", $str, $matches)) {
+			return array($matches[1], $matches[2], $matches[3], $matches[4]);
+		} else {
+			return null;
+		}
+	}
+
+	function create_annotation ($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json) {
+		/*
+		create table annotation (id int unsigned primary key auto_increment, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, x_end int unsigned, y_end int unsigned, json MEDIUMBLOB, foreign key (category_id) references category(id) on delete cascade, foreign key (user_id) references user(id) on delete cascade);
+		*/
+
+		$query = "insert into annotation (image_id, user_id, category_id, x_start, y_start, x_end, y_end, json) values (".
+			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json)).
+		")";
+
+		rquery($query);
+	}
+
 	#die(get_or_create_category_id("raketenspiraleaasd"));
 	#die(get_or_create_user_id("raketenspiraleasdadasdfff"));
+	#die(get_or_create_image_id("blaaasdasd.jpg"));
 ?>

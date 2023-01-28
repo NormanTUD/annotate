@@ -3,29 +3,21 @@
 
 	if(array_key_exists("source", $_POST)) {
 		if(array_key_exists("id", $_POST)) {
-			$hash_filename = hash("sha256", $_POST["source"]);
-			$hash_annotation = hash("sha256", $_POST["id"]);
+			$image_id = get_or_create_image_id($_POST["source"]);
+			$user_id = get_or_create_user_id($_POST["id"]);
 
-			$dir = "annotations/$hash_filename/$user_id/";
-			$filename = "$dir/$hash_annotation.json";
+			$parsed_position = parse_position($_POST["position"]);
+			$x_start = $parsed_position[0];
+			$y_start = $parsed_position[1];
+			$x_end = $parsed_position[2];
+			$y_end = $parsed_position[2];
 
-			# sudo mkdir annotations
-			# cd annotations
-			# sudo chown -R www-data:$USER .
-			ob_start();
-			system("mkdir -p $dir");
-			ob_clean();
 
-			if(is_dir($dir)) {
-				file_put_contents($filename, json_encode($_POST));
-				if(file_exists($filename)) {
-					print "OK";
-				} else {
-					die("$filename could not be created");
-				}
-			} else {
-				die("$dir could not be created");
-			}
+			$category_id = get_or_create_category_id($_POST["body"][0]["value"]);
+
+			$json = json_encode($_POST);
+
+			create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json);
 		} else {
 			die("No ID given");
 		}
