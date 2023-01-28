@@ -474,7 +474,7 @@
 
 		$query = "insert into annotation (image_id, user_id, category_id, x_start, y_start, x_end, y_end, json, annotarius_id) values (".
 			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json, $annotate_userid)).
-		")";
+		") on duplicate key update image_id = values(image_id), category_id = values(category_id), x_start = values(x_start), y_start = values(y_start), x_end = values(x_end), y_end = values(y_end), json = values(json), annotarius_id = values(annotarius_id)";
 
 		rquery($query);
 	}
