@@ -2,6 +2,25 @@
 	include("header.php");
 	include_once("functions.php");
 
+	if(isset($_GET["import"])) {
+		print "Importing images...<br>";
+
+
+		$files = scandir("images");
+
+		$img_files = array();
+
+		foreach($files as $file) {
+			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
+				print "Id for $file: ".get_or_create_image_id($file)."<br>\n";
+				ob_flush();
+				flush();
+			}
+		}
+
+		exit(0);
+	}
+
 	if(array_key_exists("move_from_identifiable", $_GET)) {
 		if(!preg_match("/\.\./", $_GET["move_from_identifiable"]) && preg_match("/\.jpg/", $_GET["move_from_identifiable"])) {
 			$f = "identifiable/".$_GET["move_from_identifiable"];
