@@ -145,6 +145,19 @@
 		return $my_array;
 	}
 
+	function get_number_of_unannotated_imgs() {
+		$q = "select count(*) from (select id from image where id not in (select image_id from annotation)) a";
+		$r = rquery($q);
+
+		$res = null;
+
+		while ($row = mysqli_fetch_row($r)) {
+			$res = $row[0];
+		}
+
+		return $res;
+	}
+
 	function get_number_of_annotated_imgs() {
 		$q = "select count(*) from (select image_id from annotation group by image_id) a";
 		$r = rquery($q);
@@ -160,8 +173,11 @@
 
 	function get_home_string () {
 		$annotation_stat = get_number_of_annotated_imgs();
+		$unannotation_stat = get_number_of_unannotated_imgs();
 
-		$str = "Anzahl annotierter Bilder: ".htmlentities($annotation_stat ?? "");
+		$str = "Annotierte Bilder: ".htmlentities($annotation_stat ?? "");
+		$str .= ", unannotierte Bilder: ".htmlentities($unannotation_stat ?? "");
+		$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
 
 		$str .= "<br><a href='overview.php'>Übersicht über meine eigenen annotierten Bilder</a>";
 
