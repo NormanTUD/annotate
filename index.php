@@ -69,7 +69,7 @@
 
 	<span style="font-size: 20px; color: red">BITTE KEINE NEUEN KATEGORIEN EINFÜGEN</span>
 	<br>
-	<span style="font-size: 15px; color: green">Nachricht vom Admin: Ich weiß, dass die Seite langsam geworden ist; das liegt daran, dass ich nie gedacht hätte dass wir SO viele Bilder zusammenkriegen! Ich arbeite bereits an Lösungen, die die Seite wieder annehmbar schnell machen. Vielen Dank für den Support!</span>
+	<span style="font-size: 15px; color: green">Nachricht vom Admin: Ich weiß, dass die Seite langsam geworden ist; das liegt daran, dass ich nie gedacht hätte dass wir SO viele Bilder zusammenkriegen, dafür habe ich die Software anfangs nicht ausgelegt! Ich arbeite bereits an Lösungen, die die Seite wieder annehmbar schnell machen. Vielen Dank für den Support!</span>
 
 	<table>
 		<tr>
