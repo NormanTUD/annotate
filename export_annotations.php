@@ -118,7 +118,7 @@
 
 		// <object-class> <x> <y> <width> <height>
 		foreach ($images as $img) {
-			$fn = $img["fn"];
+			$fn = $img["filename"];
 			$w = $img["w"];
 			$h = $img["h"];
 			$id = $img["id"];
@@ -129,6 +129,9 @@
 						</g>
 			';
 			$this_annos = array();
+
+			print($fn);
+			exit(0);
 
 			foreach ($img["position_xywh"] as $this_anno_data) {
 				$this_anno = $annotation_base;
