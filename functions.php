@@ -1,7 +1,4 @@
 <?php
-	$GLOBALS["memcache"] = new Memcache;
-	$GLOBALS["memcache"]->addServer("localhost");
-
 	$GLOBALS["get_current_tags_cache"] = array();
 
 	function generateRandomString($length = 10) {
@@ -230,15 +227,8 @@
 
 		$cache_key = hash("sha256", $cache_path);
 
-		$cached = $GLOBALS["memcache"]->get($cache_key);
-
-		if($cached) {
-			return $cached;
-		} else {
-			$data = json_decode(file_get_contents($path), true);
-			$GLOBALS["memcache"]->set($cache_key, $data);
-			return $data;
-		}
+		$data = json_decode(file_get_contents($path), true);
+		return $data;
 
 
 		/*
