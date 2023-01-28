@@ -179,53 +179,14 @@
 	}
 
 	function get_current_tags () {
-		if(is_array($GLOBALS["get_current_tags_cache"]) && count($GLOBALS["get_current_tags_cache"])) {
-			return $GLOBALS["get_current_tags_cache"];
-		}
-
-		$files = scandir("images");
-
 		$annos = [];
 
-		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !preg_match("/^\.(?:\.)?$/", $file)) {
-				$file_hash = hash("sha256", $file);
-				$base_dir = "annotations/$file_hash/";
-				if(is_dir($base_dir)) {
-					$users = scandir("annotations/$file_hash/");
-					foreach($users as $a_user) {
-						if(!preg_match("/^\.(?:\.)?$/", $a_user)) {
-							$tdir = "annotations/$file_hash/$a_user/";
-							$an = scandir($tdir);
-							foreach($an as $a_file) {
-								if(!preg_match("/^\.(?:\.)?$/", $a_file)) {
-									$path = "$tdir/$a_file";
-									$anno = get_json_cached($path);
+		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id group by c.id";
+		$res = rquery($query);
 
-									foreach ($anno["body"] as $item) {
-										if($item["purpose"] == "tagging") {
-											$value = strtolower($item["value"]);
-											#if(preg_match("/^\s*$/", $value)) {
-											#	dier("$path is empty: >$value<");
-											#}
-											if(!array_key_exists($value, $annos)) {
-												$annos[$value] = 1;
-											} else {
-												$annos[$value]++;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+		while ($row = mysqli_fetch_row($res)) {
+			$annos[$row[0]] = $row[1];
 		}
-
-		arsort($annos);
-
-		$GLOBALS["get_current_tags_cache"] = $annos;
 
 		return $annos;
 	}
