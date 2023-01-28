@@ -1,5 +1,31 @@
 <?php
 	$GLOBALS["get_current_tags_cache"] = array();
+	$GLOBALS["queries"] = array();
+	$GLOBALS["db_name"] = "annotate";
+
+	if(!isset($GLOBALS['db_host'])) {
+		$GLOBALS['db_host'] = 'localhost';
+	}
+
+	if(!isset($GLOBALS['db_username'])) {
+		$GLOBALS['db_username'] = "root";
+	}
+
+	/* 2DO: in installer eintragen, wenn nicht schon sowieso */
+	if (!isset($GLOBALS['db_password'])) {
+		$GLOBALS["db_password"] = trim(fgets(fopen("/etc/dbpw", 'r')));
+	}
+
+
+	try {
+		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name']);
+	} catch (\Throwable $e) {
+		print("aaaaaa$e\aaaaaa");
+		print("!!!!".mysqli_connect_errno()."!!!!");
+		if (mysqli_connect_errno()) {
+			die("Failed to connect to MySQL" . mysqli_connect_error());
+		}
+	}
 
 	function generateRandomString($length = 10) {
 		$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -317,4 +343,56 @@
 
 		return $imgfile;
 	}
+
+	function rquery($query){
+		$query_start_time = microtime(true);
+		$result = mysqli_query($GLOBALS['dbh'], $query) or die(mysqli_error($GLOBALS['dbh']));;
+		$query_end_time = microtime(true);
+
+		$GLOBALS["queries"][] = array(
+			"query" => $query,
+			"time" => ($query_end_time - $query_start_time)
+		);
+
+		return $result;
+	}
+
+	function my_mysqli_real_escape_string ($arg) {
+		return mysqli_real_escape_string($GLOBALS['dbh'], $arg ?? "");
+	}
+
+	function esc ($parameter) { 
+		if(!is_array($parameter)) { // Kein array
+			if(isset($parameter) && strlen($parameter)) {
+				return '"'.mysqli_real_escape_string($GLOBALS['dbh'], $parameter).'"';
+			} else {
+				return 'NULL';
+			}
+		} else { // Array
+			$str = join(', ', array_map('esc', array_map('my_mysqli_real_escape_string', $parameter)));
+			return $str;
+		}
+	}
+
+
+	function get_or_create_category_id ($category) {
+		$select_query = "select id from category where name = ".esc($category);		
+		$select_res = rquery($select_query);
+
+		$res = null;
+
+		while ($row = mysqli_fetch_row($select_res)) {
+			$res = $row[0];
+		}
+
+		if(is_null($res)) {
+			$insert_query = "insert into category (name) values (".esc($category).")";
+			print($insert_query);
+			return get_or_create_category_id($category);
+		} else {
+			return $res;
+		}
+	}
+
+	#die(get_or_create_category_id("raketenspiraleaasd"));
 ?>
