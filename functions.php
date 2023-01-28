@@ -141,35 +141,22 @@
 	}
 
 	function get_number_of_annotated_imgs() {
-		$files = scandir("images");
+		$q = "select count(*) from (select image_id from annotation group by image_id) a";
+		$r = rquery($q);
 
-		$annotated = 0;
-		$not_annotated = 0;
+		$res = null;
 
-		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$file_hash = hash("sha256", $file);
-				if(is_dir("annotations/$file_hash/")) {
-					$annotated++;
-				} else {
-					$not_annotated++;
-				}
-			}
+		while ($row = mysqli_fetch_row($r)) {
+			$res = $row[0];
 		}
 
-		return [$annotated, $not_annotated];
+		return $res;
 	}
 
 	function get_home_string () {
 		$annotation_stat = get_number_of_annotated_imgs();
 
-		$str = "Anzahl annotierter Bilder: ".htmlentities($annotation_stat[0] ?? "");
-		$str .= ", Anzahl unannotierter Bilder: ".htmlentities($annotation_stat[1] ?? "");
-
-		if($annotation_stat[1] != 0) {
-			$percent = sprintf("%0.2f", ($annotation_stat[0] / ($annotation_stat[0] + $annotation_stat[1])) * 100);
-			$str .= " ($percent%)";
-		}
+		$str = "Anzahl annotierter Bilder: ".htmlentities($annotation_stat ?? "");
 
 		$str .= "<br><a href='overview.php'>Übersicht über meine eigenen annotierten Bilder</a>";
 
