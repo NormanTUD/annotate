@@ -153,7 +153,7 @@ async function make_item_anno(elem, widgets={}) {
 				success("Create Anno: OK", response);
 				await load_dynamic_content();
 			},
-			error: function(jqXHR, textStatus, errorThrown) {
+			error: async function(jqXHR, textStatus, errorThrown) {
 				error("Create anno: " + textStatus, errorThrown);
 				await load_dynamic_content();
 			}
@@ -176,7 +176,7 @@ async function make_item_anno(elem, widgets={}) {
 				success("Update Anno: OK", response)
 				await load_dynamic_content();
 			},
-			error: function(jqXHR, textStatus, errorThrown) {
+			error: async function(jqXHR, textStatus, errorThrown) {
 				error("Update anno: " + textStatus, errorThrown);
 				await load_dynamic_content();
 			}
@@ -200,7 +200,7 @@ async function make_item_anno(elem, widgets={}) {
 				success("Delete Anno: OK", response)
 				await load_dynamic_content();
 			},
-			error: function(jqXHR, textStatus, errorThrown) {
+			error: async function(jqXHR, textStatus, errorThrown) {
 				error("delete Anno: " + textStatus, errorThrown);
 				await load_dynamic_content();
 			}
@@ -303,8 +303,9 @@ async function save_anno (annotation) {
 			success("Save Anno: OK", response);
 			await load_dynamic_content();
 		},
-		error: function(jqXHR, textStatus, errorThrown) {
+		error: async function(jqXHR, textStatus, errorThrown) {
 			error(textStatus, errorThrown);
+			await load_dynamic_content();
 		}
 	});
 }
