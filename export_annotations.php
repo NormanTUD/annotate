@@ -26,41 +26,17 @@
 		}
 	}
 
-	function parse_position_yolo ($file, $img_file, $pos, $imgw, $imgh) {
-		//xywh=pixel:579,354,58,41
-		$res = array();
+	function parse_position_yolo ($x_start, $x, $y, $w, $h, $imgw, $imgh) {
+		if(0 > $x) { $x = 0; }
+		if(0 > $y) { $y = 0; }
+		if(0 > $w) { $w = 0; }
+		if(0 > $h) { $h = 0; }
 
-		if(preg_match("/^xywh=pixel:\s*(-?\d+),\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*$/", $pos, $matches)) {
-			try {
-				$exif = @exif_read_data("images/$file");
-			} catch (\Throwable $e) {
-				//;
-			}
+		$res["x_center"] = (((2 * $x) + $w) / 2) / $imgw;
+		$res["y_center"] = (((2 * $y) + $h) / 2) / $imgh;
 
-			if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
-				list($imgw, $imgh) = array($imgh, $imgw);
-			}
-
-			$x = $matches[1];
-			$y = $matches[2];
-
-			$w = $matches[3];
-			$h = $matches[4];
-
-			if(0 > $x) { $x = 0; }
-			if(0 > $y) { $y = 0; }
-			if(0 > $w) { $w = 0; }
-			if(0 > $h) { $h = 0; }
-
-			$res["x_center"] = (((2 * $x) + $w) / 2) / $imgw;
-			$res["y_center"] = (((2 * $y) + $h) / 2) / $imgh;
-
-			$res["w_rel"] = $w / $imgw;
-			$res["h_rel"] = $h / $imgh;
-		} else {
-			mywarn("Position is undefined for $file\n");
-			#die($pos);
-		}
+		$res["w_rel"] = $w / $imgw;
+		$res["h_rel"] = $h / $imgh;
 
 		return $res;
 	}
@@ -104,6 +80,39 @@
 	}
 
 	#dier(in_array("rsdasdaketenspirale", $show_categories));
+
+	$images = [];
+	
+	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.x_end, a.y_start, a.y_end from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) limit 10";
+	$res = rquery($annotated_image_ids_query);
+
+	$images = [];
+
+	while ($row = mysqli_fetch_row($res)) {
+		$this_image = array(
+			"filename" => $row[0],
+			"width" => $row[1],
+			"height" => $row[2],
+			"category" => $row[3],
+			"x_start" => $row[4],
+			"y_start" => $row[5],
+			"x_end" => $row[6],
+			"y_end" => $row[7]
+		);
+
+		$yolo = parse_position_yolo($this_image["x_start"], $this_image["y_start"], $this_image["x_start"], $this_image["x_start"], 
+		//function parse_position_yolo ($x_start, $x, $y, $w, $h, $imgw, $imgh) {
+
+		$this_image["x_rel"] = 
+
+		$images[] = $this_image;
+	}
+
+	dier($images);
+
+
+
+	die("A");
 
 	if(is_dir($tmp_dir)) {
 		$files = scandir("images");

@@ -10,14 +10,14 @@
 			$parsed_position = parse_position($_POST["position"]);
 			$x_start = $parsed_position[0];
 			$y_start = $parsed_position[1];
-			$x_end = $parsed_position[2];
-			$y_end = $parsed_position[3];
+			$w = $parsed_position[2];
+			$h = $parsed_position[3];
 
 			$category_id = get_or_create_category_id($_POST["body"][0]["value"]);
 
 			$json = json_encode($_POST);
 
-			create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json, $annotarius_id);
+			create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id);
 
 			print "Annotation saved";
 		} else {

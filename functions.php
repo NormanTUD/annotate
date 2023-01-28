@@ -324,14 +324,14 @@
 		}
 	}
 
-	function create_annotation ($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json, $annotarius_id) {
+	function create_annotation ($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id) {
 		/*
-		create table annotation (id int unsigned primary key auto_increment, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, x_end int unsigned, y_end int unsigned, json MEDIUMBLOB, foreign key (category_id) references category(id) on delete cascade, foreign key (user_id) references user(id) on delete cascade);
+		create table annotation (id int unsigned primary key auto_increment, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, w int unsigned, h int unsigned, json MEDIUMBLOB, foreign key (category_id) references category(id) on delete cascade, foreign key (user_id) references user(id) on delete cascade);
 		*/
 
-		$query = "insert into annotation (image_id, user_id, category_id, x_start, y_start, x_end, y_end, json, annotarius_id) values (".
-			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json, $annotarius_id)).
-		") on duplicate key update image_id = values(image_id), category_id = values(category_id), x_start = values(x_start), y_start = values(y_start), x_end = values(x_end), y_end = values(y_end), json = values(json), annotarius_id = values(annotarius_id)";
+		$query = "insert into annotation (image_id, user_id, category_id, x_start, y_start, w, h, json, annotarius_id) values (".
+			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id)).
+		") on duplicate key update image_id = values(image_id), category_id = values(category_id), x_start = values(x_start), y_start = values(y_start), w = values(w), h = values(h), json = values(json), annotarius_id = values(annotarius_id)";
 
 		rquery($query);
 	}
