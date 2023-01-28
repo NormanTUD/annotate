@@ -54,16 +54,6 @@
 		return $res;
 	}
 
-	$tmp_name = generateRandomString(20);
-	$tmp_dir = "tmp/$tmp_name";
-	while (is_dir($tmp_dir)) {
-		$tmp_name = generateRandomString(20);
-		$tmp_dir = "tmp/$tmp_name";
-	}
-
-	ob_start();
-	system("mkdir -p $tmp_dir");
-	ob_clean();
 
 	$valid_formats = array(
 		"ultralytics_yolov5", "html"
@@ -163,9 +153,19 @@
 
 		print($html);
 		include("footer.php");
-		exit;
+		exit(0);
 	}
 
+	$tmp_name = generateRandomString(20);
+	$tmp_dir = "tmp/$tmp_name";
+	while (is_dir($tmp_dir)) {
+		$tmp_name = generateRandomString(20);
+		$tmp_dir = "tmp/$tmp_name";
+	}
+
+	ob_start();
+	system("mkdir -p $tmp_dir");
+	ob_clean();
 
 	if(is_dir($tmp_dir)) {
 		$dataset_yaml = "path: ./\n";
@@ -186,104 +186,96 @@
 			$j++;
 		}
 
-		foreach ($images as $img) {
-
-		}
-
 		ob_start();
 		mkdir("$tmp_dir/images/");
+		mkdir("$tmp_dir/labels/");
 		ob_clean();
 
-		if($format == "ultralytics_yolov5") {
-			ob_start();
-			mkdir("$tmp_dir/labels/");
-			ob_clean();
+		if($validation_split) {
+			mkdir("$tmp_dir/validation/");
+		}
 
-			if($validation_split) {
-				mkdir("$tmp_dir/validation/");
+		if($test_split) {
+			mkdir("$tmp_dir/test/");
+		}
+
+		file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
+
+		$j = 0;
+
+		shuffle($filtered_imgs);
+
+		foreach ($images as $img) {
+			if(!array_key_exists("fn", $img)) {
+				error_log("fn not defined:");
+				error_log(print_r($img, true));
+				continue;
 			}
+			if($max_files == 0 || $j < $max_files) {
+				$fn = $img["fn"];
+				//dier($img);
+				#print "<br>$fn<br>";
+				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
+				$str = "";
+				$strarr = array();
+				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
+					foreach ($img["tags"] as $i => $t) {
+						$pos = $img["position_yolo"][$i];
+						$k = $category_numbers[$img["anno_name"][$i]];
+						if(isset($pos['x_center']) && isset($pos['y_center']) &&  isset($pos['w_rel']) && isset($pos['h_rel'])) {
+							$this_str = "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel'];
+							if (!in_array($this_str, $strarr)) {
+								$strarr[] = $this_str;
+							}
+						} else {
+							error_log("$fn misses x_center, y_center, w_rel or h_rel");
+							#die(print_r($img, true));
+						}
+					}
 
-			if($test_split) {
-				mkdir("$tmp_dir/test/");
-			}
-
-			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
-
-			$j = 0;
-
-			shuffle($filtered_imgs);
-
-			foreach ($filtered_imgs as $img) {
-				if(!array_key_exists("fn", $img)) {
-					error_log("fn not defined:");
-					error_log(print_r($img, true));
-					continue;
-				}
-				if($max_files == 0 || $j < $max_files) {
-					$fn = $img["fn"];
+					$str = implode("\n", $strarr);
+				} else {
 					//dier($img);
-					#print "<br>$fn<br>";
-					$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
-					$str = "";
-					$strarr = array();
-					if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
-						foreach ($img["tags"] as $i => $t) {
-							$pos = $img["position_yolo"][$i];
-							$k = $category_numbers[$img["anno_name"][$i]];
-							if(isset($pos['x_center']) && isset($pos['y_center']) &&  isset($pos['w_rel']) && isset($pos['h_rel'])) {
-								$this_str = "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel'];
-								if (!in_array($this_str, $strarr)) {
-									$strarr[] = $this_str;
+				}
+
+				if($str && $fn && $fn_txt) {
+					$copy_to = "$tmp_dir/images/$fn";
+					if($validation_split || $test_split) {
+						$max_val = count($filtered_imgs) * $validation_split;
+						$max_test = count($filtered_imgs) * $test_split;
+
+						if($validation_split && $test_split) {
+							if(get_rand_between_0_and_1() >= 0.5) {
+								if($j <= $max_val) {
+									$copy_to = "$tmp_dir/validation/$fn";
 								}
 							} else {
-								error_log("$fn misses x_center, y_center, w_rel or h_rel");
-								#die(print_r($img, true));
+								if ($j <= $max_test) {
+									$copy_to = "$tmp_dir/test/$fn";
+								}
 							}
-						}
-
-						$str = implode("\n", $strarr);
-					} else {
-						//dier($img);
-					}
-
-					if($str && $fn && $fn_txt) {
-						$copy_to = "$tmp_dir/images/$fn";
-						if($validation_split || $test_split) {
-							$max_val = count($filtered_imgs) * $validation_split;
-							$max_test = count($filtered_imgs) * $test_split;
-
-							if($validation_split && $test_split) {
-								if(get_rand_between_0_and_1() >= 0.5) {
-									if($j <= $max_val) {
-										$copy_to = "$tmp_dir/validation/$fn";
-									}
-								} else {
-									if ($j <= $max_test) {
-										$copy_to = "$tmp_dir/test/$fn";
-									}
+						} else {
+							if($validation_split) {
+								if($j <= $max_val) {
+									$copy_to = "$tmp_dir/validation/$fn";
 								}
-							} else {
-								if($validation_split) {
-									if($j <= $max_val) {
-										$copy_to = "$tmp_dir/validation/$fn";
-									}
-								}
-								if($test_split) {
-									if($j <= $max_test) {
-										$copy_to = "$tmp_dir/test/$fn";
-									}
+							}
+							if($test_split) {
+								if($j <= $max_test) {
+									$copy_to = "$tmp_dir/test/$fn";
 								}
 							}
 						}
-
-						copy("images/$fn", $copy_to);
-						$j++;
-						file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 					}
+
+					copy("images/$fn", $copy_to);
+					$j++;
+					file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 				}
 			}
+		}
 
-			$hyperparams = '# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+		$hyperparams = '# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Hyperparameters for high-augmentation COCO training from scratch
 # python train.py --batch 32 --cfg yolov5m6.yaml --weights "" --data coco.yaml --img 1280 --epochs 300
 # See tutorials for hyperparameter evolution https://github.com/ultralytics/yolov5#tutorials
@@ -319,53 +311,53 @@ mixup: 0.3  # image mixup (probability)
 copy_paste: 0.4  # segment copy-paste (probability)
 ';
 
-			file_put_contents("$tmp_dir/hyperparams.yaml", $hyperparams);
+		file_put_contents("$tmp_dir/hyperparams.yaml", $hyperparams);
 
-			$train_bash = '#!/bin/bash
+		$train_bash = '#!/bin/bash
 if [ ! -d "yolov5" ]; then
-	git clone --depth 1 https://github.com/ultralytics/yolov5.git
+git clone --depth 1 https://github.com/ultralytics/yolov5.git
 fi
 cd yolov5
 ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
 if [ -d "$HOME/.alpha_yoloenv" ]; then
-	python3 -m venv ~/.alpha_yoloenv
-	echo "~/.alpha_yoloenv already exists"
-	source ~/.alpha_yoloenv/bin/activate
+python3 -m venv ~/.alpha_yoloenv
+echo "~/.alpha_yoloenv already exists"
+source ~/.alpha_yoloenv/bin/activate
 else
-	python3 -mvenv ~/.alpha_yoloenv/
-	source ~/.alpha_yoloenv/bin/activate
-	pip3 install -r requirements.txt
-	pip3 install "albumentations>=1.0.3"
-	pip3 install -r requirements.txt
+python3 -mvenv ~/.alpha_yoloenv/
+source ~/.alpha_yoloenv/bin/activate
+pip3 install -r requirements.txt
+pip3 install "albumentations>=1.0.3"
+pip3 install -r requirements.txt
 fi
 
 mkdir -p dataset
 if [ -d "../images" ]; then
-	mv ../images/ dataset/
+mv ../images/ dataset/
 fi
 if [ -d "../validation" ]; then
-	mv ../validation/ dataset/
+mv ../validation/ dataset/
 fi
 if [ -d "../test" ]; then
-	mv ../test/ dataset/
+mv ../test/ dataset/
 fi
 if [ -d "../labels" ]; then
-	mv ../labels/ dataset/
+mv ../labels/ dataset/
 fi
 if [ -e "../dataset.yaml" ]; then
-	mv ../dataset.yaml data/
+mv ../dataset.yaml data/
 fi
 if [ -e "../omniopt_simple_run.sh" ]; then
-	mv ../omniopt_simple_run.sh .
+mv ../omniopt_simple_run.sh .
 fi
 if [ -e "../simple_run.sh" ]; then
-	mv ../simple_run.sh .
+mv ../simple_run.sh .
 fi
 if [ -e "../run.sh" ]; then
-	mv ../run.sh .
+mv ../run.sh .
 fi
 if [ -e "../hyperparams.yaml" ]; then
-	mv ../hyperparams.yaml data/hyps/
+mv ../hyperparams.yaml data/hyps/
 fi
 
 
@@ -375,18 +367,18 @@ echo "cd yolov5"
 echo "sbatch -n 1 --time=64:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1 run.sh"
 ';
 
-			file_put_contents("$tmp_dir/runme.sh", $train_bash);
+		file_put_contents("$tmp_dir/runme.sh", $train_bash);
 
-			$simple_run_bash = '#!/bin/bash
+		$simple_run_bash = '#!/bin/bash
 
 #SBATCH -n 2 --time=32:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
 
 python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
 ';
 
-			file_put_contents("$tmp_dir/simple_run.sh", $simple_run_bash);
+		file_put_contents("$tmp_dir/simple_run.sh", $simple_run_bash);
 
-			$omniopt_simple_run = "#!/bin/bash -l
+		$omniopt_simple_run = "#!/bin/bash -l
 
 SCRIPT_DIR=$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )
 
@@ -395,9 +387,9 @@ cd \$SCRIPT_DIR
 ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
 
 if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
-	python3 -mvenv ~/.alpha_yoloenv/
-	source ~/.alpha_yoloenv/bin/activate
-	pip3 install -r requirements.txt
+python3 -mvenv ~/.alpha_yoloenv/
+source ~/.alpha_yoloenv/bin/activate
+pip3 install -r requirements.txt
 fi
 
 source ~/.alpha_yoloenv/bin/activate
@@ -405,11 +397,11 @@ source ~/.alpha_yoloenv/bin/activate
 
 
 function echoerr() {
-	echo \"$@\" 1>&2
+echo \"$@\" 1>&2
 }
 
 function red_text {
-        echoerr -e \"\e[31m$1\e[0m\"
+echoerr -e \"\e[31m$1\e[0m\"
 }
 
 set -e
@@ -417,49 +409,49 @@ set -o pipefail
 set -u
 
 function calltracer () {
-        echo 'Last file/last line:'
-        caller
+echo 'Last file/last line:'
+caller
 }
 trap 'calltracer' ERR
 
 function help () {
-        echo \"Possible options:\"
-        echo \"  --batchsize=INT                                    default value: 130\"
-        echo \"  --epochs=INT                                       default value: 1500\"
-        echo \"  --img=INT                                          default value: 512\"
-        echo \"  --patience=INT                                     default value: 200\"
-	echo \"	--lr0=FLOAT                                        default value: 0.01\"
-	echo \"	--lrf=FLOAT                                        default value: 0.1\"
-	echo \"	--momentum=FLOAT                                   default value: 0.937\"
-	echo \"	--weight_decay=FLOAT                               default value: 0.0005\"
-	echo \"	--warmup_epochs=FLOAT                              default value: 3.0\"
-	echo \"	--warmup_momentum=FLOAT                            default value: 0.8\"
-	echo \"	--warmup_bias_lr=FLOAT                             default value: 0.1\"
-	echo \"	--box=FLOAT                                        default value: 0.05\"
-	echo \"	--cls=FLOAT                                        default value: 0.3\"
-	echo \"	--cls_pw=FLOAT                                     default value: 1.0\"
-	echo \"	--obj=FLOAT                                        default value: 0.7\"
-	echo \"	--obj_pw=FLOAT                                     default value: 1.0\"
-	echo \"	--iou_t=FLOAT                                      default value: 0.20\"
-	echo \"	--anchor_t=FLOAT                                   default value: 4.0\"
-	echo \"	--fl_gamma=FLOAT                                   default value: 0.0\"
-	echo \"	--hsv_h=FLOAT                                      default value: 0.015\"
-	echo \"	--hsv_s=FLOAT                                      default value: 0.7\"
-	echo \"	--hsv_v=FLOAT                                      default value: 0.4\"
-	echo \"	--degrees=FLOAT                                    default value: 360\"
-	echo \"	--translate=FLOAT                                  default value: 0.1\"
-	echo \"	--scale=FLOAT                                      default value: 0.9\"
-	echo \"	--shear=FLOAT                                      default value: 0.0\"
-	echo \"	--perspective=FLOAT                                default value: 0.001\"
-	echo \"	--flipud=FLOAT                                     default value: 0.3\"
-	echo \"	--fliplr=FLOAT                                     default value: 0.5\"
-	echo \"	--mosaic=FLOAT                                     default value: 1.0\"
-	echo \"	--mixup=FLOAT                                      default value: 0.3\"
-	echo \"	--copy_paste=FLOAT                                 default value: 0.4\"
-        echo \"  --model\"
-        echo \"  --help                                             this help\"
-        echo \"  --debug                                            Enables debug mode (set -x)\"
-        exit $1
+echo \"Possible options:\"
+echo \"  --batchsize=INT                                    default value: 130\"
+echo \"  --epochs=INT                                       default value: 1500\"
+echo \"  --img=INT                                          default value: 512\"
+echo \"  --patience=INT                                     default value: 200\"
+echo \"	--lr0=FLOAT                                        default value: 0.01\"
+echo \"	--lrf=FLOAT                                        default value: 0.1\"
+echo \"	--momentum=FLOAT                                   default value: 0.937\"
+echo \"	--weight_decay=FLOAT                               default value: 0.0005\"
+echo \"	--warmup_epochs=FLOAT                              default value: 3.0\"
+echo \"	--warmup_momentum=FLOAT                            default value: 0.8\"
+echo \"	--warmup_bias_lr=FLOAT                             default value: 0.1\"
+echo \"	--box=FLOAT                                        default value: 0.05\"
+echo \"	--cls=FLOAT                                        default value: 0.3\"
+echo \"	--cls_pw=FLOAT                                     default value: 1.0\"
+echo \"	--obj=FLOAT                                        default value: 0.7\"
+echo \"	--obj_pw=FLOAT                                     default value: 1.0\"
+echo \"	--iou_t=FLOAT                                      default value: 0.20\"
+echo \"	--anchor_t=FLOAT                                   default value: 4.0\"
+echo \"	--fl_gamma=FLOAT                                   default value: 0.0\"
+echo \"	--hsv_h=FLOAT                                      default value: 0.015\"
+echo \"	--hsv_s=FLOAT                                      default value: 0.7\"
+echo \"	--hsv_v=FLOAT                                      default value: 0.4\"
+echo \"	--degrees=FLOAT                                    default value: 360\"
+echo \"	--translate=FLOAT                                  default value: 0.1\"
+echo \"	--scale=FLOAT                                      default value: 0.9\"
+echo \"	--shear=FLOAT                                      default value: 0.0\"
+echo \"	--perspective=FLOAT                                default value: 0.001\"
+echo \"	--flipud=FLOAT                                     default value: 0.3\"
+echo \"	--fliplr=FLOAT                                     default value: 0.5\"
+echo \"	--mosaic=FLOAT                                     default value: 1.0\"
+echo \"	--mixup=FLOAT                                      default value: 0.3\"
+echo \"	--copy_paste=FLOAT                                 default value: 0.4\"
+echo \"  --model\"
+echo \"  --help                                             this help\"
+echo \"  --debug                                            Enables debug mode (set -x)\"
+exit $1
 }
 
 export batchsize=130
@@ -499,310 +491,310 @@ export mixup=0.3
 export copy_paste=0.4
 
 for i in $@; do
-        case \$i in
-                --batchsize=*)
-                        batchsize=\"\${i#*=}\"
-                        re='^[+-]?[0-9]+$'
-                        if ! [[ \$batchsize =~ \$re ]] ; then
-                                red_text \"error: Not a INT: \$i\" >&2
-                                help 1
-                        fi
-                        shift
-                        ;;
-                --epochs=*)
-                        epochs=\"\${i#*=}\"
-                        re='^[+-]?[0-9]+$'
-                        if ! [[ \$epochs =~ \$re ]] ; then
-                                red_text \"error: Not a INT: \$i\" >&2
-                                help 1
-                        fi
-                        shift
-                        ;;
-                --img=*)
-                        img=\"\${i#*=}\"
-                        re='^[+-]?[0-9]+$'
-                        if ! [[ \$img =~ \$re ]] ; then
-                                red_text \"error: Not a INT: \$i\" >&2
-                                help 1
-                        fi
-                        shift
-                        ;;
-                --patience=*)
-                        patience=\"\${i#*=}\"
-                        re='^[+-]?[0-9]+$'
-                        if ! [[ \$patience =~ \$re ]] ; then
-                                red_text \"error: Not a INT: \$i\" >&2
-                                help 1
-                        fi
-                        shift
-                        ;;
-                --model=*)
-                        model=\"\${i#*=}\"
-                        shift
-                        ;;
-		--lr0=*)
-			lr0=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$lr0 =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--lrf=*)
-			lrf=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$lrf =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--momentum=*)
-			momentum=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$momentum =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--weight_decay=*)
-			weight_decay=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$weight_decay =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--warmup_epochs=*)
-			warmup_epochs=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$warmup_epochs =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--warmup_momentum=*)
-			warmup_momentum=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$warmup_momentum =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--warmup_bias_lr=*)
-			warmup_bias_lr=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$warmup_bias_lr =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--box=*)
-			box=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$box =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--cls=*)
-			cls=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$cls =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--cls_pw=*)
-			cls_pw=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$cls_pw =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--obj=*)
-			obj=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$obj =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--obj_pw=*)
-			obj_pw=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$obj_pw =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--iou_t=*)
-			iou_t=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$iou_t =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--anchor_t=*)
-			anchor_t=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$anchor_t =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--fl_gamma=*)
-			fl_gamma=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$fl_gamma =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--hsv_h=*)
-			hsv_h=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$hsv_h =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--hsv_s=*)
-			hsv_s=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$hsv_s =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--hsv_v=*)
-			hsv_v=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$hsv_v =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--degrees=*)
-			degrees=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$degrees =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--translate=*)
-			translate=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$translate =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--scale=*)
-			scale=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$scale =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--shear=*)
-			shear=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$shear =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--perspective=*)
-			perspective=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$perspective =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--flipud=*)
-			flipud=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$flipud =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--fliplr=*)
-			fliplr=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$fliplr =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--mosaic=*)
-			mosaic=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$mosaic =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--mixup=*)
-			mixup=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$mixup =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-		--copy_paste=*)
-			copy_paste=\"\${i#*=}\"
-			re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
-			if ! [[ \$copy_paste =~ \$re ]] ; then
-				red_text \"error: Not a FLOAT: \$i\" >&2
-				help 1
-			fi
-			shift
-			;;
-                -h|--help)
-                        help 0
-                        ;;
-                --debug)
-                        set -x
-                        ;;
-                *)
-                        red_text \"Unknown parameter \$i\" >&2
-                        help 1
-                        ;;
-        esac
+case \$i in
+	--batchsize=*)
+		batchsize=\"\${i#*=}\"
+		re='^[+-]?[0-9]+$'
+		if ! [[ \$batchsize =~ \$re ]] ; then
+			red_text \"error: Not a INT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--epochs=*)
+		epochs=\"\${i#*=}\"
+		re='^[+-]?[0-9]+$'
+		if ! [[ \$epochs =~ \$re ]] ; then
+			red_text \"error: Not a INT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--img=*)
+		img=\"\${i#*=}\"
+		re='^[+-]?[0-9]+$'
+		if ! [[ \$img =~ \$re ]] ; then
+			red_text \"error: Not a INT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--patience=*)
+		patience=\"\${i#*=}\"
+		re='^[+-]?[0-9]+$'
+		if ! [[ \$patience =~ \$re ]] ; then
+			red_text \"error: Not a INT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--model=*)
+		model=\"\${i#*=}\"
+		shift
+		;;
+	--lr0=*)
+		lr0=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$lr0 =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--lrf=*)
+		lrf=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$lrf =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--momentum=*)
+		momentum=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$momentum =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--weight_decay=*)
+		weight_decay=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$weight_decay =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--warmup_epochs=*)
+		warmup_epochs=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$warmup_epochs =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--warmup_momentum=*)
+		warmup_momentum=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$warmup_momentum =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--warmup_bias_lr=*)
+		warmup_bias_lr=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$warmup_bias_lr =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--box=*)
+		box=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$box =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--cls=*)
+		cls=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$cls =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--cls_pw=*)
+		cls_pw=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$cls_pw =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--obj=*)
+		obj=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$obj =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--obj_pw=*)
+		obj_pw=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$obj_pw =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--iou_t=*)
+		iou_t=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$iou_t =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--anchor_t=*)
+		anchor_t=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$anchor_t =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--fl_gamma=*)
+		fl_gamma=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$fl_gamma =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--hsv_h=*)
+		hsv_h=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$hsv_h =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--hsv_s=*)
+		hsv_s=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$hsv_s =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--hsv_v=*)
+		hsv_v=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$hsv_v =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--degrees=*)
+		degrees=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$degrees =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--translate=*)
+		translate=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$translate =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--scale=*)
+		scale=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$scale =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--shear=*)
+		shear=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$shear =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--perspective=*)
+		perspective=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$perspective =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--flipud=*)
+		flipud=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$flipud =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--fliplr=*)
+		fliplr=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$fliplr =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--mosaic=*)
+		mosaic=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$mosaic =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--mixup=*)
+		mixup=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$mixup =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	--copy_paste=*)
+		copy_paste=\"\${i#*=}\"
+		re=\"^[+-]?[0-9]+([.][0-9]+)?$\"
+		if ! [[ \$copy_paste =~ \$re ]] ; then
+			red_text \"error: Not a FLOAT: \$i\" >&2
+			help 1
+		fi
+		shift
+		;;
+	-h|--help)
+		help 0
+		;;
+	--debug)
+		set -x
+		;;
+	*)
+		red_text \"Unknown parameter \$i\" >&2
+		help 1
+		;;
+esac
 done
 
 run_uuid=\$(uuidgen)
@@ -849,23 +841,20 @@ copy_paste: \$copy_paste # segment copy-paste (probability)
 echo \"\$hyperparams_file_contents\" > \"\$hyps_file\"
 
 python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsize --data \$SCRIPT_DIR/data/dataset.yaml --epochs \$epochs --cache --img \$img --hyp \"\$hyps_file\" --patience \$patience 2>&1 \
-        | awk '{print;print > \"/dev/stderr\"}' \
-        | egrep '[0-9]G' \
-        | egrep '[0-9]/[0-9]' \
-        | grep -v Class \
-        | sed -e 's/.*G\s*//' \
-        | egrep '^[0-9]+\.[0-9]+' \
-        | tail -n1 \
-        | sed -e 's/\s*[0-9]*\s*[0-9]*:.*//' \
-        | sed -e 's#\s\s*#\\n#g' \
-        | perl -e '\$i = 1; while (<>) { print qq#RESULT\$i: \$_#; \$i++; }'
+| awk '{print;print > \"/dev/stderr\"}' \
+| egrep '[0-9]G' \
+| egrep '[0-9]/[0-9]' \
+| grep -v Class \
+| sed -e 's/.*G\s*//' \
+| egrep '^[0-9]+\.[0-9]+' \
+| tail -n1 \
+| sed -e 's/\s*[0-9]*\s*[0-9]*:.*//' \
+| sed -e 's#\s\s*#\\n#g' \
+| perl -e '\$i = 1; while (<>) { print qq#RESULT\$i: \$_#; \$i++; }'
 
 ";
 
-			file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
-		} else {
-			die("This should never happen. Sorry.");
-		}
+		file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
 
 		#die("a");
 		
