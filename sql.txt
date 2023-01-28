@@ -1,0 +1,5 @@
+create table image (id int unsigned primary key, filename varchar(1000), width int unsigned, height int unsigned);
+create table category (id int unsigned primary key, name varchar(1000));
+create table annotation (id int unsigned primary key, category_id int unsigned, x_start int unsigned, y_start int unsigned, x_end int unsigned, y_end int unsigned);
+create table user (id int unsigned primary key, name varchar(1000));
+create table annotation (id int unsigned primary key, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, x_end int unsigned, y_end int unsigned, foreign key (category_id) references category(id), foreign key (user_id) references user(id));
