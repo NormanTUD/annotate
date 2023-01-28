@@ -415,7 +415,26 @@
 		}
 	}
 
-	function get_or_create_image_id ($image) {
+	function get_image_width_and_height ($fn) {
+		$imgsz = getimagesize("./images/".$fn);
+
+		$width = $imgsz[0];
+		$height = $imgsz[1];
+
+		try {
+			$exif = @exif_read_data("images/$file");
+		} catch (\Throwable $e) {
+			//;
+		}
+
+		if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
+			list($width, $height) = array($width, $height);
+		}
+
+		return array($width, $height);
+	}
+
+	function get_or_create_image_id ($image, $width=null, $height=null) {
 		$select_query = "select id from image where filename = ".esc($image);		
 		$select_res = rquery($select_query);
 
@@ -428,7 +447,11 @@
 		#die($select_query);
 
 		if(is_null($res)) {
-			$insert_query = "insert into image (filename) values (".esc($image).") on duplicate key update filename = values(filename)";
+			$width_and_height = get_image_width_and_height($image);
+			$width = $width_and_height[0];
+			$height = $width_and_height[1];
+
+			$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height)";
 			rquery($insert_query);
 			return get_or_create_image_id($image);
 		} else {
@@ -444,13 +467,13 @@
 		}
 	}
 
-	function create_annotation ($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json) {
+	function create_annotation ($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json, $annotarius_id) {
 		/*
 		create table annotation (id int unsigned primary key auto_increment, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, x_end int unsigned, y_end int unsigned, json MEDIUMBLOB, foreign key (category_id) references category(id) on delete cascade, foreign key (user_id) references user(id) on delete cascade);
 		*/
 
-		$query = "insert into annotation (image_id, user_id, category_id, x_start, y_start, x_end, y_end, json) values (".
-			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json)).
+		$query = "insert into annotation (image_id, user_id, category_id, x_start, y_start, x_end, y_end, json, annotarius_id) values (".
+			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json, $annotate_userid)).
 		")";
 
 		rquery($query);

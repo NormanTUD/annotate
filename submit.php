@@ -4,6 +4,7 @@
 	if(array_key_exists("source", $_POST)) {
 		if(array_key_exists("id", $_POST)) {
 			$image_id = get_or_create_image_id($_POST["source"]);
+			$annotarius_id = $_POST["id"];
 			$user_id = get_or_create_user_id($_POST["id"]);
 
 			$parsed_position = parse_position($_POST["position"]);
@@ -17,7 +18,9 @@
 
 			$json = json_encode($_POST);
 
-			create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json);
+			create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json, $annotarius_id);
+
+			print "Annotation saved";
 		} else {
 			die("No ID given");
 		}
