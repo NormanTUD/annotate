@@ -13,7 +13,6 @@
 			$x_end = $parsed_position[2];
 			$y_end = $parsed_position[2];
 
-
 			$category_id = get_or_create_category_id($_POST["body"][0]["value"]);
 
 			$json = json_encode($_POST);
