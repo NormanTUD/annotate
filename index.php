@@ -5,16 +5,56 @@
 	if(isset($_GET["import"])) {
 		print "Importing images...<br>";
 
-
 		$files = scandir("images");
 
 		$img_files = array();
 
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				print "Id for $file: ".get_or_create_image_id($file)."<br>\n";
+				$image_id = get_or_create_image_id($file);
+				print "Id for $file: ".$image_id."<br>\n";
 				ob_flush();
 				flush();
+
+
+				$file_hash = hash("sha256", $file);
+				$anno_path = "annotations/".$file_hash;
+
+				if(file_exists($anno_path)) {
+					$user_dir = scandir($anno_path);
+					foreach($user_dir as $user) {
+						if(preg_match("/^[\w\d]+$/", $user)) {
+							$user_id = get_or_create_user_id($user);
+							print "Created user $user ($user_id)<br>\n";
+
+
+							$annotations = scandir("$anno_path/$user");
+
+							foreach ($annotations as $this_anno) {
+								if(preg_match("/\.json$/", $this_anno)) {
+									$this_anno_file = "$anno_path/$user/$this_anno";
+
+									$json_file = file_get_contents($this_anno_file);
+									$json = json_decode($json_file, TRUE);
+
+									$category_id = get_or_create_category_id($json["body"][0]["value"]);
+
+									$parsed_position = parse_position($json["position"]);
+									$x_start = $parsed_position[0];
+									$y_start = $parsed_position[1];
+									$x_end = $parsed_position[2];
+									$y_end = $parsed_position[3];
+
+									$annotarius_id = $json["id"];
+
+									create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $x_end, $y_end, $json_file, $annotarius_id);
+								}
+							}
+						}
+					}
+				} else {
+					// dont import
+				}
 			}
 		}
 
