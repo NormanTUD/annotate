@@ -65,12 +65,6 @@
 	system("mkdir -p $tmp_dir");
 	ob_clean();
 
-	$show_categories = array();
-
-	if(isset($_GET["show_categories"])) {
-		$show_categories = array_filter($_GET["show_categories"]);
-	}
-
 	$valid_formats = array(
 		"ultralytics_yolov5", "html"
 	);
@@ -79,16 +73,17 @@
 		$format = $_GET["format"];
 	}
 
-	#dier(in_array("rsdasdaketenspirale", $show_categories));
-
 	$images = [];
 	
-	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) limit 10";
+	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) limit 10";
 	$res = rquery($annotated_image_ids_query);
 
 	$images = [];
+	$categories = [];
 
 	while ($row = mysqli_fetch_row($res)) {
+		$row[3] = strtolower($row[3]);
+
 		$this_image = array(
 			"filename" => $row[0],
 			"width" => $row[1],
@@ -97,8 +92,13 @@
 			"x_start" => $row[4],
 			"y_start" => $row[5],
 			"w" => $row[6],
-			"h" => $row[7]
+			"h" => $row[7],
+			"id" => $row[8],
 		);
+
+		if(!in_array($row[3], $categories)) {
+			$categories[] = $row[3];
+		}
 
 		$yolo = parse_position_yolo($this_image["x_start"], $this_image["y_start"], $this_image["w"], $this_image["h"], $this_image["width"], $this_image["height"]);
 
@@ -110,169 +110,103 @@
 		$images[] = $this_image;
 	}
 
-	dier($images);
+	if ($format == "html") {
+		$html = file_get_contents("export_base.html");
+		$annos_strings = array();
+
+		$annotated_imgs_by_name = array();
+
+		// <object-class> <x> <y> <width> <height>
+		foreach ($images as $img) {
+			$fn = $img["fn"];
+			$w = $img["w"];
+			$h = $img["h"];
+			$id = $img["id"];
+
+			$annotation_base = '
+						<g class="a9s-annotation">
+							<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
+						</g>
+			';
+			$this_annos = array();
+
+			foreach ($img["position_xywh"] as $this_anno_data) {
+				$this_anno = $annotation_base;
+				$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
+				$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
+				$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
+				$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y"], $this_anno);
+				$this_anno = preg_replace('/\$\{y_1\}/', $this_anno_data["h"], $this_anno);
+
+				$this_annos[] = $this_anno;
+			}
+
+			$annotations_string = join("\n", $this_annos);
 
 
+			$base_struct = '
+			<div style="position: relative; display: inline-block;">
+				<img class="images" src="images/'.$fn.'" style="display: block;">
+				<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
+					<g>
+						'.$annotations_string.'
+					</g>
+				</svg>
+			</div>
+			';
 
-	die("A");
+			$annos_strings[] = $base_struct;
+			if(is_array($img["anno_name"])) {
+				for ($i = 0; $i < count($img["anno_name"]); $i++) {
+					$ttag = $img["anno_name"][$i];
+					$annotated_imgs_by_name[$ttag][] = $base_struct;
+				}
+			}
+
+			#dier(htmlentities($base_struct));
+
+			$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
+			$str = "";
+			if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
+				foreach ($img["tags"] as $i => $t) {
+					$pos = $img["position_rel"][$i];
+					$str .= "$t ".$pos['x_0']." ".$pos['x_1']." ".$pos['x_0']." ".$pos['y_1']."\n";
+				}
+			}
+		}
+
+		$last = "";
+		$new_html = "";
+		$hashes = array();
+		foreach ($annotated_imgs_by_name as $n => $s) {
+			if($last != $n) {
+				if(in_array($n, $show_categories)) {
+					$new_html .= "<h2>".htmlentities($n)."</h2>";
+					$last = $n;
+				}
+			}
+			foreach ($s as $i) {
+				$h = hash('md5', htmlentities($i));
+				if(!in_array($h, $hashes)) {
+					$new_html .= $i;
+					$hashes[] = $h;
+				}
+			}
+		}
+
+		#$annos_str = join("", $annos_strings);
+
+		$html = preg_replace("/REPLACEME/", $new_html, $html);
+
+		#file_put_contents("$tmp_dir/index.html", $html);
+
+		print($html);
+		include("footer.php");
+		exit;
+	}
+
 
 	if(is_dir($tmp_dir)) {
-		$files = scandir("images");
-		$images = array();
-
-		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$imgfn = "images/$file";
-				$imgsz = getimagesize($imgfn);
-
-				if($imgsz) {
-					$width = $imgsz[0];
-					$height = $imgsz[1];
-
-					#dier($imgsz);
-					#dier($file);
-					$hash = hash("sha256", $file);
-					$dir = "annotations/$hash";
-
-					if(is_dir($dir) && $width && $height && file_exists($imgfn)) {
-						$images[$file] = array(
-							"fn" => $file, 
-							"hash" => $hash,
-							"dir" => $dir,
-							"w" => $width,
-							"h" => $height
-						);
-					}
-				} else {
-					error_log("Error reading file $file");
-				}
-			}
-		}
-
-		$categories = array();
-		$annos = array();
-
-		$filtered_imgs = array();
-
-		$k = 0;
-		foreach($images as $item) {
-			if(is_dir($item["dir"])) {
-				$user_annotations = scandir($item["dir"]);
-				foreach($user_annotations as $user_annotation_dir) {
-					if(!preg_match("/^\.\.?$/", $user_annotation_dir)) {
-						$tdir = $item["dir"]."/$user_annotation_dir";
-						$single_user_annotations = scandir($tdir);
-						foreach($single_user_annotations as $single_user_annotation_file) {
-							if(preg_match("/\.json$/", $single_user_annotation_file)) {
-								#die("<pre>$single_user_annotation_file</pre>");
-								$struct = get_json_cached("$tdir/$single_user_annotation_file");
-								#dier($struct);
-								$file = $struct["source"];
-								//mywarn($file."\n");
-								#dier($images[$file]);
-
-								$has_valid_category = 0;
-
-								if(!count($show_categories)) {
-									$has_valid_category = 1;
-								}
-
-								$images[$file]["w"] = $item["w"];
-								$images[$file]["h"] = $item["h"];
-
-								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
-
-								#if($file == "lentikularwolke-OiFzWcEWGN4-00028.jpg") {
-								#	die(print_r($struct, true));
-								#}
-
-								$images[$file]["position_yolo"][] = parse_position_yolo($file, $images[$file], $struct["position"], $images[$file]["w"], $images[$file]["h"]);
-								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
-								$images[$file]["anno_struct"] = $struct;
-								$bla = print_r($struct["body"], true);
-
-								foreach ($struct["body"] as $anno) {
-									if($anno["purpose"] == "tagging") {
-										$anno["value"] = strtolower($anno["value"]);
-										if(!in_array($anno["value"], $categories)) {
-											$categories[] = $anno["value"];
-										}
-
-										$index = array_search($anno["value"], $categories);
-
-										$images[$file]["tags"][] = $index;
-										$images[$file]["anno_name"][] = $anno["value"];
-
-										#print $anno["value"];
-										#print "<br>\n";
-										#print_r($show_categories);
-										#print "<br>\n";
-										if(in_array($anno["value"], $show_categories)) {
-											$has_valid_category = 1;
-										}
-										#dier($images[$file]);
-										#die(">$has_valid_category<");
-										//dier($index);
-										//dier($anno["value"]);
-									}
-								}
-
-
-								if(!$has_valid_category) {
-									#print "no valid category $file<br><span style='color: red'>disabling entry for $file</span><br>\n";
-									unset($images[$file]["disabled"]);
-								} else {
-									if(file_exists("images/$file")) {
-										if(isset($images[$file])) {
-											if(!array_key_exists("fn", $images[$file])) {
-												$images[$file]["fn"] = $file;
-											}
-
-											$filtered_imgs[$file] = $images[$file];
-										}
-									}
-								}
-
-								#if(preg_match("/jupiter/", $bla)) {
-								#	dier("has_valid_category: $has_valid_category\nss:\n$bla");
-								#}
-								#print("===>><pre>".print_r($images[$file], true)."</pre><<==");
-							}
-						}
-					}
-				}
-			} else {
-				/*
-				print($dir);
-				dier($images[$file]);
-				die("$dir");
-				 */
-			}
-
-			//dier($item);
-			$k++;
-		}
-
-		//dier($images["002215398dcba50ac5d89290c27301c1.jpg"]);
-		//dier($images);
-
-		/*
-		path: ../datasets/coco128  # dataset root dir
-		train: images/train2017  # train images (relative to 'path') 128 images
-		val: images/train2017  # val images (relative to 'path') 128 images
-		test:  # test images (optional)
-
-		# Classes (80 COCO classes)
-		names:
-		  0: person
-		  1: bicycle
-		  2: car
-		  ...
-		  77: teddy bear
-		  78: hair drier
-		  79: toothbrush
-		*/
-
 		$dataset_yaml = "path: ./\n";
 		$dataset_yaml .= "train: dataset/images/\n";
 		if($validation_split) {
@@ -281,33 +215,19 @@
 			$dataset_yaml .= "val: dataset/images/\n";
 		}
 
-		if($test_split) {
-			$dataset_yaml .= "test: dataset/test/\n";
-		}
 		$dataset_yaml .= "names:\n";
 
 		$j = 0;
 		$category_numbers = array();
 		foreach ($categories as $i => $cat) {
-			if(!count($show_categories) || in_array($cat, $show_categories)) {
-				$category_numbers[$cat] = $j;
-				$dataset_yaml .= "  $j: $cat\n";
-				$j++;
-			}
+			$category_numbers[$cat] = $j;
+			$dataset_yaml .= "  $j: $cat\n";
+			$j++;
 		}
 
-		/*
-			git clone --depth 1 https://github.com/ultralytics/yolov5.git
-			python3 -m venv env
-			source env/bin/activate
-			pip3 install -r requirements.txt
-			pip3 install "albumentations>=1.0.3"
-			wget https://raw.githubusercontent.com/ultralytics/yolov5/b94b59e199047aa8bf2cdd4401ae9f5f42b929e6/data/hyps/hyp.scratch-low.yaml
+		foreach ($images as $img) {
 
-			pip install wandb
-
-			python3 train.py --cfg yolov5n6.yaml --batch 8 --data dataset.yaml --epochs 10 --cache --img 512 --nosave --hyp hyp.VOC.yaml --hyp hyp.scratch-low.yaml
-		 */
+		}
 
 		ob_start();
 		mkdir("$tmp_dir/images/");
@@ -982,115 +902,6 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 ";
 
 			file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
-		} else if ($format == "html") {
-			ob_start();
-			mkdir("$tmp_dir/labels/");
-			ob_clean();
-
-			file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
-
-			$html = file_get_contents("export_base.html");
-			$html_images = array();
-
-			$annos_strings = array();
-
-			$annotated_imgs_by_name = array();
-
-			// <object-class> <x> <y> <width> <height>
-			foreach ($filtered_imgs as $img) {
-				if(!isset($img["anno_struct"]["full"])) {
-					continue;
-				}
-
-
-				$fn = $img["fn"];
-				$w = $img["w"];
-				$h = $img["h"];
-
-				$anno_struct = json_decode($img["anno_struct"]["full"], true);
-
-				$id = $anno_struct["id"];
-
-				$annotation_base = '
-							<g class="a9s-annotation">
-								<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
-							</g>
-				';
-				$this_annos = array();
-
-				foreach ($img["position_xywh"] as $this_anno_data) {
-					$this_anno = $annotation_base;
-					$this_anno = preg_replace('/\$\{id\}/', $id, $this_anno);
-					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
-					$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
-					$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y"], $this_anno);
-					$this_anno = preg_replace('/\$\{y_1\}/', $this_anno_data["h"], $this_anno);
-
-					$this_annos[] = $this_anno;
-				}
-
-				$annotations_string = join("\n", $this_annos);
-
-
-				$base_struct = '
-				<div style="position: relative; display: inline-block;">
-					<img class="images" src="images/'.$fn.'" style="display: block;">
-					<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
-						<g>
-							'.$annotations_string.'
-						</g>
-					</svg>
-				</div>
-				';
-
-				$annos_strings[] = $base_struct;
-				if(is_array($img["anno_name"])) {
-					for ($i = 0; $i < count($img["anno_name"]); $i++) {
-						$ttag = $img["anno_name"][$i];
-						$annotated_imgs_by_name[$ttag][] = $base_struct;
-					}
-				}
-
-				#dier(htmlentities($base_struct));
-
-				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
-				$str = "";
-				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
-					foreach ($img["tags"] as $i => $t) {
-						$pos = $img["position_rel"][$i];
-						$str .= "$t ".$pos['x_0']." ".$pos['x_1']." ".$pos['x_0']." ".$pos['y_1']."\n";
-					}
-				}
-			}
-
-			$last = "";
-			$new_html = "";
-			$hashes = array();
-			foreach ($annotated_imgs_by_name as $n => $s) {
-				if($last != $n) {
-					if(in_array($n, $show_categories)) {
-						$new_html .= "<h2>".htmlentities($n)."</h2>";
-						$last = $n;
-					}
-				}
-				foreach ($s as $i) {
-					$h = hash('md5', htmlentities($i));
-					if(!in_array($h, $hashes)) {
-						$new_html .= $i;
-						$hashes[] = $h;
-					}
-				}
-			}
-
-			#$annos_str = join("", $annos_strings);
-
-			$html = preg_replace("/REPLACEME/", $new_html, $html);
-
-			#file_put_contents("$tmp_dir/index.html", $html);
-
-			print($html);
-			include("footer.php");
-			exit;
 		} else {
 			die("This should never happen. Sorry.");
 		}
