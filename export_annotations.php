@@ -132,28 +132,28 @@
 			foreach ($imgname as $this_anno_data) {
 				$this_anno = $annotation_base;
 				$this_anno = preg_replace('/\$\{id\}/', $this_anno_data["id"], $this_anno);
-				$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x"], $this_anno);
+				$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x_start"], $this_anno);
 				$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
-				$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y"], $this_anno);
+				$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y_start"], $this_anno);
 				$this_anno = preg_replace('/\$\{y_1\}/', $this_anno_data["h"], $this_anno);
 
 				$this_annos[] = $this_anno;
+
+				$annotations_string = join("\n", $this_annos);
+
+				$base_struct = '
+				<div style="position: relative; display: inline-block;">
+					<img class="images" src="images/'.$fn.'" style="display: block;">
+					<svg class="a9s-annotationlayer" width='.$this_anno_data["w"].' height='.$this_anno_data["h"].' viewBox="0 0 '.$w.' '.$h.'">
+						<g>
+							'.$annotations_string.'
+						</g>
+					</svg>
+				</div>
+				';
+
+				$base_structs[] = $base_struct;
 			}
-
-			$annotations_string = join("\n", $this_annos);
-
-			$base_struct = '
-			<div style="position: relative; display: inline-block;">
-				<img class="images" src="images/'.$fn.'" style="display: block;">
-				<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
-					<g>
-						'.$annotations_string.'
-					</g>
-				</svg>
-			</div>
-			';
-
-			$base_structs[] = $base_struct;
 		}
 
 		$new_html = join("\n", $base_structs);
