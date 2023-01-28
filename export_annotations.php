@@ -26,7 +26,7 @@
 		}
 	}
 
-	function parse_position_yolo ($x_start, $x, $y, $w, $h, $imgw, $imgh) {
+	function parse_position_yolo ($x, $y, $w, $h, $imgw, $imgh) {
 		if(0 > $x) { $x = 0; }
 		if(0 > $y) { $y = 0; }
 		if(0 > $w) { $w = 0; }
@@ -83,7 +83,7 @@
 
 	$images = [];
 	
-	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.x_end, a.y_start, a.y_end from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) limit 10";
+	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) limit 10";
 	$res = rquery($annotated_image_ids_query);
 
 	$images = [];
@@ -96,14 +96,16 @@
 			"category" => $row[3],
 			"x_start" => $row[4],
 			"y_start" => $row[5],
-			"x_end" => $row[6],
-			"y_end" => $row[7]
+			"w" => $row[6],
+			"h" => $row[7]
 		);
 
-		$yolo = parse_position_yolo($this_image["x_start"], $this_image["y_start"], $this_image["x_start"], $this_image["x_start"], 
-		//function parse_position_yolo ($x_start, $x, $y, $w, $h, $imgw, $imgh) {
+		$yolo = parse_position_yolo($this_image["x_start"], $this_image["y_start"], $this_image["w"], $this_image["h"], $this_image["width"], $this_image["height"]);
 
-		$this_image["x_rel"] = 
+		$this_image["x_center"] = $yolo["x_center"];
+		$this_image["y_center"] = $yolo["y_center"];
+		$this_image["w_rel"] = $yolo["w_rel"];
+		$this_image["h_rel"] = $yolo["h_rel"];
 
 		$images[] = $this_image;
 	}
