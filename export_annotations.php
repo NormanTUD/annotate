@@ -245,7 +245,7 @@
 				}
 			}
 
-			copy("images/$fn", $copy_to);
+			link("images/$fn", $copy_to);
 			$j++;
 
 			$str = "";
