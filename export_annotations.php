@@ -112,51 +112,55 @@
 		$annos_strings = array();
 
 		// <object-class> <x> <y> <width> <height>
-		foreach ($images as $fn => $imgname) {
-			$w = $imgname[0]["width"];
-			$h = $imgname[0]["height"];
+		if(count($images)) {
+			foreach ($images as $fn => $imgname) {
+				$w = $imgname[0]["width"];
+				$h = $imgname[0]["height"];
 
-			$annotation_base = '
-						<g class="a9s-annotation">
-							<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
-						</g>
-			';
-
-			$this_annos = array();
-
-			foreach ($imgname as $this_anno_data) {
-				$this_anno = $annotation_base;
-
-				$this_anno = preg_replace('/\$\{id\}/', $this_anno_data["id"], $this_anno);
-				$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x_start"], $this_anno);
-				$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
-				$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y_start"], $this_anno);
-				$this_anno = preg_replace('/\$\{y_1\}/', $this_anno_data["h"], $this_anno);
-
-				$this_annos[] = $this_anno;
-
-				$annotations_string = join("\n", $this_annos);
-
-				$base_struct = '
-				<div style="position: relative; display: inline-block;">
-					<img class="images" src="images/'.$fn.'" style="display: block;">
-					<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
-						<g>
-							'.$annotations_string.'
-						</g>
-					</svg>
-				</div>
+				$annotation_base = '
+							<g class="a9s-annotation">
+								<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
+							</g>
 				';
 
-				$base_structs[] = $base_struct;
+				$this_annos = array();
+
+				foreach ($imgname as $this_anno_data) {
+					$this_anno = $annotation_base;
+
+					$this_anno = preg_replace('/\$\{id\}/', $this_anno_data["id"], $this_anno);
+					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x_start"], $this_anno);
+					$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
+					$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y_start"], $this_anno);
+					$this_anno = preg_replace('/\$\{y_1\}/', $this_anno_data["h"], $this_anno);
+
+					$this_annos[] = $this_anno;
+
+					$annotations_string = join("\n", $this_annos);
+
+					$base_struct = '
+					<div style="position: relative; display: inline-block;">
+						<img class="images" src="images/'.$fn.'" style="display: block;">
+						<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
+							<g>
+								'.$annotations_string.'
+							</g>
+						</svg>
+					</div>
+					';
+
+					$base_structs[] = $base_struct;
+				}
 			}
+
+			$new_html = join("\n", $base_structs);
+
+			$html = preg_replace("/REPLACEME/", $new_html, $html);
+
+			print($html);
+		} else {
+			print "Keine Daten für die gewählte Kategorie";
 		}
-
-		$new_html = join("\n", $base_structs);
-
-		$html = preg_replace("/REPLACEME/", $new_html, $html);
-
-		print($html);
 		include("footer.php");
 		exit(0);
 	}
