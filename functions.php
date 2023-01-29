@@ -117,8 +117,8 @@
 	}
 
 	function get_home_string () {
-		$annotation_stat = get_number_of_annotated_imgs();
-		$unannotation_stat = get_number_of_unannotated_imgs();
+		$annotation_stat = number_format(get_number_of_annotated_imgs(), 0, ',', '.');
+		$unannotation_stat = number_format(get_number_of_unannotated_imgs(), 0, ',', '.');
 
 		$str = "Annotierte Bilder: ".htmlentities($annotation_stat ?? "");
 		$str .= ", unannotierte Bilder: ".htmlentities($unannotation_stat ?? "");
