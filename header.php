@@ -8,6 +8,7 @@ include_once("functions.php");
 	<link rel="stylesheet" href="annotorious.min.css">
 	<link rel="stylesheet" href="toastr.min.css">
 	<link rel="stylesheet" href="main.css">
+	<script src="plotly-latest.min.js"></script>
 	<script src="annotorious.min.js"></script>
 	<script src="jquery.min.js"></script>
 	<script src="main.js"></script>

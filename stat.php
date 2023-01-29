@@ -57,11 +57,8 @@ while ($row = mysqli_fetch_assoc($bounding_box_data_result)) {
 }
 
 // Use Plotly.js to display the statistics
+include("header.php");
 ?>
-<html>
-  <head>
-    <script src="plotly-latest.min.js"></script>
-  </head>
   <body>
     <div id="category_chart"></div>
 <script>
@@ -130,5 +127,9 @@ while ($row = mysqli_fetch_assoc($bounding_box_data_result)) {
     title: 'Bounding Box Height Distribution'
   });
 </script>
-  </body>
-</html>
+<?php
+	include("footer.php");
+?>
+<script>
+	load_dynamic_content();
+</script>
