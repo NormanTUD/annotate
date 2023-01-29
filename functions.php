@@ -113,7 +113,7 @@
 	}
 
 	function get_number_of_annotated_imgs() {
-		$q = "select count(*) from (select image_id from annotation group by image_id) a";
+		$q = "select count(*) from (select image_id from annotation where deleted = 0 group by image_id) a";
 		$r = rquery($q);
 
 		$res = null;
