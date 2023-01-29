@@ -160,8 +160,6 @@
 		$imgfile = get_next_random_unannotated_image();
 	}
 
-	dier("imgfile:>$imgfile<");
-
 	if($imgfile) {
 ?>
 		<br>
