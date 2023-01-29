@@ -8,7 +8,9 @@
 		set_time_limit(300);
 
 		function shutdown() {
+			mywarn("Exiting, rolling back changes\n");
 			rquery("ROLLBACK;");
+			rquery("SET autocommit=1;");
 		}
 
 		register_shutdown_function('shutdown');
@@ -74,6 +76,7 @@
 						// dont import
 					}
 					rquery("COMMIT;");
+					rquery("SET autocommit=1;");
 				}
 			}
 		}
