@@ -189,20 +189,25 @@
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
 			$link_to = "$tmp_dir/images/$fn";
 
+			/*
 			$failed_link = link("images/$fn", $link_to);
+			#Make the parent directory of the link() target have permission chmod u=rwx,g=rxs,o=rx. This should show up in "ls" as "drwxr-sr-x". In this case, the user.group ownership is wwwrun.www.
 			if(!$failed_link) {
 				dier("failed to copy >images/$fn< to >$link_to<");
 			}
-			$j++;
+			 */
+			if(file_exists("images/$fn")) {
+				copy("images/$fn", $link_to);
+				$j++;
 
-			$str = "";
-			foreach ($img as $single_anno) {
-				$str .= $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"]."\n";
+				$str = "";
+				foreach ($img as $single_anno) {
+					$str .= $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"]."\n";
+				}
+
+				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 			}
-
-			file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 		}
-		dier($j);
 
 		$hyperparams = '# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Hyperparameters for high-augmentation COCO training from scratch
