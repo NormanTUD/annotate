@@ -120,6 +120,8 @@
 	}
 
 	if(array_key_exists("move_to_unidentifiable", $_GET)) {
+		rquery("update image set unidentifiable = 1");
+		rquery("update image set deleted = 1");
 		if(!preg_match("/\.\./", $_GET["move_to_unidentifiable"]) && preg_match("/\.jpg/", $_GET["move_to_unidentifiable"])) {
 			$f = "images/".$_GET["move_to_unidentifiable"];
 			$t = "unidentifiable/".$_GET["move_to_unidentifiable"];
@@ -134,6 +136,8 @@
 	}
 
 	if(array_key_exists("move_to_offtopic", $_GET)) {
+		rquery("update image set offtopic = 1");
+		rquery("update image set deleted = 1");
 		if(!preg_match("/\.\./", $_GET["move_to_offtopic"]) && preg_match("/\.jpg/", $_GET["move_to_offtopic"])) {
 			$f = "images/".$_GET["move_to_offtopic"];
 			$t = "offtopic/".$_GET["move_to_offtopic"];

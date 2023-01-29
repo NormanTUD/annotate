@@ -91,7 +91,7 @@
 	}
 
 	function get_number_of_unannotated_imgs() {
-		$q = "select count(*) from (select id from image where id not in (select image_id from annotation)) a";
+		$q = "select count(*) from (select id from image where id not in (select image_id from annotation) and deleted = 0) a";
 		$r = rquery($q);
 
 		$res = null;
@@ -384,15 +384,17 @@
 	}
 
 	function get_next_random_unannotated_image () {
-		$query = "select filename from image where id not in (select image_id from annotation) order by rand() limit 1";
+		$query = "select filename from image where id not in (select image_id from annotation) and deleted = 0 order by rand()";
 		$res = rquery($query);
 
 		$result = null;
 
 		while ($row = mysqli_fetch_row($res)) {
-			$result = $row[0];
+			if(file_exists("images/".$row[0])) {
+				$result = $row[0];
+			}
 		}
 
-		return $result;
+		return null;
 	}
 ?>
