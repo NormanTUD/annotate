@@ -3,29 +3,23 @@
 
 	if(array_key_exists("source", $_POST)) {
 		if(array_key_exists("id", $_POST)) {
-			$hash_filename = hash("sha256", $_POST["source"]);
-			$hash_annotation = hash("sha256", $_POST["id"]);
+			$image_id = get_or_create_image_id($_POST["source"]);
+			$annotarius_id = $_POST["id"];
+			$user_id = get_or_create_user_id($_COOKIE["annotate_userid"]);
 
-			$dir = "annotations/$hash_filename/$user_id/";
-			$filename = "$dir/$hash_annotation.json";
+			$parsed_position = parse_position($_POST["position"], get_image_width($image_id), get_image_height($image_id));
+			$x_start = $parsed_position[0];
+			$y_start = $parsed_position[1];
+			$w = $parsed_position[2];
+			$h = $parsed_position[3];
 
-			# sudo mkdir annotations
-			# cd annotations
-			# sudo chown -R www-data:$USER .
-			ob_start();
-			system("mkdir -p $dir");
-			ob_clean();
+			$category_id = get_or_create_category_id($_POST["body"][0]["value"]);
 
-			if(is_dir($dir)) {
-				file_put_contents($filename, json_encode($_POST));
-				if(file_exists($filename)) {
-					print "OK";
-				} else {
-					die("$filename could not be created");
-				}
-			} else {
-				die("$dir could not be created");
-			}
+			$json = json_encode($_POST);
+
+			create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id);
+
+			print "Annotation saved";
 		} else {
 			die("No ID given");
 		}

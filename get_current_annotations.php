@@ -7,53 +7,17 @@
 	}
 
 	if(array_key_exists("source", $_GET)) {
-		$hash_filename = hash("sha256", $_GET["source"]);
-		$base_dir = "annotations/$hash_filename";
-		if(!$first_other) {
-			$dir = "$base_dir/$user_id/";
+		$query = "select a.json from annotation a left join image i on a.image_id = i.id left join user u on u.id = a.user_id where i.filename = ".esc($_GET["source"])." and u.name  = ".esc($_COOKIE["annotate_userid"]).' and a.deleted = 0 and i.deleted = 0';
 
-			if(is_dir($dir)) {
-				$files = scandir($dir);
-				$jsons = array();
+		$res = rquery($query);
 
-				foreach($files as $file) {
-					if(preg_match("/\.json$/", $file)) {
-						$jsons[] = json_decode(json_decode(file_get_contents("$dir/$file"), true)["full"]);
-					}
-				}
-				print json_encode($jsons);
-			} else {
-				print("[]");
-				exit(0);
-			}
-		} else {
-			if(is_dir($base_dir)) {
-				$users = scandir($base_dir);
-				foreach($users as $user) {
-					if($user != "." && $user != "..") {
-						$dir = "$base_dir/$user";
-						if(is_dir($dir)) {
-							$files = scandir($dir);
-							$jsons = array();
+		$jsons = [];
 
-							foreach($files as $file) {
-								if(preg_match("/\.json$/", $file)) {
-									$jsons[] = json_decode(json_decode(file_get_contents("$dir/$file"), true)["full"]);
-								}
-							}
-
-							print json_encode($jsons);
-							exit(0);
-						} else {
-							print("[]");
-							exit(0);
-						}
-					}
-				}
-			}
-			print("[]");
-			exit(0);
+		while ($row = mysqli_fetch_row($res)) {
+			$jsons[] = json_decode(json_decode(stripcslashes($row[0]), TRUE)["full"], true);
 		}
+
+		print json_encode($jsons, TRUE);
 	} else {
 		print("[]");
 		exit(0);

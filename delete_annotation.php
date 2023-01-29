@@ -3,20 +3,12 @@
 
 	if(array_key_exists("source", $_POST)) {
 		if(array_key_exists("id", $_POST)) {
-			$hash_filename = hash("sha256", $_POST["source"]);
-			$hash_annotation = hash("sha256", $_POST["id"]);
+			$annotate_userid = $_COOKIE["annotate_userid"];
+			$user_id = get_or_create_user_id($annotate_userid);
 
-			$dir = "annotations/$hash_filename/$user_id/";
-			$filename = "$dir/$hash_annotation.json";
+			flag_deleted($_POST["id"]);
 
-			# sudo mkdir annotations
-			# cd annotations
-			# sudo chown -R www-data:s3811141 .
-			ob_start();
-			system("rm $filename");
-			ob_clean();
-
-			print("OK");
+			print("OK Deleted");
 		} else {
 			die("No ID given");
 		}
