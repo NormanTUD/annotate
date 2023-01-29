@@ -39,11 +39,15 @@
 
 									$category_id = get_or_create_category_id($json["body"][0]["value"]);
 
-									$parsed_position = parse_position($json["position"]);
-									$x_start = $parsed_position[0];
-									$y_start = $parsed_position[1];
-									$w = $parsed_position[2];
-									$h = $parsed_position[3];
+									$parsed_position = parse_position($json["position"], get_image_width($image_id), get_image_height($image_id));
+									if(is_null($parsed_position)) {
+										dier($json);
+									} else {
+										$x_start = $parsed_position[0];
+										$y_start = $parsed_position[1];
+										$w = $parsed_position[2];
+										$h = $parsed_position[3];
+									}
 
 									$annotarius_id = $json["id"];
 

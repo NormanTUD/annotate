@@ -316,9 +316,38 @@
 		}
 	}
 
+	function get_image_height ($id) {
+		$query = "select height from image where id = ".esc($id);
+		$res = rquery($query);
+		$r = "";
+
+		while ($row = mysqli_fetch_row($res)) {
+			$r = $row[0];
+		}
+
+		return $r;
+	}
+
+	function get_image_width ($id) {
+		$query = "select width from image where id = ".esc($id);
+		$res = rquery($query);
+		$r = "";
+
+		while ($row = mysqli_fetch_row($res)) {
+			$r = $row[0];
+		}
+
+		return $r;
+	}
+
 	function parse_position ($str) {
-		if(preg_match("/xywh=pixel:(\d+),(\d+),(\d+),(\d+)/", $str, $matches)) {
-			return array($matches[1], $matches[2], $matches[3], $matches[4]);
+		if(preg_match("/xywh=pixel:(-?\d+),(-?\d+),(-?\d+),(-?\d+)/", $str, $matches)) {
+			return array(
+				$matches[1] < 0 ? 0,
+				$matches[2] < 0 ? 0,
+				$matches[3] > $w ? $w,
+				$matches[4] > $h ? $h,
+			);
 		} else {
 			return null;
 		}
