@@ -117,11 +117,13 @@
 	}
 
 	function get_home_string () {
-		$annotation_stat = number_format(get_number_of_annotated_imgs(), 0, ',', '.');
-		$unannotation_stat = number_format(get_number_of_unannotated_imgs(), 0, ',', '.');
+		$annotation_stat = get_number_of_annotated_imgs();
+		$unannotation_stat = get_number_of_unannotated_imgs();
+		$annotation_stat_str = number_format($annotation_stat, 0, ',', '.');
+		$unannotation_stat_str = number_format($unannotation_stat, 0, ',', '.');
 
-		$str = "Annotierte Bilder: ".htmlentities($annotation_stat ?? "");
-		$str .= ", unannotierte Bilder: ".htmlentities($unannotation_stat ?? "");
+		$str = "Annotierte Bilder: ".htmlentities($annotation_stat_str ?? "");
+		$str .= ", unannotierte Bilder: ".htmlentities($unannotation_stat_str ?? "");
 		if($unannotation_stat != 0) {
 			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
 		}
