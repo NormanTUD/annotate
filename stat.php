@@ -44,19 +44,6 @@ while ($row = mysqli_fetch_assoc($result)) {
   array_push($y, $row['COUNT(annotation.id)']);
 }
 
-$query = "SELECT image.filename, COUNT(annotation.id) FROM annotation JOIN image ON annotation.image_id = image.id GROUP BY image.id";
-$result = rquery($query);
-
-/*
-$number_annotation_per_image_x = array();
-$number_annotation_per_image_y = array();
-
-while ($row = mysqli_fetch_assoc($result)) {
-  array_push($number_annotation_per_image_x, $row['filename']);
-  array_push($number_annotation_per_image_y, $row['COUNT(annotation.id)']);
-}
- */
-
 // Use Plotly.js to display the statistics
 ?>
 <html>
@@ -107,19 +94,5 @@ while ($row = mysqli_fetch_assoc($result)) {
         title: 'Annotations per Category'
       });
     </script>
-
-<!--
-    <div id="annotations_per_image_chart"></div>
-
-    <script>
-      Plotly.newPlot('annotations_per_image_chart', [{
-        x: <?php echo json_encode($number_annotation_per_image_x); ?>,
-        y: <?php echo json_encode($number_annotation_per_image_y); ?>,
-        type: 'bar'
-      }], {
-        title: 'Annotations per Image'
-      });
-    </script>
--->
   </body>
 </html>
