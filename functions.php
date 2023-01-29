@@ -340,13 +340,18 @@
 		return $r;
 	}
 
-	function parse_position ($str) {
+	function parse_position ($str, $w, $h) {
 		if(preg_match("/xywh=pixel:(-?\d+),(-?\d+),(-?\d+),(-?\d+)/", $str, $matches)) {
+			$x = $matches[1] < 0 ? 0 : $matches[1];
+			$y = $matches[2] < 0 ? 0 : $matches[2];
+			$w = $matches[3] > $w ? $w : $matches[3];
+			$h = $matches[4] > $h ? $h : $matches[4];
+
 			return array(
-				$matches[1] < 0 ? 0,
-				$matches[2] < 0 ? 0,
-				$matches[3] > $w ? $w,
-				$matches[4] > $h ? $h,
+				$x,
+				$y,
+				$w,
+				$h
 			);
 		} else {
 			return null;
