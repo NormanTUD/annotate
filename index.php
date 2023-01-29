@@ -2,10 +2,16 @@
 	include("header.php");
 	include_once("functions.php");
 
-	if(isset($_GET["import"])) {
+	if(file_exists("/etc/import_annotate")) {
 		ini_set('memory_limit', '4096M');
 		ini_set('max_execution_time', '300');
 		set_time_limit(300);
+
+		function shutdown() {
+			rquery("ROLLBACK;");
+		}
+
+		register_shutdown_function('shutdown');
 
 		print "Importing images...<br>";
 
@@ -17,6 +23,8 @@
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
 				$new = is_null(get_image_id($file)) ? 1 : 0;
 				if($new) {
+					rquery("SET autocommit=0;");
+					rquery("START TRANSACTION;");
 					$image_id = get_or_create_image_id($file);
 					print "Id for $file: ".$image_id."<br>\n";
 					ob_flush();
@@ -65,6 +73,7 @@
 					} else {
 						// dont import
 					}
+					rquery("COMMIT;");
 				}
 			}
 		}
