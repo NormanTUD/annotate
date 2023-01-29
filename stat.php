@@ -2,21 +2,27 @@
 // Connect to the database
 include("functions.php");
 
-// Get the count of records for each table
-$image_count_query = "SELECT COUNT(*) FROM image";
-$category_count_query = "SELECT COUNT(*) FROM category";
-$user_count_query = "SELECT COUNT(*) FROM user";
-$annotation_count_query = "SELECT COUNT(*) FROM annotation";
-
-$image_count_result = rquery($image_count_query);
+// Get the count of annotations for each category
+$category_count_query = "SELECT category.name, COUNT(*) as count FROM category INNER JOIN annotation ON category.id = annotation.category_id GROUP BY category.id";
 $category_count_result = rquery($category_count_query);
-$user_count_result = rquery($user_count_query);
-$annotation_count_result = rquery($annotation_count_query);
 
-$image_count = mysqli_fetch_assoc($image_count_result)['COUNT(*)'];
-$category_count = mysqli_fetch_assoc($category_count_result)['COUNT(*)'];
-$user_count = mysqli_fetch_assoc($user_count_result)['COUNT(*)'];
-$annotation_count = mysqli_fetch_assoc($annotation_count_result)['COUNT(*)'];
+// Store the count of annotations for each category
+$category_data = [];
+while ($row = mysqli_fetch_assoc($category_count_result)) {
+  $category_data[] = [
+    "x" => [$row['name']],
+    "y" => [$row['count']],
+    "type" => "bar",
+    "name" => $row['name'],
+    "marker" => [
+      "color" => "rgba(55, 128, 191, 0.7)",
+      "line" => [
+        "color" => "rgba(55, 128, 191, 1.0)",
+        "width" => 2
+      ]
+    ]
+  ];
+}
 
 // Use Plotly.js to display the statistics
 ?>
@@ -25,44 +31,13 @@ $annotation_count = mysqli_fetch_assoc($annotation_count_result)['COUNT(*)'];
     <script src="plotly-latest.min.js"></script>
   </head>
   <body>
-    <div id="image_chart"></div>
     <div id="category_chart"></div>
-    <div id="user_chart"></div>
-    <div id="annotation_chart"></div>
-
-    <script>
-      Plotly.newPlot('image_chart', [{
-        values: [<?php echo $image_count; ?>],
-        labels: ['Image'],
-        type: 'pie'
-      }], {
-        title: 'Image Statistics'
-      });
-
-      Plotly.newPlot('category_chart', [{
-        values: [<?php echo $category_count; ?>],
-        labels: ['Category'],
-        type: 'pie'
-      }], {
-        title: 'Category Statistics'
-      });
-
-      Plotly.newPlot('user_chart', [{
-        values: [<?php echo $user_count; ?>],
-        labels: ['User'],
-        type: 'pie'
-      }], {
-        title: 'User Statistics'
-      });
-
-      Plotly.newPlot('annotation_chart', [{
-        values: [<?php echo $annotation_count; ?>],
-        labels: ['Annotation'],
-        type: 'pie'
-      }], {
-        title: 'Annotation Statistics'
-      });
-    </script>
+<script>
+  Plotly.newPlot('category_chart', <?php echo json_encode($category_data); ?>, {
+    title: 'Annotations per Category',
+    xaxis: {title: 'Category'},
+    yaxis: {title: 'Annotation Count'}
+  });
+</script>
   </body>
 </html>
-
