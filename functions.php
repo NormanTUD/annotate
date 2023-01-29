@@ -312,7 +312,7 @@
 			$width = $width_and_height[0];
 			$height = $width_and_height[1];
 
-			$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height)";
+			$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
 			rquery($insert_query);
 			return get_or_create_image_id($image);
 		} else {
@@ -369,7 +369,7 @@
 
 		$query = "insert into annotation (image_id, user_id, category_id, x_start, y_start, w, h, json, annotarius_id) values (".
 			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id)).
-			") on duplicate key update image_id = values(image_id), category_id = values(category_id), x_start = values(x_start), y_start = values(y_start), w = values(w), h = values(h), json = values(json), annotarius_id = values(annotarius_id)";
+			") on duplicate key update image_id = values(image_id), category_id = values(category_id), x_start = values(x_start), y_start = values(y_start), w = values(w), h = values(h), json = values(json), annotarius_id = values(annotarius_id), deleted = 0";
 
 		rquery($query);
 	}
@@ -386,7 +386,7 @@
 	}
 
 	function get_next_random_unannotated_image () {
-		$query = "select filename from image where id not in (select image_id from annotation) and deleted = 0 order by rand()";
+		$query = "select filename from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0 order by rand()";
 		$res = rquery($query);
 
 		$result = null;
