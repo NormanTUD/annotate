@@ -4,6 +4,8 @@
 	set_time_limit(300);
 	include_once("functions.php");
 
+	$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
+
 	$validation_split = get_get("validation_split", 0);
 	$test_split = get_get("test_split", 0);
 	$max_files = get_get("max_files", 0);
@@ -66,6 +68,9 @@
 	$images = [];
 	
 	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id))";
+	if(count($show_categories)) {
+		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).")";
+	}
 	$res = rquery($annotated_image_ids_query);
 
 	$images = [];
