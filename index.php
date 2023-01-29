@@ -17,12 +17,19 @@
 
 		print "Importing images...<br>";
 
+		$files_in_db = [];
+		$query = "select filename from image";
+		$res = rquery($query);
+		while ($row = mysqli_fetch_row($res)) {
+			$files_in_db[] = $row[0];
+		}
+
 		$files = scandir("images");
 
 		shuffle($files);
 
 		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
+			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !in_array($file, $files_in_db)) {
 				$new = is_null(get_image_id($file)) ? 1 : 0;
 				if($new) {
 					rquery("SET autocommit=0;");
