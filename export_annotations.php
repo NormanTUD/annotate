@@ -14,7 +14,6 @@
 		return mt_rand() / mt_getrandmax();
 	}
 
-
 	function parse_position_yolo ($x, $y, $w, $h, $imgw, $imgh) {
 		if(0 > $x) { $x = 0; }
 		if(0 > $y) { $y = 0; }
@@ -186,40 +185,14 @@
 
 		$j = 0;
 
-
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
-			$copy_to = "$tmp_dir/images/$fn";
+			$link_to = "$tmp_dir/images/$fn";
 
-			if($validation_split || $test_split) {
-				$max_val = count($filtered_imgs) * $validation_split;
-				$max_test = count($filtered_imgs) * $test_split;
-
-				if($validation_split && $test_split) {
-					if(get_rand_between_0_and_1() >= 0.5) {
-						if($j <= $max_val) {
-							$copy_to = "$tmp_dir/validation/$fn";
-						}
-					} else {
-						if ($j <= $max_test) {
-							$copy_to = "$tmp_dir/test/$fn";
-						}
-					}
-				} else {
-					if($validation_split) {
-						if($j <= $max_val) {
-							$copy_to = "$tmp_dir/validation/$fn";
-						}
-					}
-					if($test_split) {
-						if($j <= $max_test) {
-							$copy_to = "$tmp_dir/test/$fn";
-						}
-					}
-				}
+			$failed_link = link("images/$fn", $link_to);
+			if(!$failed_link) {
+				dier("failed to copy >images/$fn< to >$link_to<");
 			}
-
-			link("images/$fn", $copy_to);
 			$j++;
 
 			$str = "";
@@ -229,6 +202,7 @@
 
 			file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 		}
+		dier($j);
 
 		$hyperparams = '# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Hyperparameters for high-augmentation COCO training from scratch
