@@ -2,7 +2,7 @@
 	include("header.php");
 	include_once("functions.php");
 
-	if(file_exists("/etc/import_annotate")) {
+	if(file_exists("/etc/import_annotate") || get_get("import")) {
 		ini_set('memory_limit', '4096M');
 		ini_set('max_execution_time', '300');
 		set_time_limit(300);
@@ -79,7 +79,6 @@
 								}
 							}
 						}
-						print "Done importing";
 					} else {
 						// dont import
 					}
@@ -88,6 +87,8 @@
 				}
 			}
 		}
+
+		print "Done importing";
 
 		exit(0);
 	}

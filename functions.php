@@ -392,8 +392,10 @@
 		$result = null;
 
 		while ($row = mysqli_fetch_row($res)) {
-			if(file_exists("images/".$row[0])) {
+			$fn = "images/".$row[0];
+			if(file_exists($fn)) {
 				$result = $row[0];
+				return $result;
 			}
 		}
 
