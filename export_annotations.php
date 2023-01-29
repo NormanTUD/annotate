@@ -15,19 +15,6 @@
 	}
 
 
-	function parse_position_rel ($pos, $imgw, $imgh) {
-		//xywh=pixel:579,354,58,41
-		$res = null;
-		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
-			$x = $matches[1];
-			$y = $matches[2];
-
-			$w = $matches[3];
-			$h = $matches[4];
-
-		}
-	}
-
 	function parse_position_yolo ($x, $y, $w, $h, $imgw, $imgh) {
 		if(0 > $x) { $x = 0; }
 		if(0 > $y) { $y = 0; }
@@ -43,20 +30,6 @@
 		return $res;
 	}
 
-	function parse_position_xywh ($pos) {
-		//xywh=pixel:579,354,58,41
-		$res = null;
-		if(preg_match("/^xywh=pixel:\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*$/", $pos, $matches)) {
-			$res["x"] = $matches[1];
-			$res["y"] = $matches[2];
-			$res["w"] = $matches[3];
-			$res["h"] = $matches[4];
-		}
-
-		return $res;
-	}
-
-
 	$valid_formats = array(
 		"ultralytics_yolov5", "html"
 	);
@@ -68,6 +41,9 @@
 	$images = [];
 	
 	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id))";
+
+	dier($annotated_image_ids_query);
+
 	if(count($show_categories)) {
 		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).")";
 	}
