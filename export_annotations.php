@@ -65,127 +65,6 @@
 		$format = $_GET["format"];
 	}
 
-<<<<<<< HEAD
-	function cached_img_size ($fn) {
-		$cache_key = hash("sha256", $fn);
-		$cached = $GLOBALS["memcache"]->get($cache_key);
-
-		if($cached) {
-			return $cached;
-		} else {
-			$data = getimagesize($fn);
-			$GLOBALS["memcache"]->set($cache_key, $data);
-			return $data;
-		}
-	}
-
-	if(is_dir($tmp_dir)) {
-		$files = scandir("images");
-		$images = array();
-
-		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$imgfn = "images/$file";
-				$imgsz = cached_img_size($imgfn);
-
-				if($imgsz) {
-					$width = $imgsz[0];
-					$height = $imgsz[1];
-
-					#dier($imgsz);
-					#dier($file);
-					$hash = hash("sha256", $file);
-					$dir = "annotations/$hash";
-
-					if(is_dir($dir) && $width && $height && file_exists($imgfn)) {
-						$images[$file] = array(
-							"fn" => $file, 
-							"hash" => $hash,
-							"dir" => $dir,
-							"w" => $width,
-							"h" => $height
-						);
-					}
-				} else {
-					error_log("Error reading file $file");
-				}
-			}
-		}
-
-		$categories = array();
-		$annos = array();
-
-		$filtered_imgs = array();
-
-		$k = 0;
-		foreach($images as $item) {
-			if(is_dir($item["dir"])) {
-				$user_annotations = scandir($item["dir"]);
-				foreach($user_annotations as $user_annotation_dir) {
-					if(!preg_match("/^\.\.?$/", $user_annotation_dir)) {
-						$tdir = $item["dir"]."/$user_annotation_dir";
-						$single_user_annotations = scandir($tdir);
-						foreach($single_user_annotations as $single_user_annotation_file) {
-							if(preg_match("/\.json$/", $single_user_annotation_file)) {
-								#die("<pre>$single_user_annotation_file</pre>");
-								$struct = get_json_cached("$tdir/$single_user_annotation_file");
-								$file = $struct["source"];
-
-								$has_valid_category = 0;
-
-								if(!count($show_categories)) {
-									$has_valid_category = 1;
-								}
-
-								$images[$file]["w"] = $item["w"];
-								$images[$file]["h"] = $item["h"];
-
-								$images[$file]["position_rel"][] = parse_position_rel($struct["position"], $images[$file]["w"], $images[$file]["h"]);
-								$images[$file]["position_yolo"][] = parse_position_yolo($file, $images[$file], $struct["position"], $images[$file]["w"], $images[$file]["h"]);
-								$images[$file]["position_xywh"][] = parse_position_xywh($struct["position"]);
-								$images[$file]["anno_struct"] = $struct;
-								$bla = print_r($struct["body"], true);
-
-								foreach ($struct["body"] as $anno) {
-									if($anno["purpose"] == "tagging") {
-										$anno["value"] = strtolower($anno["value"]);
-										if(!in_array($anno["value"], $categories)) {
-											$categories[] = $anno["value"];
-										}
-
-										$index = array_search($anno["value"], $categories);
-
-										$images[$file]["tags"][] = $index;
-										$images[$file]["anno_name"][] = $anno["value"];
-
-										if(in_array($anno["value"], $show_categories)) {
-											$has_valid_category = 1;
-										}
-									}
-								}
-
-
-								if(!$has_valid_category) {
-									unset($images[$file]["disabled"]);
-								} else {
-									if(file_exists("images/$file")) {
-										if(isset($images[$file])) {
-											if(!array_key_exists("fn", $images[$file])) {
-												$images[$file]["fn"] = $file;
-											}
-
-											$filtered_imgs[$file] = $images[$file];
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-			$k++;
-=======
 	$images = [];
 	
 	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id))";
@@ -281,7 +160,6 @@
 			print($html);
 		} else {
 			print "Keine Daten für die gewählte Kategorie";
->>>>>>> db
 		}
 		include("footer.php");
 		exit(0);
@@ -294,28 +172,9 @@
 		$tmp_dir = "tmp/$tmp_name";
 	}
 
-<<<<<<< HEAD
-		/*
-		path: ../datasets/coco128  # dataset root dir
-		train: images/train2017  # train images (relative to 'path') 128 images
-		val: images/train2017  # val images (relative to 'path') 128 images
-		test:  # test images (optional)
-
-		# Classes (80 COCO classes)
-		names:
-		  0: person
-		  1: bicycle
-		  2: car
-		  ...
-		  77: teddy bear
-		  78: hair drier
-		  79: toothbrush
-		*/
-=======
 	ob_start();
 	system("mkdir -p $tmp_dir");
 	ob_clean();
->>>>>>> db
 
 	if(is_dir($tmp_dir)) {
 		$dataset_yaml = "path: ./\n";
@@ -336,22 +195,6 @@
 			$j++;
 		}
 
-<<<<<<< HEAD
-		/*
-			git clone --depth 1 https://github.com/ultralytics/yolov5.git
-			python3 -m venv env
-			source env/bin/activate
-			pip3 install -r requirements.txt
-			pip3 install "albumentations>=1.0.3"
-			wget https://raw.githubusercontent.com/ultralytics/yolov5/b94b59e199047aa8bf2cdd4401ae9f5f42b929e6/data/hyps/hyp.scratch-low.yaml
-
-			pip install wandb
-
-			python3 train.py --cfg yolov5n6.yaml --batch 8 --data dataset.yaml --epochs 10 --cache --img 400 --nosave --hyp hyp.VOC.yaml --hyp hyp.scratch-low.yaml
-		 */
-
-=======
->>>>>>> db
 		ob_start();
 		mkdir("$tmp_dir/images/");
 		mkdir("$tmp_dir/labels/");
@@ -511,7 +354,7 @@ echo "sbatch -n 1 --time=64:00:00 --mem-per-cpu=32000 --partition=alpha --gres=g
 
 #SBATCH -n 2 --time=32:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
 
-python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 400 --hyp data/hyps/hyperparams.yaml --patience 200
+python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
 ';
 
 		file_put_contents("$tmp_dir/simple_run.sh", $simple_run_bash);
@@ -522,8 +365,6 @@ SCRIPT_DIR=$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && 
 
 cd \$SCRIPT_DIR
 
-<<<<<<< HEAD
-=======
 ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
 
 if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
@@ -536,7 +377,6 @@ source ~/.alpha_yoloenv/bin/activate
 
 
 
->>>>>>> db
 function echoerr() {
 echo \"$@\" 1>&2
 }
@@ -556,45 +396,6 @@ caller
 trap 'calltracer' ERR
 
 function help () {
-<<<<<<< HEAD
-	echo \"Possible options:\"
-	echo \"--batchsize=INT                                    default value: 130\"
-	echo \"--epochs=INT                                       default value: 1500\"
-	echo \"--img=INT                                          default value: 400\"
-	echo \"--patience=INT                                     default value: 200\"
-	echo \"--lr0=FLOAT                                        default value: 0.01\"
-	echo \"--lrf=FLOAT                                        default value: 0.1\"
-	echo \"--momentum=FLOAT                                   default value: 0.937\"
-	echo \"--weight_decay=FLOAT                               default value: 0.0005\"
-	echo \"--warmup_epochs=FLOAT                              default value: 3.0\"
-	echo \"--warmup_momentum=FLOAT                            default value: 0.8\"
-	echo \"--warmup_bias_lr=FLOAT                             default value: 0.1\"
-	echo \"--box=FLOAT                                        default value: 0.05\"
-	echo \"--cls=FLOAT                                        default value: 0.3\"
-	echo \"--cls_pw=FLOAT                                     default value: 1.0\"
-	echo \"--obj=FLOAT                                        default value: 0.7\"
-	echo \"--obj_pw=FLOAT                                     default value: 1.0\"
-	echo \"--iou_t=FLOAT                                      default value: 0.20\"
-	echo \"--anchor_t=FLOAT                                   default value: 4.0\"
-	echo \"--fl_gamma=FLOAT                                   default value: 0.0\"
-	echo \"--hsv_h=FLOAT                                      default value: 0.015\"
-	echo \"--hsv_s=FLOAT                                      default value: 0.7\"
-	echo \"--hsv_v=FLOAT                                      default value: 0.4\"
-	echo \"--degrees=FLOAT                                    default value: 360\"
-	echo \"--translate=FLOAT                                  default value: 0.1\"
-	echo \"--scale=FLOAT                                      default value: 0.9\"
-	echo \"--shear=FLOAT                                      default value: 0.0\"
-	echo \"--perspective=FLOAT                                default value: 0.001\"
-	echo \"--flipud=FLOAT                                     default value: 0.3\"
-	echo \"--fliplr=FLOAT                                     default value: 0.5\"
-	echo \"--mosaic=FLOAT                                     default value: 1.0\"
-	echo \"--mixup=FLOAT                                      default value: 0.3\"
-	echo \"--copy_paste=FLOAT                                 default value: 0.4\"
-	echo \"--model=STR                                        Name of the model, default: yolov5s.yaml\"
-	echo \"--help                                             this help\"
-	echo \"--debug                                            Enables debug mode (set -x)\"
-	exit $1
-=======
 echo \"Possible options:\"
 echo \"  --batchsize=INT                                    default value: 130\"
 echo \"  --epochs=INT                                       default value: 1500\"
@@ -632,14 +433,14 @@ echo \"  --model\"
 echo \"  --help                                             this help\"
 echo \"  --debug                                            Enables debug mode (set -x)\"
 exit $1
->>>>>>> db
 }
 
 export batchsize=130
 export epochs=1500
+export img=512
 export patience=200
 export model=yolov5s.yaml
-export img=400
+export img=512
 export patience=200
 export lr0=0.01
 export lrf=0.1
@@ -976,16 +777,6 @@ case \$i in
 		;;
 esac
 done
-
-ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
-
-if [[ ! -e ~/.alpha_yoloenv/bin/activate ]]; then
-	python3 -mvenv ~/.alpha_yoloenv/
-	source ~/.alpha_yoloenv/bin/activate
-	pip3 install -r requirements.txt
-fi
-
-source ~/.alpha_yoloenv/bin/activate
 
 run_uuid=\$(uuidgen)
 

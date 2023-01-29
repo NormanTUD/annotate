@@ -1,14 +1,4 @@
 <?php
-<<<<<<< HEAD
-	ini_set('memory_limit', '4096M');
-	ini_set('max_execution_time', '300');
-	set_time_limit(300);
-
-	$GLOBALS["memcache"] = new Memcache;
-	$GLOBALS["memcache"]->addServer("localhost");
-
-=======
->>>>>>> db
 	$GLOBALS["get_current_tags_cache"] = array();
 	$GLOBALS["queries"] = array();
 	$GLOBALS["db_name"] = "annotate";
@@ -158,21 +148,15 @@
 	}
 
 	function get_json_cached ($path) {
-		$cache_file = md5($path);
+		$tmp_dir = "tmp/__json_cache__/";
+		$mtime = filemtime($path);
 
-		$cache_key = hash("sha256", $cache_file);
+		$cache_file = md5($path.$mtime);
 
-<<<<<<< HEAD
-		$cached = $GLOBALS["memcache"]->get($cache_key);
+		$cache_path = "$tmp_dir$cache_file";
 
-		if($cached) {
-			return $cached;
-		} else {
-			$data = json_decode(file_get_contents($path), true);
-			$GLOBALS["memcache"]->set($cache_key, $data);
-			return $data;
-		}
-=======
+		$cache_key = hash("sha256", $cache_path);
+
 		$data = json_decode(file_get_contents($path), true);
 		return $data;
 
@@ -194,7 +178,6 @@
 
 		return $data;
 		 */
->>>>>>> db
 	}
 
 	function mywarn ($msg) {
