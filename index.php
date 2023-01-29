@@ -1,5 +1,5 @@
 <?php
-die("Die Seite wird gerade gewartet");
+die("Die Seite wird gerade gewartet. Sie wird in wenigen Stunden wieder normal online sein, aber viel schneller :)");
 	include("header.php");
 	include_once("functions.php");
 
