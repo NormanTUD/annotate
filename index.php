@@ -3,11 +3,15 @@
 	include_once("functions.php");
 
 	if(isset($_GET["import"])) {
+		ini_set('memory_limit', '4096M');
+		ini_set('max_execution_time', '300');
+		set_time_limit(300);
+
 		print "Importing images...<br>";
 
 		$files = scandir("images");
 
-		$img_files = array();
+		shuffle($files);
 
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {

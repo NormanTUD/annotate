@@ -342,7 +342,7 @@
 	}
 
 	function parse_position ($str, $wimg, $himg) {
-		if(preg_match("/xywh=pixel:(-?\d+),(-?\d+),(-?\d+),(-?\d+)/", $str, $matches)) {
+		if(preg_match("/xywh=pixel:(-?\d+)(?:\.\d+)?,(-?\d+)(?:\.\d+)?,(-?\d+)(?:\.\d+)?,(-?\d+)(?:\.\d+)?/", $str, $matches)) {
 			$x = $matches[1] < 0 ? 0 : $matches[1];
 			$y = $matches[2] < 0 ? 0 : $matches[2];
 			$w = $matches[3] > $wimg ? $wimg : $matches[3];
