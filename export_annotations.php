@@ -14,7 +14,6 @@
 		return mt_rand() / mt_getrandmax();
 	}
 
-
 	function parse_position_yolo ($x, $y, $w, $h, $imgw, $imgh) {
 		if(0 > $x) { $x = 0; }
 		if(0 > $y) { $y = 0; }
@@ -186,48 +185,28 @@
 
 		$j = 0;
 
-
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
-			$copy_to = "$tmp_dir/images/$fn";
+			$link_to = "$tmp_dir/images/$fn";
 
-			if($validation_split || $test_split) {
-				$max_val = count($filtered_imgs) * $validation_split;
-				$max_test = count($filtered_imgs) * $test_split;
+			/*
+			$failed_link = link("images/$fn", $link_to);
+			#Make the parent directory of the link() target have permission chmod u=rwx,g=rxs,o=rx. This should show up in "ls" as "drwxr-sr-x". In this case, the user.group ownership is wwwrun.www.
+			if(!$failed_link) {
+				dier("failed to copy >images/$fn< to >$link_to<");
+			}
+			 */
+			if(file_exists("images/$fn")) {
+				copy("images/$fn", $link_to);
+				$j++;
 
-				if($validation_split && $test_split) {
-					if(get_rand_between_0_and_1() >= 0.5) {
-						if($j <= $max_val) {
-							$copy_to = "$tmp_dir/validation/$fn";
-						}
-					} else {
-						if ($j <= $max_test) {
-							$copy_to = "$tmp_dir/test/$fn";
-						}
-					}
-				} else {
-					if($validation_split) {
-						if($j <= $max_val) {
-							$copy_to = "$tmp_dir/validation/$fn";
-						}
-					}
-					if($test_split) {
-						if($j <= $max_test) {
-							$copy_to = "$tmp_dir/test/$fn";
-						}
-					}
+				$str = "";
+				foreach ($img as $single_anno) {
+					$str .= $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"]."\n";
 				}
+
+				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 			}
-
-			link("images/$fn", $copy_to);
-			$j++;
-
-			$str = "";
-			foreach ($img as $single_anno) {
-				$str .= $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"]."\n";
-			}
-
-			file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 		}
 
 		$hyperparams = '# YOLOv5 🚀 by Ultralytics, GPL-3.0 license

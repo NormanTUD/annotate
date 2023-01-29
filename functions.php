@@ -1,4 +1,13 @@
 <?php
+
+	// alle warnings als fatal errors ausgeben
+	function exception_error_handler($errno, $errstr, $errfile, $errline ) {
+	    throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
+	}
+	set_error_handler("exception_error_handler");
+	ini_set('display_errors', '1');
+
+
 	$GLOBALS["get_current_tags_cache"] = array();
 	$GLOBALS["queries"] = array();
 	$GLOBALS["db_name"] = "annotate";
