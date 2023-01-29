@@ -1,4 +1,5 @@
 <?php
+die("Die Seite wird gerade gewartet");
 	include("header.php");
 	include_once("functions.php");
 
