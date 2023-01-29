@@ -79,6 +79,7 @@
 								}
 							}
 						}
+						print "Done importing";
 					} else {
 						// dont import
 					}
