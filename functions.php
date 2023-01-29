@@ -373,7 +373,7 @@
 	}
 
 	#die(get_or_create_category_id("raketenspiraleaasd"));
-	die(get_or_create_category_id("\n\nDAS HIER SOLLTE KEINE NEWLINES raketenspiraleaasd\n\n"));
+	#die(get_or_create_category_id("\n\nDAS HIER SOLLTE KEINE NEWLINES raketenspiraleaasd\n\n"));
 	#die(get_or_create_user_id("raketenspiraleasdadasdfff"));
 	#die(get_or_create_image_id("blaaasdasd.jpg"));
 
