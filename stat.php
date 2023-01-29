@@ -44,6 +44,18 @@ while ($row = mysqli_fetch_assoc($result)) {
   array_push($y, $row['COUNT(annotation.id)']);
 }
 
+// Get the width and height of all bounding boxes
+$bounding_box_data_query = "SELECT w, h FROM annotation";
+$bounding_box_data_result = rquery($bounding_box_data_query);
+
+$widths = array();
+$heights = array();
+
+while ($row = mysqli_fetch_assoc($bounding_box_data_result)) {
+  $widths[] = $row['w'];
+  $heights[] = $row['h'];
+}
+
 // Use Plotly.js to display the statistics
 ?>
 <html>
@@ -94,5 +106,29 @@ while ($row = mysqli_fetch_assoc($result)) {
         title: 'Annotations per Category'
       });
     </script>
+
+<div id="width_histogram"></div>
+<div id="height_histogram"></div>
+
+<script>
+  var width_data = <?php echo json_encode($widths); ?>;
+  var height_data = <?php echo json_encode($heights); ?>;
+
+  Plotly.newPlot('width_histogram', [{
+    x: width_data,
+    type: 'histogram',
+    name: 'Width Distribution'
+  }], {
+    title: 'Bounding Box Width Distribution'
+  });
+
+  Plotly.newPlot('height_histogram', [{
+    x: height_data,
+    type: 'histogram',
+    name: 'Height Distribution'
+  }], {
+    title: 'Bounding Box Height Distribution'
+  });
+</script>
   </body>
 </html>
