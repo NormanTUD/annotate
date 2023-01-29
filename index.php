@@ -168,7 +168,7 @@
 
 		<div id="loader"></div>
 
-		<span style="font-size: 20px; color: green">Hey, Wow! Mehr als 32000 Bilder!</span>
+		<span style="font-size: 20px; color: green">Hey, Wow! Mehr als 33.000 Bilder!</span>
 
 		<table>
 			<tr>
