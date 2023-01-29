@@ -168,7 +168,7 @@
 
 		<div id="loader"></div>
 
-		<span style="font-size: 20px; color: red">BITTE KEINE NEUEN KATEGORIEN EINFÜGEN</span>
+		<span style="font-size: 20px; color: green">Hey, Wow! Mehr als 32000 Bilder!</span>
 
 		<table>
 			<tr>
