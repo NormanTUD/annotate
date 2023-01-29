@@ -7,7 +7,7 @@
 			$annotarius_id = $_POST["id"];
 			$user_id = get_or_create_user_id($_COOKIE["annotate_userid"]);
 
-			$parsed_position = parse_position($_POST["position"]);
+			$parsed_position = parse_position($_POST["position"], get_image_width($image_id), get_image_height($image_id));
 			$x_start = $parsed_position[0];
 			$y_start = $parsed_position[1];
 			$w = $parsed_position[2];
