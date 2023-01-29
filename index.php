@@ -11,6 +11,7 @@
 
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
+				$new = is_null(get_image_id($file)) ? 1 : 0;
 				$image_id = get_or_create_image_id($file);
 				print "Id for $file: ".$image_id."<br>\n";
 				ob_flush();
@@ -20,7 +21,7 @@
 				$file_hash = hash("sha256", $file);
 				$anno_path = "annotations/".$file_hash;
 
-				if(file_exists($anno_path)) {
+				if(file_exists($anno_path) && $is_new) {
 					$user_dir = scandir($anno_path);
 					foreach($user_dir as $user) {
 						if(preg_match("/^[\w\d]+$/", $user)) {

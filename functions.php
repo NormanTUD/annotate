@@ -122,27 +122,15 @@
 
 		$str = "Annotierte Bilder: ".htmlentities($annotation_stat ?? "");
 		$str .= ", unannotierte Bilder: ".htmlentities($unannotation_stat ?? "");
-		$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
+		if($unannotation_stat != 0) {
+			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
+		}
 
 		$str .= "<br><a href='overview.php'>Übersicht über meine eigenen annotierten Bilder</a>";
 
 		return $str;
 	}
 
-
-	function print_header() {
-		$annotation_stat = get_number_of_annotated_imgs();
-?>
-		Anzahl annotierter Bilder: <?php print htmlentities($annotation_stat[0] ?? ""); ?>, Anzahl unannotierter Bilder: <?php print htmlentities($annotation_stat[1] ?? ""); ?>
-	<?php
-			if($annotation_stat[1] != 0) {
-				$percent = sprintf("%0.2f", ($annotation_stat[0] / ($annotation_stat[0] + $annotation_stat[1])) * 100);
-				print " ($percent%)";
-			}
-	?>, <a href="overview.php">Übersicht über meine eigenen annotierten Bilder</a>, <a href="export_annotations.php">Annotationen exportieren</a>
-		<br>
-<?php
-	}
 
 	function get_current_tags () {
 		$annos = [];
@@ -289,6 +277,19 @@
 		}
 
 		return array($width, $height);
+	}
+
+	function get_image_id ($image) {
+		$select_query = "select id from image where filename = ".esc($image);		
+		$select_res = rquery($select_query);
+
+		$res = null;
+
+		while ($row = mysqli_fetch_row($select_res)) {
+			$res = $row[0];
+		}
+
+		return $res;
 	}
 
 	function get_or_create_image_id ($image, $width=null, $height=null) {

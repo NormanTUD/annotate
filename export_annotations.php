@@ -203,7 +203,6 @@
 
 		$j = 0;
 
-		shuffle($filtered_imgs);
 
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
