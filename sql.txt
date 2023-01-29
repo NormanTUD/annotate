@@ -1,6 +1,6 @@
 create database annotate;
 use annotate;
-create table image (id int unsigned primary key auto_increment, filename varchar(1000) unique, width int unsigned, height int unsigned);
+create table image (id int unsigned primary key auto_increment, filename varchar(1000) unique, width int unsigned, height int unsigned, deleted int unsigned default 0, offtopic int unsigned default 0);
 create table category (id int unsigned primary key auto_increment, name varchar(1000) unique);
 create table user (id int unsigned primary key auto_increment, name varchar(1000) unique);
 create table annotation (id int unsigned primary key auto_increment, image_id int unsigned, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, w int unsigned, h int unsigned, json MEDIUMBLOB unique, annotarius_id varchar(100), modified timestamp default CURRENT_TIMESTAMP, deleted int unsigned default 0, foreign key (category_id) references category(id) on delete cascade, foreign key (user_id) references user(id) on delete cascade, foreign key (image_id) references image(id) on delete cascade);
