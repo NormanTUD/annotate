@@ -205,74 +205,47 @@
 
 		shuffle($filtered_imgs);
 
-		foreach ($images as $img) {
-			if(!array_key_exists("fn", $img)) {
-				error_log("fn not defined:");
-				error_log(print_r($img, true));
-				continue;
-			}
-			if($max_files == 0 || $j < $max_files) {
-				$fn = $img["fn"];
-				//dier($img);
-				#print "<br>$fn<br>";
-				$fn_txt = preg_replace("/\.(?:jpe?g|png)$/", ".txt", $fn);
-				$str = "";
-				$strarr = array();
-				if(array_key_exists("tags", $img) && is_array($img["tags"]) && count($img["tags"])) {
-					foreach ($img["tags"] as $i => $t) {
-						$pos = $img["position_yolo"][$i];
-						$k = $category_numbers[$img["anno_name"][$i]];
-						if(isset($pos['x_center']) && isset($pos['y_center']) &&  isset($pos['w_rel']) && isset($pos['h_rel'])) {
-							$this_str = "$k ".$pos['x_center']." ".$pos['y_center']." ".$pos['w_rel']." ".$pos['h_rel'];
-							if (!in_array($this_str, $strarr)) {
-								$strarr[] = $this_str;
-							}
-						} else {
-							error_log("$fn misses x_center, y_center, w_rel or h_rel");
-							#die(print_r($img, true));
+		foreach ($images as $fn => $img) {
+			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
+			$copy_to = "$tmp_dir/images/$fn";
+
+			if($validation_split || $test_split) {
+				$max_val = count($filtered_imgs) * $validation_split;
+				$max_test = count($filtered_imgs) * $test_split;
+
+				if($validation_split && $test_split) {
+					if(get_rand_between_0_and_1() >= 0.5) {
+						if($j <= $max_val) {
+							$copy_to = "$tmp_dir/validation/$fn";
+						}
+					} else {
+						if ($j <= $max_test) {
+							$copy_to = "$tmp_dir/test/$fn";
 						}
 					}
-
-					$str = implode("\n", $strarr);
 				} else {
-					//dier($img);
-				}
-
-				if($str && $fn && $fn_txt) {
-					$copy_to = "$tmp_dir/images/$fn";
-					if($validation_split || $test_split) {
-						$max_val = count($filtered_imgs) * $validation_split;
-						$max_test = count($filtered_imgs) * $test_split;
-
-						if($validation_split && $test_split) {
-							if(get_rand_between_0_and_1() >= 0.5) {
-								if($j <= $max_val) {
-									$copy_to = "$tmp_dir/validation/$fn";
-								}
-							} else {
-								if ($j <= $max_test) {
-									$copy_to = "$tmp_dir/test/$fn";
-								}
-							}
-						} else {
-							if($validation_split) {
-								if($j <= $max_val) {
-									$copy_to = "$tmp_dir/validation/$fn";
-								}
-							}
-							if($test_split) {
-								if($j <= $max_test) {
-									$copy_to = "$tmp_dir/test/$fn";
-								}
-							}
+					if($validation_split) {
+						if($j <= $max_val) {
+							$copy_to = "$tmp_dir/validation/$fn";
 						}
 					}
-
-					copy("images/$fn", $copy_to);
-					$j++;
-					file_put_contents("$tmp_dir/labels/$fn_txt", $str);
+					if($test_split) {
+						if($j <= $max_test) {
+							$copy_to = "$tmp_dir/test/$fn";
+						}
+					}
 				}
 			}
+
+			copy("images/$fn", $copy_to);
+			$j++;
+
+			$str = "";
+			foreach ($img as $single_anno) {
+				$str .= $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"]."\n";
+			}
+
+			file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 		}
 
 		$hyperparams = '# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
