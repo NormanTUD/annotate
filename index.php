@@ -28,6 +28,7 @@
 
 		shuffle($files);
 
+		$i = 0;
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !in_array($file, $files_in_db)) {
 				$new = is_null(get_image_id($file)) ? 1 : 0;
@@ -86,6 +87,7 @@
 					rquery("SET autocommit=1;");
 				}
 			}
+
 		}
 
 		print "Done importing";
