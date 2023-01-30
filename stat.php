@@ -37,7 +37,7 @@ while ($row = mysqli_fetch_assoc($category_count_result)) {
 }
 
 // Get the count of annotations per category
-$query = "SELECT category.name, COUNT(annotation.id) FROM annotation JOIN category ON annotation.category_id = category.id GROUP BY category.id";
+$query = "SELECT category.name, COUNT(annotation.id) FROM annotation JOIN category ON annotation.category_id = category.id  where annotation.deleted != 0 GROUP BY category.id";
 $result = rquery($query);
 
 $x = array();

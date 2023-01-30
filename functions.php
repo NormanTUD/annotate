@@ -100,7 +100,7 @@
 	}
 
 	function get_number_of_unannotated_imgs() {
-		$q = "select count(*) from (select id from image where id not in (select image_id from annotation) and deleted = 0) a";
+		$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0) a";
 		$r = rquery($q);
 
 		$res = null;
@@ -113,7 +113,7 @@
 	}
 
 	function get_number_of_annotated_imgs() {
-		$q = "select count(*) from (select image_id from annotation where deleted = 0 group by image_id) a";
+		$q = "select count(*) from (select image_id from annotation a left join image i on a.image_id = i.id where a.deleted = 0 and i.deleted = 0 group by image_id) a";
 		$r = rquery($q);
 
 		$res = null;
