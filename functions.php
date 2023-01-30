@@ -137,7 +137,7 @@
 			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
 		}
 
-		$str .= "<br><a href='stat.php'>Statistik</a>";
+		$str .= "<br><a target='_blank' href='stat.php'>Statistik</a>";
 
 		return $str;
 	}

@@ -10,8 +10,12 @@ $annotation_count_query = "SELECT COUNT(id) as count, DATE(modified) as date FRO
 $annotation_count_result = rquery($annotation_count_query);
 
 $data = [];
+$i = 0;
 while($row = mysqli_fetch_assoc($annotation_count_result)) {
-  $data[] = ['date' => $row['date'], 'count' => $row['count']];
+  if($i != 0) {
+	  $data[] = ['date' => $row['date'], 'count' => $row['count']];
+  }
+  $i++;
 }
 
 // Store the count of annotations for each category
