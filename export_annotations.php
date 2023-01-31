@@ -39,7 +39,7 @@
 
 	$images = [];
 	
-	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0";
+	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0 order by i.filename";
 
 	if(count($show_categories)) {
 		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).")";
@@ -111,8 +111,13 @@
 
 					$annotations_string = join("\n", $this_annos);
 
+					$delete_str = "";
+					if(get_get("delete")) {
+						$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
+					}
+
 					$base_struct = '
-					<div style="position: relative; display: inline-block;">
+					<div '.$delete_str.' style="position: relative; display: inline-block;">
 						<img class="images" src="images/'.$fn.'" style="display: block;">
 						<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
 							<g>

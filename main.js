@@ -683,5 +683,20 @@ document.onkeydown = function (e) {
 	}
 }
 
+function delete_all_anno (image) {
+	$.ajax({
+		url: "delete_all_anno.php?image=" + image,
+		type: "get",
+		success: async function (response) {
+			success("Delete Anno: OK", response)
+			await load_dynamic_content();
+		},
+		error: async function(jqXHR, textStatus, errorThrown) {
+			error("delete Anno: " + textStatus, errorThrown);
+			await load_dynamic_content();
+		}
+	});
+}
+
 setInterval(memory_debugger, 1000);
 setInterval(create_selects_from_annotation, 1000);

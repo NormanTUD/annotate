@@ -388,6 +388,12 @@
 	#die(get_or_create_user_id("raketenspiraleasdadasdfff"));
 	#die(get_or_create_image_id("blaaasdasd.jpg"));
 
+	function flag_all_annos_as_deleted ($image_id) {
+		$query = "update annotation set deleted = 1 where image_id = ".esc($image_id);
+
+		rquery($query);
+	}
+
 	function flag_deleted ($annotarius_id) {
 		$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
 
