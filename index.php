@@ -168,7 +168,7 @@
 
 		<div id="loader"></div>
 
-		<span style="font-size: 20px; color: green">Hey, Wow! Mehr als 33.000 Bilder!</span>
+		<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round(get_number_of_annotated_imgs() - 1, -3), 0, ',', '.'); ?> Bilder!</span>
 
 		<table>
 			<tr>
