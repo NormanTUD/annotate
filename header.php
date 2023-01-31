@@ -86,8 +86,7 @@ var labels = [
 
 <!-- Tab content -->
 <div id="top">
-	<div id="tab_home_top"></div>
-	<div id="memory_debugger"></div>
+	<span id="tab_home_top"></span><span id="memory_debugger"></span>
 </div>
 
 <?php
