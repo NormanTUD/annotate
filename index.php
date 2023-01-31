@@ -172,7 +172,7 @@
 <?php
 		if($number_annotated > 10000) {
 ?>
-			<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round($number_annotated - 1, -3), 0, ',', '.'); ?> Bilder!</span>
+			<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round($number_annotated - 1, -3), 0, ',', '.'); ?> Bilder! Dass wir <b>SO</b> viele Bilder zusammenkriegen hätte ich nie für möglich gehalten, vielen Dank!</span>
 <?php
 		}
 ?>
