@@ -39,6 +39,12 @@
 
 	$offset = 10;
 	$rowcount = 10;
+	if(get_get("offset")) {
+		$offset = intval(get_get("offset"));
+	}
+	if(get_get("rowcount")) {
+		$rowcount = intval(get_get("rowcount"));
+	}
 
 	$images = [];
 	
@@ -48,7 +54,9 @@
 		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).")";
 	}
 
-	$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($rowcount);
+	if ($format == "html") {
+		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($rowcount);
+	}
 
 	$res = rquery($annotated_image_ids_query);
 
