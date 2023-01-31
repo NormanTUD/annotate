@@ -60,6 +60,49 @@ while ($row = mysqli_fetch_assoc($bounding_box_data_result)) {
   $heights[] = $row['h'];
 }
 
+
+
+// Query to retrieve data
+$sql = "SELECT user.name as username, DATE(annotation.modified) as day, count(annotation.id) as objects FROM annotation
+        JOIN user ON annotation.user_id = user.id
+        WHERE deleted = 0
+        GROUP BY username, day
+        ORDER BY day, username";
+$result = rquery($sql);
+
+// Store data in an array
+$d = array();
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $d[] = $row;
+    }
+}
+
+// Organize data for Plotly
+$usernames = array_unique(array_column($d, 'username'));
+$dates = array_unique(array_column($d, 'day'));
+
+$graph_data = array();
+foreach ($usernames as $username) {
+    $user_data = array();
+    foreach ($dates as $date) {
+        $key = array_search(array('username' => $username, 'day' => $date), $d);
+        if ($key !== false) {
+            $user_data[] = $d[$key]['objects'];
+        } else {
+            $user_data[] = 0;
+        }
+    }
+    $graph_data[] = array(
+        'x' => $dates,
+        'y' => $user_data,
+        'type' => 'bar',
+        'name' => $username
+    );
+}
+
+
+
 // Use Plotly.js to display the statistics
 include("header.php");
 ?>
@@ -131,6 +174,16 @@ include("header.php");
     title: 'Bounding Box Height Distribution'
   });
 </script>
+
+
+        <div id="plotly_graph"></div>
+        <script>
+            Plotly.newPlot('plotly_graph', <?php echo json_encode($graph_data); ?>, {
+                xaxis: {title: 'Date'},
+                yaxis: {title: 'Number of Objects Annotated'},
+                title: 'Annotations per User per Day'
+            });
+        </script>
 <?php
 	include("footer.php");
 ?>
