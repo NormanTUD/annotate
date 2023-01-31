@@ -131,8 +131,8 @@
 		$annotation_stat_str = number_format($annotation_stat, 0, ',', '.');
 		$unannotation_stat_str = number_format($unannotation_stat, 0, ',', '.');
 
-		$str = "Annotierte Bilder: ".htmlentities($annotation_stat_str ?? "");
-		$str .= ", unannotierte Bilder: ".htmlentities($unannotation_stat_str ?? "");
+		$str = "Annotiert: ".htmlentities($annotation_stat_str ?? "");
+		$str .= ", unannotiert: ".htmlentities($unannotation_stat_str ?? "");
 		if($unannotation_stat != 0) {
 			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
 		}
