@@ -84,20 +84,12 @@ var labels = [
 
 <body>
 
- <!-- Tab links -->
-<div class="tab">
-  <button class="tablinks" onclick="open_tab(event, 'tab_home')" id="defaultOpen" >Home</button>
-  <button class="tablinks" onclick="open_tab(event, 'tab_export')">Export</button>
-</div>
-
 <!-- Tab content -->
-<div id="tab_home" class="tabcontent">
+<div id="top">
 	<div id="tab_home_top"></div>
 	<div id="memory_debugger"></div>
 </div>
 
-<div id="tab_export" class="tabcontent">
-  <a href="export_annotations.php">Annotationen exportieren</a>
 <?php
 	
 	if(isset($_GET["searchtag"])) {
