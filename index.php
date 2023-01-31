@@ -162,13 +162,20 @@
 		$imgfile = get_next_random_unannotated_image();
 	}
 
+	$number_annotated = get_number_of_annotated_imgs();
+
 	if($imgfile) {
 ?>
 		<br>
 
 		<div id="loader"></div>
-
-		<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round(get_number_of_annotated_imgs() - 1, -3), 0, ',', '.'); ?> Bilder!</span>
+<?php
+		if($number_annotated > 10000) {
+?>
+			<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round($number_annotated - 1, -3), 0, ',', '.'); ?> Bilder!</span>
+<?php
+		}
+?>
 
 		<table>
 			<tr>
