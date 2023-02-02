@@ -21,7 +21,7 @@ while($row = mysqli_fetch_assoc($annotation_count_result)) {
 // Get the count of annotations for each category
 $category_count_query = "SELECT category.name, COUNT(*) as count FROM category INNER JOIN annotation ON category.id = annotation.category_id GROUP BY category.id";
 $category_count_result = rquery($category_count_query);
-$annotation_count_query = "SELECT COUNT(id) as count, DATE_FORMAT(modified, '%Y-%m-%d %h') datehour FROM annotation where deleted = 0 and image_id not in (select id from image where deleted = 1) GROUP BY image_id, datehour ORDER BY datehour";
+$annotation_count_query = "SELECT COUNT(id) as count, DATE_FORMAT(modified, '%Y-%m-%d') datehour FROM annotation where deleted = 0 and image_id not in (select id from image where deleted = 1) GROUP BY image_id, datehour ORDER BY datehour";
 
 $annotation_count_result = rquery($annotation_count_query);
 
