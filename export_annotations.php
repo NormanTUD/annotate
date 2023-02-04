@@ -129,7 +129,7 @@
 				$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
 			}
 
-			$page_str = join(" &mdash; ", $links)."<br>";
+			$page_str = "<span style='font-size: 1vw'>".join(" &mdash; ", $links)."<br></span>";
 			print $page_str;
 		}
 
@@ -190,7 +190,7 @@
 		}
 
 		if($page_str) {
-			print "<br>$page_str";
+			print "<br>$page_str<br>";
 		}
 
 		include("footer.php");
