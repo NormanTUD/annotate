@@ -54,7 +54,7 @@
 
 	$images = [];
 	
-	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0";
+	$annotated_image_ids_query = "select SQL_CALC_FOUND_ROWS i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0";
 
 	if(count($show_categories)) {
 		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).")";
@@ -68,7 +68,15 @@
 
 	$res = rquery($annotated_image_ids_query);
 
-	$number_of_rows = mysqli_num_rows($res);
+	$number_of_rows_query = "SELECT FOUND_ROWS()";
+	$number_of_rows_res = rquery($number_of_rows_query);
+
+	$number_of_rows = 0;
+
+	while ($row = mysqli_fetch_row($number_of_rows_res)) {
+		$number_of_rows = $row[0];
+	}
+
 	$max_page = ceil($number_of_rows / $items_per_page);
 
 	$images = [];
