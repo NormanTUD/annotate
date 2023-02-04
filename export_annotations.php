@@ -37,6 +37,11 @@
 		$format = $_GET["format"];
 	}
 
+	$page = 0;
+	if(get_get("page")) {
+		$page = intval(get_get("page"));
+	}
+
 	$offset = 0;
 	$rowcount = 100;
 	if(get_get("offset")) {
@@ -61,6 +66,8 @@
 	}
 
 	$res = rquery($annotated_image_ids_query);
+
+	$number_of_rows = mysqli_num_rows($res);
 
 	$images = [];
 	$categories = [];
