@@ -37,7 +37,7 @@
 		$format = $_GET["format"];
 	}
 
-	$offset = 10;
+	$offset = 0;
 	$rowcount = 10;
 	if(get_get("offset")) {
 		$offset = intval(get_get("offset"));
@@ -48,11 +48,13 @@
 
 	$images = [];
 	
-	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0 order by i.filename";
+	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0";
 
 	if(count($show_categories)) {
 		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).")";
 	}
+
+	$annotated_image_ids_query .= " order by i.filename ";
 
 	if ($format == "html") {
 		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($rowcount);
