@@ -117,6 +117,8 @@
 		$html = file_get_contents("export_base.html");
 		$annos_strings = array();
 
+		$page_str = "";
+
 		if($number_of_rows > $items_per_page) {
 			$links = array();
 			foreach (range(0, $max_page) as $page_nr) {
@@ -127,7 +129,8 @@
 				$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
 			}
 
-			print join(" &mdash; ", $links)."<br>";
+			$page_str = join(" &mdash; ", $links)."<br>";
+			print $page_str;
 		}
 
 		// <object-class> <x> <y> <width> <height>
@@ -185,6 +188,11 @@
 		} else {
 			print "Keine Daten für die gewählte Kategorie";
 		}
+
+		if($page_str) {
+			print "<br>$page_str";
+		}
+
 		include("footer.php");
 		exit(0);
 	}
