@@ -38,7 +38,7 @@
 	}
 
 	$offset = 0;
-	$rowcount = 10;
+	$rowcount = 100;
 	if(get_get("offset")) {
 		$offset = intval(get_get("offset"));
 	}
