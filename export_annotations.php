@@ -75,6 +75,8 @@
 		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
 	}
 
+	#dier($annotated_image_ids_query);
+
 	$res = rquery($annotated_image_ids_query);
 
 	$number_of_rows_query = "SELECT FOUND_ROWS()";
@@ -184,6 +186,8 @@
 						</svg>
 					</div>
 					';
+
+					#dier($annotations_string);
 
 					$base_structs[] = $base_struct;
 				}
