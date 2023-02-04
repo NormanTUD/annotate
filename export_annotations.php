@@ -42,7 +42,7 @@
 		$page = intval(get_get("page"));
 	}
 
-	$items_per_page = 100;
+	$items_per_page = 500;
 	if(get_get("items_per_page")) {
 		$items_per_page = intval(get_get("items_per_page"));
 	}
