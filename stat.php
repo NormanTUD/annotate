@@ -77,31 +77,6 @@ include("header.php");
   });
 </script>
 
-    <div id="img_annotation_chart"></div>
-<script>
-  var x = [];
-  var y = [];
-
-  <?php foreach($data_images as $point) { ?>
-    x.push("<?php echo $point['date']; ?>");
-    y.push(<?php echo $point['count']; ?>);
-  <?php } ?>
-
-  Plotly.newPlot('img_annotation_chart', [{
-    x: x,
-    y: y,
-    type: 'scatter'
-  }], {
-    title: 'Images annotated Over Time',
-    xaxis: {
-      title: 'Date'
-    },
-    yaxis: {
-      title: 'Annotation Count'
-    }
-  });
-</script>
-
     <div id="annotation_chart"></div>
 <script>
   var x = [];
