@@ -42,13 +42,14 @@
 		$page = intval(get_get("page"));
 	}
 
-	$offset = 0;
-	$rowcount = 100;
+	$items_per_page = 100;
+	if(get_get("items_per_page")) {
+		$items_per_page = intval(get_get("items_per_page"));
+	}
+
+	$offset = $page * $items_per_page;
 	if(get_get("offset")) {
 		$offset = intval(get_get("offset"));
-	}
-	if(get_get("rowcount")) {
-		$rowcount = intval(get_get("rowcount"));
 	}
 
 	$images = [];
@@ -62,12 +63,13 @@
 	$annotated_image_ids_query .= " order by i.filename ";
 
 	if ($format == "html") {
-		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($rowcount);
+		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
 	}
 
 	$res = rquery($annotated_image_ids_query);
 
 	$number_of_rows = mysqli_num_rows($res);
+	$max_page = ceil($number_of_rows / $items_per_page);
 
 	$images = [];
 	$categories = [];
@@ -106,6 +108,17 @@
 	if ($format == "html") {
 		$html = file_get_contents("export_base.html");
 		$annos_strings = array();
+
+		$links = array();
+		foreach (range(0, $max_page) as $page_nr) {
+			$query = $_GET;
+			$query['page'] = $page_nr;
+			$query_result = http_build_query($query);
+
+			$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
+		}
+
+		print join(" &mdash; ", $links)."<br>";
 
 		// <object-class> <x> <y> <width> <height>
 		if(count($images)) {
