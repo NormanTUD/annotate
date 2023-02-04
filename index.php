@@ -173,6 +173,8 @@
 		if($number_annotated > 10000) {
 ?>
 			<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round($number_annotated - 999, -3), 0, ',', '.'); ?> Bilder! Dass wir <b>SO</b> viele Bilder zusammenkriegen hätte ich nie für möglich gehalten, vielen Dank!</span>
+
+			<span style="font-size: 20px; color: green">Nicht wundern, dass es einige wenige Bilder sind noch als gestern. Ich habe einige die ausversehen falsch kategorisiert worden waren wieder in den Annotationspool geworfen. Dadurch wird der Datensatz sauberer und die KI besser.</span>
 <?php
 		}
 ?>

@@ -117,16 +117,18 @@
 		$html = file_get_contents("export_base.html");
 		$annos_strings = array();
 
-		$links = array();
-		foreach (range(0, $max_page) as $page_nr) {
-			$query = $_GET;
-			$query['page'] = $page_nr;
-			$query_result = http_build_query($query);
+		if($number_of_rows > $items_per_page) {
+			$links = array();
+			foreach (range(0, $max_page) as $page_nr) {
+				$query = $_GET;
+				$query['page'] = $page_nr;
+				$query_result = http_build_query($query);
 
-			$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
+				$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
+			}
+
+			print join(" &mdash; ", $links)."<br>";
 		}
-
-		print join(" &mdash; ", $links)."<br>";
 
 		// <object-class> <x> <y> <width> <height>
 		if(count($images)) {
