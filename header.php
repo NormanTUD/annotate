@@ -17,7 +17,7 @@ include_once("functions.php");
 	<script src='tf-backend-wasm.min.js'></script>
 	<script>
 var labels = [
-"halo",
+	"halo",
 "sonne",
 "skytracker",
 "light pillar",
@@ -52,6 +52,7 @@ var labels = [
 "regenbogen",
 "folienballon",
 "reentry",
+"flogo",
 "led-drohnen",
 "hole punch cloud",
 "blitz",
@@ -74,7 +75,6 @@ var labels = [
 "grüner blitz",
 "fledermaus",
 "halo mond",
-"flogo",
 "blue jet",
 "crown flash",
 "elve"
