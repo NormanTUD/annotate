@@ -5,13 +5,33 @@ include("functions.php");
 // Get the count of annotations for each category
 $category_count_query = "SELECT category.name, COUNT(*) as count FROM category INNER JOIN annotation ON category.id = annotation.category_id GROUP BY category.id";
 $category_count_result = rquery($category_count_query);
-$annotation_count_query = "SELECT COUNT(id) as count, DATE(modified) as date FROM annotation GROUP BY DATE(modified)";
+$annotation_count_query = "SELECT COUNT(id) as count, DATE(modified) as date FROM annotation where deleted = 0 and image_id not in (select id from image where deleted = 1) GROUP BY DATE(modified)";
 
 $annotation_count_result = rquery($annotation_count_query);
 
 $data = [];
+$i = 0;
 while($row = mysqli_fetch_assoc($annotation_count_result)) {
-  $data[] = ['date' => $row['date'], 'count' => $row['count']];
+  if($i != 0) {
+	  $data[] = ['date' => $row['date'], 'count' => $row['count']];
+  }
+  $i++;
+}
+
+// Get the count of annotations for each category
+$category_count_query = "SELECT category.name, COUNT(*) as count FROM category INNER JOIN annotation ON category.id = annotation.category_id GROUP BY category.id";
+$category_count_result = rquery($category_count_query);
+$annotation_count_query = "SELECT COUNT(id) as count, DATE_FORMAT(modified, '%Y-%m-%d') datehour FROM annotation where deleted = 0 and image_id not in (select id from image where deleted = 1) GROUP BY image_id, datehour ORDER BY datehour";
+
+$annotation_count_result = rquery($annotation_count_query);
+
+$data_images = [];
+$i = 0;
+while($row = mysqli_fetch_assoc($annotation_count_result)) {
+  if($i != 0) {
+	  $data_images[] = ['date' => $row['datehour'], 'count' => $row['count']];
+  }
+  $i++;
 }
 
 // Store the count of annotations for each category
@@ -30,18 +50,6 @@ while ($row = mysqli_fetch_assoc($category_count_result)) {
       ]
     ]
   ];
-}
-
-// Get the count of annotations per category
-$query = "SELECT category.name, COUNT(annotation.id) FROM annotation JOIN category ON annotation.category_id = category.id GROUP BY category.id";
-$result = rquery($query);
-
-$x = array();
-$y = array();
-
-while ($row = mysqli_fetch_assoc($result)) {
-  array_push($x, $row['name']);
-  array_push($y, $row['COUNT(annotation.id)']);
 }
 
 // Get the width and height of all bounding boxes
@@ -68,6 +76,7 @@ include("header.php");
     yaxis: {title: 'Annotation Count'}
   });
 </script>
+
     <div id="annotation_chart"></div>
 <script>
   var x = [];
@@ -92,17 +101,7 @@ include("header.php");
     }
   });
 </script>
-    <div id="annotations_per_category_chart"></div>
 
-    <script>
-      Plotly.newPlot('annotations_per_category_chart', [{
-        x: <?php echo json_encode($x); ?>,
-        y: <?php echo json_encode($y); ?>,
-        type: 'bar'
-      }], {
-        title: 'Annotations per Category'
-      });
-    </script>
 
 <div id="width_histogram"></div>
 <div id="height_histogram"></div>

@@ -45,7 +45,7 @@ function memory_debugger () {
 		var num_mb = num_bytes / (1024 ** 2);
 		num_mb = num_mb.toFixed(2);
 
-		var str = `Memory: ${num_mb}MB (${num_tensors} tensors)`;
+		var str = `, Memory: ${num_mb}MB (${num_tensors} tensors)`;
 
 		$("#memory_debugger").html(str);
 	} catch (e) {
@@ -681,6 +681,21 @@ document.onkeydown = function (e) {
 		default:
 			break;
 	}
+}
+
+function delete_all_anno (image) {
+	$.ajax({
+		url: "delete_all_anno.php?image=" + image,
+		type: "get",
+		success: async function (response) {
+			success("Delete Anno: OK", response)
+			await load_dynamic_content();
+		},
+		error: async function(jqXHR, textStatus, errorThrown) {
+			error("delete Anno: " + textStatus, errorThrown);
+			await load_dynamic_content();
+		}
+	});
 }
 
 setInterval(memory_debugger, 1000);

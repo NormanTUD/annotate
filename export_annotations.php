@@ -37,14 +37,58 @@
 		$format = $_GET["format"];
 	}
 
+	$page = 0;
+	if(get_get("page")) {
+		$page = intval(get_get("page"));
+	}
+
+	$items_per_page = 500;
+	if(get_get("items_per_page")) {
+		$items_per_page = intval(get_get("items_per_page"));
+	}
+
+	$offset = $page * $items_per_page;
+	if(get_get("offset")) {
+		$offset = intval(get_get("offset"));
+	}
+
+	$only_uncurated = 0;
+	if(get_get("only_uncurated")) {
+		$only_uncurated = intval(get_get("only_uncurated"));
+	}
+
 	$images = [];
 	
-	$annotated_image_ids_query = "select i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id))";
+	$annotated_image_ids_query = "select SQL_CALC_FOUND_ROWS i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0";
 
 	if(count($show_categories)) {
 		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).")";
 	}
+
+	if($only_uncurated) {
+		$annotated_image_ids_query .= " and a.curated is null";
+	}
+
+	$annotated_image_ids_query .= " order by i.filename ";
+
+	if ($format == "html") {
+		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
+	}
+
+	#dier($annotated_image_ids_query);
+
 	$res = rquery($annotated_image_ids_query);
+
+	$number_of_rows_query = "SELECT FOUND_ROWS()";
+	$number_of_rows_res = rquery($number_of_rows_query);
+
+	$number_of_rows = 0;
+
+	while ($row = mysqli_fetch_row($number_of_rows_res)) {
+		$number_of_rows = $row[0];
+	}
+
+	$max_page = ceil($number_of_rows / $items_per_page);
 
 	$images = [];
 	$categories = [];
@@ -84,6 +128,22 @@
 		$html = file_get_contents("export_base.html");
 		$annos_strings = array();
 
+		$page_str = "";
+
+		if($number_of_rows > $items_per_page) {
+			$links = array();
+			foreach (range(0, $max_page - 1) as $page_nr) {
+				$query = $_GET;
+				$query['page'] = $page_nr;
+				$query_result = http_build_query($query);
+
+				$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
+			}
+
+			$page_str = "<span style='font-size: 1vw'>".join(" &mdash; ", $links)."<br></span>";
+			print $page_str;
+		}
+
 		// <object-class> <x> <y> <width> <height>
 		if(count($images)) {
 			foreach ($images as $fn => $imgname) {
@@ -111,8 +171,13 @@
 
 					$annotations_string = join("\n", $this_annos);
 
+					$delete_str = "";
+					if(get_get("delete_on_click")) {
+						$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
+					}
+
 					$base_struct = '
-					<div style="position: relative; display: inline-block;">
+					<div '.$delete_str.' style="position: relative; display: inline-block;">
 						<img class="images" src="images/'.$fn.'" style="display: block;">
 						<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
 							<g>
@@ -121,6 +186,8 @@
 						</svg>
 					</div>
 					';
+
+					#dier($annotations_string);
 
 					$base_structs[] = $base_struct;
 				}
@@ -134,6 +201,11 @@
 		} else {
 			print "Keine Daten für die gewählte Kategorie";
 		}
+
+		if($page_str) {
+			print "<br>$page_str<br>";
+		}
+
 		include("footer.php");
 		exit(0);
 	}

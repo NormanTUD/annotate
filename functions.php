@@ -100,7 +100,7 @@
 	}
 
 	function get_number_of_unannotated_imgs() {
-		$q = "select count(*) from (select id from image where id not in (select image_id from annotation) and deleted = 0) a";
+		$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0) a";
 		$r = rquery($q);
 
 		$res = null;
@@ -113,7 +113,7 @@
 	}
 
 	function get_number_of_annotated_imgs() {
-		$q = "select count(*) from (select image_id from annotation where deleted = 0 group by image_id) a";
+		$q = "select count(*) from (select image_id from annotation a left join image i on a.image_id = i.id where a.deleted = 0 and i.deleted = 0 group by image_id) a";
 		$r = rquery($q);
 
 		$res = null;
@@ -131,13 +131,14 @@
 		$annotation_stat_str = number_format($annotation_stat, 0, ',', '.');
 		$unannotation_stat_str = number_format($unannotation_stat, 0, ',', '.');
 
-		$str = "Annotierte Bilder: ".htmlentities($annotation_stat_str ?? "");
-		$str .= ", unannotierte Bilder: ".htmlentities($unannotation_stat_str ?? "");
+		$str = "Annotiert: ".htmlentities($annotation_stat_str ?? "");
+		$str .= ", unannotiert: ".htmlentities($unannotation_stat_str ?? "");
 		if($unannotation_stat != 0) {
 			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
 		}
 
-		$str .= "<br><a href='stat.php'>Statistik</a>";
+		$str .= ", <a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
+	
 
 		return $str;
 	}
@@ -146,7 +147,7 @@
 	function get_current_tags () {
 		$annos = [];
 
-		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 group by c.id order by anzahl desc";
+		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 group by c.id order by anzahl desc, c.name asc";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_row($res)) {
@@ -387,6 +388,12 @@
 	#die(get_or_create_category_id("\n\nDAS HIER SOLLTE KEINE NEWLINES raketenspiraleaasd\n\n"));
 	#die(get_or_create_user_id("raketenspiraleasdadasdfff"));
 	#die(get_or_create_image_id("blaaasdasd.jpg"));
+
+	function flag_all_annos_as_deleted ($image_id) {
+		$query = "update annotation set deleted = 1 where image_id = ".esc($image_id);
+
+		rquery($query);
+	}
 
 	function flag_deleted ($annotarius_id) {
 		$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
