@@ -69,7 +69,7 @@
 		$annotated_image_ids_query .= " and a.curated is null";
 	}
 
-	$annotated_image_ids_query .= " order by i.filename ";
+	$annotated_image_ids_query .= " order by i.filename, a.modified";
 
 	if ($format == "html") {
 		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
@@ -158,6 +158,16 @@
 
 				$this_annos = array();
 
+				$delete_str = "";
+				if(get_get("delete_on_click")) {
+					$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
+				}
+
+				$base_structs[] = '
+					<div '.$delete_str.' style="position: relative; display: inline-block;">
+						<img class="images" src="images/'.$fn.'" style="display: block;">
+				';
+
 				foreach ($imgname as $this_anno_data) {
 					$this_anno = $annotation_base;
 
@@ -171,26 +181,21 @@
 
 					$annotations_string = join("\n", $this_annos);
 
-					$delete_str = "";
-					if(get_get("delete_on_click")) {
-						$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
-					}
 
 					$base_struct = '
-					<div '.$delete_str.' style="position: relative; display: inline-block;">
-						<img class="images" src="images/'.$fn.'" style="display: block;">
 						<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
 							<g>
 								'.$annotations_string.'
 							</g>
 						</svg>
-					</div>
 					';
 
 					#dier($annotations_string);
 
 					$base_structs[] = $base_struct;
 				}
+
+				$base_structs[] = "</div>";
 			}
 
 			$new_html = join("\n", $base_structs);
