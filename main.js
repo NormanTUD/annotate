@@ -683,6 +683,22 @@ document.onkeydown = function (e) {
 	}
 }
 
+function curate_anno (image) {
+	$.ajax({
+		url: "curate_anno.php?image=" + image,
+		type: "get",
+		success: async function (response) {
+			success("Curate Anno: OK", response)
+			await load_dynamic_content();
+		},
+		error: async function(jqXHR, textStatus, errorThrown) {
+			error("Curate Anno: " + textStatus, errorThrown);
+			await load_dynamic_content();
+		}
+	});
+}
+
+
 function delete_all_anno (image) {
 	$.ajax({
 		url: "delete_all_anno.php?image=" + image,

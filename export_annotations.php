@@ -159,6 +159,15 @@
 				$this_annos = array();
 
 				$delete_str = "";
+
+				if(get_get("curate_on_click") && get_get("delete_on_click")) {
+					die("Either curate or delete on click, not both");
+				}
+
+				if(get_get("curate_on_click")) {
+					$delete_str = 'onclick="curate_anno(\'' . $fn . '\')"';
+				}
+
 				if(get_get("delete_on_click")) {
 					$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
 				}
