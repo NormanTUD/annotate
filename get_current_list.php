@@ -11,7 +11,7 @@
 		$delete_on_click = "&delete_on_click=1";
 	}
 
-	$tags = get_current_tags();
+	$tags = get_current_tags($only_uncurated ?? 0);
 	$tags_as_array = [];
 	$html = "<ul style='list-style: conic-gradient'>";
 	foreach ($tags as $tag => $nr) {

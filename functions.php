@@ -144,10 +144,14 @@
 	}
 
 
-	function get_current_tags () {
+	function get_current_tags ($only_uncurated=0) {
 		$annos = [];
 
-		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 group by c.id order by anzahl desc, c.name asc";
+		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 ";
+		if($only_uncurated) {
+			$query .= " and a.curated is null ";
+		}
+		$query .= " group by c.id order by anzahl desc, c.name asc";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_row($res)) {
