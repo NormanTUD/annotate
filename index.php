@@ -176,7 +176,7 @@
 
 			<br>
 
-			<span style="font-size: 20px; color: green">Nicht wundern, dass es einige wenige Bilder sind noch als gestern. Ich habe einige die ausversehen falsch kategorisiert worden waren wieder in den Annotationspool geworfen. Dadurch wird der Datensatz sauberer und die KI besser.</span>
+			<span style="font-size: 20px; color: green">Ich bin wirklich, wirklich dankbar an die, die noch Mitlabellen! Wenn du du das hier liest, dann fühle dich von mir umarmt vor Freude!</span>
 <?php
 		}
 ?>
