@@ -391,7 +391,7 @@ echo "sbatch -n 1 --time=64:00:00 --mem-per-cpu=32000 --partition=alpha --gres=g
 
 		$simple_run_bash = '#!/bin/bash
 
-#SBATCH -n 2 --time=32:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
+#SBATCH -n 3 --time=64:00:00 --mem-per-cpu=60000 --partition=alpha --gres=gpu:1
 
 python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
 ';
