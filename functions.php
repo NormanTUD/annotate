@@ -144,10 +144,14 @@
 	}
 
 
-	function get_current_tags () {
+	function get_current_tags ($only_uncurated=0) {
 		$annos = [];
 
-		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 group by c.id order by anzahl desc, c.name asc";
+		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 ";
+		if($only_uncurated) {
+			$query .= " and a.curated is null ";
+		}
+		$query .= " group by c.id order by anzahl desc, c.name asc";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_row($res)) {
@@ -388,6 +392,12 @@
 	#die(get_or_create_category_id("\n\nDAS HIER SOLLTE KEINE NEWLINES raketenspiraleaasd\n\n"));
 	#die(get_or_create_user_id("raketenspiraleasdadasdfff"));
 	#die(get_or_create_image_id("blaaasdasd.jpg"));
+
+	function mark_as_curated ($image_id) {
+		$query = "update annotation set curated = 1 where image_id = ".esc($image_id);
+
+		rquery($query);
+	}
 
 	function flag_all_annos_as_deleted ($image_id) {
 		$query = "update annotation set deleted = 1 where image_id = ".esc($image_id);

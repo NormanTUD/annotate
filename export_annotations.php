@@ -69,7 +69,7 @@
 		$annotated_image_ids_query .= " and a.curated is null";
 	}
 
-	$annotated_image_ids_query .= " order by i.filename ";
+	$annotated_image_ids_query .= " order by i.filename, a.modified";
 
 	if ($format == "html") {
 		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
@@ -158,6 +158,25 @@
 
 				$this_annos = array();
 
+				$delete_str = "";
+
+				if(get_get("curate_on_click") && get_get("delete_on_click")) {
+					die("Either curate or delete on click, not both");
+				}
+
+				if(get_get("curate_on_click")) {
+					$delete_str = 'onclick="curate_anno(\'' . $fn . '\')"';
+				}
+
+				if(get_get("delete_on_click")) {
+					$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
+				}
+
+				$base_structs[] = '
+					<div '.$delete_str.' style="position: relative; display: inline-block;">
+						<img class="images" src="images/'.$fn.'" style="display: block;">
+				';
+
 				foreach ($imgname as $this_anno_data) {
 					$this_anno = $annotation_base;
 
@@ -171,26 +190,21 @@
 
 					$annotations_string = join("\n", $this_annos);
 
-					$delete_str = "";
-					if(get_get("delete_on_click")) {
-						$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
-					}
 
 					$base_struct = '
-					<div '.$delete_str.' style="position: relative; display: inline-block;">
-						<img class="images" src="images/'.$fn.'" style="display: block;">
 						<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
 							<g>
 								'.$annotations_string.'
 							</g>
 						</svg>
-					</div>
 					';
 
 					#dier($annotations_string);
 
 					$base_structs[] = $base_struct;
 				}
+
+				$base_structs[] = "</div>";
 			}
 
 			$new_html = join("\n", $base_structs);
@@ -377,7 +391,7 @@ echo "sbatch -n 1 --time=64:00:00 --mem-per-cpu=32000 --partition=alpha --gres=g
 
 		$simple_run_bash = '#!/bin/bash
 
-#SBATCH -n 2 --time=32:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1
+#SBATCH -n 3 --time=64:00:00 --mem-per-cpu=60000 --partition=alpha --gres=gpu:1
 
 python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
 ';
