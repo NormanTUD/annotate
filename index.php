@@ -175,8 +175,6 @@
 			<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round($number_annotated - 999, -3), 0, ',', '.'); ?> Bilder! Dass wir <b>SO</b> viele Bilder zusammenkriegen hätte ich nie für möglich gehalten, vielen Dank!</span>
 
 			<br>
-
-			<span style="font-size: 20px; color: green">Ich bin wirklich, wirklich dankbar an die, die noch Mitlabellen! Wenn du du das hier liest, dann fühle dich von mir umarmt vor Freude!</span>
 <?php
 		}
 ?>
