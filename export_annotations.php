@@ -274,6 +274,7 @@
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
 			$link_to = "$tmp_dir/images/$fn";
+			$link_to = preg_replace("/\.\w+$/", ".jpg", $fn);
 
 			/*
 			$failed_link = link("images/$fn", $link_to);
@@ -283,7 +284,8 @@
 			}
 			 */
 			if(file_exists("images/$fn")) {
-				copy("images/$fn", $link_to);
+				#copy("images/$fn", $link_to);
+				system("convert ".escapeshellarg("images/$fn")." ".escapeshellarg($link_to));
 				$j++;
 
 				$str = "";
