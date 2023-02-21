@@ -287,9 +287,12 @@
 				$j++;
 
 				$str = "";
+				$str_arr = array();
 				foreach ($img as $single_anno) {
-					$str .= $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"]."\n";
+					$str_arr[] = $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"];
 				}
+
+				$str = join("\n", array_unique($str_arr));
 
 				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 			}
