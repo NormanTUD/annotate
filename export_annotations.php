@@ -1,7 +1,7 @@
 <?php
 	ini_set('memory_limit', '4096M');
-	ini_set('max_execution_time', '600');
-	set_time_limit(600);
+	ini_set('max_execution_time', '300');
+	set_time_limit(300);
 	include_once("functions.php");
 
 	$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
@@ -274,7 +274,6 @@
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
 			$link_to = "$tmp_dir/images/$fn";
-			$link_to = preg_replace("/\.\w+$/", ".jpg", $fn);
 
 			/*
 			$failed_link = link("images/$fn", $link_to);
