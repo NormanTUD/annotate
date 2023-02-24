@@ -309,7 +309,10 @@
 		return $res;
 	}
 
-	function get_or_create_image_id ($image, $width=null, $height=null) {
+	function get_or_create_image_id ($image, $width=null, $height=null, $rec=0) {
+		if($rec >= 10) {
+			return;
+		}
 		$select_query = "select id from image where filename = ".esc($image);		
 		$select_res = rquery($select_query);
 
@@ -328,7 +331,7 @@
 
 			$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
 			rquery($insert_query);
-			return get_or_create_image_id($image);
+			return get_or_create_image_id($image, $width, $height, $rec + 1);
 		} else {
 			return $res;
 		}
