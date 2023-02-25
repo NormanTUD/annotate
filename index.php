@@ -144,7 +144,7 @@
 				<td style="vertical-align: baseline;">
 					<div id="content" style="padding: 30px;">
 						<p>
-							<button onClick="load_next_random_image()">N&auml;chstes Bild (n)</button>
+							<button id="next_img_button" onClick="load_next_random_image()">N&auml;chstes Bild (n)</button>
 							<button><a onclick="ai_file($('#image')[0])">KI-Labelling (k)</a></button>
 							<button onclick="move_to_offtopic()">Bild ist Off Topic (o)</button>
 							<button onclick="move_to_unidentifiable()">Bild ist nicht identifizierbar (u)</button>
