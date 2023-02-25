@@ -8,8 +8,7 @@
 
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$annotations = number_of_annotations($user_id, $file);
-				$img_files[$file] = $annotations;
+				$img_files[$file] = 1;
 			}
 		}
 

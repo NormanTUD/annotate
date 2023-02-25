@@ -65,26 +65,6 @@
 		exit(1);
 	}
 
-	function number_of_annotations ($uid, $img) {
-		$img = hash("sha256", $img);
-		$dir = "annotations/$img/$uid/";
-
-		if(is_dir($dir)) {
-			$files = scandir($dir);
-
-			$i = 0;
-
-			foreach($files as $file) {
-				if(preg_match("/\.json$/", $file)) {
-					$i++;
-				}
-			}
-
-			return $i;
-		}
-		return 0;
-	}
-
 	function shuffle_assoc($my_array) {
 		$keys = array_keys($my_array);
 
