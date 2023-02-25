@@ -414,8 +414,12 @@
 		rquery($query);
 	}
 
-	function get_next_random_unannotated_image () {
-		$query = "select filename from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0 order by rand()";
+	function get_next_random_unannotated_image ($fn = "") {
+		$query = "select filename from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0";
+		if($fn) {
+			$query .= " and filename like ".esc("%$fn%");
+		}
+		$query .= " order by rand()";
 		$res = rquery($query);
 
 		$result = null;

@@ -115,7 +115,11 @@
 	if(isset($_GET["edit"])) {
 		$imgfile = $_GET["edit"];
 	} else {
-		$imgfile = get_next_random_unannotated_image();
+		if(get_get("like")) {
+			$imgfile = get_next_random_unannotated_image(get_get("like"));
+		} else {
+			$imgfile = get_next_random_unannotated_image();
+		}
 	}
 
 	$number_annotated = get_number_of_annotated_imgs();
