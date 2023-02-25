@@ -592,8 +592,17 @@ async function load_next_random_image (fn=false) {
 	if(fn) {
 		set_img_from_filename(fn);
 	} else {
+		var ajax_url = "get_random_unannotated_image.php";
+		const queryString = window.location.search;
+		const urlParams = new URLSearchParams(queryString);
+		var like = urlParams.get('like');
+
+		if(like) {
+			ajax_url += "?like=" + encodeURI(like);
+		}
+
 		await $.ajax({
-			url: "get_random_unannotated_image.php",
+			url: ajax_url,
 			type: "GET",
 			dataType: "html",
 			success: async function (fn) {

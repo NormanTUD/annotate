@@ -1,5 +1,9 @@
 <?php
 	include_once("functions.php");
 
-	print get_next_random_unannotated_image();
+	if(get_get("like")) {
+		print get_next_random_unannotated_image(get_get("like"));
+	} else {
+		print get_next_random_unannotated_image();
+	}
 ?>
