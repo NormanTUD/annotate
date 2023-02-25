@@ -79,6 +79,19 @@
 		return $my_array;
 	}
 
+	function get_number_of_curated_imgs () {
+		$q = "select count(*) from (select id from image where id in (select image_id from annotation where deleted = 0 and curated = 1) and deleted = 0) a";
+		$r = rquery($q);
+
+		$res = null;
+
+		while ($row = mysqli_fetch_row($r)) {
+			$res = $row[0];
+		}
+
+		return $res;
+	}
+
 	function get_number_of_unannotated_imgs() {
 		$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0) a";
 		$r = rquery($q);
@@ -108,13 +121,20 @@
 	function get_home_string () {
 		$annotation_stat = get_number_of_annotated_imgs();
 		$unannotation_stat = get_number_of_unannotated_imgs();
+		$curated_stat = get_number_of_curated_imgs();
 		$annotation_stat_str = number_format($annotation_stat, 0, ',', '.');
 		$unannotation_stat_str = number_format($unannotation_stat, 0, ',', '.');
+		$curated_stat_str = number_format($curated_stat, 0, ',', '.');
 
 		$str = "Annotiert: ".htmlentities($annotation_stat_str ?? "");
+		$str .= ", kuratiert: ".htmlentities($curated_stat_str ?? "");
 		$str .= ", unannotiert: ".htmlentities($unannotation_stat_str ?? "");
+
+		$curated_percent = ($curated_stat / $annotation_stat) * 100;
+		$curated_percent = number_format($curated_percent, 0, ',', '.');
+
 		if($unannotation_stat != 0) {
-			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
+			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert, davon $curated_percent% kuratiert)";
 		}
 
 		$str .= ", <a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
