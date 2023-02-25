@@ -131,7 +131,7 @@
 		$str .= ", unannotiert: ".htmlentities($unannotation_stat_str ?? "");
 
 		$curated_percent = ($curated_stat / $annotation_stat) * 100;
-		$curated_percent = number_format($curated_percent, 0, ',', '.');
+		$curated_percent = number_format($curated_percent, 3, ',', '.');
 
 		if($unannotation_stat != 0) {
 			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert, davon $curated_percent% kuratiert)";
