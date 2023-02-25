@@ -39,50 +39,6 @@
 					print "Id for $file: ".$image_id."<br>\n";
 					ob_flush();
 					flush();
-
-
-					$file_hash = hash("sha256", $file);
-					$anno_path = "annotations/".$file_hash;
-
-					if(file_exists($anno_path)) {
-						$user_dir = scandir($anno_path);
-						foreach($user_dir as $user) {
-							if(preg_match("/^[\w\d]+$/", $user)) {
-								$user_id = get_or_create_user_id($user);
-								print "Created user $user ($user_id)<br>\n";
-
-
-								$annotations = scandir("$anno_path/$user");
-
-								foreach ($annotations as $this_anno) {
-									if(preg_match("/\.json$/", $this_anno)) {
-										$this_anno_file = "$anno_path/$user/$this_anno";
-
-										$json_file = file_get_contents($this_anno_file);
-										$json = json_decode($json_file, TRUE);
-
-										$category_id = get_or_create_category_id($json["body"][0]["value"]);
-
-										$parsed_position = parse_position($json["position"], get_image_width($image_id), get_image_height($image_id));
-										if(is_null($parsed_position)) {
-											dier($json);
-										} else {
-											$x_start = $parsed_position[0];
-											$y_start = $parsed_position[1];
-											$w = $parsed_position[2];
-											$h = $parsed_position[3];
-										}
-
-										$annotarius_id = $json["id"];
-
-										create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json_file, $annotarius_id);
-									}
-								}
-							}
-						}
-					} else {
-						// dont import
-					}
 					rquery("COMMIT;");
 					rquery("SET autocommit=1;");
 				}
