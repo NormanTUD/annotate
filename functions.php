@@ -403,13 +403,15 @@
 	}
 
 	function flag_all_annos_as_deleted ($image_id) {
-		$query = "update annotation set deleted = 1 where image_id = ".esc($image_id);
+		#$query = "update annotation set deleted = 1 where image_id = ".esc($image_id);
+		$query = "delete from annotation where image_id = ".esc($image_id);
 
 		rquery($query);
 	}
 
 	function flag_deleted ($annotarius_id) {
-		$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
+		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
+		$query = "delete from annotation where annotarius_id = ".esc($annotarius_id);
 
 		rquery($query);
 	}
