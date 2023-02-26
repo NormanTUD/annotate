@@ -883,7 +883,7 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 		
 		$tmp_zip = "$tmp_dir/yolo_export.zip";
 		ob_start();
-		system("cd $tmp_dir; zip -r yolo_export.zip .");
+		system("cd $tmp_dir; zip --symlinks -r yolo_export.zip .");
 		ob_clean();
 
 		header("Content-type: application/zip"); 
