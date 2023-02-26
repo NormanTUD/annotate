@@ -283,7 +283,7 @@
 			}
 			 */
 			if(file_exists("images/$fn")) {
-				copy("images/$fn", $link_to);
+				link("images/$fn", $link_to);
 				$j++;
 
 				$str = "";
