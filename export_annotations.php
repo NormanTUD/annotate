@@ -278,7 +278,6 @@
 				$fn = preg_replace("/empty\//", "", $fn);
 				if(file_exists("empty/$fn")) {
 					$link_to = "$tmp_dir/images/$fn";
-					mywarn("\nCopying empty/$fn to $link_to\n\n");
 					$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
 					copy("empty/$fn", $link_to);
 
