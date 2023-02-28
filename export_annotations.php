@@ -278,12 +278,13 @@
 				$fn = preg_replace("/empty\//", "", $fn);
 				if(file_exists("empty/$fn")) {
 					$link_to = "$tmp_dir/images/$fn";
+					mywarn("\nCopying empty/$fn to $link_to\n\n");
 					$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
 					copy("empty/$fn", $link_to);
 
 					file_put_contents("$tmp_dir/labels/$fn_txt", "");
 				} else {
-					mywarn("Cannot copy file");
+					mywarn("\nCannot copy file: empty/$fn\n\n");
 				}
 			}
 		}
