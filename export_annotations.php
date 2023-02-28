@@ -271,7 +271,7 @@
 
 		$j = 0;
 
-		if(get_get("empty")) {
+		if(!get_get("no_empty")) {
 			$empty_images = glob("empty/*.jpg");
 
 			foreach ($empty_images as $fn) {
@@ -282,6 +282,8 @@
 					copy("empty/$fn", $link_to);
 
 					file_put_contents("$tmp_dir/labels/$fn_txt", "");
+				} else {
+					mywarn("Cannot copy file");
 				}
 			}
 		}
