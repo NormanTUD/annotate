@@ -271,6 +271,21 @@
 
 		$j = 0;
 
+		if(get_get("empty")) {
+			$empty_images = glob("empty/*.jpg");
+
+			foreach ($empty_images as $fn) {
+				$fn = preg_replace("/empty\//", "", $fn);
+				if(file_exists("empty/$fn")) {
+					$link_to = "$tmp_dir/images/$fn";
+					$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
+					copy("empty/$fn", $link_to);
+
+					file_put_contents("$tmp_dir/labels/$fn_txt", "");
+				}
+			}
+		}
+
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
 			$link_to = "$tmp_dir/images/$fn";
@@ -297,6 +312,8 @@
 				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 			}
 		}
+
+
 
 		$hyperparams = '# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Hyperparameters for high-augmentation COCO training from scratch
