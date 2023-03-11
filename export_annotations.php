@@ -172,10 +172,19 @@
 					$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
 				}
 
-				$base_structs[] = '
+				$ahref_start = "";
+				$ahref_end = "";
+
+				if(get_get("delete_on_click")) {
+					$ahref_start = "<a target='_blank' href='index.php?edit=$fn'>";
+					$ahref_end = "</a>";
+				}
+
+
+				$base_structs[] = $ahref_start.'
 					<div '.$delete_str.' style="position: relative; display: inline-block;">
 						<img class="images" src="images/'.$fn.'" style="display: block;">
-				';
+				'.$ahref_end;
 
 				foreach ($imgname as $this_anno_data) {
 					$this_anno = $annotation_base;
