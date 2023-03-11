@@ -1,5 +1,5 @@
 <?php
-	ini_set('memory_limit', '8192M');
+	ini_set('memory_limit', '16384M');
 	ini_set('max_execution_time', '600');
 	set_time_limit(600);
 	include_once("functions.php");
@@ -271,7 +271,7 @@
 
 		$j = 0;
 
-		if(!get_get("no_empty")) {
+		if(get_get("empty")) {
 			$empty_images = glob("empty/*.jpg");
 
 			foreach ($empty_images as $fn) {
@@ -279,7 +279,7 @@
 				if(file_exists("empty/$fn")) {
 					$link_to = "$tmp_dir/images/$fn";
 					$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
-					copy("empty/$fn", $link_to);
+					system("ln ".escapeshellarg("empty/$fn")." ".escapeshellarg($link_to));
 
 					file_put_contents("$tmp_dir/labels/$fn_txt", "");
 				} else {
@@ -300,7 +300,8 @@
 			}
 			 */
 			if(file_exists("images/$fn")) {
-				copy("images/$fn", $link_to);
+				#link("images/$fn", $link_to);
+				system("ln ".escapeshellarg("images/$fn")." ".escapeshellarg($link_to));
 				$j++;
 
 				$str = "";
