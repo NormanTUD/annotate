@@ -175,7 +175,7 @@
 				$ahref_start = "";
 				$ahref_end = "";
 
-				if(get_get("delete_on_click")) {
+				if(get_get("delete_on_click") && !get_get("no_link")) {
 					$ahref_start = "<a target='_blank' href='index.php?edit=$fn'>";
 					$ahref_end = "</a>";
 				}
