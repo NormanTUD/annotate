@@ -417,6 +417,16 @@ async function ai_file (elem) {
 		await save_anno(new_annos[i]);
 	}
 	running_ki = false;
+
+	success("Success!", "KI fertig...");
+
+	const queryString = window.location.search;
+	const urlParams = new URLSearchParams(queryString);
+	var autonext = urlParams.get('autonext');
+
+	if(autonext) {
+		await load_next_random_image();
+	}
 }
 
 function sleep(ms) {
