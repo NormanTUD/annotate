@@ -288,7 +288,9 @@
 				if(file_exists("empty/$fn")) {
 					$link_to = "$tmp_dir/images/$fn";
 					$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
-					system("ln ".escapeshellarg("empty/$fn")." ".escapeshellarg($link_to));
+					if(get_get("images")) {
+						system("ln ".escapeshellarg("empty/$fn")." ".escapeshellarg($link_to));
+					}
 
 					file_put_contents("$tmp_dir/labels/$fn_txt", "");
 				} else {
@@ -310,7 +312,9 @@
 			 */
 			if(file_exists("images/$fn")) {
 				#link("images/$fn", $link_to);
-				system("ln ".escapeshellarg("images/$fn")." ".escapeshellarg($link_to));
+				if(get_get("images")) {
+					system("ln ".escapeshellarg("images/$fn")." ".escapeshellarg($link_to));
+				}
 				$j++;
 
 				$str = "";
@@ -907,6 +911,13 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 ";
 
 		file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
+
+		$download_images = "#!/bin/bash
+set -x
+for i in $(curl http://ufo-ki.de/annotate/images/ | sed -e 's/.*href=\"//' | sed -e 's#\".*##' | sed -e 's#^#http://ufo-ki.de/annotate/images/#'); do wget -nc \"$i\"; done
+";
+
+		file_put_contents("$tmp_dir/download_images.sh", $download_images);
 
 		#die("a");
 		
