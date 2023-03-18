@@ -132,7 +132,7 @@
 <?php
 		if($number_annotated > 10000) {
 ?>
-			<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round($number_annotated - 999, -3), 0, ',', '.'); ?> Bilder! Dass wir <b>SO</b> viele Bilder zusammenkriegen hätte ich nie für möglich gehalten, vielen Dank!</span>
+			<span style="font-size: 20px; color: green">Hallo, wer bis hierhin noch durchgehalten hat, bitte sende mir mal eine Email: <a href="mailto:kochnorman@rocketmail.com">kochnorman@rocketmail.com</a>. Ich kann zwar keine Preise vergeben, aber würde mich gern persönlich bedanken.</span>
 
 			<br>
 <?php

@@ -278,21 +278,26 @@
 	}
 
 	function get_image_width_and_height_from_file ($fn) {
-		$imgsz = getimagesize("./images/".$fn);
-
-		$width = $imgsz[0];
-		$height = $imgsz[1];
-
+		$width = null;
+		$height = null;
 		try {
-			$exif = @exif_read_data("images/$file");
+			$imgsz = getimagesize("./images/".$fn);
+
+			$width = $imgsz[0];
+			$height = $imgsz[1];
+
+			try {
+				$exif = @exif_read_data("images/$file");
+			} catch (\Throwable $e) {
+				//;
+			}
+
+			if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
+				list($width, $height) = array($width, $height);
+			}
 		} catch (\Throwable $e) {
-			//;
+			mywarn("$e for file $fn inside get_image_width_and_height_from_file");
 		}
-
-		if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
-			list($width, $height) = array($width, $height);
-		}
-
 		return array($width, $height);
 	}
 
@@ -329,9 +334,13 @@
 			$width = $width_and_height[0];
 			$height = $width_and_height[1];
 
-			$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
-			rquery($insert_query);
-			return get_or_create_image_id($image, $width, $height, $rec + 1);
+			if($width && $height) {
+				$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
+				rquery($insert_query);
+				return get_or_create_image_id($image, $width, $height, $rec + 1);
+			} else {
+				return null;
+			}
 		} else {
 			return $res;
 		}

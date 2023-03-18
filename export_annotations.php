@@ -1,7 +1,7 @@
 <?php
 	ini_set('memory_limit', '16384M');
-	ini_set('max_execution_time', '600');
-	set_time_limit(600);
+	ini_set('max_execution_time', '3600');
+	set_time_limit(3600);
 	include_once("functions.php");
 
 	$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
