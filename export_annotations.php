@@ -920,6 +920,14 @@ for i in $(curl http://ufo-ki.de/annotate/$1/ | grep href | egrep -i \"(jpg|jpeg
 
 		file_put_contents("$tmp_dir/download_images.sh", $download_images);
 
+		$download_empty = "#!/bin/bash
+set -x
+mkdir -p images
+for i in $(curl http://ufo-ki.de/annotate/empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do wget -nc \"http://ufo-ki.de/annotate/empty/\$i\" -O \"images/\$i\"; done
+";
+
+		file_put_contents("$tmp_dir/download_empty.sh", $download_empty);
+
 		#die("a");
 		
 		$tmp_zip = "$tmp_dir/yolo_export.zip";
