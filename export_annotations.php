@@ -915,7 +915,7 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 		$download_images = "#!/bin/bash
 set -x
 mkdir -p \$1
-for i in $(curl http://ufo-ki.de/annotate/$1/ | sed -e 's/.*href=\"//' | sed -e 's#\".*##' | sed -e 's#^#http://ufo-ki.de/annotate/images/#'); do wget -nc \"\$i\" -o \"\$1/\$i\"; done
+for i in $(curl http://ufo-ki.de/annotate/$1/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do wget -nc \"\http://ufo-ki.de/annotate/\$1/\$i\" -o \"\$1/\$i\"; done
 ";
 
 		file_put_contents("$tmp_dir/download_images.sh", $download_images);
