@@ -426,7 +426,7 @@
 	}
 
 	function get_next_random_unannotated_image ($fn = "") {
-		$query = "select filename from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0";
+		$query = "select filename from image i left join annotation a on a.image_id = i.id where a.deleted is null or a.deleted = 1 group by filename";
 		if($fn) {
 			$query .= " and filename like ".esc("%$fn%");
 		}
