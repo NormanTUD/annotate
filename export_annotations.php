@@ -137,6 +137,10 @@
 				$query['page'] = $page_nr;
 				$query_result = http_build_query($query);
 
+				if($page_nr == get_get("page")) {
+					$page_nr = "<b>$page_nr</b>";
+				}
+
 				$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
 			}
 
