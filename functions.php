@@ -93,7 +93,8 @@
 	}
 
 	function get_number_of_unannotated_imgs() {
-		$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0) a";
+		#$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0) a";
+		$q = "select count(*) from (select filename from image i left join annotation a on a.image_id = i.id where (a.deleted is null or a.deleted = 1)) a";
 		$r = rquery($q);
 
 		$res = null;
@@ -426,11 +427,11 @@
 	}
 
 	function get_next_random_unannotated_image ($fn = "") {
-		$query = "select filename from image i left join annotation a on a.image_id = i.id where a.deleted is null or a.deleted = 1 group by filename";
+		$query = "select filename from image i left join annotation a on a.image_id = i.id where (a.deleted is null or a.deleted = 1) ";
 		if($fn) {
-			$query .= " and filename like ".esc("%$fn%");
+			$query .= " and i.filename like ".esc("%$fn%");
 		}
-		$query .= " order by rand()";
+		$query .= "  group by filename order by rand()";
 		$res = rquery($query);
 
 		$result = null;
