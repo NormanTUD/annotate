@@ -2,6 +2,19 @@
 // Connect to the database
 include("functions.php");
 
+    $sql = "SELECT * FROM (SELECT user.name, COUNT(annotation.id) AS count FROM user LEFT JOIN annotation ON user.id = annotation.user_id GROUP BY user.id) a order by a.count";
+    $result = rquery($sql);
+
+    $user_names = array();
+    $annotation_counts = array();
+
+    if ($result->num_rows > 0) {
+      while($row = $result->fetch_assoc()) {
+        $user_names[] = $row["name"];
+        $annotation_counts[] = $row["count"];
+      }
+    }
+
 // Get the count of annotations for each category
 $category_count_query = "SELECT category.name, COUNT(*) as count FROM category INNER JOIN annotation ON category.id = annotation.category_id GROUP BY category.id";
 $category_count_result = rquery($category_count_query);
@@ -126,6 +139,30 @@ include("header.php");
     title: 'Bounding Box Height Distribution'
   });
 </script>
+
+<div id="user_plot"></div>
+
+  <script>
+    // Create the plot
+
+    var data = [{
+      x: <?php echo json_encode($user_names); ?>,
+      y: <?php echo json_encode($annotation_counts); ?>,
+      type: 'bar'
+    }];
+
+    var layout = {
+      title: 'User Annotation Statistics',
+      xaxis: {
+        title: 'User'
+      },
+      yaxis: {
+        title: 'Number of Annotations'
+      }
+    };
+
+    Plotly.newPlot('user_plot', data, layout);
+  </script>
 <?php
 	include("footer.php");
 ?>
