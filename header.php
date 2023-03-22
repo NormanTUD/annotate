@@ -60,13 +60,13 @@ var labels = [
 "unfokussiertes objekt",
 "starlink",
 "satellit",
+"vogelschwarm",
 "elmsfeuer",
 "paraglider",
 "mülltüte",
 "hubschrauber",
 "planet",
 "milchstraße",
-"vogelschwarm",
 "funken",
 "sonnenstrahlen",
 "himmelslaterne",
@@ -77,8 +77,12 @@ var labels = [
 "halo mond",
 "blue jet",
 "crown flash",
-"elve"
+"suchscheinwerfer",
+"schmetterling",
+"elve",
+"searchlight"
 ];
+
 	</script>
 </head>
 
