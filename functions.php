@@ -431,6 +431,7 @@
 		if($fn) {
 			$query .= " and i.filename like ".esc("%$fn%");
 		}
+		$query .= " and i.id not in (select id from annotation where deleted != '1')";
 		$query .= "  group by filename order by rand()";
 		$res = rquery($query);
 
