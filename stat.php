@@ -2,6 +2,22 @@
 // Connect to the database
 include("functions.php");
 
+
+// Retrieve the data
+$sql = "SELECT w, h FROM annotation WHERE deleted = 0";
+$result = rquery($sql);
+
+$aspect_ratios = array();
+
+if ($result->num_rows > 0) {
+	while($row = $result->fetch_assoc()) {
+		if($row["h"]) {
+			$aspect_ratio = $row["w"] / $row["h"];
+			$aspect_ratios[] = $aspect_ratio;
+		}
+	}
+}
+
     $sql = "SELECT * FROM (SELECT user.name, COUNT(annotation.id) AS count FROM user LEFT JOIN annotation ON user.id = annotation.user_id GROUP BY user.id) a order by a.count";
     $result = rquery($sql);
 
@@ -163,6 +179,36 @@ include("header.php");
 
     Plotly.newPlot('user_plot', data, layout);
   </script>
+
+  <div id="aspect_ratio_plot"></div>
+
+
+  <script>
+    // Create the plot
+    var trace1 = {
+      x: <?php echo json_encode($aspect_ratios); ?>,
+      type: 'histogram',
+      marker: {
+        color: '#1f77b4',
+      },
+      nbinsx: 1000
+    };
+
+    var data = [trace1];
+
+    var layout = {
+      title: 'Aspect Ratio Statistics',
+      xaxis: {
+        title: 'Aspect Ratio (Width/Height)'
+      },
+      yaxis: {
+        title: 'Frequency'
+      }
+    };
+
+    Plotly.newPlot('aspect_ratio_plot', data, layout);
+  </script>
+
 <?php
 	include("footer.php");
 ?>
