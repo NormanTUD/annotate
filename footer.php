@@ -1,12 +1,4 @@
 <script>
-	$(document).ready(function () {
-		try {
-			document.getElementById("defaultOpen").click();
-		} catch(e) {
-			console.log(e);
-		};
-	});
-
 	function toc () {
 	    var toc = "";
 	    var level = 0;

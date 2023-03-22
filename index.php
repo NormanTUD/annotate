@@ -39,50 +39,6 @@
 					print "Id for $file: ".$image_id."<br>\n";
 					ob_flush();
 					flush();
-
-
-					$file_hash = hash("sha256", $file);
-					$anno_path = "annotations/".$file_hash;
-
-					if(file_exists($anno_path)) {
-						$user_dir = scandir($anno_path);
-						foreach($user_dir as $user) {
-							if(preg_match("/^[\w\d]+$/", $user)) {
-								$user_id = get_or_create_user_id($user);
-								print "Created user $user ($user_id)<br>\n";
-
-
-								$annotations = scandir("$anno_path/$user");
-
-								foreach ($annotations as $this_anno) {
-									if(preg_match("/\.json$/", $this_anno)) {
-										$this_anno_file = "$anno_path/$user/$this_anno";
-
-										$json_file = file_get_contents($this_anno_file);
-										$json = json_decode($json_file, TRUE);
-
-										$category_id = get_or_create_category_id($json["body"][0]["value"]);
-
-										$parsed_position = parse_position($json["position"], get_image_width($image_id), get_image_height($image_id));
-										if(is_null($parsed_position)) {
-											dier($json);
-										} else {
-											$x_start = $parsed_position[0];
-											$y_start = $parsed_position[1];
-											$w = $parsed_position[2];
-											$h = $parsed_position[3];
-										}
-
-										$annotarius_id = $json["id"];
-
-										create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json_file, $annotarius_id);
-									}
-								}
-							}
-						}
-					} else {
-						// dont import
-					}
 					rquery("COMMIT;");
 					rquery("SET autocommit=1;");
 				}
@@ -159,7 +115,11 @@
 	if(isset($_GET["edit"])) {
 		$imgfile = $_GET["edit"];
 	} else {
-		$imgfile = get_next_random_unannotated_image();
+		if(get_get("like")) {
+			$imgfile = get_next_random_unannotated_image(get_get("like"));
+		} else {
+			$imgfile = get_next_random_unannotated_image();
+		}
 	}
 
 	$number_annotated = get_number_of_annotated_imgs();
@@ -172,7 +132,7 @@
 <?php
 		if($number_annotated > 10000) {
 ?>
-			<span style="font-size: 20px; color: green">Hey, Wow! Mehr als <?php print number_format(round($number_annotated - 999, -3), 0, ',', '.'); ?> Bilder! Dass wir <b>SO</b> viele Bilder zusammenkriegen hätte ich nie für möglich gehalten, vielen Dank!</span>
+			<span style="font-size: 20px; color: green">Hallo, wer bis hierhin noch durchgehalten hat, bitte sende mir mal eine Email: <a href="mailto:kochnorman@rocketmail.com">kochnorman@rocketmail.com</a>. Ich kann zwar keine Preise vergeben, aber würde mich gern persönlich bedanken.</span>
 
 			<br>
 <?php
@@ -184,7 +144,7 @@
 				<td style="vertical-align: baseline;">
 					<div id="content" style="padding: 30px;">
 						<p>
-							<button onClick="load_next_random_image()">N&auml;chstes Bild (n)</button>
+							<button id="next_img_button" onClick="load_next_random_image()">N&auml;chstes Bild (n)</button>
 							<button><a onclick="ai_file($('#image')[0])">KI-Labelling (k)</a></button>
 							<button onclick="move_to_offtopic()">Bild ist Off Topic (o)</button>
 							<button onclick="move_to_unidentifiable()">Bild ist nicht identifizierbar (u)</button>

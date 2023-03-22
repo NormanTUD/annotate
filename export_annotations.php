@@ -1,7 +1,7 @@
 <?php
-	ini_set('memory_limit', '4096M');
-	ini_set('max_execution_time', '300');
-	set_time_limit(300);
+	ini_set('memory_limit', '16384M');
+	ini_set('max_execution_time', '3600');
+	set_time_limit(3600);
 	include_once("functions.php");
 
 	$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
@@ -137,6 +137,10 @@
 				$query['page'] = $page_nr;
 				$query_result = http_build_query($query);
 
+				if($page_nr == get_get("page")) {
+					$page_nr = "<b>$page_nr</b>";
+				}
+
 				$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
 			}
 
@@ -172,10 +176,19 @@
 					$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
 				}
 
-				$base_structs[] = '
+				$ahref_start = "";
+				$ahref_end = "";
+
+				if(get_get("delete_on_click") && !get_get("no_link")) {
+					$ahref_start = "<a target='_blank' href='index.php?edit=$fn'>";
+					$ahref_end = "</a>";
+				}
+
+
+				$base_structs[] = $ahref_start.'
 					<div '.$delete_str.' style="position: relative; display: inline-block;">
 						<img class="images" src="images/'.$fn.'" style="display: block;">
-				';
+				'.$ahref_end;
 
 				foreach ($imgname as $this_anno_data) {
 					$this_anno = $annotation_base;
@@ -271,6 +284,25 @@
 
 		$j = 0;
 
+		if(get_get("empty")) {
+			$empty_images = glob("empty/*.jpg");
+
+			foreach ($empty_images as $fn) {
+				$fn = preg_replace("/empty\//", "", $fn);
+				if(file_exists("empty/$fn")) {
+					$link_to = "$tmp_dir/images/$fn";
+					$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
+					if(get_get("images")) {
+						system("ln ".escapeshellarg("empty/$fn")." ".escapeshellarg($link_to));
+					}
+
+					file_put_contents("$tmp_dir/labels/$fn_txt", "");
+				} else {
+					mywarn("\nCannot copy file: empty/$fn\n\n");
+				}
+			}
+		}
+
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
 			$link_to = "$tmp_dir/images/$fn";
@@ -283,7 +315,10 @@
 			}
 			 */
 			if(file_exists("images/$fn")) {
-				copy("images/$fn", $link_to);
+				#link("images/$fn", $link_to);
+				if(get_get("images")) {
+					system("ln ".escapeshellarg("images/$fn")." ".escapeshellarg($link_to));
+				}
 				$j++;
 
 				$str = "";
@@ -297,6 +332,8 @@
 				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
 			}
 		}
+
+
 
 		$hyperparams = '# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Hyperparameters for high-augmentation COCO training from scratch
@@ -878,6 +915,22 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 ";
 
 		file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
+
+		$download_images = "#!/bin/bash
+set -x
+mkdir -p \$1
+for i in $(curl http://ufo-ki.de/annotate/$1/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do wget -nc \"\http://ufo-ki.de/annotate/\$1/\$i\" -o \"\$1/\$i\"; done
+";
+
+		file_put_contents("$tmp_dir/download_images.sh", $download_images);
+
+		$download_empty = "#!/bin/bash
+set -x
+mkdir -p images
+for i in $(curl http://ufo-ki.de/annotate/empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do wget -nc \"http://ufo-ki.de/annotate/empty/\$i\" -O \"images/\$i\"; done
+";
+
+		file_put_contents("$tmp_dir/download_empty.sh", $download_empty);
 
 		#die("a");
 		

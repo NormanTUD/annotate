@@ -65,26 +65,6 @@
 		exit(1);
 	}
 
-	function number_of_annotations ($uid, $img) {
-		$img = hash("sha256", $img);
-		$dir = "annotations/$img/$uid/";
-
-		if(is_dir($dir)) {
-			$files = scandir($dir);
-
-			$i = 0;
-
-			foreach($files as $file) {
-				if(preg_match("/\.json$/", $file)) {
-					$i++;
-				}
-			}
-
-			return $i;
-		}
-		return 0;
-	}
-
 	function shuffle_assoc($my_array) {
 		$keys = array_keys($my_array);
 
@@ -99,8 +79,22 @@
 		return $my_array;
 	}
 
+	function get_number_of_curated_imgs () {
+		$q = "select count(*) from (select id from image where id in (select image_id from annotation where deleted = 0 and curated = 1) and deleted = 0) a";
+		$r = rquery($q);
+
+		$res = null;
+
+		while ($row = mysqli_fetch_row($r)) {
+			$res = $row[0];
+		}
+
+		return $res;
+	}
+
 	function get_number_of_unannotated_imgs() {
-		$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0) a";
+		#$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0) a";
+		$q = "select count(*) from (select filename from image i left join annotation a on a.image_id = i.id where (a.deleted is null or a.deleted = 1)) a";
 		$r = rquery($q);
 
 		$res = null;
@@ -128,13 +122,20 @@
 	function get_home_string () {
 		$annotation_stat = get_number_of_annotated_imgs();
 		$unannotation_stat = get_number_of_unannotated_imgs();
+		$curated_stat = get_number_of_curated_imgs();
 		$annotation_stat_str = number_format($annotation_stat, 0, ',', '.');
 		$unannotation_stat_str = number_format($unannotation_stat, 0, ',', '.');
+		$curated_stat_str = number_format($curated_stat, 0, ',', '.');
 
 		$str = "Annotiert: ".htmlentities($annotation_stat_str ?? "");
+		$str .= ", kuratiert: ".htmlentities($curated_stat_str ?? "");
 		$str .= ", unannotiert: ".htmlentities($unannotation_stat_str ?? "");
+
+		$curated_percent = ($curated_stat / $annotation_stat) * 100;
+		$curated_percent = number_format($curated_percent, 3, ',', '.');
+
 		if($unannotation_stat != 0) {
-			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert)";
+			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert, davon $curated_percent% kuratiert)";
 		}
 
 		$str .= ", <a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
@@ -278,21 +279,26 @@
 	}
 
 	function get_image_width_and_height_from_file ($fn) {
-		$imgsz = getimagesize("./images/".$fn);
-
-		$width = $imgsz[0];
-		$height = $imgsz[1];
-
+		$width = null;
+		$height = null;
 		try {
-			$exif = @exif_read_data("images/$file");
+			$imgsz = getimagesize("./images/".$fn);
+
+			$width = $imgsz[0];
+			$height = $imgsz[1];
+
+			try {
+				$exif = @exif_read_data("images/$file");
+			} catch (\Throwable $e) {
+				//;
+			}
+
+			if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
+				list($width, $height) = array($width, $height);
+			}
 		} catch (\Throwable $e) {
-			//;
+			mywarn("$e for file $fn inside get_image_width_and_height_from_file");
 		}
-
-		if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
-			list($width, $height) = array($width, $height);
-		}
-
 		return array($width, $height);
 	}
 
@@ -309,7 +315,10 @@
 		return $res;
 	}
 
-	function get_or_create_image_id ($image, $width=null, $height=null) {
+	function get_or_create_image_id ($image, $width=null, $height=null, $rec=0) {
+		if($rec >= 10) {
+			return;
+		}
 		$select_query = "select id from image where filename = ".esc($image);		
 		$select_res = rquery($select_query);
 
@@ -326,9 +335,13 @@
 			$width = $width_and_height[0];
 			$height = $width_and_height[1];
 
-			$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
-			rquery($insert_query);
-			return get_or_create_image_id($image);
+			if($width && $height) {
+				$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
+				rquery($insert_query);
+				return get_or_create_image_id($image, $width, $height, $rec + 1);
+			} else {
+				return null;
+			}
 		} else {
 			return $res;
 		}
@@ -400,19 +413,25 @@
 	}
 
 	function flag_all_annos_as_deleted ($image_id) {
-		$query = "update annotation set deleted = 1 where image_id = ".esc($image_id);
+		#$query = "update annotation set deleted = 1 where image_id = ".esc($image_id);
+		$query = "delete from annotation where image_id = ".esc($image_id);
 
 		rquery($query);
 	}
 
 	function flag_deleted ($annotarius_id) {
-		$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
+		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
+		$query = "delete from annotation where annotarius_id = ".esc($annotarius_id);
 
 		rquery($query);
 	}
 
-	function get_next_random_unannotated_image () {
-		$query = "select filename from image where id not in (select image_id from annotation where deleted = 0) and deleted = 0 order by rand()";
+	function get_next_random_unannotated_image ($fn = "") {
+		$query = "select filename from image i left join annotation a on a.image_id = i.id where (a.deleted is null or a.deleted = 1) ";
+		if($fn) {
+			$query .= " and i.filename like ".esc("%$fn%");
+		}
+		$query .= "  group by filename order by rand()";
 		$res = rquery($query);
 
 		$result = null;
