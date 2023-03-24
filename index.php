@@ -15,7 +15,7 @@
 
 		register_shutdown_function('shutdown');
 
-		print "Importing images...<br>";
+		print "Cleaning images...<br>";
 
 		$files_in_db = [];
 		$query = "select filename from image";
@@ -47,6 +47,56 @@
 		}
 
 		print "Done importing";
+
+		exit(0);
+	}
+
+	if(file_exists("/etc/cleanup_annotate") || get_get("cleanup")) {
+		ini_set('memory_limit', '4096M');
+		ini_set('max_execution_time', '300');
+		set_time_limit(300);
+
+		function shutdown() {
+			mywarn("Exiting, rolling back changes\n");
+			rquery("ROLLBACK;");
+			rquery("SET autocommit=1;");
+		}
+
+		register_shutdown_function('shutdown');
+
+		print "Cleaning images...<br>";
+
+		$files_in_db = [];
+		$query = "select id, filename from image where deleted = '0' and offtopic = '0'";
+		$res = rquery($query);
+		while ($row = mysqli_fetch_row($res)) {
+			if(!file_exists("images/".$row[1])) {
+				print "File ".$row[1]." (".$row[0].") does not exist anymore<br>";
+				rquery("update image set deleted = '1' where id = ".esc($row[0]));
+			}
+		}
+
+		/*
+		$i = 0;
+		foreach($files as $file) {
+			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !in_array($file, $files_in_db)) {
+				$new = is_null(get_image_id($file)) ? 1 : 0;
+				if($new) {
+					rquery("SET autocommit=0;");
+					rquery("START TRANSACTION;");
+					$image_id = get_or_create_image_id($file);
+					print "Id for $file: ".$image_id."<br>\n";
+					ob_flush();
+					flush();
+					rquery("COMMIT;");
+					rquery("SET autocommit=1;");
+				}
+			}
+
+		}
+		 */
+
+		print "Done cleaning";
 
 		exit(0);
 	}
