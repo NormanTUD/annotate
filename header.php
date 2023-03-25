@@ -17,7 +17,7 @@ include_once("functions.php");
 	<script src='tf-backend-wasm.min.js'></script>
 	<script>
 var labels = [
-	"halo",
+"halo",
 "sonne",
 "skytracker",
 "light pillar",
