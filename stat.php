@@ -2,6 +2,35 @@
 // Connect to the database
 include("functions.php");
 
+
+// Retrieve the data
+$sql = "SELECT w, h FROM annotation WHERE deleted = 0";
+$result = rquery($sql);
+
+$aspect_ratios = array();
+
+if ($result->num_rows > 0) {
+	while($row = $result->fetch_assoc()) {
+		if($row["h"]) {
+			$aspect_ratio = $row["w"] / $row["h"];
+			$aspect_ratios[] = $aspect_ratio;
+		}
+	}
+}
+
+    $sql = "SELECT * FROM (SELECT user.name, COUNT(annotation.id) AS count FROM user LEFT JOIN annotation ON user.id = annotation.user_id GROUP BY user.id) a order by a.count";
+    $result = rquery($sql);
+
+    $user_names = array();
+    $annotation_counts = array();
+
+    if ($result->num_rows > 0) {
+      while($row = $result->fetch_assoc()) {
+        $user_names[] = $row["name"];
+        $annotation_counts[] = $row["count"];
+      }
+    }
+
 // Get the count of annotations for each category
 $category_count_query = "SELECT category.name, COUNT(*) as count FROM category INNER JOIN annotation ON category.id = annotation.category_id GROUP BY category.id";
 $category_count_result = rquery($category_count_query);
@@ -126,7 +155,157 @@ include("header.php");
     title: 'Bounding Box Height Distribution'
   });
 </script>
+
+<div id="user_plot"></div>
+
+  <script>
+    // Create the plot
+
+    var data = [{
+      x: <?php echo json_encode($user_names); ?>,
+      y: <?php echo json_encode($annotation_counts); ?>,
+      type: 'bar'
+    }];
+
+    var layout = {
+      title: 'User Annotation Statistics',
+      xaxis: {
+        title: 'User'
+      },
+      yaxis: {
+        title: 'Number of Annotations'
+      }
+    };
+
+    Plotly.newPlot('user_plot', data, layout);
+  </script>
+
+  <div id="aspect_ratio_plot"></div>
+
+
+  <script>
+    // Create the plot
+    var trace1 = {
+      x: <?php echo json_encode($aspect_ratios); ?>,
+      type: 'histogram',
+      marker: {
+        color: '#1f77b4',
+      },
+      nbinsx: 1000
+    };
+
+    var data = [trace1];
+
+    var layout = {
+      title: 'Aspect Ratio Statistics',
+      xaxis: {
+        title: 'Aspect Ratio (Width/Height)'
+      },
+      yaxis: {
+        title: 'Frequency'
+      }
+    };
+
+    Plotly.newPlot('aspect_ratio_plot', data, layout);
+  </script>
+
 <?php
+// Query zur Abfrage der Kategorien und ihrer IDs
+$sql = "SELECT id, name FROM category";
+$result = rquery($sql);
+$categories = array();
+
+// Schleife, um die Kategorien in ein Array zu speichern
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $categories[$row["id"]] = $row["name"];
+    }
+}
+
+/*
+// Query zur Abfrage der Anmerkungen und ihrer Kategorien
+$sql = "SELECT category_id, COUNT(*) as count FROM annotation WHERE deleted = 0 AND curated IS NULL GROUP BY category_id";
+$result = rquery($sql);
+$category_counts = array();
+
+// Schleife, um die Anzahl der Anmerkungen pro Kategorie in ein Array zu speichern
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $category_counts[$row["category_id"]] = $row["count"];
+    }
+}
+
+// Matrix für die Korrelationskoeffizienten initialisieren
+$correlation_matrix = array();
+
+// Schleife über alle Kombinationen von Kategorien
+foreach ($categories as $id1 => $name1) {
+    foreach ($categories as $id2 => $name2) {
+        // Query zur Abfrage der Anmerkungen mit den beiden Kategorien
+        $sql = "SELECT COUNT(*) as count FROM annotation WHERE deleted = 0 AND curated IS NULL AND category_id IN ($id1, $id2) GROUP BY image_id HAVING COUNT(DISTINCT category_id) = 2";
+        $result = rquery($sql);
+        $count = $result->num_rows;
+
+        // Korrelationskoeffizient berechnen und in die Matrix speichern
+	if(isset($category_counts[$id1]) && isset($category_counts[$id2])) {
+		$correlation = ($category_counts[$id1] * $category_counts[$id2] != 0) ? $count / sqrt($category_counts[$id1] * $category_counts[$id2]) : 0;
+		$correlation_matrix[$id1][$id2] = $correlation;
+	}
+    }
+}
+
+// Tabelle mit HTML und CSS-Code erstellen
+echo '<table>';
+echo '<tr><th></th>';
+foreach ($categories as $id1 => $name1) {
+    echo '<th>' . $name1 . '</th>';
+}
+echo '</tr>';
+foreach ($categories as $id1 => $name1) {
+    echo '<tr><th>' . $name1 . '</th>';
+    foreach ($categories as $id2 => $name2) {
+        $correlation = $correlation_matrix[$id1][$id2];
+        $color = ($correlation >= 0) ? 'rgba(0, 255, 0, ' . $correlation . ')' : 'rgba(255, 0, 0, ' . abs($correlation) . ')';
+        echo '<td style="background-color: ' . $color . '">' . round($correlation, 2) . '</td>';
+    }
+    echo '</tr>';
+}
+echo '</table>';
+
+// Tabelle mit HTML und CSS-Code erstellen
+echo '<table>';
+echo '<tr><th></th>';
+foreach ($categories as $id1 => $name1) {
+echo '<th>' . $name1 . '</th>';
+}
+echo '</tr>';
+foreach ($categories as $id1 => $name1) {
+echo '<tr><th>' . $name1 . '</th>';
+foreach ($categories as $id2 => $name2) {
+$correlation = $correlation_matrix[$id1][$id2];
+// Zellenhintergrundfarbe entsprechend des Korrelationskoeffizienten festlegen
+if ($correlation >= 0.7) {
+$color = '#C6E48B';
+} elseif ($correlation >= 0.4) {
+$color = '#7BC96F';
+} elseif ($correlation >= 0.1) {
+$color = '#239A3B';
+} elseif ($correlation > -0.1) {
+$color = '#555555';
+} elseif ($correlation > -0.4) {
+$color = '#D3D3D3';
+} elseif ($correlation > -0.7) {
+$color = '#8C8C8C';
+} else {
+$color = '#525252';
+}
+echo '<td style="background-color: ' . $color . ';">' . round($correlation, 2) . '</td>';
+}
+echo '</tr>';
+}
+echo '</table>';
+ */
+
 	include("footer.php");
 ?>
 <script>
