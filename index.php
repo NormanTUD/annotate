@@ -15,7 +15,7 @@
 
 		register_shutdown_function('shutdown');
 
-		print "Cleaning images...<br>";
+		print "Importing images...<br>";
 
 		$files_in_db = [];
 		$query = "select filename from image";

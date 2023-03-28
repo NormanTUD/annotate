@@ -93,7 +93,10 @@
 	}
 
 	function get_number_of_unannotated_imgs() {
-		$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = '0' and offtopic = '0')) b";
+		$q = "SELECT COUNT(*) FROM image
+WHERE deleted = 0 AND offtopic = 0 AND id NOT IN 
+  (SELECT image_id FROM annotation WHERE deleted = 0);
+";
 
 		$r = rquery($q);
 
@@ -433,6 +436,14 @@
 		}
 		$query .= " and i.id not in (select id from annotation where deleted != '1')";
 		$query .= "  group by filename order by rand()";
+
+
+		$query = 'SELECT filename FROM image 
+WHERE deleted = 0 AND offtopic = 0 AND id NOT IN 
+  (SELECT image_id FROM annotation WHERE deleted = 0) 
+ORDER BY RAND() LIMIT 1;
+';
+
 		$res = rquery($query);
 
 		$result = null;

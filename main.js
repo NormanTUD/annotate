@@ -38,6 +38,21 @@ async function load_model () {
 }
 
 function memory_debugger () {
+	if($("#tab_home_top").html() == "") {
+		$.ajax({
+			url: "print_home.php",
+			type: "GET",
+			dataType: "html",
+			success: function (data) {
+				$('#tab_home_top').html("");
+				$('#tab_home_top').html(data);
+			},
+			error: function (xhr, status) {
+				error("Error loading the List", "Sorry, there was a problem!");
+			}
+		});
+	}
+
 	try {
 		var mem = tf.memory();
 		var num_tensors = mem.numTensors;
