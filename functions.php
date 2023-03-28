@@ -419,6 +419,13 @@
 		rquery($query);
 	}
 
+	function delete_image_by_fn ($fn) {
+		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
+		$query = "delete from image where filename = ".esc($fn);
+
+		rquery($query);
+	}
+
 	function flag_deleted ($annotarius_id) {
 		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
 		$query = "delete from annotation where annotarius_id = ".esc($annotarius_id);
@@ -444,23 +451,23 @@
 		$query .= ' id NOT IN (SELECT image_id FROM annotation WHERE deleted = 0 or deleted is null or deleted = "0") ORDER BY RAND() LIMIT 1';
 		*/
 
-		$query = 'select i.filename from image i left join annotation a on i.id = a.image_id where a.id is null ';
+		$query = 'select * from (select i.filename from image i left join annotation a on i.id = a.image_id where a.id is null ';
 		if($fn) {
 			$query .= " and i.filename like ".esc("%$fn%");
 		}
-		$query .= ' order by rand() limit 1';
+		$query .= ' order by rand()) a';
 
 		$res = rquery($query);
 
 		$result = null;
 
 		while ($row = mysqli_fetch_row($res)) {
-			$fn = "images/".$row[0];
-			if(file_exists($fn)) {
+			$f = "images/".$row[0];
+			if(file_exists($f)) {
 				$result = $row[0];
 				return $result;
 			} else {
-				dier($fn);
+				delete_image_by_fn($f);
 			}
 		}
 
