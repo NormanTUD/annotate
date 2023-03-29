@@ -363,7 +363,7 @@ async function ai_file (elem) {
 	var [modelWidth, modelHeight] = model.inputs[0].shape.slice(1, 3);
 
 	tf.engine().startScope();
-	var res = await model.executeAsync(tf.browser.fromPixels($("#image")[0]).resizeBilinear([modelWidth,modelHeight]).div(255).expandDims());
+	var res = await model.executeAsync(tf.browser.fromPixels($("#image")[0]).resizeBilinear([modelWidth, modelHeight]).div(255).expandDims());
 	$("body").css("cursor", "default");
 
 	const [boxes, scores, classes] = res.slice(0, 3);
@@ -391,11 +391,8 @@ async function ai_file (elem) {
 			var x_start = parseInt(this_box[0] * img_width);
 			var y_start = parseInt(this_box[1] * img_height);
 
-			var x_end = Math.abs(x_start - parseInt(this_box[2] * img_width));
-			var y_end = Math.abs(y_start - parseInt(this_box[3] * img_height));
-
-			var w = x_end;
-			var h = y_end;
+			var w = Math.abs(x_start - parseInt(this_box[2] * img_width));
+			var h = Math.abs(y_start - parseInt(this_box[3] * img_height));
 
 			var this_elem = {
 				"type": "Annotation", 
