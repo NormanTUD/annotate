@@ -434,23 +434,6 @@
 	}
 
 	function get_next_random_unannotated_image ($fn = "") {
-		/*
-		$query = "select filename from image i left join annotation a on a.image_id = i.id where (a.deleted is null or a.deleted = 1) ";
-		if($fn) {
-			$query .= " and i.filename like ".esc("%$fn%");
-		}
-		$query .= " and i.id not in (select id from annotation where deleted != '1')";
-		$query .= "  group by filename order by rand()";
-		*/
-
-		/*
-		$query = 'SELECT filename FROM image WHERE (deleted = 0 or deleted is null or deleted = "0") AND (offtopic = 0 or offtopic is null or deleted = "0") AND ';
-		if($fn) {
-			$query .= " and filename like ".esc("%$fn%");
-		}
-		$query .= ' id NOT IN (SELECT image_id FROM annotation WHERE deleted = 0 or deleted is null or deleted = "0") ORDER BY RAND() LIMIT 1';
-		*/
-
 		$query = 'select * from (select i.filename from image i left join annotation a on i.id = a.image_id where a.id is null ';
 		if($fn) {
 			$query .= " and i.filename like ".esc("%$fn%");
@@ -467,6 +450,7 @@
 				$result = $row[0];
 				return $result;
 			} else {
+				$f = preg_replace("/images\//", "", $f);
 				delete_image_by_fn($f);
 			}
 		}
