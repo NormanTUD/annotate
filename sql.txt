@@ -7,3 +7,4 @@ create table annotation (id int unsigned primary key auto_increment, image_id in
 create index image_filename on image(filename);
 create index annotation_image_id on annotation(image_id);
 alter table annotation add column curated int unsigned default null;
+alter table image add column perception_hash varchar(50) default null;
