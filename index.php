@@ -5,7 +5,7 @@
 	if(file_exists("/etc/perception_hash") || get_get("perception_hash")) {
 		$visual_hash = "";
 
-		$query = "select id, filename from image where perception_hash is null and deleted = '0' and offtopic = '0' order by rand() limit 1000";
+		$query = "select id, filename from image where perception_hash is null and deleted = '0' and offtopic = '0' order by rand() limit 5";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_row($res)) {
