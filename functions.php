@@ -93,7 +93,7 @@
 	}
 
 	function get_number_of_unannotated_imgs() {
-		$q = "select count(*) from (select id from image where id not in (select image_id from annotation where deleted = '0' and offtopic = '0')) b";
+		$q = "select count(*) from image i left join annotation a on i.id = a.image_id where a.id is null";
 
 		$r = rquery($q);
 
@@ -145,14 +145,14 @@
 	}
 
 
-	function get_current_tags ($only_uncurated=0) {
+	function get_current_tags ($only_uncurated=0, $group_by_perception_hash=0) {
 		$annos = [];
 
-		$query = "select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 ";
+		$query = "select name, anzahl from (select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 ";
 		if($only_uncurated) {
 			$query .= " and a.curated is null ";
 		}
-		$query .= " group by c.id order by anzahl desc, c.name asc";
+		$query .= " group by c.id order by anzahl desc, c.name asc) a";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_row($res)) {
@@ -419,6 +419,13 @@
 		rquery($query);
 	}
 
+	function delete_image_by_fn ($fn) {
+		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
+		$query = "delete from image where filename = ".esc($fn);
+
+		rquery($query);
+	}
+
 	function flag_deleted ($annotarius_id) {
 		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
 		$query = "delete from annotation where annotarius_id = ".esc($annotarius_id);
@@ -427,21 +434,24 @@
 	}
 
 	function get_next_random_unannotated_image ($fn = "") {
-		$query = "select filename from image i left join annotation a on a.image_id = i.id where (a.deleted is null or a.deleted = 1) ";
+		$query = 'select * from (select i.filename from image i left join annotation a on i.id = a.image_id where a.id is null ';
 		if($fn) {
 			$query .= " and i.filename like ".esc("%$fn%");
 		}
-		$query .= " and i.id not in (select id from annotation where deleted != '1')";
-		$query .= "  group by filename order by rand()";
+		$query .= ' order by rand()) a';
+
 		$res = rquery($query);
 
 		$result = null;
 
 		while ($row = mysqli_fetch_row($res)) {
-			$fn = "images/".$row[0];
-			if(file_exists($fn)) {
+			$f = "images/".$row[0];
+			if(file_exists($f)) {
 				$result = $row[0];
 				return $result;
+			} else {
+				$f = preg_replace("/images\//", "", $f);
+				delete_image_by_fn($f);
 			}
 		}
 

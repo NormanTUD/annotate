@@ -61,19 +61,27 @@
 	
 	$annotated_image_ids_query = "select SQL_CALC_FOUND_ROWS i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0";
 
+
 	if(count($show_categories)) {
-		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).")";
+		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).") ";
 	}
 
 	if($only_uncurated) {
-		$annotated_image_ids_query .= " and a.curated is null";
+		$annotated_image_ids_query .= " and a.curated is null ";
 	}
 
-	$annotated_image_ids_query .= " order by i.filename, a.modified";
+	if(get_get("group_by_perception_hash")) {
+		$annotated_image_ids_query .= ' group by perception_hash ';
+	}
+
+	$annotated_image_ids_query .= " order by i.filename, a.modified ";
+
 
 	if ($format == "html") {
 		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
 	}
+
+
 
 	#dier($annotated_image_ids_query);
 

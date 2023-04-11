@@ -12,6 +12,12 @@
 		$delete_on_click = "&delete_on_click=1";
 	}
 
+	$group_by_perception_hash = null;
+	if(isset($_GET["group_by_perception_hash"])) {
+		$delete_on_click = "&group_by_perception_hash=1";
+		$group_by_perception_hash = 1;
+	}
+
 	if(isset($_GET["curate_on_click"])) {
 		$curate_on_click = "&curate_on_click=1";
 	}
@@ -20,7 +26,7 @@
 		die("Either curate or delete on click, not both.");
 	}
 
-	$tags = get_current_tags($only_uncurated ?? 0);
+	$tags = get_current_tags($only_uncurated ?? 0, $group_by_perception_hash ?? 0);
 	$tags_as_array = [];
 	$html = "<ul style='list-style: conic-gradient'>";
 	foreach ($tags as $tag => $nr) {
