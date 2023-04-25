@@ -69,15 +69,18 @@
 		$annotated_image_ids_query .= " and a.curated is null ";
 	}
 
-	if(get_get("group_by_perception_hash")) {
-		$annotated_image_ids_query .= ' and i.filename in (select filename from image where deleted = "0" and offtopic = "0" group by perception_hash order by id) ';
-	}
+	#if(get_get("group_by_perception_hash")) {
+	#	$annotated_image_ids_query .= ' and i.filename in (select filename from image where deleted = "0" and offtopic = "0" group by perception_hash order by id) ';
+	#}
 
 	$annotated_image_ids_query .= " order by i.filename, a.modified ";
 
 
+
 	if ($format == "html") {
 		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
+	} else if(get_get("limit")) {
+		$annotated_image_ids_query .= " limit ".intval(get_get("limit"));
 	}
 
 	#dier($annotated_image_ids_query);
@@ -102,7 +105,7 @@
 
 	$j = 0;
 
-	//$perception_hashes = [];
+	$perception_hash_to_image = [];
 
 	// geht einzelne annotationen durch, appendiert die einzelannotationen an die dateinamen
 	while ($row = mysqli_fetch_row($res)) {
@@ -141,15 +144,9 @@
 			"image_perception_hash" => $image_perception_hash
 		);
 
-		/*
 		if(get_get("group_by_perception_hash")) {
-			if(in_array($this_annotation["image_perception_hash"], $perception_hashes)) {
-				continue;
-			}
-
-			$perception_hashes[] = $this_annotation["image_perception_hash"];
+			$perception_hash_to_image[$this_annotation["image_perception_hash"]] = $filename;
 		}
-		 */
 
 		if(!in_array($category, $categories)) {
 			$categories[] = $category;
@@ -172,6 +169,16 @@
 		$images[$filename][] = $this_annotation;
 
 		$j++;
+	}
+
+	if(count($perception_hash_to_image)) {
+		$new_images = [];
+
+		foreach ($perception_hash_to_image as $hash => $fn) {
+			$new_images[$fn] = $images[$fn];
+		}
+
+		$images = $new_images;
 	}
 
 	#dier(count($images));
