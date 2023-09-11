@@ -987,7 +987,12 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 		$download_images = "#!/bin/bash
 set -x
 mkdir -p images
-for i in $(curl http://ufo-ki.de/annotate/images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do wget -nc \"\http://ufo-ki.de/annotate/images/\$i\" -o \"images/\$i\"; done
+for i in $(curl http://ufo-ki.de/annotate/images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
+	fn_without_ending=\"\${i%.*}\"
+	if [[ -e \"labels/\$fn_without_ending.txt\" ]]; then
+		wget -nc \"\http://ufo-ki.de/annotate/images/\$i\" -o \"images/\$i\"
+	fi
+done
 ";
 
 		file_put_contents("$tmp_dir/download_images.sh", $download_images);
@@ -995,7 +1000,9 @@ for i in $(curl http://ufo-ki.de/annotate/images/ | grep href | egrep -i \"(jpg|
 		$download_empty = "#!/bin/bash
 set -x
 mkdir -p images
-for i in $(curl http://ufo-ki.de/annotate/empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do wget -nc \"http://ufo-ki.de/annotate/empty/\$i\" -O \"images/\$i\"; done
+for i in $(curl http://ufo-ki.de/annotate/empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
+	wget -nc \"http://ufo-ki.de/annotate/empty/\$i\" -O \"images/\$i\";
+done
 ";
 
 		file_put_contents("$tmp_dir/download_empty.sh", $download_empty);
