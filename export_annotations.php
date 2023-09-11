@@ -994,7 +994,7 @@ mkdir -p images
 for i in $(curl http://ufo-ki.de/annotate/images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
 	fn_without_ending=\"\${i%.*}\"
 	if [[ -e \"labels/\$fn_without_ending.txt\" ]]; then
-		wget -nc \"http://ufo-ki.de/annotate/images/\$i\" -o \"images/\$i\"
+		wget -nc \"http://ufo-ki.de/annotate/images/\$i\" -O \"images/\$i\"
 	fi
 done
 ";
