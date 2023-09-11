@@ -79,17 +79,18 @@
 	#	$annotated_image_ids_query .= ' and i.filename in (select filename from image where deleted = "0" and offtopic = "0" group by truncated_perception_hash order by id) ';
 	#}
 
-	$annotated_image_ids_query .= " order by i.filename, a.modified ";
 
 
 
 	if ($format == "html") {
+		$annotated_image_ids_query .= " order by i.filename, a.modified ";
 		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
 	} else if(get_get("limit")) {
+		$annotated_image_ids_query .= " order by rand()";
 		$annotated_image_ids_query .= " limit ".intval(get_get("limit"));
+	} else {
+		$annotated_image_ids_query .= " order by rand()";
 	}
-
-	#dier($annotated_image_ids_query);
 
 	$res = rquery($annotated_image_ids_query);
 
