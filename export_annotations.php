@@ -397,7 +397,7 @@
 
 				$str = join("\n", array_unique($str_arr));
 
-				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
+				file_put_contents("$tmp_dir/labels/$fn_txt", "$str\n");
 			}
 		}
 
@@ -456,7 +456,6 @@ python3 -mvenv ~/.alpha_yoloenv/
 source ~/.alpha_yoloenv/bin/activate
 pip3 install -r requirements.txt
 pip3 install "albumentations>=1.0.3"
-pip3 install -r requirements.txt
 fi
 
 mkdir -p dataset
@@ -983,6 +982,18 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 ";
 
 		file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
+
+		$remove_labels_with_multiple_entries = "#!/bin/bash
+for i in $(ls labels); do 
+	NUMLINES=$(wc -l labels/\$i | sed -e 's#\s.*##')
+	if [[ \$NUMLINES -gt 1 ]]; then
+		echo \"\$NUMLINES: \$i\"
+		rm labels/\$i
+	fi
+done
+";
+
+		file_put_contents("$tmp_dir/remove_labels_with_multiple_entries.sh", $remove_labels_with_multiple_entries);
 
 		$download_images = "#!/bin/bash
 set -x
