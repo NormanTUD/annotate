@@ -67,20 +67,13 @@
 
 	$annotated_image_ids_query = "select SQL_CALC_FOUND_ROWS i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id, left(i.perception_hash, $max_truncation) as truncated_perception_hash from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = '0' group by image_id)) and i.deleted = 0 ";
 
-	if(count($show_categories)) {
+	if($show_categories && count($show_categories)) {
 		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).") ";
 	}
 
 	if($only_uncurated) {
 		$annotated_image_ids_query .= " and a.curated is null ";
 	}
-
-	#if(get_get("group_by_perception_hash")) {
-	#	$annotated_image_ids_query .= ' and i.filename in (select filename from image where deleted = "0" and offtopic = "0" group by truncated_perception_hash order by id) ';
-	#}
-
-
-
 
 	if ($format == "html") {
 		$annotated_image_ids_query .= " order by i.filename, a.modified ";
@@ -1001,7 +994,7 @@ mkdir -p images
 for i in $(curl http://ufo-ki.de/annotate/images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
 	fn_without_ending=\"\${i%.*}\"
 	if [[ -e \"labels/\$fn_without_ending.txt\" ]]; then
-		wget -nc \"\http://ufo-ki.de/annotate/images/\$i\" -o \"images/\$i\"
+		wget -nc \"http://ufo-ki.de/annotate/images/\$i\" -o \"images/\$i\"
 	fi
 done
 ";
