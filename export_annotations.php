@@ -976,6 +976,23 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 
 		file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
 
+		$only_take_first_line = "#!/bin/bash
+for i in $(ls labels); do 
+	NUMLINES=$(cat labels/\$i | wc -l)
+	if [[ \$NUMLINES -gt 1 ]]; then
+		TMPFILE=\"\${RANDOM}_\${RANDOM}.txt\"
+
+		head -n1 labels/\$i > labels/\$TMPFILE
+
+		rm labels/\$i
+		mv labels/\$TMPFILE labels/\$i
+		
+	fi
+done
+";
+
+		file_put_contents("$tmp_dir/only_take_first_line.sh", $only_take_first_line);
+
 		$remove_labels_with_multiple_entries = "#!/bin/bash
 for i in $(ls labels); do 
 	NUMLINES=$(cat labels/\$i | sed -e 's#\s.*##' | uniq | wc -l)
