@@ -978,7 +978,7 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 
 		$remove_labels_with_multiple_entries = "#!/bin/bash
 for i in $(ls labels); do 
-	NUMLINES=$(wc -l labels/\$i | sed -e 's#\s.*##')
+	NUMLINES=$(cat labels/\$i | sed -e 's#\s.*##' | uniq | wc -l)
 	if [[ \$NUMLINES -gt 1 ]]; then
 		echo \"\$NUMLINES: \$i\"
 		rm labels/\$i
