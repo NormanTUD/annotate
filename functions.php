@@ -440,6 +440,8 @@
 			") on duplicate key update image_id = values(image_id), category_id = values(category_id), x_start = values(x_start), y_start = values(y_start), w = values(w), h = values(h), json = values(json), annotarius_id = values(annotarius_id), deleted = 0";
 
 		rquery($query);
+
+		return $GLOBALS["dbh"]->insert_id;
 	}
 
 	#die(get_or_create_category_id("raketenspiraleaasd"));

@@ -19,9 +19,9 @@
 
 			$json = json_encode($_POST);
 
-			create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id);
+			$anno_id = create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id);
 
-			print "Annotation category $category_name for image ".$_POST['source']." ($image_id) saved";
+			print "Annotation category $category_name for image ".$_POST['source']." ($image_id) saved (anno-id: $anno_id)";
 		} else {
 			die("No ID given");
 		}
