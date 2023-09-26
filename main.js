@@ -1,6 +1,8 @@
 "use strict";
 
-var autonext = urlParams.get('autonext');
+const startQueryString = window.location.search;
+const startUrlParams = new URLSearchParams(queryString);
+var autonext = startUrlParams.get('autonext');
 var model;
 var last_load_dynamic_content = false;
 var running_ki = false;
@@ -394,9 +396,6 @@ async function ai_file (elem) {
 	running_ki = false;
 
 	success("Success!", "KI fertig...");
-
-	const queryString = window.location.search;
-	const urlParams = new URLSearchParams(queryString);
 
 	if(autonext) {
 		await load_next_random_image();
