@@ -158,6 +158,7 @@
 
 		if($unannotated_imgs != 0) {
 			$annotated_nr = $annotated_imgs / ($annotated_imgs + $unannotated_imgs) * 100;
+			$annotated_str = $annotated_nr;
 			if($annotated_nr) {
 				$annotated_str = sprintf("%.2f", $annotated_nr);
 			}
