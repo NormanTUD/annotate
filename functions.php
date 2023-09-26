@@ -29,10 +29,24 @@
 	try {
 		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name']);
 	} catch (\Throwable $e) {
-		print("aaaaaa$e\aaaaaa");
-		print("!!!!".mysqli_connect_errno()."!!!!");
-		if (mysqli_connect_errno()) {
-			die("Failed to connect to MySQL" . mysqli_connect_error());
+		try {
+			$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password']);
+			$handle = fopen("sql.txt", "r");
+			if ($handle) {
+				while (($line = fgets($handle)) !== false) {
+					if(!preg_match("/^\s*$/", $line)) {
+						rquery($line);
+					}
+				}
+
+				fclose($handle);
+			}
+		} catch (\Throwable $e) {
+			print("$e");
+			print("!!!!".mysqli_connect_errno()."!!!!");
+			if (mysqli_connect_errno()) {
+				die("Failed to connect to MySQL" . mysqli_connect_error());
+			}
 		}
 	}
 
