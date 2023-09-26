@@ -11,7 +11,7 @@
 		while ($row = mysqli_fetch_row($res)) {
 			$id = $row[0];
 			$filename = $row[1];
-			print "Doing file $filename, id: $id<br>\n";
+			print "Perception hashing file $filename, id: $id<br>\n";
 			flush();
 
 			$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" images/'.$filename;
