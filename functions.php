@@ -149,7 +149,9 @@
 		if($annotated_imgs) {
 			$curated_percent = ($curated_imgs / $annotated_imgs) * 100;
 		}
-		$curated_percent = number_format($curated_percent, 3, ',', '.');
+		if($curated_percent) {
+			$curated_percent = number_format($curated_percent, 3, ',', '.');
+		}
 
 		if($unannotated_imgs != 0) {
 			$str .= " (".htmlentities(sprintf("%.2f", $annotated_imgs / ($annotated_imgs + $unannotated_imgs) * 100))."% annotiert, davon $curated_percent% kuratiert)";
