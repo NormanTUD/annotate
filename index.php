@@ -2,39 +2,6 @@
 	include("header.php");
 	include_once("functions.php");
 
-	if(file_exists("/etc/perception_hash") || get_get("perception_hash") || get_get("import")) {
-		$visual_hash = "";
-
-		$query = "select id, filename from image where perception_hash is null and deleted = '0' and offtopic = '0' order by rand()";
-		$res = rquery($query);
-
-		while ($row = mysqli_fetch_row($res)) {
-			$id = $row[0];
-			$filename = $row[1];
-			print "Perception hashing file $filename, id: $id<br>\n";
-			flush();
-
-			$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" images/'.$filename;
-
-			ob_start();
-			system($command);
-			$hash = ob_get_clean();
-			ob_flush();
-
-			$hash = trim($hash);
-			if($hash) {
-				$update_query = "update image set perception_hash = ".esc($hash)." where id = ".esc($id);
-				rquery($update_query);
-			} else {
-				dier($command);
-			}
-		}
-
-		if(!get_get("import")) {
-			exit(0);
-		}
-	}
-
 	if(file_exists("/etc/import_annotate") || get_get("import")) {
 		ini_set('memory_limit', '4096M');
 		ini_set('max_execution_time', '300');
@@ -69,11 +36,28 @@
 					rquery("SET autocommit=0;");
 					rquery("START TRANSACTION;");
 					$image_id = get_or_create_image_id($file);
-					print "Id for $file: ".$image_id."<br>\n";
-					ob_flush();
-					flush();
+
 					rquery("COMMIT;");
 					rquery("SET autocommit=1;");
+
+					$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" images/'.$file;
+
+					ob_start();
+					system($command);
+					$hash = ob_get_clean();
+					ob_flush();
+
+					$hash = trim($hash);
+					if($hash) {
+						$update_query = "update image set perception_hash = ".esc($hash)." where id = ".esc($image_id);
+						rquery($update_query);
+					} else {
+						dier($command);
+					}
+
+					print "Id for $file: ".$image_id.", perception hash: $hash<br>\n";
+					ob_flush();
+					flush();
 				}
 			}
 
