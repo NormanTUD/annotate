@@ -451,7 +451,7 @@
 	}
 
 	function get_next_random_unannotated_image ($fn = "") {
-		$query = 'select * from (select i.filename from image i left join annotation a on i.id = a.image_id where a.id is null ';
+		$query = 'select * from (select i.filename from image i left join annotation a on i.id = a.image_id where a.id is null and i.perception_hash is not null';
 		if($fn) {
 			$query .= " and i.filename like ".esc("%$fn%");
 		}
