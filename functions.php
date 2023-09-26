@@ -41,6 +41,9 @@
 
 				fclose($handle);
 			}
+			print("<h1>DB created</h1><h1>Importing files...</h1>");
+
+			import_files();
 		} catch (\Throwable $e) {
 			print("$e");
 			print("!!!!".mysqli_connect_errno()."!!!!");
@@ -489,5 +492,56 @@
 		}
 
 		return null;
+	}
+
+	function import_files () {
+		ini_set('memory_limit', '4096M');
+		ini_set('max_execution_time', '300');
+		set_time_limit(300);
+
+		function shutdown() {
+			mywarn("Exiting, rolling back changes\n");
+			rquery("ROLLBACK;");
+			rquery("SET autocommit=1;");
+		}
+
+		register_shutdown_function('shutdown');
+
+		print "Importing images...<br>";
+
+		$files_in_db = [];
+		$query = "select filename from image";
+		$res = rquery($query);
+		while ($row = mysqli_fetch_row($res)) {
+			$files_in_db[] = $row[0];
+		}
+
+		$files = scandir("images");
+
+		shuffle($files);
+
+		$i = 0;
+		foreach($files as $file) {
+			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !in_array($file, $files_in_db)) {
+				$new = is_null(get_image_id($file)) ? 1 : 0;
+				if($new) {
+					rquery("SET autocommit=0;");
+					rquery("START TRANSACTION;");
+					$image_id = get_or_create_image_id($file);
+
+					rquery("COMMIT;");
+					rquery("SET autocommit=1;");
+
+					print "Id for $file: ".$image_id."<br>\n";
+					ob_flush();
+					flush();
+				}
+			}
+
+		}
+
+		print "Done importing";
+
+		exit(0);
 	}
 ?>
