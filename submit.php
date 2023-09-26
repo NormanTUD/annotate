@@ -13,13 +13,15 @@
 			$w = $parsed_position[2];
 			$h = $parsed_position[3];
 
-			$category_id = get_or_create_category_id($_POST["body"][0]["value"]);
+			$category_name = $_POST["body"][0]["value"];
+
+			$category_id = get_or_create_category_id($category_name);
 
 			$json = json_encode($_POST);
 
 			create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id);
 
-			print "Annotation saved";
+			print "Annotation category $category_name for image ".$_POST['source']." ($image_id) saved";
 		} else {
 			die("No ID given");
 		}
