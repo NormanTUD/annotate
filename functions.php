@@ -157,7 +157,11 @@
 		}
 
 		if($unannotated_imgs != 0) {
-			$str .= " (".htmlentities(sprintf("%.2f", $annotated_imgs / ($annotated_imgs + $unannotated_imgs) * 100))."% annotiert, davon $curated_percent% kuratiert)";
+			$annotated_nr = $annotated_imgs / ($annotated_imgs + $unannotated_imgs) * 100;
+			if($annotated_nr) {
+				$annotated_str = sprintf("%.2f", $annotated_nr);
+			}
+			$str .= " (".htmlentities($annotated_str)."% annotiert, davon $curated_percent% kuratiert)";
 		}
 
 		$str .= ", <a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
