@@ -148,6 +148,10 @@
 			</tr>
 		</table>
 
+		<div id="status_bar">
+			<span id="msg"></span>
+		</div>
+
 		<script>
 			load_dynamic_content();
 			load_next_random_image("<?php print htmlentities($imgfile); ?>");

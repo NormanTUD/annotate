@@ -96,49 +96,11 @@ function next_img () {
 }
 
 function success (title, msg) {
-	toastr.options = {
-		"closeButton": false,
-		"debug": false,
-		"newestOnTop": true,
-		"progressBar": true,
-		"positionClass": "toast-bottom-center",
-		"preventDuplicates": true,
-		"onclick": null,
-		"showDuration": "300",
-		"hideDuration": "1000",
-		"timeOut": "5000",
-		"extendedTimeOut": "1000",
-		"showEasing": "swing",
-		"hideEasing": "linear",
-		"showMethod": "fadeIn",
-		"hideMethod": "fadeOut"
-	};
-
-	toastr["success"](title, msg);
+	$("#status_bar").html("<span style='color: black'>" + title + ": " + msg + "</span>");
 }
 
-
-
 function error (title, msg) {
-	toastr.options = {
-		"closeButton": false,
-		"debug": false,
-		"newestOnTop": true,
-		"progressBar": true,
-		"positionClass": "toast-bottom-center",
-		"preventDuplicates": true,
-		"onclick": null,
-		"showDuration": "300",
-		"hideDuration": "1000",
-		"timeOut": "5000",
-		"extendedTimeOut": "10000",
-		"showEasing": "swing",
-		"hideEasing": "linear",
-		"showMethod": "fadeIn",
-		"hideMethod": "fadeOut"
-	};
-
-	toastr["error"](title, msg);
+	$("#status_bar").html("<span style='color: red'>" + title + ": " + msg + "</span>");
 }
 
 async function make_item_anno(elem, widgets={}) {
