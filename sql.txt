@@ -8,3 +8,8 @@ create index image_filename on image(filename);
 create index annotation_image_id on annotation(image_id);
 alter table annotation add column curated int unsigned default null;
 alter table image add column perception_hash varchar(50) default null;
+
+ALTER TABLE `image` ADD INDEX `idx_image` (`id`, `filename`, `width`, `height`, `perception_hash`, `deleted`);
+ALTER TABLE `annotation` ADD INDEX `idx_annotation` (`image_id`, `category_id`, `deleted`, `x_start`, `y_start`, `w`, `h`, `id`, `modified`);
+ALTER TABLE `category` ADD INDEX `idx_category` (`id`, `name`);
+ALTER TABLE `image` ADD INDEX `idx_image_deleted_offtopic_perception_hash_id` (`deleted`, `offtopic`, `perception_hash`, `id`);

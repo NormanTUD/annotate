@@ -57,12 +57,17 @@
 		$only_uncurated = intval(get_get("only_uncurated"));
 	}
 
+	$max_truncation = 100;
+
+	if(intval(get_get("max_truncation"))) {
+		$max_truncation = intval(get_get("max_truncation"));
+	}
+
 	$images = [];
-	
-	$annotated_image_ids_query = "select SQL_CALC_FOUND_ROWS i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = 0 group by image_id)) and i.deleted = 0";
 
+	$annotated_image_ids_query = "select SQL_CALC_FOUND_ROWS i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id, left(i.perception_hash, $max_truncation) as truncated_perception_hash from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = '0' group by image_id)) and i.deleted = 0 ";
 
-	if(count($show_categories)) {
+	if($show_categories && count($show_categories)) {
 		$annotated_image_ids_query .= " and c.name in (".esc($show_categories).") ";
 	}
 
@@ -70,22 +75,19 @@
 		$annotated_image_ids_query .= " and a.curated is null ";
 	}
 
-	if(get_get("group_by_perception_hash")) {
-		$annotated_image_ids_query .= ' group by perception_hash ';
-	}
-
-	$annotated_image_ids_query .= " order by i.filename, a.modified ";
-
-
 	if ($format == "html") {
+		$annotated_image_ids_query .= " order by i.filename, a.modified ";
 		$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
+	} else if(get_get("limit")) {
+		$annotated_image_ids_query .= " order by rand()";
+		$annotated_image_ids_query .= " limit ".intval(get_get("limit"));
+	} else {
+		$annotated_image_ids_query .= " order by rand()";
 	}
-
-
-
-	#dier($annotated_image_ids_query);
 
 	$res = rquery($annotated_image_ids_query);
+
+	#dier($annotated_image_ids_query);
 
 	$number_of_rows_query = "SELECT FOUND_ROWS()";
 	$number_of_rows_res = rquery($number_of_rows_query);
@@ -101,36 +103,87 @@
 	$images = [];
 	$categories = [];
 
+	$j = 0;
+
+	$perception_hash_to_image = [];
+
+	// geht einzelne annotationen durch, appendiert die einzelannotationen an die dateinamen
 	while ($row = mysqli_fetch_row($res)) {
-		$row[3] = strtolower($row[3]);
-		if(!isset($images[$row[0]])) {
-			$images[$row[0]] = array();
+		if($max_files && $j >= $max_files) {
+			continue;
+		}
+
+		$filename = $row[0];
+
+		$width = $row[1];
+		$height = $row[2];
+		$category = $row[3];
+		$x_start = $row[4];
+		$y_start = $row[5];
+
+		$w = $row[6];
+		$h = $row[7];
+		$id = $row[8];
+
+		$image_perception_hash = $row[9];
+
+		$category = strtolower($category);
+		if(!isset($images[$filename])) {
+			$images[$filename] = array();
 		}
 
 		$this_annotation = array(
-			"width" => $row[1],
-			"height" => $row[2],
-			"category" => $row[3],
-			"x_start" => $row[4],
-			"y_start" => $row[5],
-			"w" => $row[6],
-			"h" => $row[7],
-			"id" => $row[8],
+			"width" => $width,
+			"height" => $height,
+			"category" => $category,
+			"x_start" => $x_start,
+			"y_start" => $y_start,
+			"w" => $w,
+			"h" => $h,
+			"id" => $id,
+			"image_perception_hash" => $image_perception_hash
 		);
 
-		if(!in_array($row[3], $categories)) {
-			$categories[] = $row[3];
+		if(get_get("group_by_perception_hash")) {
+			$perception_hash_to_image[$this_annotation["image_perception_hash"]] = $filename;
 		}
 
-		$yolo = parse_position_yolo($this_annotation["x_start"], $this_annotation["y_start"], $this_annotation["w"], $this_annotation["h"], $this_annotation["width"], $this_annotation["height"]);
+		if(!in_array($category, $categories)) {
+			$categories[] = $category;
+		}
+
+		$yolo = parse_position_yolo(
+			$this_annotation["x_start"],
+			$this_annotation["y_start"],
+			$this_annotation["w"],
+			$this_annotation["h"],
+			$this_annotation["width"],
+			$this_annotation["height"]
+		);
 
 		$this_annotation["x_center"] = $yolo["x_center"];
 		$this_annotation["y_center"] = $yolo["y_center"];
 		$this_annotation["w_rel"] = $yolo["w_rel"];
 		$this_annotation["h_rel"] = $yolo["h_rel"];
 
-		$images[$row[0]][] = $this_annotation;
+		$images[$filename][] = $this_annotation;
+
+		$j++;
 	}
+
+	if(count($perception_hash_to_image)) {
+		$new_images = [];
+
+		foreach ($perception_hash_to_image as $hash => $fn) {
+			$new_images[$fn] = $images[$fn];
+		}
+
+		$images = $new_images;
+	}
+
+	#dier(count($images));
+
+	#dier($j);
 
 	if ($format == "html") {
 		$html = file_get_contents("export_base.html");
@@ -337,7 +390,7 @@
 
 				$str = join("\n", array_unique($str_arr));
 
-				file_put_contents("$tmp_dir/labels/$fn_txt", $str);
+				file_put_contents("$tmp_dir/labels/$fn_txt", "$str\n");
 			}
 		}
 
@@ -396,7 +449,6 @@ python3 -mvenv ~/.alpha_yoloenv/
 source ~/.alpha_yoloenv/bin/activate
 pip3 install -r requirements.txt
 pip3 install "albumentations>=1.0.3"
-pip3 install -r requirements.txt
 fi
 
 mkdir -p dataset
@@ -924,10 +976,44 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 
 		file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
 
+		$only_take_first_line = "#!/bin/bash
+for i in $(ls labels); do 
+	NUMLINES=$(cat labels/\$i | wc -l)
+	if [[ \$NUMLINES -gt 1 ]]; then
+		TMPFILE=\"\${RANDOM}_\${RANDOM}.txt\"
+
+		head -n1 labels/\$i > labels/\$TMPFILE
+
+		rm labels/\$i
+		mv labels/\$TMPFILE labels/\$i
+		
+	fi
+done
+";
+
+		file_put_contents("$tmp_dir/only_take_first_line.sh", $only_take_first_line);
+
+		$remove_labels_with_multiple_entries = "#!/bin/bash
+for i in $(ls labels); do 
+	NUMLINES=$(cat labels/\$i | sed -e 's#\s.*##' | uniq | wc -l)
+	if [[ \$NUMLINES -gt 1 ]]; then
+		echo \"\$NUMLINES: \$i\"
+		rm labels/\$i
+	fi
+done
+";
+
+		file_put_contents("$tmp_dir/remove_labels_with_multiple_entries.sh", $remove_labels_with_multiple_entries);
+
 		$download_images = "#!/bin/bash
 set -x
-mkdir -p \$1
-for i in $(curl http://ufo-ki.de/annotate/$1/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do wget -nc \"\http://ufo-ki.de/annotate/\$1/\$i\" -o \"\$1/\$i\"; done
+mkdir -p images
+for i in $(curl http://ufo-ki.de/annotate/images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
+	fn_without_ending=\"\${i%.*}\"
+	if [[ -e \"labels/\$fn_without_ending.txt\" ]]; then
+		wget -nc \"http://ufo-ki.de/annotate/images/\$i\" -O \"images/\$i\"
+	fi
+done
 ";
 
 		file_put_contents("$tmp_dir/download_images.sh", $download_images);
@@ -935,22 +1021,24 @@ for i in $(curl http://ufo-ki.de/annotate/$1/ | grep href | egrep -i \"(jpg|jpeg
 		$download_empty = "#!/bin/bash
 set -x
 mkdir -p images
-for i in $(curl http://ufo-ki.de/annotate/empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do wget -nc \"http://ufo-ki.de/annotate/empty/\$i\" -O \"images/\$i\"; done
+for i in $(curl http://ufo-ki.de/annotate/empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
+	wget -nc \"http://ufo-ki.de/annotate/empty/\$i\" -O \"images/\$i\";
+done
 ";
 
 		file_put_contents("$tmp_dir/download_empty.sh", $download_empty);
 
 		#die("a");
-		
+
 		$tmp_zip = "$tmp_dir/yolo_export.zip";
 		ob_start();
 		system("cd $tmp_dir; zip -r yolo_export.zip .");
 		ob_clean();
 
-		header("Content-type: application/zip"); 
-		header("Content-Disposition: attachment; filename=data.zip"); 
-		header("Pragma: no-cache"); 
-		header("Expires: 0"); 
+		header("Content-type: application/zip");
+		header("Content-Disposition: attachment; filename=data.zip");
+		header("Pragma: no-cache");
+		header("Expires: 0");
 		header("Content-Length: ".filesize($tmp_zip));
 
 		#readfile($tmp_zip);
