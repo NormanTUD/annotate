@@ -1,7 +1,7 @@
 "use strict";
 
 const startQueryString = window.location.search;
-const startUrlParams = new URLSearchParams(queryString);
+const startUrlParams = new URLSearchParams(startQueryString);
 var autonext = startUrlParams.get('autonext');
 var model;
 var last_load_dynamic_content = false;
