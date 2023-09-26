@@ -131,7 +131,11 @@
 		$str .= ", kuratiert: ".htmlentities($curated_stat_str ?? "");
 		$str .= ", unannotiert: ".htmlentities($unannotation_stat_str ?? "");
 
-		$curated_percent = ($curated_stat / $annotation_stat) * 100;
+		if($annotation_stat) {
+			$curated_percent = ($curated_stat / $annotation_stat) * 100;
+		} else {
+			$curated_percent = 0;
+		}
 		$curated_percent = number_format($curated_percent, 3, ',', '.');
 
 		if($unannotation_stat != 0) {
