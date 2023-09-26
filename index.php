@@ -2,7 +2,7 @@
 	include("header.php");
 	include_once("functions.php");
 
-	if(file_exists("/etc/perception_hash") || get_get("perception_hash")) {
+	if(file_exists("/etc/perception_hash") || get_get("perception_hash") || get_get("import")) {
 		$visual_hash = "";
 
 		$query = "select id, filename from image where perception_hash is null and deleted = '0' and offtopic = '0' order by rand() limit 5";
@@ -29,8 +29,6 @@
 				dier($command);
 			}
 		}
-
-		exit(0);
 	}
 
 	if(file_exists("/etc/import_annotate") || get_get("import")) {
