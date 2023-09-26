@@ -40,22 +40,7 @@
 					rquery("COMMIT;");
 					rquery("SET autocommit=1;");
 
-					$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" images/'.$file;
-
-					ob_start();
-					system($command);
-					$hash = ob_get_clean();
-					ob_flush();
-
-					$hash = trim($hash);
-					if($hash) {
-						$update_query = "update image set perception_hash = ".esc($hash)." where id = ".esc($image_id);
-						rquery($update_query);
-					} else {
-						dier($command);
-					}
-
-					print "Id for $file: ".$image_id.", perception hash: $hash<br>\n";
+					print "Id for $file: ".$image_id."<br>\n";
 					ob_flush();
 					flush();
 				}

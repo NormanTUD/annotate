@@ -332,6 +332,19 @@
 		return $res;
 	}
 
+	function get_perception_hash ($file) {
+		$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" images/'.$file;
+
+		ob_start();
+		system($command);
+		$hash = ob_get_clean();
+		ob_flush();
+
+		$hash = trim($hash);
+
+		return $hash;
+	}
+
 	function get_or_create_image_id ($image, $width=null, $height=null, $rec=0) {
 		if($rec >= 10) {
 			return;
@@ -353,7 +366,8 @@
 			$height = $width_and_height[1];
 
 			if($width && $height) {
-				$insert_query = "insert into image (filename, width, height) values (".esc(array($image, $width, $height)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
+				$hash = get_perception_hash($image);
+				$insert_query = "insert into image (filename, width, height, perception_hash) values (".esc(array($image, $width, $height, $hash)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
 				rquery($insert_query);
 				return get_or_create_image_id($image, $width, $height, $rec + 1);
 			} else {
