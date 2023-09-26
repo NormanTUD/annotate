@@ -134,26 +134,25 @@
 	}
 
 	function get_home_string () {
-		$annotation_stat = get_number_of_annotated_imgs();
-		$unannotation_stat = get_number_of_unannotated_imgs();
-		$curated_stat = get_number_of_curated_imgs();
-		$annotation_stat_str = number_format($annotation_stat, 0, ',', '.');
-		$unannotation_stat_str = number_format($unannotation_stat, 0, ',', '.');
-		$curated_stat_str = number_format($curated_stat, 0, ',', '.');
+		$annotated_imgs = get_number_of_annotated_imgs();
+		$unannotated_imgs = get_number_of_unannotated_imgs();
+		$curated_imgs = get_number_of_curated_imgs();
+		$annotation_stat_str = number_format($annotated_imgs, 0, ',', '.');
+		$unannotated_imgs_str = number_format($unannotated_imgs, 0, ',', '.');
+		$curated_imgs_str = number_format($curated_imgs, 0, ',', '.');
 
 		$str = "Annotiert: ".htmlentities($annotation_stat_str ?? "");
-		$str .= ", kuratiert: ".htmlentities($curated_stat_str ?? "");
-		$str .= ", unannotiert: ".htmlentities($unannotation_stat_str ?? "");
+		$str .= ", kuratiert: ".htmlentities($curated_imgs_str ?? "");
+		$str .= ", unannotiert: ".htmlentities($unannotated_imgs_str ?? "");
 
-		if($annotation_stat) {
-			$curated_percent = ($curated_stat / $annotation_stat) * 100;
-		} else {
-			$curated_percent = 0;
+		$curated_percent = 0;
+		if($annotated_imgs) {
+			$curated_percent = ($curated_imgs / $annotated_imgs) * 100;
 		}
 		$curated_percent = number_format($curated_percent, 3, ',', '.');
 
-		if($unannotation_stat != 0) {
-			$str .= " (".htmlentities(sprintf("%.2f", $annotation_stat / ($annotation_stat + $unannotation_stat) * 100))."% annotiert, davon $curated_percent% kuratiert)";
+		if($unannotated_imgs != 0) {
+			$str .= " (".htmlentities(sprintf("%.2f", $annotated_imgs / ($annotated_imgs + $unannotated_imgs) * 100))."% annotiert, davon $curated_percent% kuratiert)";
 		}
 
 		$str .= ", <a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
