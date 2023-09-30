@@ -14,20 +14,23 @@
 			$inserted_model_ids = [];
 
 			// Loop through the files array
-			foreach ($files_array as $file) {
+			foreach ($files_array as $path) {
 				// Generate a unique filename to avoid conflicts
-				$unique_filename = generate_unique_filename($pdo, $file['filename']);
-				$file_contents = file_get_contents($file['tmp_name']);
+				$file = $path;
+				$file = preg_replace("/.*\//", "", $file);
+				$file_contents = file_get_contents($path);
 
 				// Insert the model into the database
-				$stmt = $pdo->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents) VALUES (:model_name, UNIX_TIMESTAMP(), :filename, :file_contents)");
+				$stmt = $pdo->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents) VALUES (:model_name, now(), :filename, :file_contents)");
 				$stmt->bindParam(':model_name', $model_name);
-				$stmt->bindParam(':filename', $unique_filename);
+				$stmt->bindParam(':filename', $file);
 				$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
 				$stmt->execute();
 
 				// Retrieve the ID of the inserted model
 				$model_id = $pdo->lastInsertId();
+
+				echo "Model-ID: $model_id<br>";
 
 				// Store the ID in the array
 				$inserted_model_ids[] = $model_id;
@@ -40,7 +43,7 @@
 		} catch (\Throwable $e) {
 			// Log and handle the database error
 			error_log("Database error: " . $e->getMessage());
-			die("Error: Unable to insert models into the database.");
+			die("Error: Unable to insert models into the database.<br>".$e->getMessage());
 		}
 	}
 
@@ -86,7 +89,7 @@
 
 						if(preg_match('/>>PATH>>(.*)<<PATH<</', $output, $matches)) {
 							$output_path = $matches[1];
-							echo "<b>output path $output_path detected</b>";
+							echo "<b>output path $output_path detected</b><br>";
 						} else {
 							echo nl2br(htmlspecialchars($output));
 						}

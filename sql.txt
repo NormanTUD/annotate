@@ -18,4 +18,4 @@ alter table image add column unidentifiable int default 0;
 
 CREATE TABLE image_data (id INT UNSIGNED NOT NULL AUTO_INCREMENT, filename VARCHAR(255) NOT NULL UNIQUE, image_content LONGBLOB, PRIMARY KEY (id));
 
-CREATE TABLE models (id INT AUTO_INCREMENT PRIMARY KEY, model_name VARCHAR(100) NOT NULL, upload_time TIMESTAMP, filename VARCHAR(100), file_contents BLOB);
+CREATE TABLE models (id INT AUTO_INCREMENT PRIMARY KEY, model_name VARCHAR(100) NOT NULL, upload_time TIMESTAMP, filename VARCHAR(100), file_contents LONGBLOB);
