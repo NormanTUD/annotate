@@ -43,8 +43,8 @@ include_once("functions.php");
 
 <h1>Upload Images</h1>
 <form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" name="image" accept="image/jpeg">
-    <input type="submit" value="Upload">
+	<input type="file" name="image" multiple accept="image/jpeg">
+	<input type="submit" value="Upload">
 </form>
 <div id="response"></div>
 
