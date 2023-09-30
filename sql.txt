@@ -15,3 +15,5 @@ ALTER TABLE `category` ADD INDEX `idx_category` (`id`, `name`);
 ALTER TABLE `image` ADD INDEX `idx_image_deleted_offtopic_perception_hash_id` (`deleted`, `offtopic`, `perception_hash`, `id`);
 
 alter table image add column unidentifiable int default 0;
+
+CREATE TABLE image_data (id INT UNSIGNED NOT NULL AUTO_INCREMENT, filename VARCHAR(255) NOT NULL UNIQUE, image_content LONGBLOB, PRIMARY KEY (id));
