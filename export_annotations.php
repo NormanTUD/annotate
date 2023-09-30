@@ -12,9 +12,9 @@
 
 	$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
 
+	$max_files = get_get("max_files", 0);
 	$validation_split = get_get("validation_split", 0);
 	$test_split = get_get("test_split", 0);
-	$max_files = get_get("max_files", 0);
 
 	$valid_formats = array(
 		"ultralytics_yolov5", "html"
