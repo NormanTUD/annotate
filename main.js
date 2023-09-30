@@ -362,7 +362,7 @@ async function ai_file (elem) {
 
 	running_ki = true;
 	$("body").css("cursor", "progress");
-	success("Success!", "KI gestartet... Bitte warten");
+	success("Success", "KI gestartet... Bitte warten");
 	await anno.clearAnnotations();
 
 	await load_model();
@@ -429,7 +429,7 @@ async function ai_file (elem) {
 
 	var msg = "KI erfolgreich durchgelaufen";
 
-	success("Success!", msg);
+	success("Success", msg);
 	await anno.setAnnotations(a);
 
 	var new_annos = await anno.getAnnotations();
@@ -438,7 +438,7 @@ async function ai_file (elem) {
 	}
 	running_ki = false;
 
-	success("Success!", "KI fertig...");
+	success("Success", "KI fertig...");
 
 	if(autonext_param) {
 		await load_next_random_image();
