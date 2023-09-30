@@ -620,7 +620,7 @@ async function set_img_from_filename (fn) {
 
 	$("#ki_detected_names").html("");
 	$("#filename").html(fn);
-	$("#image").prop("src", "images/" + fn);
+	$("#image").prop("src", "print_image.php?filename=" + fn);
 
 	await load_page();
 }

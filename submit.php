@@ -2,8 +2,12 @@
 	include_once("functions.php");
 
 	if(array_key_exists("source", $_POST)) {
-		if(array_key_exists("id", $_POST)) {
-			$image_id = get_or_create_image_id($_POST["source"]);
+		if(array_key_exists("id", $_POST) && array_key_exists("source", $_POST)) {
+			$filename = $_POST["source"];
+
+			$filename = preg_replace("/print_image.php.filename=/", "", $filename);
+
+			$image_id = get_or_create_image_id("", $filename);
 			$annotarius_id = $_POST["id"];
 			$user_id = get_or_create_user_id($_COOKIE["annotate_userid"]);
 
