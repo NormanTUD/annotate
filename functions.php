@@ -192,7 +192,7 @@
 
 		$str = "Annotiert: ".htmlentities($annotation_stat_str ?? "");
 		if($not_completely_imported != 0) {
-			$str .= ", noch nicht vollständig importiert: ".htmlentities($not_completely_imported ?? "");
+			$str .= ", noch nicht vollständig importiert: ".htmlentities($not_completely_imported_str ?? "");
 		}
 
 		if($curated_imgs) {
