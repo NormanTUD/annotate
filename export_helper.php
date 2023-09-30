@@ -787,14 +787,6 @@ done
 		write_download_empty($tmp_dir);
 	}
 
-	function get_param ($name, $default = 0) {
-		$res = $default;
-		if(get_get($name)) {
-			$res = intval(get_get($name));
-		}
-		return $res;
-	}
-
 	function get_number_of_rows () {
 		$number_of_rows_query = "SELECT FOUND_ROWS()";
 		$number_of_rows_res = rquery($number_of_rows_query);

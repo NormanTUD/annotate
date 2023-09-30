@@ -693,8 +693,9 @@
 			$unique_filename = generate_unique_filename($pdo, $file_name);
 
 			// Insert the unique filename into the database
-			$stmt = $pdo->prepare("INSERT INTO your_table (filename) VALUES (:filename)");
-			$stmt->bindParam(':filename', $unique_filename);
+			$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content)");
+			$stmt->bindParam(':filename', $filename);
+			$stmt->bindParam(':image_content', $file_contents, PDO::PARAM_LOB);
 			$stmt->execute();
 
 			// Close the database connection
@@ -715,7 +716,7 @@
 		$unique_filename = $base_name . '_' . uniqid() . '.' . $extension;
 
 		// Check if the generated filename already exists in the database
-		$stmt = $pdo->prepare("SELECT filename FROM your_table WHERE filename = :filename");
+		$stmt = $pdo->prepare("SELECT filename FROM image_data WHERE filename = :filename");
 		$stmt->bindParam(':filename', $unique_filename);
 		$stmt->execute();
 
@@ -725,6 +726,27 @@
 		}
 
 		return $unique_filename;
+	}
+
+	function print_image($fn) {
+		$query = "select image_content from image_data where filename = ".esc($fn);
+		dier($query);
+
+		$res = rquery($query);
+
+		while ($row = mysqli_fetch_row($res)) {
+			header('Content-Type: image/jpeg');
+			print $row[0];
+			exit(0);
+		}
+	}
+
+	function get_param ($name, $default = 0) {
+		$res = $default;
+		if(get_get($name)) {
+			$res = intval(get_get($name));
+		}
+		return $res;
 	}
 
 	$GLOBALS["base_url"] = get_base_url();
