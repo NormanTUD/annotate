@@ -96,6 +96,19 @@
 		return $my_array;
 	}
 
+	function get_number_of_offtopic_imgs () {
+		$q = "select count(*) from image where offtopic = 1";
+		$r = rquery($q);
+
+		$res = null;
+
+		while ($row = mysqli_fetch_row($r)) {
+			$res = $row[0];
+		}
+
+		return $res;
+	}
+
 	function get_number_of_curated_imgs () {
 		$q = "select count(*) from (select id from image where id in (select image_id from annotation where deleted = 0 and curated = 1) and deleted = 0) a";
 		$r = rquery($q);
@@ -140,14 +153,17 @@
 		$annotated_imgs = get_number_of_annotated_imgs();
 		$unannotated_imgs = get_number_of_unannotated_imgs();
 		$curated_imgs = get_number_of_curated_imgs();
+		$offtopic_imgs = get_number_of_offtopic_imgs();
 
 		$annotation_stat_str = number_format($annotated_imgs, 0, ',', '.');
 		$unannotated_imgs_str = number_format($unannotated_imgs, 0, ',', '.');
 		$curated_imgs_str = number_format($curated_imgs, 0, ',', '.');
+		$offtopic_imgs_str = number_format($offtopic_imgs, 0, ',', '.');
 
 		$str = "Annotiert: ".htmlentities($annotation_stat_str ?? "");
 		$str .= ", kuratiert: ".htmlentities($curated_imgs_str ?? "");
 		$str .= ", unannotiert: ".htmlentities($unannotated_imgs_str ?? "");
+		$str .= ", offtopic: ".htmlentities($offtopic_imgs_str ?? "");
 
 		$curated_percent = 0;
 		if($annotated_imgs) {
