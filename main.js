@@ -591,7 +591,7 @@ async function load_dynamic_content () {
 			if(d.html) {
 				$('#list').html(d.html);
 			} else {
-			$('#list').html("<i>Bisher keine Tags</i>");
+				$('#list').html("<i>Bisher keine Tags</i>");
 			}
 		},
 		error: function (xhr, status) {
