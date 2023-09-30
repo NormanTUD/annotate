@@ -197,7 +197,9 @@
 		$str .= ", kuratiert: ".htmlentities($curated_imgs_str ?? "");
 		$str .= ", unannotiert: ".htmlentities($unannotated_imgs_str ?? "");
 		$str .= ", offtopic: ".htmlentities($offtopic_imgs_str ?? "");
-		$str .= ", nicht identifizierbar: ".htmlentities($unidentifiable_imgs_str ?? "");
+		if($unidentifiable_imgs) {
+			$str .= ", nicht identifizierbar: ".htmlentities($unidentifiable_imgs_str ?? "");
+		}
 
 		$curated_percent = 0;
 		if($annotated_imgs) {
@@ -216,7 +218,7 @@
 			$str .= " (".htmlentities($annotated_str)."% annotiert, davon $curated_percent% kuratiert)";
 		}
 
-		$str .= ", <a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
+		$str .= "<br><a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
 	
 
 		return $str;
