@@ -726,7 +726,7 @@ done
 
 				$base_structs[] = $ahref_start.'
 					<div '.$delete_str.' style="position: relative; display: inline-block;">
-						<img class="images" src="images/'.$fn.'" style="display: block;">
+						<img class="images" src="print_image.php?filename='.$fn.'" style="display: block;">
 				'.$ahref_end;
 
 				foreach ($imgname as $this_anno_data) {
