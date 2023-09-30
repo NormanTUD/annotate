@@ -21,4 +21,6 @@ if [[ ! -e .alpha_yoloenv_normal/bin/activate ]]; then
         pip3 install -r requirements.txt
 fi
 
-python3 export.py --weights $1 --img 512 512 --batch-size 1 --include tfjs
+cd -
+
+python3 yolov5/export.py --weights $1 --img 512 512 --batch-size 1 --include tfjs
