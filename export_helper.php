@@ -642,6 +642,69 @@ done
 
 	}
 
+	function write_run_on_normal_hardware ($tmp_dir) {
+		$download_empty = '#!/bin/bash -l
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+cd $SCRIPT_DIR
+
+if [ ! -d "yolov5" ]; then
+        git clone --depth 1 https://github.com/ultralytics/yolov5.git
+fi
+
+cd yolov5
+
+if [[ ! -e ~/.alpha_yoloenv_normal/bin/activate ]]; then
+        python3 -mvenv ~/.alpha_yoloenv_normal/
+        source ~/.alpha_yoloenv_normal/bin/activate
+        pip3 install -r requirements.txt
+fi
+
+mkdir -p dataset
+
+if [ -d "../images" ]; then
+        mv ../images/ dataset/
+fi
+
+if [ -d "../validation" ]; then
+        mv ../validation/ dataset/
+fi
+
+if [ -d "../test" ]; then
+        mv ../test/ dataset/
+fi
+
+if [ -d "../labels" ]; then
+        mv ../labels/ dataset/
+fi
+
+if [ -e "../dataset.yaml" ]; then
+        mv ../dataset.yaml data/
+fi
+
+if [ -e "../omniopt_simple_run.sh" ]; then
+        mv ../omniopt_simple_run.sh .
+fi
+
+if [ -e "../simple_run.sh" ]; then
+        mv ../simple_run.sh .
+fi
+
+if [ -e "../run.sh" ]; then
+        mv ../run.sh .
+fi
+
+if [ -e "../hyperparams.yaml" ]; then
+        mv ../hyperparams.yaml data/hyps/
+fi
+
+python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
+';
+
+		file_put_contents("$tmp_dir/run_on_normal_hardware.sh", $download_empty);
+	}
+
 	function write_download_empty ($tmp_dir) {
 		$download_empty = "#!/bin/bash
 mkdir -p images
@@ -790,6 +853,7 @@ done
 		write_remove_labels_with_multiple_entries($tmp_dir);
 		write_download_images($tmp_dir);
 		write_download_empty($tmp_dir);
+		write_run_on_normal_hardware($tmp_dir);
 	}
 
 	function get_number_of_rows () {
