@@ -684,5 +684,32 @@
 		return $b;
 	}
 
+	function insert_image_into_db ($path) {
+		try {
+			// Create a new PDO connection
+			$conn = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
+			$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+			// Read the image into file_contents
+			$file_contents = file_get_contents($path);
+
+			$filename = $path;
+			$filename = preg_replace("/\/[^\/]*$/", "", $filename);
+
+			// Prepare and execute the SQL statement
+			$stmt = $conn->prepare("INSERT INTO my_table (filename, image_content) VALUES (:filename, :image_content)");
+			$stmt->bindParam(':filename', $filename);
+			$stmt->bindParam(':image_content', $file_contents, PDO::PARAM_LOB);
+			$stmt->execute();
+
+			// Close the database connection
+			$conn = null;
+
+			echo "Image inserted successfully.";
+		} catch (PDOException $e) {
+			echo "Error: " . $e->getMessage();
+		}
+	}
+
 	$GLOBALS["base_url"] = get_base_url();
 ?>
