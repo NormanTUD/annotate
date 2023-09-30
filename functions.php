@@ -712,10 +712,12 @@
 
 	function insert_image_into_db($file_tmp, $filename) {
 		try {
+			$is_in_image_data_table = is_null(get_image_data_id($filename)) ? 1 : 0;
+
 			$existing_perception_hash = get_perception_hash_from_db($filename);
 			$new_perception_hash = get_perception_hash($file_tmp);
 
-			if($existing_perception_hash == $new_perception_hash) {
+			if($existing_perception_hash == $new_perception_hash && !$is_in_image_data_table) {
 				return get_image_id($filename);
 			}
 
@@ -743,7 +745,7 @@
 		} catch (\Throwable $e) {
 			// Log and handle the database error
 			error_log("Database error: " . $e->getMessage());
-			return "Error: Unable to insert image into the database.";
+			dier("Error: Unable to insert image into the database.");
 		}
 	}
 
