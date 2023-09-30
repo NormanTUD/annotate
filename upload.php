@@ -1,35 +1,53 @@
 <?php
-	include("header.php");
-	include_once("functions.php");
+include("header.php");
+include_once("functions.php");
 ?>
-	<script>
-		$(document).ready(function () {
-			$('#uploadForm').on('submit', function (e) {
-				e.preventDefault();
 
-				var formData = new FormData(this);
+<script>
+    $(document).ready(function () {
+        $('#uploadForm').on('submit', function (e) {
+            e.preventDefault();
 
-				$.ajax({
-					type: 'POST',
-					url: 'upload_files.php',
-					data: formData,
-					cache: false,
-					contentType: false,
-					processData: false,
-					success: function (response) {
-						$('#response').html(response);
-					}
-				});
-			});
-		});
-	</script>
+            var formData = new FormData(this);
 
-	<h1>Upload Images</h1>
-	<form id="uploadForm" enctype="multipart/form-data">
-		<input type="file" name="images[]" multiple accept="image/*">
-		<input type="submit" value="Upload">
-	</form>
-	<div id="response"></div>
+            // Loop through the selected files
+            var files = $('input[type="file"]')[0].files;
+            var currentIndex = 0;
+
+            function uploadNextFile() {
+                if (currentIndex < files.length) {
+                    var file = files[currentIndex];
+                    formData.set('image', file);
+
+                    $.ajax({
+                        type: 'POST',
+                        url: 'upload_file.php',
+                        data: formData,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (response) {
+                            $('#response').html(response);
+                            currentIndex++;
+                            uploadNextFile();
+                        }
+                    });
+                }
+            }
+
+            // Start uploading files
+            uploadNextFile();
+        });
+    });
+</script>
+
+<h1>Upload Images</h1>
+<form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="image" accept="image/jpeg">
+    <input type="submit" value="Upload">
+</form>
+<div id="response"></div>
+
 <?php
-	include_once("footer.php");
+include_once("footer.php");
 ?>
