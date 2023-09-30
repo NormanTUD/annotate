@@ -653,57 +653,6 @@ async function load_next_random_image (fn=false) {
 
 }
 
-function add_function_debugger () {
-	for (var i in window) {
-		if(typeof(window[i]) == "function" && !["log", "$", "getComputedStyle", "add_function_debugger", "Or", "N", "wS", "Wc", "Wx", "Or", "Xc", "dispatchEvent", "removeEventListener", "addEventListener", "clearImmediate", "setImmediate", "jQuery", "xi", "h", "$e", "Oi", "Pr", "TS", "DS", "Kc", "queueMicrotask", "createImageBitmap", "clearTimeout", "structuredClone", "requestIdleCallback", "setResizable", "getDefaultComputedStyle", "close", "stop", "focus", "blur", "alert", "open", "prompt", "print", "captureEvents", "moveTo", "getSelection", "matchMedia", "releaseEvents", "confirm", "resizeTo", "resizeBy", "scrollBy", "scroll", "scrollTo", "sizeToContent", "updateCommands", "find", "cancelIdleCallback", "requestAnimationFrame", "cancelAnimationFrame", "reportError", "btoa", "atob", "setTimeout", "setInterval", "clearInterval", "fetch", "PS", "scrollByPages", "postMessage", "moveBy", "dump", "scrollByLines", "scrollByPages"].includes(i)) {
-
-			// wenn der Name der Funktion nicht den String "original_function enthält"
-			if(i.indexOf("original_function") == -1) {
-
-				// kopiere die Funktion namens "i" nach "i_original_function"
-				window[i + "_original_function"] = window[i];
-
-				try {
-					log("Replacing " + i);
-					var execute_this = `
-					window["${i}"] = function (...args) {
-						var _start_time = + new Date();
-
-						var old_annotations = 0;
-						var new_annotations = 0;
-
-						if(typeof(anno) == "object") {
-							old_annotations = anno.getAnnotations().length;
-						}
-
-						var result = window["${i}_original_function"](...args);
-
-						if(typeof(anno) == "object") {
-							new_annotations = anno.getAnnotations().length;
-						}
-
-						var _end_time = + new Date();
-
-						if(typeof(anno) == "object" && old_annotations != new_annotations) {
-							log("========== function ${i} ==========: " + new_annotations);
-							console.trace();
-						}
-						return result;
-					}
-					`;
-
-					eval(execute_this);
-
-				} catch (e) {
-					console.warn(e);
-					log(i);
-					window[i] = window[i + "_original_function"];
-				}
-			}
-		}
-	}
-}
-
 document.onkeydown = function (e) {
 	if($(":focus").length) {
 		return;
