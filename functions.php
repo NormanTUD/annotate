@@ -599,8 +599,8 @@
 		$i = 0;
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !in_array($file, $files_in_db)) {
-				$new = is_null(get_image_id($file)) ? 1 : 0;
-				if($new) {
+				$is_in_images_table = is_null(get_image_id($file)) ? 1 : 0;
+				if(!$is_in_images_table || !$is_in_image_data_table($file)) {
 					rquery("SET autocommit=0;");
 					rquery("START TRANSACTION;");
 					$path = "$base_dir/$file";

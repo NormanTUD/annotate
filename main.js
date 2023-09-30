@@ -490,7 +490,9 @@ async function create_selects_from_annotation(force=0) {
 
 		html += selects.join(", ");
 
-		$("#ki_detected_names").html(html);
+		if($("#ki_detected_names").html() != html) {
+			$("#ki_detected_names").html(html);
+		}
 
 		$(".ki_select_box").change(async function (x, y, z) {
 			var old_value = previous[$(this).data("nr")];
@@ -503,9 +505,13 @@ async function create_selects_from_annotation(force=0) {
 		});
 	} else {
 		if(!running_ki) {
-			$("#ki_detected_names").html("Keine Objekte markiert");
+			if($("#ki_detected_names").html() != "Keine Objekte markiert") {
+				$("#ki_detected_names").html("Keine Objekte markiert");
+			}
 		} else {
-			$("#ki_detected_names").html("Bitte warten, die KI läuft...");
+			if($("#ki_detected_names").html() != "Bitte warten, die KI läuft...") {
+				$("#ki_detected_names").html("Bitte warten, die KI läuft...");
+			}
 		}
 	}
 }
@@ -622,8 +628,12 @@ async function set_img_from_filename (fn) {
 		$("#annotatin_area").show();
 		$("#no_imgs_left").hide();
 
-		$("#ki_detected_names").html("");
-		$("#filename").html(fn);
+		if($("#ki_detected_names").html != "") {
+			$("#ki_detected_names").html("");
+		}
+		if($("#filename").html() != fn) {
+			$("#filename").html(fn);
+		}
 		$("#image").prop("src", "print_image.php?filename=" + fn);
 
 		await load_page();
