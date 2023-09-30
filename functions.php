@@ -419,7 +419,7 @@
 		return $hash;
 	}
 
-	function get_or_create_image_id ($path, $filename, $width=null, $height=null, $rec=0) {
+	function get_or_create_image_id ($path, $filename, $perception_hash=null, $width=null, $height=null, $rec=0) {
 		if($rec >= 10) {
 			return;
 		}
