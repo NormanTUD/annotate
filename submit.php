@@ -4,10 +4,14 @@
 	if(array_key_exists("source", $_POST)) {
 		if(array_key_exists("id", $_POST) && array_key_exists("source", $_POST)) {
 			$filename = $_POST["source"];
+			$filename = urldecode(html_entity_decode($filename));
 
 			$filename = preg_replace("/print_image.php.filename=/", "", $filename);
 
 			$image_id = get_or_create_image_id("", $filename);
+			if(!$image_id) {
+				dier("Could not get image id for $filename");
+			}
 			$annotarius_id = $_POST["id"];
 			$user_id = get_or_create_user_id($_COOKIE["annotate_userid"]);
 
@@ -25,7 +29,7 @@
 
 			$anno_id = create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id);
 
-			print "Annotation category $category_name for image ".$_POST['source']." ($image_id) saved (anno-id: $anno_id)";
+			print "Annotation category $category_name for image ".$_POST['source']." (image-id: $image_id) saved (anno-id: $anno_id)";
 		} else {
 			die("No ID given");
 		}
