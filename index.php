@@ -62,7 +62,7 @@
 
 	<script>
 		load_dynamic_content();
-		load_next_random_image("<?php print htmlentities($imgfile); ?>");
+		load_next_random_image("<?php print $imgfile; ?>");
 	</script>
 <?php
 	include_once("footer.php");

@@ -8,5 +8,7 @@
 		exit(1);
 	}
 
+	$filename = html_entity_decode($filename);
+
 	print_image($filename);
 ?>

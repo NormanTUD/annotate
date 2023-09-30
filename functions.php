@@ -778,7 +778,7 @@
 			exit(0);
 		}
 
-		print "Image ".htmlentities($fn)." not found";
+		print "Image <b>".htmlentities($fn)."</b> not found";
 		exit(0);
 	}
 
