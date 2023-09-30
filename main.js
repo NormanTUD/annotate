@@ -77,7 +77,10 @@ function memory_debugger () {
 		var num_mb = num_bytes / (1024 ** 2);
 		num_mb = num_mb.toFixed(2);
 
-		var str = `<br>Memory: ${num_mb}MB (${num_tensors} tensors)`;
+		str = "";
+		if(num_tensors) {
+			str = `<br>Memory: ${num_mb}MB (${num_tensors} tensors)`;
+		}
 
 		$("#memory_debugger").html(str);
 	} catch (e) {
