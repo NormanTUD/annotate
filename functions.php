@@ -233,8 +233,10 @@
 			}
 		}
 
-		$str .= "<br><a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
-	
+		$str .= "<br><a href='index.php'>Home</a>, ";
+		$str .= "<a target='_blank' href='stat.php'>Statistik</a>, ";
+		$str .= "<a target='_blank' href='upload.php'>Upload</a>, ";
+		$str .= "<a href='export_annotations.php'>Annotationen exportieren</a>";
 
 		return $str;
 	}
