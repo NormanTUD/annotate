@@ -26,21 +26,10 @@ WEBMODEL="$WORK_DIR/model_web_model"
 echo "Work-Dir: $WORK_DIR"
 echo ">>PATH>>$WEBMODEL<<PATH<<"
 
-mkdir -p $WEBMODEL
-touch $WEBMODEL/bla.json $WEBMODEL/blubb.bin
-
-exit 0
-
-
 PATH="$PATH:$(pwd)/yolov5/.alpha_yoloenv_normal/bin/"
 
 cp $1 $WORK_DIR/model.pt 2>&1
 
 python3 yolov5/export.py --weights $WORK_DIR/model.pt --img 512 512 --batch-size 1 --include tfjs 2>&1
-exit_code=$?
 
-if [[ -d $WEBMODEL ]]; then
-	exit 0
-else
-	exit $exit_code
-fi
+echo "export-exit-code: $?"
