@@ -1,6 +1,6 @@
 <?php
-include("header.php");
-include_once("functions.php");
+	include("header.php");
+	include_once("functions.php");
 ?>
 
 <script>
