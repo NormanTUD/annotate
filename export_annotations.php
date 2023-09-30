@@ -53,14 +53,7 @@
 
 	#dier($annotated_image_ids_query);
 
-	$number_of_rows_query = "SELECT FOUND_ROWS()";
-	$number_of_rows_res = rquery($number_of_rows_query);
-
-	$number_of_rows = 0;
-
-	while ($row = mysqli_fetch_row($number_of_rows_res)) {
-		$number_of_rows = $row[0];
-	}
+	$number_of_rows = get_number_of_rows();
 
 	$max_page = ceil($number_of_rows / $items_per_page);
 

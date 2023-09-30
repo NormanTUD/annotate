@@ -794,4 +794,16 @@ done
 		}
 		return $res;
 	}
+
+	function get_number_of_rows () {
+		$number_of_rows_query = "SELECT FOUND_ROWS()";
+		$number_of_rows_res = rquery($number_of_rows_query);
+		$number_of_rows = 0;
+
+		while ($row = mysqli_fetch_row($number_of_rows_res)) {
+			$number_of_rows = $row[0];
+		}
+
+		return $number_of_rows;
+	}
 ?>
