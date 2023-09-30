@@ -585,7 +585,6 @@ async function load_dynamic_content () {
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			log("A");
 			var d = JSON.parse(data);
 			tags = Object.keys(d.tags);
 			$('#list').html("");
