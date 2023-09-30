@@ -13,6 +13,7 @@
 			// Initialize an array to store the IDs of inserted models
 			$inserted_model_ids = [];
 
+			$prefix = "model_";
 			$uid = uniqid($prefix);
 
 			// Loop through the files array

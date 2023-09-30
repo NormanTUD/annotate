@@ -811,5 +811,33 @@
 		return $res;
 	}
 
+	function get_list_of_models () {
+		$query = 'select if(model_name is null or model_name = "", uid, model_name) as model_name, uid from models group by uid';
+
+		$res = rquery($query);
+
+		$models = [];
+		while ($row = mysqli_fetch_row($res)) {
+			$models[] = $row;
+		}
+
+		return $models;
+	}
+
+	function print_model_file ($uid, $filename) {
+		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename);
+
+		$res = rquery($query);
+
+		$models = [];
+		while ($row = mysqli_fetch_row($res)) {
+			print $row[0];
+			exit(0);
+		}
+		
+		print "uid <b>>$uid<</b>, filename <b>>$filename<</b> not found.<br>";
+		exit(1);
+	}
+
 	$GLOBALS["base_url"] = get_base_url();
 ?>
