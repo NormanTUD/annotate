@@ -712,6 +712,13 @@
 
 	function insert_image_into_db($file_tmp, $filename) {
 		try {
+			$existing_perception_hash = get_perception_hash_from_db($filename);
+			$new_perception_hash = get_perception_hash($file_tmp);
+
+			if($existing_perception_hash == $new_perception_hash) {
+				return get_image_id($filename);
+			}
+
 			// Establish a database connection (replace with your actual database details)
 			$pdo = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
 
