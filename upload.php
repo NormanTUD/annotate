@@ -49,5 +49,5 @@ include_once("functions.php");
 <div id="response"></div>
 
 <?php
-include_once("footer.php");
+	include_once("footer.php");
 ?>
