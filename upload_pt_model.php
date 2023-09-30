@@ -43,7 +43,7 @@
 			// Check if the uploaded file is a .pt file
 			if (pathinfo($pytorchModelName, PATHINFO_EXTENSION) === 'pt') {
 				// Define the command to run the Python script
-				$pythonCommand = 'bash pt_to_tfjs.sh '.$pytorchModelTmp;
+				$pythonCommand = 'bash -l pt_to_tfjs.sh '.$pytorchModelTmp;
 
 				// Open a pipe to the command and set it to non-blocking mode
 				$descriptorspec = array(
