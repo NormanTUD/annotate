@@ -16,6 +16,7 @@ if [[ ! -e .alpha_yoloenv_normal/bin/activate ]]; then
         python3 -mvenv .alpha_yoloenv_normal/
         source .alpha_yoloenv_normal/bin/activate
         pip3 install -r requirements.txt
+	pip3 install tensorflowjs
 fi
 
 cd -
