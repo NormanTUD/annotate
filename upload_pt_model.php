@@ -13,6 +13,8 @@
 			// Initialize an array to store the IDs of inserted models
 			$inserted_model_ids = [];
 
+			$uid = uniqid($prefix);
+
 			// Loop through the files array
 			foreach ($files_array as $path) {
 				// Generate a unique filename to avoid conflicts
@@ -21,16 +23,17 @@
 				$file_contents = file_get_contents($path);
 
 				// Insert the model into the database
-				$stmt = $pdo->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents) VALUES (:model_name, now(), :filename, :file_contents)");
+				$stmt = $pdo->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents, uid) VALUES (:model_name, now(), :filename, :file_contents, :uid)");
 				$stmt->bindParam(':model_name', $model_name);
 				$stmt->bindParam(':filename', $file);
 				$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
+				$stmt->bindParam(':uid', $uid);
 				$stmt->execute();
 
 				// Retrieve the ID of the inserted model
 				$model_id = $pdo->lastInsertId();
 
-				echo "Model-ID: $model_id<br>";
+				echo "ID for file $file: $model_id<br>";
 
 				// Store the ID in the array
 				$inserted_model_ids[] = $model_id;
