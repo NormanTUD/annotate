@@ -684,13 +684,15 @@
 		return $b;
 	}
 
-	function insert_image_into_db($file_tmp, $file_name) {
+	function insert_image_into_db($file_tmp, $filename) {
 		try {
 			// Establish a database connection (replace with your actual database details)
 			$pdo = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
 
 			// Generate a unique filename to avoid conflicts
-			$unique_filename = generate_unique_filename($pdo, $file_name);
+			$unique_filename = generate_unique_filename($pdo, $filename);
+
+			$file_contents = file_get_contents($file_tmp);
 
 			// Insert the unique filename into the database
 			$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content)");
@@ -703,16 +705,16 @@
 
 			// Return the unique filename for display
 			return $unique_filename;
-		} catch (PDOException $e) {
+		} catch (\Throwable $e) {
 			// Log and handle the database error
 			error_log("Database error: " . $e->getMessage());
 			return "Error: Unable to insert image into the database.";
 		}
 	}
 
-	function generate_unique_filename($pdo, $file_name) {
-		$base_name = pathinfo($file_name, PATHINFO_FILENAME);
-		$extension = pathinfo($file_name, PATHINFO_EXTENSION);
+	function generate_unique_filename($pdo, $filename) {
+		$base_name = pathinfo($filename, PATHINFO_FILENAME);
+		$extension = pathinfo($filename, PATHINFO_EXTENSION);
 		$unique_filename = $base_name . '_' . uniqid() . '.' . $extension;
 
 		// Check if the generated filename already exists in the database
@@ -722,7 +724,7 @@
 
 		if ($stmt->rowCount() > 0) {
 			// If it exists, recursively generate a new unique filename
-			return generate_unique_filename($pdo, $file_name);
+			return generate_unique_filename($pdo, $filename);
 		}
 
 		return $unique_filename;

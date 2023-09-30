@@ -11,10 +11,14 @@
 			echo "Error: Please upload a valid JPEG image.";
 		} else {
 			// Call the function to insert the image into the database
-			insert_image_into_db($file_tmp, $file_name);
+			try {
+				insert_image_into_db($file_tmp, $file_name);
 
-			// Display the uploaded image
-			echo "<img src='print_image.php?filename=".htmlentities($file_name)."' alt='Uploaded Image'>";
+				// Display the uploaded image
+				echo "<img src='print_image.php?filename=".htmlentities($file_name)."' alt='Uploaded Image'>";
+			} catch (\Throwable $e) {
+				echo "Error: <pre>$e</pre>";
+			}
 		}
 	} else {
 		echo "Error: Please select a valid JPEG image to upload.";
