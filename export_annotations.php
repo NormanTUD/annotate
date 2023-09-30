@@ -126,16 +126,7 @@
 		print_export_html_and_exit($number_of_rows, $items_per_page, $images);
 	}
 
-	$tmp_name = generateRandomString(20);
-	$tmp_dir = "tmp/$tmp_name";
-	while (is_dir($tmp_dir)) {
-		$tmp_name = generateRandomString(20);
-		$tmp_dir = "tmp/$tmp_name";
-	}
-
-	ob_start();
-	system("mkdir -p $tmp_dir");
-	ob_clean();
+	$tmp_dir = create_tmp_dir();
 
 	if(is_dir($tmp_dir)) {
 		$dataset_yaml = "path: ./\n";
@@ -157,7 +148,6 @@
 		}
 
 		ob_start();
-		mkdir("$tmp_dir/images/");
 		mkdir("$tmp_dir/labels/");
 		ob_clean();
 

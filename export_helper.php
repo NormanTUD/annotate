@@ -624,10 +624,10 @@ done
 		$download_images = "#!/bin/bash
 set -x
 mkdir -p images
-for i in $(curl http://ufo-ki.de/annotate/images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
+for i in $(curl ".$GLOBALS["base_url"]."images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
 	fn_without_ending=\"\${i%.*}\"
 	if [[ -e \"labels/\$fn_without_ending.txt\" ]]; then
-		wget -nc \"http://ufo-ki.de/annotate/images/\$i\" -O \"images/\$i\"
+		wget -nc \"".$GLOBALS["base_url"]."images/\$i\" -O \"images/\$i\"
 	fi
 done
 ";
@@ -640,8 +640,8 @@ done
 		$download_empty = "#!/bin/bash
 set -x
 mkdir -p images
-for i in $(curl http://ufo-ki.de/annotate/empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
-	wget -nc \"http://ufo-ki.de/annotate/empty/\$i\" -O \"images/\$i\";
+for i in $(curl ".$GLOBALS["base_url"]."empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
+	wget -nc \"".$GLOBALS["base_url"]."empty/\$i\" -O \"images/\$i\";
 done
 ";
 
@@ -829,5 +829,20 @@ done
 		}
 
 		return $annotated_image_ids_query;
+	}
+
+	function create_tmp_dir () {
+		$tmp_name = generateRandomString(20);
+		$tmp_dir = "tmp/$tmp_name";
+		while (is_dir($tmp_dir)) {
+			$tmp_name = generateRandomString(20);
+			$tmp_dir = "tmp/$tmp_name";
+		}
+
+		ob_start();
+		system("mkdir -p $tmp_dir");
+		ob_clean();
+
+		return $tmp_dir;
 	}
 ?>

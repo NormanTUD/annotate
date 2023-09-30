@@ -650,4 +650,39 @@
 			}
 		}
 	}
+
+	function get_base_url () {
+		if(!$_SERVER["REQUEST_SCHEME"]) {
+			die("REQUEST_SCHEME not in request");
+		}
+
+		if(!$_SERVER["SERVER_NAME"]) {
+			die("SERVER_NAME not in request");
+		}
+
+		if(!$_SERVER["SERVER_PORT"]) {
+			die("SERVER_PORT not in request");
+		}
+
+		if(!$_SERVER["PHP_SELF"]) {
+			die("PHP_SELF not in request");
+		}
+
+		$scheme = $_SERVER["REQUEST_SCHEME"];
+		$server_name = $_SERVER["SERVER_NAME"];
+		$server_port = $_SERVER["SERVER_PORT"];
+		$php_self = $_SERVER["PHP_SELF"];
+
+		if(($scheme == "https" && $server_port == 443) || ($scheme == "http" && $server_port == 80)) {
+			$b = $scheme."://".$server_name."/".$php_self;
+		} else {
+			$b = $scheme."://".$server_name.":".$server_port."/".$php_self;
+		}
+		$b = preg_replace("/\/[^\/]*?$/", "/", $b);
+		$b = preg_replace("/([^:])\/\//", "$1/", $b);
+
+		return $b;
+	}
+
+	$GLOBALS["base_url"] = get_base_url();
 ?>
