@@ -807,7 +807,7 @@ done
 		return $number_of_rows;
 	}
 
-	function get_annotated_image_ids_query ($max_truncation, $show_categories, $only_uncurated, $format, $limit) {
+	function get_annotated_image_ids_query ($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset) {
 		$annotated_image_ids_query = "select SQL_CALC_FOUND_ROWS i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id, left(i.perception_hash, $max_truncation) as truncated_perception_hash from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = '0' group by image_id)) and i.deleted = 0 ";
 
 		if($show_categories && count($show_categories)) {

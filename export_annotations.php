@@ -34,7 +34,7 @@
 
 	$images = [];
 
-	$annotated_image_ids_query = get_annotated_image_ids_query($max_truncation, $show_categories, $only_uncurated, $format, $limit);
+	$annotated_image_ids_query = get_annotated_image_ids_query($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset);
 	$res = rquery($annotated_image_ids_query);
 
 	$number_of_rows = get_number_of_rows();
