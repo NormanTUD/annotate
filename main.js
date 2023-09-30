@@ -84,14 +84,35 @@ function refresh(){
 	window.location.reload("Refresh")
 }
 
-function move_to_unidentifiable() {
-	var file = $("#image")[0].src.replace(/.*\//, "");
-	window.location.href = "index.php?move_to_unidentifiable=" + file;
+function move_to_offtopic () {
+	move_file("move_to_offtopic");
 }
 
-function move_to_offtopic() {
-	var file = $("#image")[0].src.replace(/.*\//, "");
-	window.location.href = "index.php?move_to_offtopic=" + file;
+function move_from_offtopic () {
+	move_file("move_from_offtopic");
+}
+
+function move_to_unidentifiable () {
+	move_file("move_to_unidentifiable");
+}
+
+function move_file (to) {
+	var image = $("#image")[0].src.replace(/.*\//, "");
+
+	$.ajax({
+		url: "move.php?" + to + "=" + image,
+		type: "get",
+		success: async function (response) {
+			success("OK", response)
+			await load_dynamic_content();
+
+			await load_next_random_image();
+		},
+		error: async function(jqXHR, textStatus, errorThrown) {
+			error("Error: " + textStatus, errorThrown);
+			await load_dynamic_content();
+		}
+	})
 }
 
 function next_img () {

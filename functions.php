@@ -588,6 +588,7 @@
 			if(file_exists("images/$fn")) {
 				rquery("update image set offtopic = 1 where filename = ".esc($fn));
 				rquery("update image set deleted = 1 where filename = ".esc($fn));
+				print "Moved to offtopic";
 			} else {
 				mywarn("$fn not found");
 			}
@@ -599,6 +600,7 @@
 			if(file_exists("images/$fn")) {
 				rquery("update image set unidentifiable = 1 where filename = ".esc($fn));
 				rquery("update image set deleted = 1 where filename = ".esc($fn));
+				print "Moved from unidentifiable";
 			} else {
 				mywarn("$fn not found");
 			}
@@ -610,6 +612,7 @@
 			if(file_exists("images/$fn")) {
 				rquery("update image set offtopic = 0 where filename = ".esc($fn));
 				rquery("update image set deleted = 0 where filename = ".esc($fn));
+				print "Moved from offtopic";
 			} else {
 				mywarn("$fn not found");
 			}
