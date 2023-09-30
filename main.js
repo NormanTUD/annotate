@@ -791,6 +791,10 @@ async function has_model () {
 		const content = await response.text();
 		const hasModelValue = content.includes('1') ? 1 : 0;
 
+		if(!hasModelValue) {
+			autonext_param = false;
+		}
+
 		return hasModelValue;
 	} catch (error) {
 		// Handle errors, log, and return 0.
