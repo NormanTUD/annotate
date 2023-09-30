@@ -1,11 +1,6 @@
 #!/bin/bash
 set -x
 
-if [[ ! -e $1 ]]; then
-	echo "$1 not found";
-	exit 1
-fi
-
 if [ ! -d "yolov5" ]; then
         git clone --depth 1 https://github.com/ultralytics/yolov5.git
 fi
@@ -20,6 +15,11 @@ if [[ ! -e .alpha_yoloenv_normal/bin/activate ]]; then
 fi
 
 cd -
+
+if [[ ! -e $1 ]]; then
+	echo "$1 not found";
+	exit 1
+fi
 
 WORK_DIR=`mktemp -d -p "$DIR"`
 echo "Work-Dir: $WORK_DIR"
