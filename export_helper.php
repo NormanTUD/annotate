@@ -666,4 +666,113 @@ done
 
 		return $res;
 	}
+
+	function print_export_html ($number_of_rows, $items_per_page, $images) {
+		$html = file_get_contents("export_base.html");
+		$annos_strings = array();
+
+		$page_str = "";
+
+		if($number_of_rows > $items_per_page) {
+			$links = array();
+			foreach (range(0, $max_page - 1) as $page_nr) {
+				$query = $_GET;
+				$query['page'] = $page_nr;
+				$query_result = http_build_query($query);
+
+				if($page_nr == get_get("page")) {
+					$page_nr = "<b>$page_nr</b>";
+				}
+
+				$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
+			}
+
+			$page_str = "<span style='font-size: 1vw'>".join(" &mdash; ", $links)."<br></span>";
+			print $page_str;
+		}
+
+		// <object-class> <x> <y> <width> <height>
+		if(count($images)) {
+			foreach ($images as $fn => $imgname) {
+				$w = $imgname[0]["width"];
+				$h = $imgname[0]["height"];
+
+				$annotation_base = '
+							<g class="a9s-annotation">
+								<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
+							</g>
+				';
+
+				$this_annos = array();
+
+				$delete_str = "";
+
+				if(get_get("curate_on_click")) {
+					$delete_str = 'onclick="curate_anno(\'' . $fn . '\')"';
+				}
+
+				if(get_get("delete_on_click")) {
+					$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
+				}
+
+				$ahref_start = "";
+				$ahref_end = "";
+
+				if(get_get("delete_on_click") && !get_get("no_link")) {
+					$ahref_start = "<a target='_blank' href='index.php?edit=$fn'>";
+					$ahref_end = "</a>";
+				}
+
+
+				$base_structs[] = $ahref_start.'
+					<div '.$delete_str.' style="position: relative; display: inline-block;">
+						<img class="images" src="images/'.$fn.'" style="display: block;">
+				'.$ahref_end;
+
+				foreach ($imgname as $this_anno_data) {
+					$this_anno = $annotation_base;
+
+					$this_anno = preg_replace('/\$\{id\}/', $this_anno_data["id"], $this_anno);
+					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x_start"], $this_anno);
+					$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
+					$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y_start"], $this_anno);
+					$this_anno = preg_replace('/\$\{y_1\}/', $this_anno_data["h"], $this_anno);
+
+					$this_annos[] = $this_anno;
+
+					$annotations_string = join("\n", $this_annos);
+
+
+					$base_struct = '
+						<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
+							<g>
+								'.$annotations_string.'
+							</g>
+						</svg>
+					';
+
+					#dier($annotations_string);
+
+					$base_structs[] = $base_struct;
+				}
+
+				$base_structs[] = "</div>";
+			}
+
+			$new_html = join("\n", $base_structs);
+
+			$html = preg_replace("/REPLACEME/", $new_html, $html);
+
+			print($html);
+		} else {
+			print "Keine Daten für die gewählte Kategorie";
+		}
+
+		if($page_str) {
+			print "<br>$page_str<br>";
+		}
+
+		include("footer.php");
+		exit(0);
+	}
 ?>
