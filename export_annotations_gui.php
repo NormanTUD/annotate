@@ -13,7 +13,14 @@
 
 				var explanation = $(children[0]).html();
 				var name = $(children[1]).html();
-				var value = $(children[2]).find("input,checkbox").val();
+				var value_item = $(children[2]).find("input,checkbox");
+
+				var value = "";
+				if(value_item.attr("type") == "checkbox") {
+					value = value_item.is(":checked") ? 1 : 0;
+				} else {
+					value = value_item.val();
+				}
 
 				url_pairs.push(name + "=" + value);
 			}
@@ -27,14 +34,32 @@
 	<table id="export_settings" border=1>
 		<tr>
 			<th>Erklärung</th>
-			<th>Option</th>
+			<th style="display: none">Option</th>
 			<th>Wert</th>
 		</tr>
 
 		<tr>
 			<td>Maximale Anzahl an Dateien (0 = kein Limit)</td>
-			<td>max_files</td>
+			<td style="display: none">max_files</td>
 			<td><input onchange="change_url()" type="number" value="0" /></td>
+		</tr>
+
+		<tr>
+			<td>Validation Split Size</td>
+			<td style="display: none">validation_split</td>
+			<td><input onchange="change_url()" type="number" value="0" /></td>
+		</tr>
+
+		<tr>
+			<td>Test Split Size</td>
+			<td style="display: none">test_split</td>
+			<td><input onchange="change_url()" type="number" value="0" /></td>
+		</tr>
+
+		<tr>
+			<td>Only uncurated?</td>
+			<td style="display: none">only_uncurated</td>
+			<td><input onchange="change_url()" type="checkbox" /></td>
 		</tr>
 	</table>
 

@@ -15,6 +15,8 @@
 	$max_files = get_get("max_files", 0);
 	$validation_split = get_get("validation_split", 0);
 	$test_split = get_get("test_split", 0);
+	$only_uncurated = get_param("only_uncurated");
+	$max_truncation = get_param("max_truncation", 100);
 
 	$valid_formats = array(
 		"ultralytics_yolov5", "html"
@@ -28,8 +30,6 @@
 	$page = get_param("page");
 	$items_per_page = get_param("items_per_page", 500);
 	$offset = get_param("offset", $page * $items_per_page);
-	$only_uncurated = get_param("only_uncurated");
-	$max_truncation = get_param("max_truncation", 100);
 	$limit = get_param("limit");
 
 	$images = [];
