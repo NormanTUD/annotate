@@ -147,7 +147,7 @@ async function make_item_anno(elem, widgets={}) {
 		widgets: widgets
 	});
 
-	await anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*\//, ""));
+	await anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*?filename=/, ""));
 
 	// Add event handlers using .on  
 	anno.on('createAnnotation', function(annotation) {
