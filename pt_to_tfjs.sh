@@ -19,4 +19,21 @@ fi
 
 cd -
 
-python3 yolov5/export.py --weights $1 --img 512 512 --batch-size 1 --include tfjs
+WORK_DIR=`mktemp -d -p "$DIR"`
+echo "Work-Dir: $WORK_DIR"
+
+cp $1 $WORK_DIR/model.pt
+
+python3 yolov5/export.py --weights $WORK_DIR/model.pt --img 512 512 --batch-size 1 --include tfjs
+exit_code=$?
+
+if [[ $exit_code -eq 0 ]]; then
+	rm $WORK_DIR/model.pt
+fi
+
+echo "$WORK_DIR/model_saved_model"
+
+echo "ls -1 $WORK_DIR/model_saved_model"
+ls -1 $WORK_DIR/model_saved_model
+
+exit $exit_code

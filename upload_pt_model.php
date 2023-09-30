@@ -1,4 +1,8 @@
 <?php
+	ini_set('memory_limit', '16384M');
+	ini_set('max_execution_time', '3600');
+	set_time_limit(3600);
+
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if (isset($_FILES['pytorch_model']) && isset($_POST['model_name'])) {
 			$modelName = $_POST['model_name'];
