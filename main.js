@@ -677,6 +677,8 @@ async function load_next_random_image (fn=false) {
 		}
 	}
 
+
+	await load_dynamic_content();
 }
 
 document.onkeydown = function (e) {
