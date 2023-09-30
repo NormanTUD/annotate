@@ -634,7 +634,7 @@ async function set_img_from_filename (fn) {
 		if($("#filename").html() != fn) {
 			$("#filename").html(fn);
 		}
-		$("#image").prop("src", "print_image.php?filename=" + fn);
+		$("#image").prop("src", "print_image.php?filename=" + encodeURIComponent(fn));
 
 		await load_page();
 	} else {

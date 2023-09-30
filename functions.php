@@ -777,6 +777,9 @@
 			print $row[0];
 			exit(0);
 		}
+
+		print "Image ".htmlentities($fn)." not found";
+		exit(0);
 	}
 
 	function get_param ($name, $default = 0) {

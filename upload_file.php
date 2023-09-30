@@ -15,7 +15,7 @@
 				insert_image_into_db($file_tmp, $file_name);
 
 				// Display the uploaded image
-				echo "<img src='print_image.php?filename=".htmlentities($file_name)."' alt='Uploaded Image'>";
+				echo "<img src='print_image.php?filename=".htmlentities(urlencode($file_name))."' alt='Uploaded Image'>";
 			} catch (\Throwable $e) {
 				echo "Error: <pre>$e</pre>";
 			}
