@@ -112,14 +112,16 @@
 		$j++;
 	}
 
-	if(count($perception_hash_to_image)) {
-		$new_images = [];
+	if(get_get("group_by_perception_hash")) {
+		if(count($perception_hash_to_image)) {
+			$new_images = [];
 
-		foreach ($perception_hash_to_image as $hash => $fn) {
-			$new_images[$fn] = $images[$fn];
+			foreach ($perception_hash_to_image as $hash => $fn) {
+				$new_images[$fn] = $images[$fn];
+			}
+
+			$images = $new_images;
 		}
-
-		$images = $new_images;
 	}
 
 	if ($format == "html") {
@@ -181,19 +183,17 @@
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
 
-			if(file_exists("images/$fn")) {
-				$j++;
+			$j++;
 
-				$str = "";
-				$str_arr = array();
-				foreach ($img as $single_anno) {
-					$str_arr[] = $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"];
-				}
-
-				$str = join("\n", array_unique($str_arr));
-
-				file_put_contents("$tmp_dir/labels/$fn_txt", "$str\n");
+			$str = "";
+			$str_arr = array();
+			foreach ($img as $single_anno) {
+				$str_arr[] = $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"];
 			}
+
+			$str = join("\n", array_unique($str_arr));
+
+			file_put_contents("$tmp_dir/labels/$fn_txt", "$str\n");
 		}
 
 		write_bash_files($tmp_dir);
