@@ -2,7 +2,9 @@
 	ini_set('memory_limit', '16384M');
 	ini_set('max_execution_time', '3600');
 	set_time_limit(3600);
+
 	include_once("functions.php");
+	include("export_helper.php");
 
 	$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
 
@@ -10,24 +12,6 @@
 	$test_split = get_get("test_split", 0);
 	$max_files = get_get("max_files", 0);
 
-	function get_rand_between_0_and_1 () {
-		return mt_rand() / mt_getrandmax();
-	}
-
-	function parse_position_yolo ($x, $y, $w, $h, $imgw, $imgh) {
-		if(0 > $x) { $x = 0; }
-		if(0 > $y) { $y = 0; }
-		if(0 > $w) { $w = 0; }
-		if(0 > $h) { $h = 0; }
-
-		$res["x_center"] = (((2 * $x) + $w) / 2) / $imgw;
-		$res["y_center"] = (((2 * $y) + $h) / 2) / $imgh;
-
-		$res["w_rel"] = $w / $imgw;
-		$res["h_rel"] = $h / $imgh;
-
-		return $res;
-	}
 
 	$valid_formats = array(
 		"ultralytics_yolov5", "html"
@@ -182,6 +166,10 @@
 		$images = $new_images;
 	}
 
+	if(get_get("curate_on_click") && get_get("delete_on_click")) {
+		die("Either curate or delete on click, not both");
+	}
+
 	if ($format == "html") {
 		$html = file_get_contents("export_base.html");
 		$annos_strings = array();
@@ -222,9 +210,7 @@
 
 				$delete_str = "";
 
-				if(get_get("curate_on_click") && get_get("delete_on_click")) {
-					die("Either curate or delete on click, not both");
-				}
+
 
 				if(get_get("curate_on_click")) {
 					$delete_str = 'onclick="curate_anno(\'' . $fn . '\')"';
@@ -390,8 +376,6 @@
 				file_put_contents("$tmp_dir/labels/$fn_txt", "$str\n");
 			}
 		}
-
-		include("export_helper.php");
 
 		write_yolo_hyperparams($tmp_dir);
 		write_train_bash($tmp_dir);

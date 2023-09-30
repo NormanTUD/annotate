@@ -647,4 +647,23 @@ done
 
 		file_put_contents("$tmp_dir/download_empty.sh", $download_empty);
 	}
+
+	function get_rand_between_0_and_1 () {
+		return mt_rand() / mt_getrandmax();
+	}
+
+	function parse_position_yolo ($x, $y, $w, $h, $imgw, $imgh) {
+		if(0 > $x) { $x = 0; }
+		if(0 > $y) { $y = 0; }
+		if(0 > $w) { $w = 0; }
+		if(0 > $h) { $h = 0; }
+
+		$res["x_center"] = (((2 * $x) + $w) / 2) / $imgw;
+		$res["y_center"] = (((2 * $y) + $h) / 2) / $imgh;
+
+		$res["w_rel"] = $w / $imgw;
+		$res["h_rel"] = $h / $imgh;
+
+		return $res;
+	}
 ?>
