@@ -7,7 +7,7 @@ var model;
 var last_load_dynamic_content = false;
 var running_ki = false;
 var tags = [];
-var model_md5 = "";
+var last_model_md5 = "";
 
 function uuidv4() {
 	return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
@@ -16,8 +16,21 @@ function uuidv4() {
 }
 
 async function load_model () {
-	if(model) {
+	if(!has_model()) {
+		console.info("Model doesnt exist. Not loading.");
 		return;
+	}
+
+	var new_model_md5 = await model_md5();
+
+	if(model && new_model_md5 == last_model_md5) {
+		return;
+	}
+
+	last_model_md5 = new_model_md5;
+
+	if(model) {
+		await tf.dispose(model);
 	}
 
 	model = await tf.loadGraphModel(
@@ -26,7 +39,7 @@ async function load_model () {
 			onProgress: function (p) {
 				var percent = p * 100;
 				percent = percent.toFixed(0);
-				$("#loader").html("Loading Model, " + percent + "%<br>\n");
+				success("Loading Model", percent + "%<br>\n");
 			}
 		}
 	);
@@ -747,6 +760,25 @@ function delete_all_anno (image) {
 	});
 }
 
+async function model_md5 () {
+	var res = "";
+
+	try {
+		const response = await fetch('model_md5.php');
+		if (!response.ok) {
+			throw new Error('Failed to fetch has_model.php');
+		}
+
+		const content = await response.text();
+
+		return content;
+	} catch (error) {
+		// Handle errors, log, and return 0.
+		console.warn('Error:', error.message);
+		return 0;
+	}
+}
+
 async function has_model () {
 	var res = 0;
 
@@ -758,8 +790,6 @@ async function has_model () {
 
 		const content = await response.text();
 		const hasModelValue = content.includes('1') ? 1 : 0;
-
-		// Log the result and any potential errors.
 
 		return hasModelValue;
 	} catch (error) {
