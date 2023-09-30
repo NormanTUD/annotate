@@ -34,7 +34,11 @@
 	}
 	$html .= "</ul>";
 
-	$json_string = json_encode(array("html" => $html, "tags" => $tags));
+	if(get_get("json")) {
+		$json_string = json_encode(array("html" => $html, "tags" => $tags));
 
-	print($json_string);
+		print($json_string);
+	} else {
+		print $html;
+	}
 ?>

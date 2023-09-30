@@ -581,7 +581,7 @@ async function load_dynamic_content () {
 	});
 
 	await $.ajax({
-		url: "get_current_list.php",
+		url: "get_current_list.php?json=1",
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
