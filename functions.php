@@ -568,7 +568,7 @@
 	}
 
 	function get_next_random_unannotated_image ($fn = "") {
-		$query = 'select * from (select i.filename from image i left join annotation a on i.id = a.image_id where a.id is null and i.perception_hash is not null';
+		$query = 'select * from (select i.filename from image i left join image_data id on id.filename = i.filename left join annotation a on i.id = a.image_id where a.id is null and i.perception_hash is not null';
 		if($fn) {
 			$query .= " and i.filename like ".esc("%$fn%");
 		}
@@ -613,13 +613,6 @@
 
 		print "Importing images...<br>";
 
-		$files_in_db = [];
-		$query = "select filename from image";
-		$res = rquery($query);
-		while ($row = mysqli_fetch_row($res)) {
-			$files_in_db[] = $row[0];
-		}
-
 		$base_dir = "images";
 
 		$files = scandir($base_dir);
@@ -628,7 +621,7 @@
 
 		$i = 0;
 		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !in_array($file, $files_in_db)) {
+			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
 				$is_in_images_table = is_null(get_image_id($file)) ? 1 : 0;
 				$is_in_image_data_table = is_null(get_image_data_id($file)) ? 1 : 0;
 				if(!$is_in_images_table || !$is_in_image_data_table) {
