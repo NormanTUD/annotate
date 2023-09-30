@@ -745,7 +745,6 @@ async function has_model () {
 		const hasModelValue = content.includes('1') ? 1 : 0;
 
 		// Log the result and any potential errors.
-		console.log('Result:', hasModelValue);
 
 		return hasModelValue;
 	} catch (error) {
