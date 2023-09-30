@@ -684,31 +684,47 @@
 		return $b;
 	}
 
-	function insert_image_into_db ($path) {
+	function insert_image_into_db($file_tmp, $file_name) {
 		try {
-			// Create a new PDO connection
-			$conn = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
-			$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			// Establish a database connection (replace with your actual database details)
+			$pdo = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
 
-			// Read the image into file_contents
-			$file_contents = file_get_contents($path);
+			// Generate a unique filename to avoid conflicts
+			$unique_filename = generate_unique_filename($pdo, $file_name);
 
-			$filename = $path;
-			$filename = preg_replace("/\/[^\/]*$/", "", $filename);
-
-			// Prepare and execute the SQL statement
-			$stmt = $conn->prepare("INSERT INTO my_table (filename, image_content) VALUES (:filename, :image_content)");
-			$stmt->bindParam(':filename', $filename);
-			$stmt->bindParam(':image_content', $file_contents, PDO::PARAM_LOB);
+			// Insert the unique filename into the database
+			$stmt = $pdo->prepare("INSERT INTO your_table (filename) VALUES (:filename)");
+			$stmt->bindParam(':filename', $unique_filename);
 			$stmt->execute();
 
 			// Close the database connection
-			$conn = null;
+			$pdo = null;
 
-			echo "Image inserted successfully.";
+			// Return the unique filename for display
+			return $unique_filename;
 		} catch (PDOException $e) {
-			echo "Error: " . $e->getMessage();
+			// Log and handle the database error
+			error_log("Database error: " . $e->getMessage());
+			return "Error: Unable to insert image into the database.";
 		}
+	}
+
+	function generate_unique_filename($pdo, $file_name) {
+		$base_name = pathinfo($file_name, PATHINFO_FILENAME);
+		$extension = pathinfo($file_name, PATHINFO_EXTENSION);
+		$unique_filename = $base_name . '_' . uniqid() . '.' . $extension;
+
+		// Check if the generated filename already exists in the database
+		$stmt = $pdo->prepare("SELECT filename FROM your_table WHERE filename = :filename");
+		$stmt->bindParam(':filename', $unique_filename);
+		$stmt->execute();
+
+		if ($stmt->rowCount() > 0) {
+			// If it exists, recursively generate a new unique filename
+			return generate_unique_filename($pdo, $file_name);
+		}
+
+		return $unique_filename;
 	}
 
 	$GLOBALS["base_url"] = get_base_url();
