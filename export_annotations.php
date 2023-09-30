@@ -6,6 +6,10 @@
 	include_once("functions.php");
 	include("export_helper.php");
 
+	if(get_get("curate_on_click") && get_get("delete_on_click")) {
+		die("Either curate or delete on click, not both");
+	}
+
 	$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
 
 	$validation_split = get_get("validation_split", 0);
@@ -138,10 +142,6 @@
 		$images = $new_images;
 	}
 
-	if(get_get("curate_on_click") && get_get("delete_on_click")) {
-		die("Either curate or delete on click, not both");
-	}
-
 	if ($format == "html") {
 		print_export_html_and_exit($number_of_rows, $items_per_page, $images);
 	}
@@ -199,11 +199,7 @@
 			foreach ($empty_images as $fn) {
 				$fn = preg_replace("/empty\//", "", $fn);
 				if(file_exists("empty/$fn")) {
-					$link_to = "$tmp_dir/images/$fn";
 					$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
-					if(get_get("images")) {
-						system("ln ".escapeshellarg("empty/$fn")." ".escapeshellarg($link_to));
-					}
 
 					file_put_contents("$tmp_dir/labels/$fn_txt", "");
 				} else {
@@ -214,20 +210,8 @@
 
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
-			$link_to = "$tmp_dir/images/$fn";
 
-			/*
-			$failed_link = link("images/$fn", $link_to);
-			#Make the parent directory of the link() target have permission chmod u=rwx,g=rxs,o=rx. This should show up in "ls" as "drwxr-sr-x". In this case, the user.group ownership is wwwrun.www.
-			if(!$failed_link) {
-				dier("failed to copy >images/$fn< to >$link_to<");
-			}
-			 */
 			if(file_exists("images/$fn")) {
-				#link("images/$fn", $link_to);
-				if(get_get("images")) {
-					system("ln ".escapeshellarg("images/$fn")." ".escapeshellarg($link_to));
-				}
 				$j++;
 
 				$str = "";
