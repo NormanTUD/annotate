@@ -568,6 +568,18 @@
 		return null;
 	}
 
+	function get_image_data_id ($file) {
+		$query = "select id from image_data where filename = ".esc($file);
+
+		$res = rquery($query);
+
+		while ($row = mysqli_fetch_row($res)) {
+			return $row[0];
+		}
+
+		return null;
+	}
+
 	function import_files () {
 		ini_set('memory_limit', '4096M');
 		ini_set('max_execution_time', '300');
@@ -600,6 +612,7 @@
 		foreach($files as $file) {
 			if(preg_match("/\.(?:jpe?|pn)g$/i", $file) && !in_array($file, $files_in_db)) {
 				$is_in_images_table = is_null(get_image_id($file)) ? 1 : 0;
+				$is_in_image_data_table = is_null(get_image_data_id($file)) ? 1 : 0
 				if(!$is_in_images_table || !$is_in_image_data_table($file)) {
 					rquery("SET autocommit=0;");
 					rquery("START TRANSACTION;");
