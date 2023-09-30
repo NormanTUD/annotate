@@ -4,41 +4,41 @@ include_once("functions.php");
 ?>
 
 <script>
-    $(document).ready(function () {
-        $('#uploadForm').on('submit', function (e) {
-            e.preventDefault();
+	$(document).ready(function () {
+		$('#uploadForm').on('submit', function (e) {
+			e.preventDefault();
 
-            var formData = new FormData(this);
+			var formData = new FormData(this);
 
-            // Loop through the selected files
-            var files = $('input[type="file"]')[0].files;
-            var currentIndex = 0;
+			// Loop through the selected files
+			var files = $('input[type="file"]')[0].files;
+			var currentIndex = 0;
 
-            function uploadNextFile() {
-                if (currentIndex < files.length) {
-                    var file = files[currentIndex];
-                    formData.set('image', file);
+			function uploadNextFile() {
+				if (currentIndex < files.length) {
+					var file = files[currentIndex];
+					formData.set('image', file);
 
-                    $.ajax({
-                        type: 'POST',
-                        url: 'upload_file.php',
-                        data: formData,
-                        cache: false,
-                        contentType: false,
-                        processData: false,
-                        success: function (response) {
-                            $('#response').html(response);
-                            currentIndex++;
-                            uploadNextFile();
-                        }
-                    });
-                }
-            }
+					$.ajax({
+					type: 'POST',
+						url: 'upload_file.php',
+						data: formData,
+						cache: false,
+						contentType: false,
+						processData: false,
+						success: function (response) {
+							$('#response').html(response);
+							currentIndex++;
+							uploadNextFile();
+						}
+					});
+				}
+			}
 
-            // Start uploading files
-            uploadNextFile();
-        });
-    });
+			// Start uploading files
+			uploadNextFile();
+		});
+	});
 </script>
 
 <h1>Upload Images</h1>
