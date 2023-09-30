@@ -15,6 +15,7 @@
 			var currentIndex = 0;
 
 			function uploadNextFile() {
+				var progress = `${currentIndex} of ${files.length}`;
 				if (currentIndex < files.length) {
 					var file = files[currentIndex];
 					formData.set('image', file);
@@ -34,6 +35,8 @@
 						}
 					});
 				}
+
+				success("File import", progress);
 			}
 
 			// Start uploading files
