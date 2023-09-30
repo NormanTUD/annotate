@@ -731,6 +731,10 @@
 
 			$image_id = get_or_create_image_id($file_tmp, $filename);
 
+			if(!$image_id) {
+				dier("Could not get image id for $file_tmp / $filename");
+			}
+
 			// Return the unique filename for display
 			return $image_id;
 		} catch (\Throwable $e) {
