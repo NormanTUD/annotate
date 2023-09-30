@@ -375,7 +375,20 @@
 		return $res;
 	}
 
+	function get_or_create_perception_hash_from_db ($file) {
+		$query = "select perception_hash from image where file = ".esc($file);
+		$res = rquery($query);
+
+		while ($row = mysqli_fetch_row($res)) {
+			return $row[0];
+		}
+	}
+
 	function get_perception_hash ($file) {
+		if(!file_exists($file)) {
+			die("$file not found");
+		}
+
 		$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" images/'.$file;
 
 		ob_start();
