@@ -610,7 +610,7 @@
 					rquery("SET autocommit=0;");
 					rquery("START TRANSACTION;");
 					$path = "$base_dir/$file";
-					$image_id = get_or_create_image_id($path, $file);
+					$image_id = insert_image_into_db($path, $file);
 
 					rquery("COMMIT;");
 					rquery("SET autocommit=1;");
@@ -756,7 +756,7 @@
 			$image_id = get_or_create_image_id($file_tmp, $filename);
 
 			// Return the unique filename for display
-			return $unique_filename;
+			return $image_id;
 		} catch (\Throwable $e) {
 			// Log and handle the database error
 			error_log("Database error: " . $e->getMessage());
