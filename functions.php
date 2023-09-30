@@ -825,7 +825,7 @@
 	}
 
 	function print_model_file ($uid, $filename) {
-		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename);
+		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)." order by upload_time desc";
 
 		$res = rquery($query);
 

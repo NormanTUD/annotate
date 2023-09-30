@@ -32,6 +32,27 @@
 		$img_area_display = "none";
 		$no_imgs_left_display = "block";
 	}
+
+	$available_models = get_list_of_models();
+?>
+	<br>
+<?php
+	if(count($available_models)) {
+		print "Ausgewähltes KI-Modell: <select name='chosen_model'>";
+		$i = 0;
+		foreach ($available_models as $_model) {
+			$model_uid = $_model[0];
+			$model_name = $_model[1];
+
+			$selected = "";
+			if($i == 0) {
+				$selected = " selected ";
+			}
+			print "<option $selected value='$model_uid'>$model_name</option>";
+			$i++;
+		}
+		print "</select>";
+	}
 ?>
 	<br>
 
