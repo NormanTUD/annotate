@@ -19,11 +19,18 @@
 
 	$number_annotated = get_number_of_annotated_imgs();
 
-
 	$img_area_display = "none";
+	$no_imgs_left_display = "none";
 
 	if($imgfile) {
 		$img_area_display = "block";
+	}
+
+	$img_data_id = get_image_data_id($imgfile);
+
+	if(!$img_data_id) {
+		$img_area_display = "none";
+		$no_imgs_left_display = "block";
 	}
 ?>
 	<br>
@@ -56,13 +63,19 @@
 		</table>
 	</div>
 
-	<div id="no_imgs_left" style="display: none">
+	<div id="no_imgs_left" style="display: <?php print $no_imgs_left_display; ?>">
 		Aktuell sind alle vorhandenen Bilder annotiert. Bitte checken Sie die Seite später erneut.
 	</div>
 
 	<script>
 		load_dynamic_content();
-		load_next_random_image("<?php print $imgfile; ?>");
+<?php
+		if($no_imgs_left_display == "none") {
+?>
+			load_next_random_image("<?php print $imgfile; ?>");
+<?php
+		}
+?>
 	</script>
 <?php
 	include_once("footer.php");
