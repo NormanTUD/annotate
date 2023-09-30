@@ -194,9 +194,19 @@
 		if($not_completely_imported != 0) {
 			$str .= ", noch nicht vollständig importiert: ".htmlentities($not_completely_imported ?? "");
 		}
-		$str .= ", kuratiert: ".htmlentities($curated_imgs_str ?? "");
-		$str .= ", unannotiert: ".htmlentities($unannotated_imgs_str ?? "");
-		$str .= ", offtopic: ".htmlentities($offtopic_imgs_str ?? "");
+
+		if($curated_imgs) {
+			$str .= ", kuratiert: ".htmlentities($curated_imgs_str ?? "");
+		}
+
+		if($unannotated_imgs) {
+			$str .= ", unannotiert: ".htmlentities($unannotated_imgs_str ?? "");
+		}
+
+		if($offtopic_imgs) {
+			$str .= ", offtopic: ".htmlentities($offtopic_imgs_str ?? "");
+		}
+
 		if($unidentifiable_imgs) {
 			$str .= ", nicht identifizierbar: ".htmlentities($unidentifiable_imgs_str ?? "");
 		}
@@ -215,7 +225,12 @@
 			if($annotated_nr) {
 				$annotated_str = sprintf("%.2f", $annotated_nr);
 			}
-			$str .= " (".htmlentities($annotated_str)."% annotiert, davon $curated_percent% kuratiert)";
+		
+			if($curated_percent) {
+				$str .= " (".htmlentities($annotated_str)."% annotiert, davon $curated_percent% kuratiert)";
+			} else {
+				$str .= " (".htmlentities($annotated_str)."% annotiert)";
+			}
 		}
 
 		$str .= "<br><a href='index.php'>Home</a>, <a target='_blank' href='stat.php'>Statistik</a>, <a href='export_annotations.php'>Annotationen exportieren</a>";
