@@ -6,10 +6,6 @@
 		import_files();
 	}
 
-	if(file_exists("/etc/cleanup_annotate") || get_get("cleanup")) {
-		cleanup();
-	}
-
 	$imgfile = "";
 	if(isset($_GET["edit"])) {
 		$imgfile = $_GET["edit"];

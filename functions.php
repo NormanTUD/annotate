@@ -561,14 +561,8 @@
 		$result = null;
 
 		while ($row = mysqli_fetch_row($res)) {
-			$f = "images/".$row[0];
-			if(file_exists($f)) {
-				$result = $row[0];
-				return $result;
-			} else {
-				$f = preg_replace("/images\//", "", $f);
-				delete_image_by_fn($f);
-			}
+			$result = $row[0];
+			return $result;
 		}
 
 		return null;
@@ -628,69 +622,27 @@
 		exit(0);
 	}
 
-	function cleanup () {
-		ini_set('memory_limit', '4096M');
-		ini_set('max_execution_time', '300');
-		set_time_limit(300);
-
-		function shutdown() {
-			mywarn("Exiting, rolling back changes\n");
-			rquery("ROLLBACK;");
-			rquery("SET autocommit=1;");
-		}
-
-		register_shutdown_function('shutdown');
-
-		print "Cleaning images...<br>";
-
-		$files_in_db = [];
-		$query = "select id, filename from image where deleted = '0' and offtopic = '0'";
-		$res = rquery($query);
-		while ($row = mysqli_fetch_row($res)) {
-			if(!file_exists("images/".$row[1])) {
-				print "File ".$row[1]." (".$row[0].") does not exist anymore<br>";
-				rquery("update image set deleted = '1' where id = ".esc($row[0]));
-			}
-		}
-
-		print "Done cleaning";
-
-		exit(0);
-	}
-
 	function move_to_offtopic ($fn) {
 		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
-			if(file_exists("images/$fn")) {
-				rquery("update image set offtopic = 1 where filename = ".esc($fn));
-				rquery("update image set deleted = 1 where filename = ".esc($fn));
-				print "Moved to offtopic";
-			} else {
-				mywarn("$fn not found");
-			}
+			rquery("update image set offtopic = 1 where filename = ".esc($fn));
+			rquery("update image set deleted = 1 where filename = ".esc($fn));
+			print "Moved to offtopic";
 		}
 	}
 
 	function move_to_unidentifiable ($fn) {
 		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
-			if(file_exists("images/$fn")) {
-				rquery("update image set unidentifiable = 1 where filename = ".esc($fn));
-				rquery("update image set deleted = 1 where filename = ".esc($fn));
-				print "Moved from unidentifiable";
-			} else {
-				mywarn("$fn not found");
-			}
+			rquery("update image set unidentifiable = 1 where filename = ".esc($fn));
+			rquery("update image set deleted = 1 where filename = ".esc($fn));
+			print "Moved from unidentifiable";
 		}
 	}
 
 	function move_from_offtopic ($fn) {
 		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
-			if(file_exists("images/$fn")) {
-				rquery("update image set offtopic = 0 where filename = ".esc($fn));
-				rquery("update image set deleted = 0 where filename = ".esc($fn));
-				print "Moved from offtopic";
-			} else {
-				mywarn("$fn not found");
-			}
+			rquery("update image set offtopic = 0 where filename = ".esc($fn));
+			rquery("update image set deleted = 0 where filename = ".esc($fn));
+			print "Moved from offtopic";
 		}
 	}
 
