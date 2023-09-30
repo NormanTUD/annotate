@@ -34,6 +34,8 @@
 							uploadNextFile();
 						}
 					});
+				} else {
+					success("File import", `All ${files.length} file(s) imported`);
 				}
 
 				success("File import", progress);
