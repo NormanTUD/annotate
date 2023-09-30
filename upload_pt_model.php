@@ -46,9 +46,9 @@
 						if(preg_match('/>>PATH>>(.*)<<PATH<</', $output, $matches)) {
 							$output_path = $matches[1];
 							echo "<b>output path $output_path detected</b>";
+						} else {
+							echo nl2br(htmlspecialchars($output));
 						}
-
-						echo nl2br(htmlspecialchars($output));
 						ob_flush();
 						flush();
 					}
