@@ -398,41 +398,9 @@
 		write_simple_run($tmp_dir);
 		write_omniopt_simple_run($tmp_dir);
 		write_only_take_first_line($tmp_dir);
-
-		$remove_labels_with_multiple_entries = "#!/bin/bash
-for i in $(ls labels); do 
-	NUMLINES=$(cat labels/\$i | sed -e 's#\s.*##' | uniq | wc -l)
-	if [[ \$NUMLINES -gt 1 ]]; then
-		echo \"\$NUMLINES: \$i\"
-		rm labels/\$i
-	fi
-done
-";
-
-		file_put_contents("$tmp_dir/remove_labels_with_multiple_entries.sh", $remove_labels_with_multiple_entries);
-
-		$download_images = "#!/bin/bash
-set -x
-mkdir -p images
-for i in $(curl http://ufo-ki.de/annotate/images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
-	fn_without_ending=\"\${i%.*}\"
-	if [[ -e \"labels/\$fn_without_ending.txt\" ]]; then
-		wget -nc \"http://ufo-ki.de/annotate/images/\$i\" -O \"images/\$i\"
-	fi
-done
-";
-
-		file_put_contents("$tmp_dir/download_images.sh", $download_images);
-
-		$download_empty = "#!/bin/bash
-set -x
-mkdir -p images
-for i in $(curl http://ufo-ki.de/annotate/empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
-	wget -nc \"http://ufo-ki.de/annotate/empty/\$i\" -O \"images/\$i\";
-done
-";
-
-		file_put_contents("$tmp_dir/download_empty.sh", $download_empty);
+		write_remove_labels_with_multiple_entries($tmp_dir);
+		write_download_images($tmp_dir);
+		write_download_empty($tmp_dir);
 
 		#die("a");
 
