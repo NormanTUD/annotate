@@ -618,11 +618,19 @@ function set_image_url (img) {
 async function set_img_from_filename (fn) {
 	set_image_url(fn);
 
-	$("#ki_detected_names").html("");
-	$("#filename").html(fn);
-	$("#image").prop("src", "print_image.php?filename=" + fn);
+	if(fn) {
+		$("#annotatin_area").show();
+		$("#no_imgs_left").hide();
 
-	await load_page();
+		$("#ki_detected_names").html("");
+		$("#filename").html(fn);
+		$("#image").prop("src", "print_image.php?filename=" + fn);
+
+		await load_page();
+	} else {
+		$("#annotatin_area").hide();
+		$("#no_imgs_left").show();
+	}
 }
 
 async function load_next_random_image (fn=false) {

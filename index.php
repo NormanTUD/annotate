@@ -23,10 +23,16 @@
 
 	$number_annotated = get_number_of_annotated_imgs();
 
-	if($imgfile) {
-?>
-		<br>
 
+	$img_area_display = "none";
+
+	if($imgfile) {
+		$img_area_display = "block";
+	}
+?>
+	<br>
+
+	<div id="annotatin_area" style="display: <?php print $img_area_display; ?>">
 		<div id="loader"></div>
 		<table>
 			<tr>
@@ -52,16 +58,16 @@
 				</td>
 			</tr>
 		</table>
+	</div>
 
-		<script>
-			load_dynamic_content();
-			load_next_random_image("<?php print htmlentities($imgfile); ?>");
-		</script>
+	<div id="no_imgs_left" style="display: none">
+		Aktuell sind alle vorhandenen Bilder annotiert. Bitte checken Sie die Seite später erneut.
+	</div>
+
+	<script>
+		load_dynamic_content();
+		load_next_random_image("<?php print htmlentities($imgfile); ?>");
+	</script>
 <?php
-	} else {
-?>
-			Aktuell sind alle vorhandenen Bilder annotiert. Bitte checken Sie die Seite später erneut.
-<?php
-	}
 	include_once("footer.php");
 ?>
