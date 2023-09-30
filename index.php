@@ -7,33 +7,7 @@
 	}
 
 	if(file_exists("/etc/cleanup_annotate") || get_get("cleanup")) {
-		ini_set('memory_limit', '4096M');
-		ini_set('max_execution_time', '300');
-		set_time_limit(300);
-
-		function shutdown() {
-			mywarn("Exiting, rolling back changes\n");
-			rquery("ROLLBACK;");
-			rquery("SET autocommit=1;");
-		}
-
-		register_shutdown_function('shutdown');
-
-		print "Cleaning images...<br>";
-
-		$files_in_db = [];
-		$query = "select id, filename from image where deleted = '0' and offtopic = '0'";
-		$res = rquery($query);
-		while ($row = mysqli_fetch_row($res)) {
-			if(!file_exists("images/".$row[1])) {
-				print "File ".$row[1]." (".$row[0].") does not exist anymore<br>";
-				rquery("update image set deleted = '1' where id = ".esc($row[0]));
-			}
-		}
-
-		print "Done cleaning";
-
-		exit(0);
+		cleanup();
 	}
 
 	if(array_key_exists("move_from_identifiable", $_GET)) {
@@ -51,49 +25,15 @@
 	}
 
 	if(array_key_exists("move_from_offtopic", $_GET)) {
-		if(!preg_match("/\.\./", $_GET["move_from_offtopic"]) && preg_match("/\.jpg/", $_GET["move_from_offtopic"])) {
-			$f = "offtopic/".$_GET["move_from_offtopic"];
-			$t = "images/".$_GET["move_from_offtopic"];
-			if(file_exists($f)) {
-				if(!file_exists($t)) {
-					rename($f, $t);
-				} else {
-					mywarn("$f wurde gefunden, aber $t exitiert bereits");
-				}
-			}
-		}
+		move_from_offtopic($_GET["move_from_offtopic"]);
 	}
 
 	if(array_key_exists("move_to_unidentifiable", $_GET)) {
-		rquery("update image set unidentifiable = 1 where filename = ".esc($_GET["move_to_unidentifiable"]));
-		rquery("update image set deleted = 1 where filename = ".esc($_GET["move_to_unidentifiable"]));
-		if(!preg_match("/\.\./", $_GET["move_to_unidentifiable"]) && preg_match("/\.jpg/", $_GET["move_to_unidentifiable"])) {
-			$f = "images/".$_GET["move_to_unidentifiable"];
-			$t = "unidentifiable/".$_GET["move_to_unidentifiable"];
-			if(file_exists($f)) {
-				if(!file_exists($t)) {
-					rename($f, $t);
-				} else {
-					mywarn("$f wurde gefunden, aber $t exitiert bereits");
-				}
-			}
-		}
+		move_to_unidentifiable($_GET["move_to_unidentifiable"]);
 	}
 
 	if(array_key_exists("move_to_offtopic", $_GET)) {
-		rquery("update image set offtopic = 1 where filename = ".esc($_GET["move_to_offtopic"]));
-		rquery("update image set deleted = 1 where filename = ".esc($_GET["move_to_offtopic"]));
-		if(!preg_match("/\.\./", $_GET["move_to_offtopic"]) && preg_match("/\.jpg/", $_GET["move_to_offtopic"])) {
-			$f = "images/".$_GET["move_to_offtopic"];
-			$t = "offtopic/".$_GET["move_to_offtopic"];
-			if(file_exists($f)) {
-				if(!file_exists($t)) {
-					rename($f, $t);
-				} else {
-					mywarn("$f wurde gefunden, aber $t exitiert bereits");
-				}
-			}
-		}
+		move_to_offtopic($_GET["move_to_offtopic"]);
 	}
 
 	$imgfile = "";

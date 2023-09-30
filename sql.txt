@@ -13,3 +13,5 @@ ALTER TABLE `image` ADD INDEX `idx_image` (`id`, `filename`, `width`, `height`, 
 ALTER TABLE `annotation` ADD INDEX `idx_annotation` (`image_id`, `category_id`, `deleted`, `x_start`, `y_start`, `w`, `h`, `id`, `modified`);
 ALTER TABLE `category` ADD INDEX `idx_category` (`id`, `name`);
 ALTER TABLE `image` ADD INDEX `idx_image_deleted_offtopic_perception_hash_id` (`deleted`, `offtopic`, `perception_hash`, `id`);
+
+alter table image add column unidentifiable int default 0;

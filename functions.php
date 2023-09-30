@@ -110,7 +110,7 @@
 	}
 
 	function get_number_of_unannotated_imgs() {
-		$q = "select count(*) from image i left join annotation a on i.id = a.image_id where a.id is null and i.perception_hash is not null";
+		$q = "select count(*) from image i left join annotation a on i.id = a.image_id where a.id is null and i.perception_hash is not null and i.deleted = 0 and i.offtopic = 0 and i.unidentifiable = 0";
 
 		$r = rquery($q);
 
@@ -140,6 +140,7 @@
 		$annotated_imgs = get_number_of_annotated_imgs();
 		$unannotated_imgs = get_number_of_unannotated_imgs();
 		$curated_imgs = get_number_of_curated_imgs();
+
 		$annotation_stat_str = number_format($annotated_imgs, 0, ',', '.');
 		$unannotated_imgs_str = number_format($unannotated_imgs, 0, ',', '.');
 		$curated_imgs_str = number_format($curated_imgs, 0, ',', '.');
@@ -550,5 +551,68 @@
 		print "Done importing";
 
 		exit(0);
+	}
+
+	function cleanup () {
+		ini_set('memory_limit', '4096M');
+		ini_set('max_execution_time', '300');
+		set_time_limit(300);
+
+		function shutdown() {
+			mywarn("Exiting, rolling back changes\n");
+			rquery("ROLLBACK;");
+			rquery("SET autocommit=1;");
+		}
+
+		register_shutdown_function('shutdown');
+
+		print "Cleaning images...<br>";
+
+		$files_in_db = [];
+		$query = "select id, filename from image where deleted = '0' and offtopic = '0'";
+		$res = rquery($query);
+		while ($row = mysqli_fetch_row($res)) {
+			if(!file_exists("images/".$row[1])) {
+				print "File ".$row[1]." (".$row[0].") does not exist anymore<br>";
+				rquery("update image set deleted = '1' where id = ".esc($row[0]));
+			}
+		}
+
+		print "Done cleaning";
+
+		exit(0);
+	}
+
+	function move_to_offtopic ($fn) {
+		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
+			if(file_exists("images/$fn")) {
+				rquery("update image set offtopic = 1 where filename = ".esc($fn));
+				rquery("update image set deleted = 1 where filename = ".esc($fn));
+			} else {
+				mywarn("$fn not found");
+			}
+		}
+	}
+
+	function move_to_unidentifiable ($fn) {
+		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
+			if(file_exists("images/$fn")) {
+				rquery("update image set unidentifiable = 1 where filename = ".esc($fn));
+				rquery("update image set deleted = 1 where filename = ".esc($fn));
+			} else {
+				mywarn("$fn not found");
+			}
+		}
+	}
+
+	function move_from_offtopic ($fn) {
+		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
+			if(file_exists("images/$fn")) {
+				rquery("update image set offtopic = 0 where filename = ".esc($fn));
+				rquery("update image set deleted = 0 where filename = ".esc($fn));
+			} else {
+				mywarn("$fn not found");
+			}
+		}
 	}
 ?>
