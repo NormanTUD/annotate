@@ -29,6 +29,7 @@
 						success: function (response) {
 							$('#response').html(response);
 							currentIndex++;
+							load_dynamic_content();
 							uploadNextFile();
 						}
 					});

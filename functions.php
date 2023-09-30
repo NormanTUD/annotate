@@ -338,11 +338,11 @@
 		}
 	}
 
-	function get_image_width_and_height_from_file ($fn) {
+	function get_image_width_and_height_from_file ($path) {
 		$width = null;
 		$height = null;
 		try {
-			$imgsz = getimagesize("./images/".$fn);
+			$imgsz = getimagesize($path);
 
 			$width = $imgsz[0];
 			$height = $imgsz[1];
@@ -357,7 +357,7 @@
 				list($width, $height) = array($width, $height);
 			}
 		} catch (\Throwable $e) {
-			mywarn("$e for file $fn inside get_image_width_and_height_from_file");
+			mywarn("$e for file $path inside get_image_width_and_height_from_file");
 		}
 		return array($width, $height);
 	}
@@ -375,21 +375,39 @@
 		return $res;
 	}
 
-	function get_or_create_perception_hash_from_db ($file) {
-		$query = "select perception_hash from image where file = ".esc($file);
+	function get_perception_hash_from_db ($filename) {
+		$query = "select perception_hash from image where filename = ".esc($filename);
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_row($res)) {
 			return $row[0];
 		}
+
+		return "";
 	}
 
-	function get_perception_hash ($file) {
-		if(!file_exists($file)) {
-			die("$file not found");
+	function get_or_create_perception_hash_from_db ($path, $filename) {
+		$old_perception_hash = get_perception_hash_from_db($filename);
+
+		$new_perception_hash = $old_perception_hash;
+
+		if($old_perception_hash == "") {
+			$new_perception_hash = get_perception_hash($path);
 		}
 
-		$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" images/'.$file;
+		$query = "update image set perception_hash = ".esc($new_perception_hash)." where filename = ".esc($filename);
+		$res = rquery($query);
+
+		if(!$res) {
+			dier("Error setting perception hash");
+			return "";
+		}
+
+		return $new_perception_hash;
+	}
+
+	function get_perception_hash ($path) {
+		$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" '.$path;
 
 		ob_start();
 		system($command);
@@ -401,11 +419,11 @@
 		return $hash;
 	}
 
-	function get_or_create_image_id ($image, $width=null, $height=null, $rec=0) {
+	function get_or_create_image_id ($path, $filename, $width=null, $height=null, $rec=0) {
 		if($rec >= 10) {
 			return;
 		}
-		$select_query = "select id from image where filename = ".esc($image);		
+		$select_query = "select id from image where filename = ".esc($filename);		
 		$select_res = rquery($select_query);
 
 		$res = null;
@@ -417,15 +435,25 @@
 		#die($select_query);
 
 		if(is_null($res)) {
-			$width_and_height = get_image_width_and_height_from_file($image);
-			$width = $width_and_height[0];
-			$height = $width_and_height[1];
+			$width_and_height = get_image_width_and_height_from_file($path);
+			if(!$width) {
+				$width = $width_and_height[0];
+			}
+
+			if(!$height) {
+				$height = $width_and_height[1];
+			}
 
 			if($width && $height) {
-				$hash = get_perception_hash($image);
-				$insert_query = "insert into image (filename, width, height, perception_hash) values (".esc(array($image, $width, $height, $hash)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
+				$hash = $perception_hash;
+
+				if(!$perception_hash) {
+					$hash = get_or_create_perception_hash_from_db($path, $filename);
+				}
+
+				$insert_query = "insert into image (filename, width, height, perception_hash) values (".esc(array($filename, $width, $height, $hash)).") on duplicate key update filename = values(filename), width = values(width), height = values(height), deleted = 0, offtopic = 0";
 				rquery($insert_query);
-				return get_or_create_image_id($image, $width, $height, $rec + 1);
+				return get_or_create_image_id($path, $filename, $perception_hash, $width, $height, $rec + 1);
 			} else {
 				return null;
 			}
@@ -493,7 +521,6 @@
 	#die(get_or_create_category_id("raketenspiraleaasd"));
 	#die(get_or_create_category_id("\n\nDAS HIER SOLLTE KEINE NEWLINES raketenspiraleaasd\n\n"));
 	#die(get_or_create_user_id("raketenspiraleasdadasdfff"));
-	#die(get_or_create_image_id("blaaasdasd.jpg"));
 
 	function mark_as_curated ($image_id) {
 		$query = "update annotation set curated = 1 where image_id = ".esc($image_id);
@@ -569,7 +596,9 @@
 			$files_in_db[] = $row[0];
 		}
 
-		$files = scandir("images");
+		$base_dir = "images";
+
+		$files = scandir($base_dir);
 
 		shuffle($files);
 
@@ -580,7 +609,8 @@
 				if($new) {
 					rquery("SET autocommit=0;");
 					rquery("START TRANSACTION;");
-					$image_id = get_or_create_image_id($file);
+					$path = "$base_dir/$file";
+					$image_id = get_or_create_image_id($path, $file);
 
 					rquery("COMMIT;");
 					rquery("SET autocommit=1;");
@@ -699,6 +729,13 @@
 
 	function insert_image_into_db($file_tmp, $filename) {
 		try {
+			$existing_perception_hash = get_perception_hash_from_db($filename);
+			$new_perception_hash = get_perception_hash($file_tmp);
+
+			if($existing_perception_hash == $new_perception_hash) {
+				return "";
+			}
+
 			// Establish a database connection (replace with your actual database details)
 			$pdo = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
 
@@ -715,6 +752,8 @@
 
 			// Close the database connection
 			$pdo = null;
+
+			$image_id = get_or_create_image_id($file_tmp, $filename);
 
 			// Return the unique filename for display
 			return $unique_filename;

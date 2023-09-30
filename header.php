@@ -13,6 +13,7 @@ include_once("functions.php");
 	<script src="main.js"></script>
 	<script src='tf.js'></script>
 	<script src='tf-backend-wasm.min.js'></script>
+	<!--<script src='phash.js'></script>-->
 	<script>
 var labels = <?php print(file_get_contents("labels.json")); ?>;
 	</script>
