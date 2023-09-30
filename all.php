@@ -2,26 +2,22 @@
 		include_once("header.php");
 		include_once("functions.php");
 
-		$files = scandir("images");
-
 		$img_files = array();
 
-		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$annotations = number_of_annotations($user_id, $file);
-				$img_files[$file] = $annotations;
-			}
+		$query = "select filename from image i left join annotation a on i.id = a.image_id where a.image_id is not null group by filename";
+		$res = rquery($query);
+
+		while ($row = mysqli_fetch_row($res)) {
+			$img_files[] = $row[0];
 		}
 
-		asort($img_files);
 		#print_header();
 ?>
 	<div id="content">
 <?php
-		foreach ($img_files as $f => $k) {
+		foreach ($img_files as $f) {
 ?>
-			<!--<a target="_blank" href="index.php?move_to_offtopic=<?php print $f; ?>"><img class="images" id="<?php print uniqid(); ?>" src="images/<?php print $f; ?>"></a>-->
-			<a target="_blank" href="index.php?edit=<?php print $f; ?>"><img class="images" id="<?php print uniqid(); ?>" src="images/<?php print $f; ?>"></a>
+			<a target="_blank" href="index.php?edit=<?php print urlencode($f); ?>"><img class="images" id="<?php print uniqid(); ?>" src="print_image.php?filename=<?php print urlencode($f); ?>"></a>
 <?php
 		}
 ?>

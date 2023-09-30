@@ -23,7 +23,7 @@ var labels = <?php print(file_get_contents("labels.json")); ?>;
 
 <!-- Tab content -->
 <div id="top">
-	<span id="tab_home_top"></span><span id="memory_debugger"></span>
+	<span id="tab_home_top"><?php include("print_home.php"); ?></span><span id="memory_debugger"></span>
 </div>
 
 <?php
