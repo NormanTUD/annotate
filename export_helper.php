@@ -667,7 +667,7 @@ done
 		return $res;
 	}
 
-	function print_export_html ($number_of_rows, $items_per_page, $images) {
+	function print_export_html_and_exit ($number_of_rows, $items_per_page, $images) {
 		$html = file_get_contents("export_base.html");
 		$annos_strings = array();
 

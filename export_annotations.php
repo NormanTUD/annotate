@@ -171,7 +171,7 @@
 	}
 
 	if ($format == "html") {
-		print_export_html($number_of_rows, $items_per_page, $images);
+		print_export_html_and_exit($number_of_rows, $items_per_page, $images);
 	}
 
 	$tmp_name = generateRandomString(20);
