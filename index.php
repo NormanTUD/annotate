@@ -28,16 +28,6 @@
 		<br>
 
 		<div id="loader"></div>
-<?php
-		if($number_annotated > 10000) {
-?>
-			<span style="font-size: 20px; color: green">Hallo, wer bis hierhin noch durchgehalten hat, bitte sende mir mal eine Email: <a href="mailto:kochnorman@rocketmail.com">kochnorman@rocketmail.com</a>. Ich kann zwar keine Preise vergeben, aber würde mich gern persönlich bedanken.</span>
-
-			<br>
-<?php
-		}
-?>
-
 		<table>
 			<tr>
 				<td style="vertical-align: baseline;">
@@ -62,10 +52,6 @@
 				</td>
 			</tr>
 		</table>
-
-		<div id="status_bar">
-			<span id="msg"></span>
-		</div>
 
 		<script>
 			load_dynamic_content();

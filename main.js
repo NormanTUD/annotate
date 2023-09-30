@@ -638,17 +638,25 @@ async function load_next_random_image (fn=false) {
 			ajax_url += "?like=" + encodeURI(like);
 		}
 
-		await $.ajax({
-			url: ajax_url,
-			type: "GET",
-			dataType: "html",
-			success: async function (fn) {
-				await set_img_from_filename(fn);
-			},
-			error: function (xhr, status) {
-				error("Error loading the List", "Sorry, there was a problem!");
+		try {
+			await $.ajax({
+				url: ajax_url,
+				type: "GET",
+				dataType: "html",
+				success: async function (fn) {
+					await set_img_from_filename(fn);
+				},
+				error: function (xhr, status) {
+					error("Error loading the List", "Sorry, there was a problem!");
+				}
+			});
+		} catch (e) {
+			if(Object.keys(e).includes("message")) {
+				e = e.message;
 			}
-		});
+
+			error("" + e);
+		}
 	}
 
 }
