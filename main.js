@@ -338,6 +338,11 @@ function get_names_from_ki_anno (anno) {
 }
 
 async function ai_file (elem) {
+	if(!has_model()) {
+		console.info("No AI model found. Not allowing ai_file stuff");
+		return;
+	}
+
 	running_ki = true;
 	$("body").css("cursor", "progress");
 	success("Success!", "KI gestartet... Bitte warten");
@@ -725,6 +730,32 @@ function delete_all_anno (image) {
 			await load_dynamic_content();
 		}
 	});
+}
+
+function has_model () {
+	var res = 0;
+	$.ajax({
+		url: "has_model.php",
+		type: "get",
+		success: async function (response) {
+			if(response == "1") {
+				res = 1;
+			}
+		},
+		error: async function(jqXHR, textStatus, errorThrown) {
+			error("has_model: " + textStatus, errorThrown);
+		}
+	});
+
+	return res;
+}
+
+function show_or_hide_ai_stuff () {
+	if(has_model()) {
+		$(".ai_stuff").show();
+	} else {
+		$(".ai_stuff").hide();
+	}
 }
 
 setInterval(memory_debugger, 1000);

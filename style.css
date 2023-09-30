@@ -51,3 +51,7 @@
 	z-index: 99999;
 	padding-bottom: 5px;
 }
+
+.ai_stuff {
+	display: none;
+}
