@@ -421,6 +421,7 @@
 			while (($buffer = fgets($handle, 4096)) !== false) {
 				echo $buffer;
 			}
+
 			fclose($handle);
 		}
 
