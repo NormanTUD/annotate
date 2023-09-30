@@ -741,6 +741,7 @@ async function has_model () {
 		const hasModelValue = content.includes('1') ? 1 : 0;
 
 		if(!hasModelValue) {
+			$("#autonext_img_button").text("AutoNext");
 			autonext_param = false;
 		}
 
