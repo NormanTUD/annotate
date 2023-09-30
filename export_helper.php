@@ -632,6 +632,7 @@ done
 		$download_images = "#!/bin/bash
 set -x
 mkdir -p images
+IFS=\$'\n'
 for i in $(ls labels | sed -e 's#\.txt#.jpg#'); do
 	wget -nc \"".$GLOBALS["base_url"]."/print_image.php?filename=\$i\" -O \"images/\$i\"
 done
