@@ -572,6 +572,8 @@
 		if($fn) {
 			$query .= " and i.filename like ".esc("%$fn%");
 		}
+
+		$query .= " and id.filename is not null ";
 		$query .= ' order by rand()) a';
 
 		$res = rquery($query);
