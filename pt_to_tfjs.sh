@@ -28,10 +28,6 @@ cp $1 $WORK_DIR/model.pt 2>&1
 python3 yolov5/export.py --weights $WORK_DIR/model.pt --img 512 512 --batch-size 1 --include tfjs 2>&1
 exit_code=$?
 
-if [[ $exit_code -eq 0 ]]; then
-	rm $WORK_DIR/model.pt 2>&1
-fi
-
 echo "$WORK_DIR/model_web_model"
 
 echo "ls -1 $WORK_DIR/model_web_model"
