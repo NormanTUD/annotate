@@ -339,9 +339,12 @@ function get_names_from_ki_anno (anno) {
 
 async function ai_file (elem) {
 	if(!await has_model()) {
+		hide_ai_stuff();
 		console.info("No AI model found. Not allowing ai_file stuff");
 		return;
 	}
+
+	show_ai_stuff();
 
 	running_ki = true;
 	$("body").css("cursor", "progress");
@@ -754,17 +757,26 @@ async function has_model () {
 	}
 }
 
+function hide_ai_stuff() {
+	$(".ai_stuff").hide();
+}
+
+function show_ai_stuff () {
+	$(".ai_stuff").show();
+
+}
+
 async function show_or_hide_ai_stuff () {
 	if(await has_model()) {
-		$(".ai_stuff").show();
+		show_ai_stuff();
 	} else {
-		$(".ai_stuff").hide();
+		hide_ai_stuff();
 	}
 }
 
 setInterval(memory_debugger, 1000);
 setInterval(create_selects_from_annotation, 1000);
 
-$( document ).ready(() => {
+$(document).ready(() => {
 	show_or_hide_ai_stuff();
 })
