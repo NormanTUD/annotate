@@ -1,9 +1,5 @@
 #!/bin/bash
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
-cd $SCRIPT_DIR
-
 if [[ ! -e $1 ]]; then
 	echo "$1 not found";
 	exit 1
