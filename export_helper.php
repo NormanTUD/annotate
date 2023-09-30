@@ -775,4 +775,15 @@ done
 		include("footer.php");
 		exit(0);
 	}
+
+	function write_bash_files ($tmp_dir) {
+		write_yolo_hyperparams($tmp_dir);
+		write_train_bash($tmp_dir);
+		write_simple_run($tmp_dir);
+		write_omniopt_simple_run($tmp_dir);
+		write_only_take_first_line($tmp_dir);
+		write_remove_labels_with_multiple_entries($tmp_dir);
+		write_download_images($tmp_dir);
+		write_download_empty($tmp_dir);
+	}
 ?>
