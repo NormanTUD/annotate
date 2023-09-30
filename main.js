@@ -585,10 +585,11 @@ async function load_dynamic_content () {
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
+			log("A");
 			var d = JSON.parse(data);
 			tags = Object.keys(d.tags);
 			$('#list').html("");
-			if(d.html) {
+			if(d.html != "<ul style='list-style: conic-gradient'></ul>") {
 				$('#list').html(d.html);
 			} else {
 				$('#list').html("<i>Bisher keine Tags</i>");
