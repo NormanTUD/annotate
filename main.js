@@ -2,7 +2,7 @@
 
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
-var autonext = startUrlParams.get('autonext');
+var autonext_param = startUrlParams.get('autonext');
 var model;
 var last_load_dynamic_content = false;
 var running_ki = false;
@@ -426,13 +426,24 @@ async function ai_file (elem) {
 
 	success("Success!", "KI fertig...");
 
-	if(autonext) {
+	if(autonext_param) {
 		await load_next_random_image();
 	}
 }
 
+function autonext () {
+	if(autonext_param) {
+		autonext_param = false;
+		$("#autonext_img_button").text("AutoNext");
+	} else {
+		autonext_param = true;
+		load_next_random_image()
+		$("#autonext_img_button").text("Stop AutoNext");
+	}
+}
+
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function create_selects_from_annotation(force=0) {
