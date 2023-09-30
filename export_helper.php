@@ -786,4 +786,12 @@ done
 		write_download_images($tmp_dir);
 		write_download_empty($tmp_dir);
 	}
+
+	function get_param ($name, $default = 0) {
+		$res = $default;
+		if(get_get($name)) {
+			$res = intval(get_get($name));
+		}
+		return $res;
+	}
 ?>

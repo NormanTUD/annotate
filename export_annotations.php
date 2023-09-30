@@ -12,7 +12,6 @@
 	$test_split = get_get("test_split", 0);
 	$max_files = get_get("max_files", 0);
 
-
 	$valid_formats = array(
 		"ultralytics_yolov5", "html"
 	);
@@ -22,31 +21,11 @@
 		$format = $_GET["format"];
 	}
 
-	$page = 0;
-	if(get_get("page")) {
-		$page = intval(get_get("page"));
-	}
-
-	$items_per_page = 500;
-	if(get_get("items_per_page")) {
-		$items_per_page = intval(get_get("items_per_page"));
-	}
-
-	$offset = $page * $items_per_page;
-	if(get_get("offset")) {
-		$offset = intval(get_get("offset"));
-	}
-
-	$only_uncurated = 0;
-	if(get_get("only_uncurated")) {
-		$only_uncurated = intval(get_get("only_uncurated"));
-	}
-
-	$max_truncation = 100;
-
-	if(intval(get_get("max_truncation"))) {
-		$max_truncation = intval(get_get("max_truncation"));
-	}
+	$page = get_param("page");
+	$items_per_page = get_param("items_per_page", 500);
+	$offset = get_param("offset", $page * $items_per_page);
+	$only_uncurated = get_param("only_uncurated");
+	$max_truncation = get_param("max_truncation", 100);
 
 	$images = [];
 
