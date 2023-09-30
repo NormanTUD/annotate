@@ -57,9 +57,27 @@
 		</tr>
 
 		<tr>
+			<td>Empty?</td>
+			<td style="display: none">empty</td>
+			<td><input onchange="change_url()" type="checkbox" /></td>
+		</tr>
+
+		<tr>
+			<td>Group by perception hash?</td>
+			<td style="display: none">group_by_perception_hash</td>
+			<td><input onchange="change_url()" type="checkbox" /></td>
+		</tr>
+
+		<tr>
 			<td>Only uncurated?</td>
 			<td style="display: none">only_uncurated</td>
 			<td><input onchange="change_url()" type="checkbox" /></td>
+		</tr>
+
+		<tr>
+			<td>Max perception hash truncation?</td>
+			<td style="display: none">max_truncation</td>
+			<td><input onchange="change_url()" type="number" value="100" /></td>
 		</tr>
 	</table>
 
