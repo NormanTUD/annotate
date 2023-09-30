@@ -1,7 +1,48 @@
 <?php
+	include_once("functions.php");
+
 	ini_set('memory_limit', '16384M');
 	ini_set('max_execution_time', '3600');
 	set_time_limit(3600);
+
+	function insert_model_into_db ($model_name, $files_array) {
+		try {
+			// Establish a database connection (replace with your actual database details)
+			$pdo = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
+
+			// Initialize an array to store the IDs of inserted models
+			$inserted_model_ids = [];
+
+			// Loop through the files array
+			foreach ($files_array as $file) {
+				// Generate a unique filename to avoid conflicts
+				$unique_filename = generate_unique_filename($pdo, $file['filename']);
+				$file_contents = file_get_contents($file['tmp_name']);
+
+				// Insert the model into the database
+				$stmt = $pdo->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents) VALUES (:model_name, UNIX_TIMESTAMP(), :filename, :file_contents)");
+				$stmt->bindParam(':model_name', $model_name);
+				$stmt->bindParam(':filename', $unique_filename);
+				$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
+				$stmt->execute();
+
+				// Retrieve the ID of the inserted model
+				$model_id = $pdo->lastInsertId();
+
+				// Store the ID in the array
+				$inserted_model_ids[] = $model_id;
+			}
+
+			// Close the database connection
+			$pdo = null;
+
+			return $inserted_model_ids;
+		} catch (\Throwable $e) {
+			// Log and handle the database error
+			error_log("Database error: " . $e->getMessage());
+			die("Error: Unable to insert models into the database.");
+		}
+	}
 
 	function process_is_running ($process) {
 		$res = proc_get_status($process);
@@ -61,13 +102,20 @@
 
 					// Loop through the generated files and insert them into the database
 					if($output_path) {
+						$files = [];
 						foreach (glob("$output_path/*") as $tfjsFile) {
+							$files[] = $tfjsFile;
+						}
+
+						if(count($files)) {
 							try {
-								insert_model_into_db($modelName, $tfjsFile, pathinfo($tfjsFile, PATHINFO_BASENAME));
-								success("Model Upload", "Model uploaded and processed successfully.");
+								insert_model_into_db($modelName, $files);
+								echo "Success: Model saved into DB";
 							} catch (\Throwable $e) {
 								echo "Error: $e";
 							}
+						} else {
+							echo "Error: no files found";
 						}
 					} else {
 						print("$output_path could not be determined");
