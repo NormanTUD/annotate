@@ -42,48 +42,56 @@ copy_paste: 0.4  # segment copy-paste (probability)
 	function write_train_bash ($tmp_dir) {
 		$train_bash = '#!/bin/bash
 if [ ! -d "yolov5" ]; then
-git clone --depth 1 https://github.com/ultralytics/yolov5.git
+	git clone --depth 1 https://github.com/ultralytics/yolov5.git
 fi
+
 cd yolov5
 ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
+
 if [ -d "$HOME/.alpha_yoloenv" ]; then
-python3 -m venv ~/.alpha_yoloenv
-echo "~/.alpha_yoloenv already exists"
-source ~/.alpha_yoloenv/bin/activate
-else
-python3 -mvenv ~/.alpha_yoloenv/
-source ~/.alpha_yoloenv/bin/activate
-pip3 install -r requirements.txt
-pip3 install "albumentations>=1.0.3"
+	python3 -m venv ~/.alpha_yoloenv
+	echo "~/.alpha_yoloenv already exists"
+	source ~/.alpha_yoloenv/bin/activate
+	else
+	python3 -mvenv ~/.alpha_yoloenv/
+	source ~/.alpha_yoloenv/bin/activate
+	pip3 install -r requirements.txt
+	pip3 install "albumentations>=1.0.3"
 fi
 
 mkdir -p dataset
 if [ -d "../images" ]; then
-mv ../images/ dataset/
+	mv ../images/ dataset/
 fi
 if [ -d "../validation" ]; then
-mv ../validation/ dataset/
+	mv ../validation/ dataset/
 fi
 if [ -d "../test" ]; then
-mv ../test/ dataset/
+	mv ../test/ dataset/
 fi
+
 if [ -d "../labels" ]; then
-mv ../labels/ dataset/
+	mv ../labels/ dataset/
 fi
+
 if [ -e "../dataset.yaml" ]; then
-mv ../dataset.yaml data/
+	mv ../dataset.yaml data/
 fi
+
 if [ -e "../omniopt_simple_run.sh" ]; then
-mv ../omniopt_simple_run.sh .
+	mv ../omniopt_simple_run.sh .
 fi
+
 if [ -e "../simple_run.sh" ]; then
-mv ../simple_run.sh .
+	mv ../simple_run.sh .
 fi
+
 if [ -e "../run.sh" ]; then
-mv ../run.sh .
+	mv ../run.sh .
 fi
+
 if [ -e "../hyperparams.yaml" ]; then
-mv ../hyperparams.yaml data/hyps/
+	mv ../hyperparams.yaml data/hyps/
 fi
 
 
@@ -624,11 +632,8 @@ done
 		$download_images = "#!/bin/bash
 set -x
 mkdir -p images
-for i in $(curl ".$GLOBALS["base_url"]."images/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
-	fn_without_ending=\"\${i%.*}\"
-	if [[ -e \"labels/\$fn_without_ending.txt\" ]]; then
-		wget -nc \"".$GLOBALS["base_url"]."images/\$i\" -O \"images/\$i\"
-	fi
+for i in $(ls labels | sed -e 's#\.txt#.jpg#'); do
+	wget -nc \"".$GLOBALS["base_url"]."/print_image.php?filename=\$i\" -O \"images/\$i\"
 done
 ";
 
