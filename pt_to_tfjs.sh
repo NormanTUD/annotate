@@ -31,9 +31,9 @@ if [[ $exit_code -eq 0 ]]; then
 	rm $WORK_DIR/model.pt
 fi
 
-echo "$WORK_DIR/model_saved_model"
+echo "$WORK_DIR/model_web_model"
 
-echo "ls -1 $WORK_DIR/model_saved_model"
-ls -1 $WORK_DIR/model_saved_model
+echo "ls -1 $WORK_DIR/model_web_model"
+ls -1 "$WORK_DIR/model_web_model"
 
 exit $exit_code

@@ -4,6 +4,7 @@
 	set_time_limit(3600);
 
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		print "<pre>";
 		if (isset($_FILES['pytorch_model']) && isset($_POST['model_name'])) {
 			$modelName = $_POST['model_name'];
 			$pytorchModelName = $_FILES['pytorch_model']['name'];
@@ -52,7 +53,7 @@
 							try {
 								insert_model_into_db($modelName, $tfjsFile, pathinfo($tfjsFile, PATHINFO_BASENAME));
 							} catch (\Throwable $e) {
-								echo "Error: <pre>$e</pre>";
+								echo "Error: $e";
 							}
 						}
 
@@ -70,5 +71,6 @@
 		} else {
 			echo "Error: Please provide both a model name and a .pt file to upload.";
 		}
+		print "</pre>";
 	}
 ?>
