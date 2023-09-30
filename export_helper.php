@@ -631,7 +631,6 @@ done
 
 	function write_download_images ($tmp_dir) {
 		$download_images = "#!/bin/bash
-set -x
 mkdir -p images
 IFS=\$'\n'
 for i in $(ls labels | sed -e 's#\.txt#.jpg#'); do
@@ -645,7 +644,6 @@ done
 
 	function write_download_empty ($tmp_dir) {
 		$download_empty = "#!/bin/bash
-set -x
 mkdir -p images
 for i in $(curl ".$GLOBALS["base_url"]."empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
 	wget -nc \"".$GLOBALS["base_url"]."empty/\$i\" -O \"images/\$i\";
