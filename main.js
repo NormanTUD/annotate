@@ -588,7 +588,11 @@ async function load_dynamic_content () {
 			var d = JSON.parse(data);
 			tags = Object.keys(d.tags);
 			$('#list').html("");
-			$('#list').html(d.html);
+			if(d.html) {
+				$('#list').html(d.html);
+			} else {
+			$('#list').html("<i>Bisher keine Tags</i>");
+			}
 		},
 		error: function (xhr, status) {
 			error("Error loading the List", "Sorry, there was a problem!");
