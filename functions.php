@@ -732,7 +732,6 @@
 
 	function print_image($fn) {
 		$query = "select image_content from image_data where filename = ".esc($fn);
-		dier($query);
 
 		$res = rquery($query);
 
