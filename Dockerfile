@@ -25,6 +25,8 @@ RUN chmod +x /var/www/html/.env
 # Configure Apache
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN echo "$DB_PASSWORD" >> /etc/dbpw
+RUN echo "$DB_USER" >> /etc/dbuser
 
 # Add the "extension=mongodb.so" directive to the PHP configuration
 RUN echo "extension=mongodb.so" >> /usr/local/etc/php/php.ini

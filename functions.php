@@ -18,6 +18,9 @@
 
 	if(!isset($GLOBALS['db_username'])) {
 		$GLOBALS['db_username'] = "root";
+		if(file_exists("/etc/dbuser")) {
+			$GLOBALS["db_username"] = trim(fgets(fopen("/etc/dbuser", 'r')));
+		}
 	}
 
 	/* 2DO: in installer eintragen, wenn nicht schon sowieso */
