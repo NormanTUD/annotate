@@ -85,12 +85,33 @@
 			}
 
 			function open_deleted_in_new_tab () {
+				$(".container_div").each((i, e) => {
+					var img = $(e).find("img").attr("src");
+					img = img.replace(/.*filename=/, "");
+					img = img.replace(/"/, "\\\"");
+					log(img);
+					$(e).attr("onclick", `delete_all_anno_new_tab("${img}")`);
+				});
 			}
 
 			function delete_on_click() {
+				$(".container_div").each((i, e) => {
+					var img = $(e).find("img").attr("src");
+					img = img.replace(/.*filename=/, "");
+					img = img.replace(/"/, "\\\"");
+					log(img);
+					$(e).attr("onclick", `delete_all_anno("${img}")`);
+				});
 			}
 
 			function curate_on_click () {
+				$(".container_div").each((i, e) => {
+					var img = $(e).find("img").attr("src");
+					img = img.replace(/.*filename=/, "");
+					img = img.replace(/"/, "\\\"");
+					log(img);
+					$(e).attr("onclick", `curate_anno("${img}")`);
+				});
 			}
 		</script>
 	</body>

@@ -750,6 +750,13 @@ function curate_anno (image) {
 	});
 }
 
+function delete_all_anno_new_tab (image) {
+	delete_all_anno(image);
+
+	var url = "index.php?file=" + image;
+
+	window.open(url, '_blank').focus();
+}
 
 function delete_all_anno (image) {
 	$.ajax({

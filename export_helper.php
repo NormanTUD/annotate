@@ -773,27 +773,11 @@ done
 
 				$this_annos = array();
 
-				$delete_str = "";
-
-				if(get_get("curate_on_click")) {
-					$delete_str = 'onclick="curate_anno(\'' . $fn . '\')"';
-				}
-
-				if(get_get("delete_on_click")) {
-					$delete_str = 'onclick="delete_all_anno(\'' . $fn . '\')"';
-				}
-
 				$ahref_start = "";
 				$ahref_end = "";
 
-				if(get_get("delete_on_click") && !get_get("no_link")) {
-					$ahref_start = "<a target='_blank' href='index.php?edit=$fn'>";
-					$ahref_end = "</a>";
-				}
-
-
 				$base_structs[] = $ahref_start.'
-					<div '.$delete_str.' style="position: relative; display: inline-block;">
+					<div class="container_div" style="position: relative; display: inline-block;">
 						<img class="images" src="print_image.php?filename='.$fn.'" style="display: block;">
 				'.$ahref_end;
 
