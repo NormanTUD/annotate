@@ -63,7 +63,7 @@
 	<input type="file" name="image" multiple accept="image/jpeg">
 	<input type="submit" value="Upload">
 </form>
-<div id="response"></div>
+<div id="response" style="height: 400px;"></div>
 
 <div id="defective_files">
 	Defective files:
