@@ -11,6 +11,9 @@
 			$modelName = $_POST['model_name'];
 
 			$has_labels = 0;
+			$has_model = 0;
+			$model_json_path = "";
+			$file_paths = [];
 
 			$files = [];
 			for ($i = 0; $i < count($_FILES["tfjs_model"]["name"]); $i++) {
@@ -34,12 +37,42 @@
 					for ($k = 0; $k < count($labels_content); $k++) {
 						get_or_create_category_id($labels_content[$k]);
 					}
+				} else if($filename == "model.json") {
+					$has_model = 1;
+
+					$model_json_path = $tmp;
 				}
+
+				$file_paths[] = $filename;
 			}
 
-			if(!$has_labels) {
-				echo "<b><tt>labels.json</tt> is missing!</b>";
+			if(!$has_labels || !$has_model) {
+				if(!$has_model) {
+					echo "<b><tt>model.json</tt> is missing!</b><br>";
+				}
+
+				if($has_labels) {
+					echo "<b><tt>labels.json</tt> is missing!</b><br>";
+				}
 			} else {
+				$model_json = json_decode(file_get_contents($model_json_path), 1);
+
+				if(isset($model_json["weightsManifest"][0]["paths"])) {
+					$paths = $model_json["weightsManifest"][0]["paths"];
+
+					$missing_files = [];
+
+					for ($kk = 0; $kk < count($paths); $kk++) {
+						if(!in_array($paths[$kk], $file_paths)) {
+							$missing_files[] = $paths[$kk];
+						}
+					}
+
+					if(count($missing_files)) {
+						die("Missing files to be uploaded: <tt>".join("</tt>, <tt>", $missing_files)."</tt>");
+					}
+				}
+				
 				if(count($files)) {
 					try {
 						insert_model_into_db($modelName, $files);
