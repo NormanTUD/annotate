@@ -724,7 +724,6 @@
 					rquery("SET autocommit=1;");
 
 					print "Id for $file: ".$image_id."<br>\n";
-					ob_flush();
 					flush();
 				}
 			}
