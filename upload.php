@@ -6,6 +6,9 @@
 <script>
 	$(document).ready(function () {
 		$('#uploadForm').on('submit', function (e) {
+			$("#defective_files").hide();
+			$("#defective_files_ul").html("");
+
 			e.preventDefault();
 
 			var formData = new FormData(this);
@@ -13,6 +16,8 @@
 			// Loop through the selected files
 			var files = $('input[type="file"]')[0].files;
 			var currentIndex = 0;
+
+			var defective_files = [];
 
 			function uploadNextFile() {
 				var progress = `${currentIndex} of ${files.length}`;
@@ -29,6 +34,12 @@
 						processData: false,
 						success: function (response) {
 							$('#response').html(response);
+							log("response:", response);
+							if(response.includes("Error:")) {
+								defective_files.push();
+								$("#defective_files_ul").append("<li>" + files[currentIndex].name + "</li>");
+								$("#defective_files").show();
+							}
 							currentIndex++;
 							load_dynamic_content();
 							uploadNextFile();
@@ -53,6 +64,12 @@
 	<input type="submit" value="Upload">
 </form>
 <div id="response"></div>
+
+<div id="defective_files">
+	Defective files:
+	<ul id="defective_files_ul">
+	</ul>
+</div>
 
 <?php
 	include_once("footer.php");
