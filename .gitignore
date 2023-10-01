@@ -19,4 +19,3 @@ yolov5
 real_world_pytorch_model*
 numpy
 labels.json
-.env
