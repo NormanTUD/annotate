@@ -1,51 +1,54 @@
 <!DOCTYPE html>
-<html><head>
-	<link rel="stylesheet" href="toastr.min.css">
-	<script src="jquery.min.js"></script>
-	<script src="toc.js"></script>
-	<script src="toastr.min.js"></script>
-	<script src="main.js"></script>
-	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-	<title>Bildannotationstool</title>
-<style>
-	.a9s-annotationlayer {
-		position: absolute;
-		top: 0;
-		left: 0;
-		outline: none;
-		-webkit-user-select: none;
-		-moz-user-select: none;
-		-ms-user-select: none;
-		-o-user-select: none;
-		user-select: none;
-		pointer-events: none;
-	}
-	.a9s-selection-mask {
-		stroke: none;
-		fill: transparent;
-		pointer-events: none;
-	}
+<html>
+	<head>
+		<link rel="stylesheet" href="toastr.min.css">
+		<script src="jquery.min.js"></script>
+		<script src="toc.js"></script>
+		<script src="toastr.min.js"></script>
+		<script src="main.js"></script>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<title>Bildannotationstool</title>
+		<style>
+			.a9s-annotationlayer {
+				position: absolute;
+				top: 0;
+				left: 0;
+				outline: none;
+				-webkit-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				-o-user-select: none;
+				user-select: none;
+				pointer-events: none;
+			}
+			.a9s-selection-mask {
+				stroke: none;
+				fill: transparent;
+				pointer-events: none;
+			}
 
-	.a9s-annotation .a9s-inner,
-	.a9s-selection .a9s-inner {
-		stroke: #fff;
-		stroke-width: 1px;
-		fill: transparent;
-	}
-	.a9s-annotation .a9s-inner:hover,
-	.a9s-selection .a9s-inner:hover {
-		stroke: #fff000;
-	}
-</style>
-</head>
-	<div id="toc"> 
-	</div> 
-	<div id="contents">
-		<div id="content">
-			REPLACEME
-		</div>
-	</div>
+			.a9s-annotation .a9s-inner,
+			.a9s-selection .a9s-inner {
+				stroke: #fff;
+				stroke-width: 1px;
+				fill: transparent;
+			}
+			.a9s-annotation .a9s-inner:hover,
+			.a9s-selection .a9s-inner:hover {
+				stroke: #fff000;
+			}
+		</style>
+		</head>
+		<body>
+			<div id="toc"> 
+			</div> 
+			<div id="contents">
+				<div id="content">
+					REPLACEME
+				</div>
+			</div>
 
-	<script>
-		toc();
-	</script>
+			<script>
+				toc();
+			</script>
+		</body>
