@@ -142,8 +142,8 @@ echo "#!/bin/bash" > .env
 echo "DB_HOST=$DB_HOST" >> .env
 echo "DB_PORT=$DB_PORT" >> .env
 echo "LOCAL_PORT=$LOCAL_PORT" >> .env
-echo "DB_PASSWORD=$LOCAL_PORT" >> .env
-echo "DB_USER=$LOCAL_PORT" >> .env
+echo "DB_PASSWORD=$DB_PASSWORD" >> .env
+echo "DB_USER=$DB_USER" >> .env
 
 echo "=== Current git hash before auto-pulling ==="
 git rev-parse HEAD
