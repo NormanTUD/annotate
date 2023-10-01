@@ -82,9 +82,6 @@
 					fclose($handle);
 				}
 
-				print("<h1>DB created</h1>");
-				print("<h1>Importing files...</h1>");
-
 				import_files();
 			} catch (\Throwable $e) {
 				$pingable = ping($GLOBALS["db_host"], $GLOBALS["db_port"], 5);
@@ -681,6 +678,12 @@
 	}
 
 	function import_files () {
+		$base_dir = "images";
+
+		if(!is_dir($base_dir)) {
+			return;
+		}
+
 		ini_set('memory_limit', '4096M');
 		ini_set('max_execution_time', '300');
 		set_time_limit(300);
@@ -694,12 +697,6 @@
 		register_shutdown_function('shutdown');
 
 		print "Importing images...<br>";
-
-		$base_dir = "images";
-
-		if(!is_dir($base_dir)) {
-			return;
-		}
 
 		$files = scandir($base_dir);
 
