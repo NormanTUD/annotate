@@ -2,7 +2,6 @@
 
 # Default values
 DB_HOST=""
-DB_PORT="3306"
 DB_USER=root
 DB_PASSWORD=""
 LOCAL_PORT=""
@@ -14,7 +13,6 @@ help_message() {
 	echo "  --db-user          MySQL/MariaDB user"
 	echo "  --db-password      MySQL/MariaDB password"
 	echo "  --db-host          MySQL/MariaDB host address"
-	echo "  --db-port          MySQL port number"
 	echo "  --local-port       Local port to bind for the GUI"
 	echo "  --help             Show this help message"
 }
@@ -32,10 +30,6 @@ while [[ "$#" -gt 0 ]]; do
 			;;
 		--db-user*)
 			DB_USER="$2"
-			shift
-			;;
-		--db-port*)
-			DB_PORT="$2"
 			shift
 			;;
 		--local-port*)
@@ -66,16 +60,6 @@ fi
 
 if [[ -z $DB_USER ]]; then
 	echo "Error: Missing required parameter --db-user. Use --help for usage."
-	exit 1
-fi
-
-if [[ -z $DB_PORT ]]; then
-	echo "Error: Missing required parameter --db-port. Use --help for usage."
-	exit 1
-fi
-
-if [[ -z $DB_PORT ]]; then
-	echo "Error: Missing required parameter --db-port. Use --help for usage."
 	exit 1
 fi
 
@@ -141,13 +125,11 @@ if [[ $DB_HOST == "localhost" || $DB_HOST == "127.0.0.1" ]]; then
 fi
 
 export DB_HOST
-export DB_PORT
 export LOCAL_PORT
 
 # Write environment variables to .env file
 echo "#!/bin/bash" > .env
 echo "DB_HOST=$DB_HOST" >> .env
-echo "DB_PORT=$DB_PORT" >> .env
 echo "LOCAL_PORT=$LOCAL_PORT" >> .env
 echo "DB_PASSWORD=$DB_PASSWORD" >> .env
 echo "DB_USER=$DB_USER" >> .env
