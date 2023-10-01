@@ -29,3 +29,14 @@ Just put JPG files in the images folder.
 # How it will look like
 
 ![Alt Text](annotate.gif)
+
+# PHP Settings
+
+In php.ini, set
+
+```
+upload_max_filesize = 100M;
+post_max_size = 100M;
+```
+
+This is needed for uploading yolov5-Models.
