@@ -530,8 +530,8 @@ async function create_selects_from_annotation(force=0) {
 		});
 	} else {
 		if(!running_ki) {
-			if($("#ki_detected_names").html() != "No objects found") {
-				$("#ki_detected_names").html("No objects found");
+			if($("#ki_detected_names").html() != "") {
+				$("#ki_detected_names").html("");
 			}
 		} else {
 			if($("#ki_detected_names").html() != "Please wait, AI is running...") {
