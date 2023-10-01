@@ -9,11 +9,11 @@
 
 		$categories = [];
 
-		$annotated_image_ids_query = get_annotated_image_ids_query();
+		$annotated_image_ids_query = 'select name from category order by id';
 		$res = rquery($annotated_image_ids_query);
 
 		while ($row = mysqli_fetch_row($res)) {
-			$category = $row[3];
+			$category = $row[0];
 			if(!in_array($category, $categories)) {
 				$categories[] = $category;
 			}

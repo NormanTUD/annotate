@@ -10,6 +10,8 @@
 		if (isset($_FILES['tfjs_model']) && isset($_POST['model_name'])) {
 			$modelName = $_POST['model_name'];
 
+			$has_labels = 0;
+
 			$files = [];
 			for ($i = 0; $i < count($_FILES["tfjs_model"]["name"]); $i++) {
 				$filename = $_FILES["tfjs_model"]["name"][$i];
@@ -23,6 +25,20 @@
 				copy($tmp, $new_path);
 
 				$files[] = $new_path;
+
+				if($filename == "labels.json") {
+					$has_labels = 1;
+
+					$labels_content = json_decode(file_get_contents($tmp));
+
+					for ($k = 0; $k < count($labels_content); $k++) {
+						get_or_create_category_id($labels_content[$k]);
+					}
+				}
+			}
+
+			if(!$has_labels) {
+				echo "<b><tt>labels.json</tt> is missing!</b>";
 			}
 
 			if(count($files)) {

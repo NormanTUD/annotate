@@ -21,15 +21,19 @@
 			$w = $parsed_position[2];
 			$h = $parsed_position[3];
 
-			$category_name = $_POST["body"][0]["value"];
+			if(isset($_POST["body"][0]["value"])) {
+				$category_name = $_POST["body"][0]["value"];
 
-			$category_id = get_or_create_category_id($category_name);
+				$category_id = get_or_create_category_id($category_name);
 
-			$json = json_encode($_POST);
+				$json = json_encode($_POST);
 
-			$anno_id = create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id);
+				$anno_id = create_annotation($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id);
 
-			print "Annotation category <b>$category_name</b> for image <i>".$filename."</i> (image-id: $image_id) saved (anno-id: $anno_id)";
+				print "Annotation category <b>$category_name</b> for image <i>".$filename."</i> (image-id: $image_id) saved (anno-id: $anno_id)";
+			} else {
+				die("Label not properly found");
+			}
 		} else {
 			die("No ID given");
 		}

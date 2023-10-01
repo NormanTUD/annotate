@@ -407,6 +407,11 @@ async function ai_file (elem) {
 		var this_class = classes_data[i];
 
 		if(this_class != -1) {
+			if(Object.keys(labels).length == 0) {
+				error("ERROR", "has no labels");
+				return;
+			}
+
 			var this_label = labels[this_class];
 
 			var name = this_label + " (" + (this_score * 100).toFixed(0) + "%)";
