@@ -11,6 +11,7 @@
 	$GLOBALS["get_current_tags_cache"] = array();
 	$GLOBALS["queries"] = array();
 	$GLOBALS["db_name"] = "annotate";
+	$GLOBALS["db_port"] = 3306;
 
 	if(!isset($GLOBALS['db_host'])) {
 		$GLOBALS['db_host'] = 'localhost';
@@ -23,13 +24,20 @@
 		}
 	}
 
-	/* 2DO: in installer eintragen, wenn nicht schon sowieso */
+	if(file_exists("/etc/dbport")) {
+		$GLOBALS["db_dbport"] = trim(fgets(fopen("/etc/dbport", 'r')));
+	}
+
 	if (!isset($GLOBALS['db_password'])) {
 		if(file_exists("/etc/dbpw")) {
 			$GLOBALS["db_password"] = trim(fgets(fopen("/etc/dbpw", 'r')));
 		} else {
 			die("<tt>/etc/dbpw</tt> not found! Cannot connect to database without.");
 		}
+	}
+
+	if(!$GLOBALS["db_port"]) {
+		die("db_port could not be determined");
 	}
 
 	if(!$GLOBALS["db_password"]) {
@@ -44,20 +52,16 @@
 		die("db_username could not be determined");
 	}
 
-	if(!$GLOBALS["db_user"]) {
-		die("db_user could not be determined");
-	}
-
 	if(!$GLOBALS["db_host"]) {
 		die("db_host could not be determined");
 	}
 
 	try {
-		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name']);
+		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS["db_port"]);
 	} catch (\Throwable $e) {
 		try {
 			try {
-				$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password']);
+				$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS["db_port"]);
 				$handle = fopen("sql.txt", "r");
 				if ($handle) {
 					while (($line = fgets($handle)) !== false) {
@@ -68,7 +72,9 @@
 
 					fclose($handle);
 				}
-				print("<h1>DB created</h1><h1>Importing files...</h1>");
+
+				print("<h1>DB created</h1>");
+				print("<h1>Importing files...</h1>");
 
 				import_files();
 			} catch (\Throwable $e) {

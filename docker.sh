@@ -9,14 +9,14 @@ LOCAL_PORT=""
 
 # Help message
 help_message() {
-    echo "Usage: bash docker.sh [OPTIONS]"
-    echo "Options:"
-    echo "  --db-user          MySQL/MariaDB user"
-    echo "  --db-password      MySQL/MariaDB password"
-    echo "  --db-host          MySQL/MariaDB host address"
-    echo "  --db-port          MongoDB port number"
-    echo "  --local-port       Local port to bind for the GUI"
-    echo "  --help             Show this help message"
+	echo "Usage: bash docker.sh [OPTIONS]"
+	echo "Options:"
+	echo "  --db-user          MySQL/MariaDB user"
+	echo "  --db-password      MySQL/MariaDB password"
+	echo "  --db-host          MySQL/MariaDB host address"
+	echo "  --db-port          MySQL port number"
+	echo "  --local-port       Local port to bind for the GUI"
+	echo "  --help             Show this help message"
 }
 
 # Parse command-line arguments
