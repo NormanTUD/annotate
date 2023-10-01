@@ -14,26 +14,23 @@
 	$GLOBALS["db_port"] = 3306;
 	$GLOBALS['db_host'] = 'localhost';
 	$GLOBALS['db_username'] = "root";
-	$GLOBALS["db_password"] = "";
 
 	if(file_exists("/etc/dbuser")) {
 		$GLOBALS["db_username"] = trim(fgets(fopen("/etc/dbuser", 'r')));
 	}
 
 	if(file_exists("/etc/dbhost")) {
-		$GLOBALS["db_dbhost"] = trim(fgets(fopen("/etc/dbhost", 'r')));
+		$GLOBALS["db_host"] = trim(fgets(fopen("/etc/dbhost", 'r')));
 	}
 
 	if(file_exists("/etc/dbport")) {
 		$GLOBALS["db_dbport"] = trim(fgets(fopen("/etc/dbport", 'r')));
 	}
 
-	if (!isset($GLOBALS['db_password'])) {
-		if(file_exists("/etc/dbpw")) {
-			$GLOBALS["db_password"] = trim(fgets(fopen("/etc/dbpw", 'r')));
-		} else {
-			die("<tt>/etc/dbpw</tt> not found! Cannot connect to database without.");
-		}
+	if(file_exists("/etc/dbpw")) {
+		$GLOBALS["db_password"] = trim(fgets(fopen("/etc/dbpw", 'r')));
+	} else {
+		die("<tt>/etc/dbpw</tt> not found! Cannot connect to database without.");
 	}
 
 	if(!$GLOBALS["db_port"]) {
