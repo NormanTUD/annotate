@@ -72,7 +72,7 @@
 				$("#curate_on_click").attr("checked", false);
 			}
 
-			if(startUrlParams.get("delete_on_click")) {
+			if(startUrlParams.get("delete_on_click") && !startUrlParams.get("curate_on_click")) {
 				$("#delete_on_click").attr("checked", true);
 			} else {
 				$("#delete_on_click").attr("checked", false);
