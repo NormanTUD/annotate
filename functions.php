@@ -1,5 +1,4 @@
 <?php
-
 	// alle warnings als fatal errors ausgeben
 	function exception_error_handler($errno, $errstr, $errfile, $errline ) {
 	    throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
@@ -7,6 +6,18 @@
 	set_error_handler("exception_error_handler");
 	ini_set('display_errors', '1');
 
+	function ping($host, $port=80, $timeout=6) {
+		try {
+			$fsock = fsockopen($host,$port,$errno,$errstr,$timeout);
+			if(!$fsock) {
+				return false;
+			} else {
+				return true;
+			}
+		} catch (\Throwable $e) {
+			return false;
+		}
+	}
 
 	$GLOBALS["get_current_tags_cache"] = array();
 	$GLOBALS["queries"] = array();
@@ -75,7 +86,9 @@
 
 				import_files();
 			} catch (\Throwable $e) {
-				die("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>");
+				$pingable = ping($GLOBALS["db_host"], $GLOBALS["db_port"], 5);
+
+				die("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt><br>Host is pingable? <tt>".$pingable."</tt>");
 			}
 		} catch (\Throwable $e) {
 			print("$e");
