@@ -33,8 +33,11 @@ async function load_model () {
 		await tf.dispose(model);
 	}
 
+	var model_uid = $("#chosen_model").val();
+	var model_json_url = "models/" + uid + "/model.json";
+
 	model = await tf.loadGraphModel(
-		'./model.json',
+		model_json_url,
 		{
 			onProgress: function (p) {
 				var percent = p * 100;

@@ -38,11 +38,11 @@
 	<br>
 <?php
 	if(count($available_models)) {
-		print "Ausgewähltes KI-Modell: <select name='chosen_model'>";
+		print "Ausgewähltes KI-Modell: <select id='chosen_model'>";
 		$i = 0;
 		foreach ($available_models as $_model) {
-			$model_uid = $_model[0];
-			$model_name = $_model[1];
+			$model_name = $_model[0];
+			$model_uid = $_model[1];
 
 			$selected = "";
 			if($i == 0) {

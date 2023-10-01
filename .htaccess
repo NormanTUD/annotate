@@ -3,4 +3,6 @@
 </IfModule>
 php_value upload_max_filesize 500M
 php_value post_max_size 500M
+RewriteEngine on
 RedirectMatch 404 /\.git
+RewriteRule ^models/([^/]+)/([^/]+)$ get_model_file.php?uid=$1&filename=$2 [QSA,L]
