@@ -735,10 +735,7 @@ done
 		return $res;
 	}
 
-	function print_export_html_and_exit ($number_of_rows, $items_per_page, $images) {
-		$html = file_get_contents("export_base.html");
-		$annos_strings = array();
-
+	function _create_internal_html ($images, $number_of_rows = 0, $items_per_page = 0, $html = "") {
 		$page_str = "";
 
 		if($number_of_rows > $items_per_page) {
@@ -757,6 +754,14 @@ done
 
 			$page_str = "<span style='font-size: 1vw'>".join(" &mdash; ", $links)."<br></span>";
 			print $page_str;
+		}
+
+		if($page_str) {
+			print "<br>$page_str<br>";
+		}
+
+		if($html == "") {
+			$html .= file_get_contents("export_base.html");
 		}
 
 		// <object-class> <x> <y> <width> <height>
@@ -814,15 +819,20 @@ done
 			$new_html = join("\n", $base_structs);
 
 			$html = preg_replace("/REPLACEME/", $new_html, $html);
-
-			print($html);
 		} else {
-			print "No images for the chosen category";
+			$html = "No images for the chosen category";
 		}
 
-		if($page_str) {
-			print "<br>$page_str<br>";
-		}
+		return $html;
+	}
+
+	function print_export_html_and_exit ($number_of_rows, $items_per_page, $images) {
+		$annos_strings = array();
+
+		$html = _create_internal_html($images, $number_of_rows, $items_per_page);
+
+		print($html);
+
 
 		include("footer.php");
 		exit(0);
