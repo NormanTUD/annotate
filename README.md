@@ -22,4 +22,6 @@ You can upload a bunch of images and annotate them for usage with YoloV5.
 
 You can export them to the YoloV5-format as well.
 
-It is made for large datasets and groups that voluntarily label data.
+It is made for large datasets and groups that voluntarily label data. It has a (yet incomplete) curation system.
+
+It also allows you to upload TFJS-models and use the models in the browser to annotate further data.
