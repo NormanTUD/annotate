@@ -117,7 +117,7 @@ function move_to_unidentifiable () {
 }
 
 function move_file (to) {
-	var image = $("#image")[0].src.replace(/.*\//, "");
+	var image = $("#image")[0].src.replace(/.*filename=/, "");
 
 	$.ajax({
 		url: "move.php?" + to + "=" + image,

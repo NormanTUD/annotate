@@ -574,7 +574,6 @@
 	}
 
 	function delete_image_by_fn ($fn) {
-		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
 		$query = "delete from image where filename = ".esc($fn);
 
 		rquery($query);
@@ -587,7 +586,6 @@
 	}
 
 	function flag_deleted ($annotarius_id) {
-		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
 		$query = "delete from annotation where annotarius_id = ".esc($annotarius_id);
 
 		rquery($query);
@@ -683,24 +681,24 @@
 
 	function move_to_offtopic ($fn) {
 		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
-			rquery("update image set offtopic = 1 where filename = ".esc($fn));
-			rquery("update image set deleted = 1 where filename = ".esc($fn));
+			rquery("update image set offtopic = '1' where filename = ".esc($fn));
+			rquery("update image set deleted = '1' where filename = ".esc($fn));
 			print "Moved to offtopic";
 		}
 	}
 
 	function move_to_unidentifiable ($fn) {
 		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
-			rquery("update image set unidentifiable = 1 where filename = ".esc($fn));
-			rquery("update image set deleted = 1 where filename = ".esc($fn));
+			rquery("update image set unidentifiable = '1' where filename = ".esc($fn));
+			rquery("update image set deleted = '1' where filename = ".esc($fn));
 			print "Moved from unidentifiable";
 		}
 	}
 
 	function move_from_offtopic ($fn) {
 		if(!preg_match("/\.\./", $fn) && preg_match("/\.jpg/", $fn)) {
-			rquery("update image set offtopic = 0 where filename = ".esc($fn));
-			rquery("update image set deleted = 0 where filename = ".esc($fn));
+			rquery("update image set offtopic = '0' where filename = ".esc($fn));
+			rquery("update image set deleted = '0' where filename = ".esc($fn));
 			print "Moved from offtopic";
 		}
 	}
