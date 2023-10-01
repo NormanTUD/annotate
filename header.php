@@ -15,7 +15,7 @@ include_once("functions.php");
 	<script src='tf-backend-wasm.min.js'></script>
 	<!--<script src='phash.js'></script>-->
 	<script>
-var labels = <?php print(file_get_contents("labels.json")); ?>;
+		var labels = <?php include("labels.php"); ?>;
 	</script>
 </head>
 
