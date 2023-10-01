@@ -25,9 +25,11 @@ RUN chmod +x /var/www/html/.env
 # Configure Apache
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-RUN cat .env | grep "DB_PASSWORD" | sed -e 's#.*=##' >> /etc/dbpw
-RUN cat .env | grep "DB_USER" | sed -e 's#.*=##' >> /etc/dbuser
-RUN cat .env | grep "DB_HOST" | sed -e 's#.*=##' >> /etc/dbhost
+
+RUN echo "$DB_PASSWORD" | sed -e 's#.*=##' >> /etc/dbpw
+RUN echo "$DB_USER" | sed -e 's#.*=##' >> /etc/dbuser
+RUN echo "$DB_HOST" | sed -e 's#.*=##' >> /etc/dbhost
+RUN echo "$DB_PORT" | sed -e 's#.*=##' >> /etc/dbport
 
 # Add the "extension=mongodb.so" directive to the PHP configuration
 RUN echo "extension=mongodb.so" >> /usr/local/etc/php/php.ini
