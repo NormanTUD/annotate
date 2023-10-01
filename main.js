@@ -34,7 +34,7 @@ async function load_model () {
 	}
 
 	var model_uid = $("#chosen_model").val();
-	var model_json_url = "models/" + uid + "/model.json";
+	var model_json_url = "models/" + model_uid + "/model.json";
 
 	model = await tf.loadGraphModel(
 		model_json_url,
