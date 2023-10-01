@@ -16,6 +16,8 @@ if [[ ! -e .alpha_yoloenv_normal/bin/activate ]]; then
 	pip3 install tensorflowjs
 fi
 
+source .alpha_yoloenv_normal/bin/activate
+
 cd $start_dir
 
 if [[ "$(python3 -c 'import numpy; print(numpy.__version__)')" =~ "1.26.0" ]]; then
