@@ -8,17 +8,12 @@ ENV APACHE_PORT 8080
 ENV APACHE_DOCUMENT_ROOT /var/www/html
 
 # Install necessary dependencies
-RUN apt-get update && apt-get install -y \
-    libssl-dev iproute2 \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get install -y inet-utils
+RUN apt-get update && apt-get install -y libssl-dev iproute2
+RUN rm -rf /var/lib/apt/lists/*
 
 # Copy the PHP files to the container
 COPY . $APACHE_DOCUMENT_ROOT/
-
 COPY .env /var/www/html/.env
-RUN chmod +x /var/www/html/.env
 
 # Configure Apache
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
@@ -27,9 +22,6 @@ RUN cat .env | grep "DB_PASSWORD" | sed -e 's#.*=##' >> /etc/dbpw
 RUN cat .env | grep "DB_USER" | sed -e 's#.*=##' >> /etc/dbuser
 RUN cat .env | grep "DB_HOST" | sed -e 's#.*=##' >> /etc/dbhost
 RUN cat .env | grep "DB_PORT" | sed -e 's#.*=##' >> /etc/dbport
-
-# Add the "extension=mongodb.so" directive to the PHP configuration
-RUN echo "extension=mongodb.so" >> /usr/local/etc/php/php.ini
 
 # Debugging step - Check the content of php.ini again
 RUN cat /usr/local/etc/php/php.ini
