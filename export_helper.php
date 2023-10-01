@@ -879,11 +879,9 @@ done
 			$annotated_image_ids_query .= " and (a.curated is null or a.curated = 0 or a.curated = '0') ";
 		}
 
-		if($only_uncurated) {
+		if($only_curated) {
 			$annotated_image_ids_query .= " and (a.curated = 1 or a.curated = '1') "; 
 		}
-
-		dier($annotated_image_ids_query);
 
 		if ($format == "html") {
 			$annotated_image_ids_query .= " order by i.filename, a.modified ";
