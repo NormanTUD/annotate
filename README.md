@@ -1,6 +1,8 @@
 # SimpleImageAnnotationTool
 A simple image annotation tool in PHP/JS
 
+![Screenshot](screens/screen0.png "Visualization at the start page")
+
 # Setup
 Install Apache+PHP+zip. Copy this dir to `/var/www/html/annotate/`.
 
