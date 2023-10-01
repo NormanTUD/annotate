@@ -59,10 +59,6 @@
 			mkdir("$tmp_dir/validation/");
 		}
 
-		if($test_split) {
-			mkdir("$tmp_dir/test/");
-		}
-
 		file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 		file_put_contents("$tmp_dir/labels.json", $labels_json);
 
