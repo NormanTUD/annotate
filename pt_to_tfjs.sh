@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 if [ ! -d "yolov5" ]; then
         git clone --depth 1 https://github.com/ultralytics/yolov5.git
