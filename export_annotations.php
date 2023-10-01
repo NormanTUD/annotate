@@ -4,7 +4,7 @@
 	set_time_limit(3600);
 
 	include_once("functions.php");
-	include("export_helper.php");
+	include_once("export_helper.php");
 
 	if(get_get("curate_on_click") && get_get("delete_on_click")) {
 		die("Either curate or delete on click, not both");
