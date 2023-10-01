@@ -97,6 +97,9 @@ fi
 export DB_HOST
 export LOCAL_PORT
 
+# Write environment variables to .env file
+sed -i "s#LOCAL_PORT=.*#LOCAL_PORT=$LOCAL_PORT#" .env
+
 echo "=== Current git hash before auto-pulling ==="
 git rev-parse HEAD
 echo "=== Current git hash before auto-pulling ==="
