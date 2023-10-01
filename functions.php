@@ -88,7 +88,12 @@
 			} catch (\Throwable $e) {
 				$pingable = ping($GLOBALS["db_host"], $GLOBALS["db_port"], 5);
 
-				die("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt><br>Host is pingable? <tt>".$pingable."</tt>");
+				$pingable_str = "Yes";
+				if(!$pingable) {
+					$pingable_str = "No";
+				}
+
+				die("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt><br>Host is pingable? <tt>".$pingable_str."</tt>");
 			}
 		} catch (\Throwable $e) {
 			print("$e");
