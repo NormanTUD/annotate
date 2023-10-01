@@ -10,37 +10,21 @@
 		die("Either curate or delete on click, not both");
 	}
 
-	$valid_formats = array(
-		"ultralytics_yolov5", "html"
-	);
-
-	$format = "ultralytics_yolov5";
-	if(isset($_GET["format"]) && in_array($_GET["format"], $valid_formats)) {
-		$format = $_GET["format"];
-	}
-
-	$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
-
-	$max_files = get_get("max_files", 0);
-	$validation_split = get_get("validation_split", 0);
-	$test_split = get_get("test_split", 0);
-	$only_uncurated = get_param("only_uncurated");
-	$only_curated = get_param("only_curated");
-	$max_truncation = get_param("max_truncation", 100);
-	$page = get_param("page");
 	$items_per_page = get_param("items_per_page", 500);
-	$offset = get_param("offset", $page * $items_per_page);
-	$limit = get_param("limit");
 
-	$images_and_number_of_rows = get_annotated_images($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files);
-	$images = $images_and_number_of_rows[0];
-	$number_of_rows = $images_and_number_of_rows[1];
+	$images_and_number_of_rows_and_format_and_categories = get_annotated_images();
+	$images = $images_and_number_of_rows_and_format_and_categories[0];
+	$number_of_rows = $images_and_number_of_rows_and_format_and_categories[1];
+	$format = $images_and_number_of_rows_and_format_and_categories[2];
+	$categories = $images_and_number_of_rows_and_format_and_categories[3];
 
 	if ($format == "html") {
 		print_export_html_and_exit($number_of_rows, $items_per_page, $images);
 	}
 
 	$tmp_dir = create_tmp_dir();
+
+	$validation_split = get_get("validation_split", 0);
 
 	if(is_dir($tmp_dir)) {
 		$dataset_yaml = "path: ./\n";
@@ -83,21 +67,6 @@
 		file_put_contents("$tmp_dir/labels.json", $labels_json);
 
 		$j = 0;
-
-		if(get_get("empty")) {
-			$empty_images = glob("empty/*.jpg");
-
-			foreach ($empty_images as $fn) {
-				$fn = preg_replace("/empty\//", "", $fn);
-				if(file_exists("empty/$fn")) {
-					$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
-
-					file_put_contents("$tmp_dir/labels/$fn_txt", "");
-				} else {
-					mywarn("\nCannot copy file: empty/$fn\n\n");
-				}
-			}
-		}
 
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
@@ -147,6 +116,4 @@
 	} else {
 		print "Der Ordner $tmp_name konnte nicht erstellt werden.";
 	}
-
-
 ?>

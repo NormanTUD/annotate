@@ -956,7 +956,31 @@
 		}
 	}
 
-	function get_annotated_images ($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files) {
+	function get_annotated_images () {
+		$valid_formats = array(
+			"ultralytics_yolov5", "html"
+		);
+
+		$format = "ultralytics_yolov5";
+		if(isset($_GET["format"]) && in_array($_GET["format"], $valid_formats)) {
+			$format = $_GET["format"];
+		}
+
+		$max_files = get_get("max_files", 0);
+		$test_split = get_get("test_split", 0);
+		$only_uncurated = get_param("only_uncurated");
+		$only_curated = get_param("only_curated");
+		$max_truncation = get_param("max_truncation", 100);
+		$page = get_param("page");
+		$items_per_page = get_param("items_per_page", 500);
+		$offset = get_param("offset", $page * $items_per_page);
+		$limit = get_param("limit");
+		$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
+
+		return _get_annotated_images($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files);
+	}
+
+	function _get_annotated_images ($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files) {
 		$annotated_image_ids_query = get_annotated_image_ids_query($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated);
 		$res = rquery($annotated_image_ids_query);
 
@@ -1047,7 +1071,7 @@
 			}
 		}
 
-		return [$images, $number_of_rows];
+		return [$images, $number_of_rows, $format, $categories];
 	}
 
 	$GLOBALS["base_url"] = get_base_url();
