@@ -61,7 +61,7 @@
 	}
 ?>
 
-	<div id="annotatin_area" style="display: <?php print $img_area_display; ?>">
+	<div id="annotation_area" style="display: <?php print $img_area_display; ?>">
 		<div id="loader"></div>
 		<table>
 			<tr>

@@ -652,7 +652,7 @@ async function set_img_from_filename (fn) {
 	set_image_url(fn);
 
 	if(fn) {
-		$("#annotatin_area").show();
+		$("#annotation_area").show();
 		$("#no_imgs_left").hide();
 
 		if($("#ki_detected_names").html != "") {
@@ -665,7 +665,7 @@ async function set_img_from_filename (fn) {
 
 		await load_page();
 	} else {
-		$("#annotatin_area").hide();
+		$("#annotation_area").hide();
 		$("#no_imgs_left").show();
 	}
 }
