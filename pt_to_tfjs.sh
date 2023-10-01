@@ -9,7 +9,8 @@ fi
 cd yolov5
 
 if [[ ! -e .alpha_yoloenv_normal/bin/activate ]]; then
-        python3 -mvenv .alpha_yoloenv_normal/
+	pip3 install virtualenv
+        virtualenv .alpha_yoloenv_normal/
         source .alpha_yoloenv_normal/bin/activate
         pip3 install -r requirements.txt
 	pip3 install tensorflowjs
@@ -24,6 +25,10 @@ if [[ "$(python -c 'import numpy; print(numpy.__version__)')" =~ "1.26.0" ]]; th
 	export USE_NNPACK=0
 
 	git checkout maintenance/1.26.x
+
+	git submodule update --init
+
+	# spin test -v # tests, shows what went wrong during compilation if sth goes wrong
 
 	pip install --upgrade pip
 
