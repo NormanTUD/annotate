@@ -23,9 +23,6 @@ RUN cat .env | grep "DB_USER" | sed -e 's#.*=##' >> /etc/dbuser
 RUN cat .env | grep "DB_HOST" | sed -e 's#.*=##' >> /etc/dbhost
 RUN cat .env | grep "DB_PORT" | sed -e 's#.*=##' >> /etc/dbport
 
-# Debugging step - Check the content of php.ini again
-RUN cat /usr/local/etc/php/php.ini
-
 RUN rm .env
 
 # Expose the Apache port
