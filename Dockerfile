@@ -9,12 +9,10 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html
 
 # Install necessary dependencies
 RUN apt-get update
-RUN apt-get install -y libssl-dev iproute2 iputils-ping
+RUN apt-get install -y libssl-dev iproute2 iputils-ping python3 python3-pip zip
 RUN docker-php-ext-install mysqli
 RUN docker-php-ext-install pdo pdo_mysql
-RUN apt-get install -y python3 python3-pip
 RUN pip3 install imagehash
-RUN apt-get install -y zip
 RUN rm -rf /var/lib/apt/lists/*
 
 # Copy the PHP files to the container
