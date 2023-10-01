@@ -813,7 +813,7 @@
 	}
 
 	function get_list_of_models () {
-		$query = 'select if(model_name is null or model_name = "", uid, model_name) as model_name, uid from models group by uid';
+		$query = 'select if(model_name is null or model_name = "", uid, model_name) as model_name, uid from models group by uid order by upload_time desc';
 
 		$res = rquery($query);
 
@@ -826,7 +826,7 @@
 	}
 
 	function print_model_file ($uid, $filename) {
-		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)." order by upload_time desc";
+		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)."";
 
 		$res = rquery($query);
 
