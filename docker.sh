@@ -22,19 +22,19 @@ help_message() {
 # Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
-		--db-password)
+		--db-password*)
 			DB_PASSWORD="$2"
 			shift
 			;;
-		--db-host)
+		--db-host*)
 			DB_HOST="$2"
 			shift
 			;;
-		--db-port)
+		--db-port*)
 			DB_PORT="$2"
 			shift
 			;;
-		--local-port)
+		--local-port*)
 			LOCAL_PORT="$2"
 			shift
 			;;
@@ -162,4 +162,4 @@ fi
 
 echo "Building container. This needs sudo-permissions"
 
-sudo docker-compose build && sudo docker-compose up -d || echo "Failed to build container"
+#sudo docker-compose build && sudo docker-compose up -d || echo "Failed to build container"
