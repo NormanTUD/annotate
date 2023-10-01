@@ -18,7 +18,7 @@ fi
 
 cd $start_dir
 
-if [[ "$(python -c 'import numpy; print(numpy.__version__)')" =~ "1.26.0" ]]; then
+if [[ "$(python3 -c 'import numpy; print(numpy.__version__)')" =~ "1.26.0" ]]; then
 	git clone https://github.com/numpy/numpy.git
 	cd numpy
 
