@@ -817,7 +817,7 @@ done
 
 			print($html);
 		} else {
-			print "Keine Daten für die gewählte Kategorie";
+			print "No images for the chosen category";
 		}
 
 		if($page_str) {
