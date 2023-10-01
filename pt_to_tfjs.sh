@@ -1,5 +1,7 @@
 #!/bin/bash
 
+start_dir=$(pwd)
+
 if [ ! -d "yolov5" ]; then
         git clone --depth 1 https://github.com/ultralytics/yolov5.git
 fi
@@ -13,12 +15,24 @@ if [[ ! -e .alpha_yoloenv_normal/bin/activate ]]; then
 	pip3 install tensorflowjs
 fi
 
+cd $start_dir
+
 if [[ "$(python -c 'import numpy; print(numpy.__version__)')" =~ "1.26.0" ]]; then
 	git clone https://github.com/numpy/numpy.git
+	cd numpy
+
+	export USE_NNPACK=0
+
+	pip install --upgrade pip
+
+	pip install -r build_requirements.txt
+	pip install -e . --no-build-isolation
+
+	cd -
 	echo "compile yourself..."
 fi
 
-cd -
+cd $start_dir
 
 if [[ ! -e $1 ]]; then
 	echo "$1 not found";
