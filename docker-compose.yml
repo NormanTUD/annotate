@@ -1,7 +1,7 @@
 version: '3'
 services:
-  annotate_mysql:
-    container_name: annotate_mysql
+  annotate_mariadb:
+    container_name: annotate_mariadb
     restart: always
     image: mariadb:latest
     environment:
@@ -18,7 +18,7 @@ services:
     ports:
       - $LOCAL_PORT:80
     environment:
-      - DB_HOST=annotate_mysql
+      - DB_HOST=annotate_mariadb
       - DB_PORT=6603
       - DB_PASSWORD=root
       - DB_USER=root
