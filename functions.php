@@ -12,16 +12,17 @@
 	$GLOBALS["queries"] = array();
 	$GLOBALS["db_name"] = "annotate";
 	$GLOBALS["db_port"] = 3306;
-
-	if(!isset($GLOBALS['db_host'])) {
-		$GLOBALS['db_host'] = 'localhost';
-	}
+	$GLOBALS['db_host'] = 'localhost';
 
 	if(!isset($GLOBALS['db_username'])) {
 		$GLOBALS['db_username'] = "root";
 		if(file_exists("/etc/dbuser")) {
 			$GLOBALS["db_username"] = trim(fgets(fopen("/etc/dbuser", 'r')));
 		}
+	}
+
+	if(file_exists("/etc/dbhost")) {
+		$GLOBALS["db_dbhost"] = trim(fgets(fopen("/etc/dbhost", 'r')));
 	}
 
 	if(file_exists("/etc/dbport")) {
@@ -78,7 +79,7 @@
 
 				import_files();
 			} catch (\Throwable $e) {
-				die("Could not connect to database. If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>");
+				die("Could not connect to database on ".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>");
 			}
 		} catch (\Throwable $e) {
 			print("$e");
