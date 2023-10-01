@@ -71,7 +71,7 @@
 		<tr>
 			<td>Only curated?</td>
 			<td style="display: none">only_curated</td>
-			<td><input onchange="change_url()" type="checkbox" checked /></td>
+			<td><input onchange="change_url()" type="checkbox" /></td>
 		</tr>
 
 		<tr>
