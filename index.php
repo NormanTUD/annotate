@@ -38,6 +38,9 @@
 	<br>
 <?php
 	if(count($available_models)) {
+		if(count($available_models) == 1) {
+			print "<span style='display: none'>";
+		}
 		print "Ausgewähltes KI-Modell: <select id='chosen_model'>";
 		$i = 0;
 		foreach ($available_models as $_model) {
@@ -52,6 +55,9 @@
 			$i++;
 		}
 		print "</select>";
+		if(count($available_models) == 1) {
+			print "</span>";
+		}
 	}
 ?>
 	<br>
