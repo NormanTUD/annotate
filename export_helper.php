@@ -868,7 +868,7 @@ done
 		return $number_of_rows;
 	}
 
-	function get_annotated_image_ids_query ($max_truncation=100, $show_categories=0, $only_uncurated=0, $format="ultralytics_yolov5", $limit=0, $items_per_page=0, $offset=0) {
+	function get_annotated_image_ids_query ($max_truncation=100, $show_categories=0, $only_uncurated=0, $format="ultralytics_yolov5", $limit=0, $items_per_page=0, $offset=0, $only_curated=0) {
 		$annotated_image_ids_query = "select SQL_CALC_FOUND_ROWS i.filename, i.width, i.height, c.name, a.x_start, a.y_start, a.w, a.h, a.id, left(i.perception_hash, $max_truncation) as truncated_perception_hash from annotation a left join image i on i.id = a.image_id left join category c on c.id = a.category_id where i.id in (select id from image where id in (select image_id from annotation where deleted = '0' group by image_id)) and i.deleted = 0 ";
 
 		if($show_categories && count($show_categories)) {
@@ -876,8 +876,14 @@ done
 		}
 
 		if($only_uncurated) {
-			$annotated_image_ids_query .= " and a.curated is null ";
+			$annotated_image_ids_query .= " and (a.curated is null or a.curated = 0 or a.curated = '0') ";
 		}
+
+		if($only_uncurated) {
+			$annotated_image_ids_query .= " and (a.curated = 1 or a.curated = '1') "; 
+		}
+
+		dier($annotated_image_ids_query);
 
 		if ($format == "html") {
 			$annotated_image_ids_query .= " order by i.filename, a.modified ";

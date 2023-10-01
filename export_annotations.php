@@ -16,6 +16,7 @@
 	$validation_split = get_get("validation_split", 0);
 	$test_split = get_get("test_split", 0);
 	$only_uncurated = get_param("only_uncurated");
+	$only_curated = get_param("only_curated");
 	$max_truncation = get_param("max_truncation", 100);
 
 	$valid_formats = array(
@@ -34,7 +35,7 @@
 
 	$images = [];
 
-	$annotated_image_ids_query = get_annotated_image_ids_query($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset);
+	$annotated_image_ids_query = get_annotated_image_ids_query($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated);
 	$res = rquery($annotated_image_ids_query);
 
 	$number_of_rows = get_number_of_rows();

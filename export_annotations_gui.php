@@ -69,6 +69,12 @@
 		</tr>
 
 		<tr>
+			<td>Only curated?</td>
+			<td style="display: none">only_curated</td>
+			<td><input onchange="change_url()" type="checkbox" checked /></td>
+		</tr>
+
+		<tr>
 			<td>Only uncurated?</td>
 			<td style="display: none">only_uncurated</td>
 			<td><input onchange="change_url()" type="checkbox" /></td>
