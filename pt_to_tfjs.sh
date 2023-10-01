@@ -20,8 +20,12 @@ source .alpha_yoloenv_normal/bin/activate
 
 cd $start_dir
 
+if [[ $1 == "" ]]; then
+	exit 0
+fi
+
 if [[ ! -e $1 ]]; then
-	echo "$1 not found";
+	echo "File >$1< not found";
 	exit 1
 fi
 
