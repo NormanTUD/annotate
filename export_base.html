@@ -4,6 +4,7 @@
 		<script src="jquery.min.js"></script>
 		<script src="toc.js"></script>
 		<script src="main.js"></script>
+		<link rel="stylesheet" href="style.css">
 		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 		<title>Bildannotationstool</title>
 		<style>
@@ -36,17 +37,60 @@
 				stroke: #fff000;
 			}
 		</style>
-		</head>
-		<body>
-			<div id="toc"> 
-			</div> 
-			<div id="contents">
-				<div id="content">
-					REPLACEME
-				</div>
+	</head>
+	<body>
+		<div id="top">
+			<table>
+				<tr>
+					<td>Curate on click?</td>
+					<td><input id="curate_on_click" type="checkbox" value=1 onclick='curate_on_click();' /></td>
+				</tr>
+				<tr>
+					<td>Delete Annotation on click?</td>
+					<td><input id="delete_on_click" type="checkbox" value=1 onclick='delete_on_click();' /></td>
+				</tr>
+				<tr>
+					<td>Open deleted image in new tab?</td>
+					<td><input id="open_deleted_in_new_tab" type="checkbox" value=1 onclick='open_deleted_in_new_tab();' /></td>
+				</tr>
+			</table>
+		</div>
+		<div id="toc"> 
+		</div> 
+		<div id="contents">
+			<div id="content">
+				REPLACEME
 			</div>
+		</div>
 
-			<script>
-				toc();
-			</script>
-		</body>
+		<script>
+			toc();
+
+			if(startUrlParams.get("curate_on_click")) {
+				$("#curate_on_click").attr("checked", true);
+			} else {
+				$("#curate_on_click").attr("checked", false);
+			}
+
+			if(startUrlParams.get("delete_on_click")) {
+				$("#delete_on_click").attr("checked", true);
+			} else {
+				$("#delete_on_click").attr("checked", false);
+			}
+
+			if(startUrlParams.get("open_deleted_in_new_tab")) {
+				$("#open_deleted_in_new_tab").attr("checked", true);
+			} else {
+				$("#open_deleted_in_new_tab").attr("checked", false);
+			}
+
+			function open_deleted_in_new_tab () {
+			}
+
+			function delete_on_click() {
+			}
+
+			function curate_on_click () {
+			}
+		</script>
+	</body>
