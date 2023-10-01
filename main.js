@@ -445,7 +445,7 @@ async function ai_file (elem) {
 		}
 	}
 
-	var msg = "KI erfolgreich durchgelaufen";
+	var msg = "AI ran successfully";
 
 	success("Success", msg);
 	await anno.setAnnotations(a);
@@ -456,7 +456,7 @@ async function ai_file (elem) {
 	}
 	running_ki = false;
 
-	success("Success", "KI fertig...");
+	success("Success", "AI done...");
 
 	if(autonext_param) {
 		await load_next_random_image();
@@ -523,12 +523,12 @@ async function create_selects_from_annotation(force=0) {
 		});
 	} else {
 		if(!running_ki) {
-			if($("#ki_detected_names").html() != "Keine Objekte markiert") {
-				$("#ki_detected_names").html("Keine Objekte markiert");
+			if($("#ki_detected_names").html() != "No objects found") {
+				$("#ki_detected_names").html("No objects found");
 			}
 		} else {
-			if($("#ki_detected_names").html() != "Bitte warten, die KI läuft...") {
-				$("#ki_detected_names").html("Bitte warten, die KI läuft...");
+			if($("#ki_detected_names").html() != "Please wait, AI is running...") {
+				$("#ki_detected_names").html("Please wait, AI is running...");
 			}
 		}
 	}
@@ -606,7 +606,7 @@ async function load_dynamic_content () {
 			if(d.html != "<ul style='list-style: conic-gradient'></ul>") {
 				$('#list').html(d.html);
 			} else {
-				$('#list').html("<i>Bisher keine Tags</i>");
+				$('#list').html("<i>No tags yet</i>");
 			}
 		},
 		error: function (xhr, status) {

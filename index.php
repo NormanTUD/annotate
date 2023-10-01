@@ -69,11 +69,11 @@
 				<td style="vertical-align: baseline;">
 					<div id="content" style="padding: 30px;">
 						<p>
-							<button id="next_img_button" onClick="load_next_random_image()">N&auml;chstes Bild (n)</button>
+							<button id="next_img_button" onClick="load_next_random_image()">Next image</button>
 							<button class='ai_stuff' id="autonext_img_button" onClick="autonext()">AutoNext</button>
-							<button class='ai_stuff'><a onclick="ai_file($('#image')[0])">KI-Labelling (k)</a></button>
-							<button onclick="move_to_offtopic()">Bild ist Off Topic (o)</button>
-							<button onclick="move_to_unidentifiable()">Bild ist nicht identifizierbar (u)</button>
+							<button class='ai_stuff'><a onclick="ai_file($('#image')[0])">AI-Labelling</a></button>
+							<button onclick="move_to_offtopic()">Offtopic</button>
+							<button onclick="move_to_unidentifiable()">Not identifiable</button>
 						</p>
 						<div id="ki_detected_names"></div>
 						<img id="image" />
@@ -82,7 +82,7 @@
 					</div>
 				</td>
 				<td>
-					Aktuelle Tags:
+					Current tags:
 
 					<div id="list"></div>
 				</td>
@@ -91,7 +91,7 @@
 	</div>
 
 	<div id="no_imgs_left" style="display: <?php print $no_imgs_left_display; ?>">
-		Aktuell sind alle vorhandenen Bilder annotiert. Bitte checken Sie die Seite später erneut.
+		Currently, all available images are annotated. <a href="upload.php">Upload images</a> or check again later.
 	</div>
 
 	<script>

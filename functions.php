@@ -190,17 +190,17 @@
 		$not_completely_imported_str = number_format($not_completely_imported, 0, ',', '.');
 		$unidentifiable_imgs_str = number_format($unidentifiable_imgs, 0, ',', '.');
 
-		$str = "Annotiert: ".htmlentities($annotation_stat_str ?? "");
+		$str = "Annotated: ".htmlentities($annotation_stat_str ?? "");
 		if($not_completely_imported != 0) {
-			$str .= ", noch nicht vollständig importiert: ".htmlentities($not_completely_imported_str ?? "");
+			$str .= ", not yet completely imported: ".htmlentities($not_completely_imported_str ?? "");
 		}
 
 		if($curated_imgs) {
-			$str .= ", kuratiert: ".htmlentities($curated_imgs_str ?? "");
+			$str .= ", curated: ".htmlentities($curated_imgs_str ?? "");
 		}
 
 		if($unannotated_imgs) {
-			$str .= ", unannotiert: ".htmlentities($unannotated_imgs_str ?? "");
+			$str .= ", unannotated: ".htmlentities($unannotated_imgs_str ?? "");
 		}
 
 		if($offtopic_imgs) {
@@ -208,7 +208,7 @@
 		}
 
 		if($unidentifiable_imgs) {
-			$str .= ", nicht identifizierbar: ".htmlentities($unidentifiable_imgs_str ?? "");
+			$str .= ", not identifiable: ".htmlentities($unidentifiable_imgs_str ?? "");
 		}
 
 		$curated_percent = 0;
@@ -234,10 +234,10 @@
 		}
 
 		$str .= "<br><a href='index.php'>Home</a>, ";
-		$str .= "<a target='_blank' href='stat.php'>Statistik</a>, ";
+		$str .= "<a target='_blank' href='stat.php'>Statistics</a>, ";
 		$str .= "<a target='_blank' href='models.php'>Models</a>, ";
-		$str .= "<a target='_blank' href='upload.php'>Upload</a>, ";
-		$str .= "<a target='_blank' href='export_annotations_gui.php'>Annotationen exportieren</a>";
+		$str .= "<a target='_blank' href='upload.php'>Upload Images</a>, ";
+		$str .= "<a target='_blank' href='export_annotations_gui.php'>Export annotations</a>";
 
 		return $str;
 	}

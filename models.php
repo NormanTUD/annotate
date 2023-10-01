@@ -6,13 +6,13 @@
 
 	if(count($available_models)) {
 ?>
-		<h1>Aktuelle Modelle</h1>
+		<h1>Current models</h1>
 		
 		<table border=1>
 			<tr>
 				<th>Name</th>
 				<th>UID</th>
-				<th>Löschen?</th>
+				<th>Delete?</th>
 			</tr>
 <?php
 			for ($i = 0; $i < count($available_models); $i++) {
