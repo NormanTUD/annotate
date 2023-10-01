@@ -20,29 +20,6 @@ source .alpha_yoloenv_normal/bin/activate
 
 cd $start_dir
 
-if [[ "$(python3 -c 'import numpy; print(numpy.__version__)')" =~ "1.26.0" ]]; then
-	git clone https://github.com/numpy/numpy.git
-	cd numpy
-
-	export USE_NNPACK=0
-
-	git checkout maintenance/1.26.x
-
-	git submodule update --init
-
-	# spin test -v # tests, shows what went wrong during compilation if sth goes wrong
-
-	pip install --upgrade pip
-
-	pip install -r build_requirements.txt
-	pip install -e . --no-build-isolation
-
-	cd -
-	echo "compile yourself..."
-fi
-
-cd $start_dir
-
 if [[ ! -e $1 ]]; then
 	echo "$1 not found";
 	exit 1
