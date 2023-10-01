@@ -1,7 +1,8 @@
 # SimpleImageAnnotationTool
 A simple image annotation tool in PHP/JS
 
-![Screenshot](screens/screen0.png "Visualization at the start page")
+![Screenshot](screens/screen1.png "No AI")
+![Screenshot](screens/screen2.png "AI")
 
 # Setup
 Install Apache+PHP+zip. Copy this dir to `/var/www/html/annotate/`.
