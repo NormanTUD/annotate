@@ -10,7 +10,7 @@
 			$modelName = $_POST['model_name'];
 
 			$files = [];
-			for ($i = 0; $i < count($_FILES["tfjs_model"]["name"]) - 1; $i++) {
+			for ($i = 0; $i < count($_FILES["tfjs_model"]["name"]); $i++) {
 				$filename = $_FILES["tfjs_model"]["name"][$i];
 				$tmp = $_FILES["tfjs_model"]["tmp_name"][$i];
 
