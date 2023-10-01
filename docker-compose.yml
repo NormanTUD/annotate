@@ -10,3 +10,15 @@ services:
       - DB_PORT=$DB_PORT
       - DB_PASSWORD=$DB_PASSWORD
       - DB_USER=$DB_USER
+  mysql:
+    container_name: mysql
+    restart: always
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=$DB_PASSWORD
+      - MYSQL_PASS=$DB_PASSWORD
+      - MYSQL_USER=$DB_USER
+    volumes:
+      - my-datavolume:/var/lib/docker_mysql
+volumes:
+  my-datavolume:
