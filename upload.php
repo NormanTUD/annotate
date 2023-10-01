@@ -34,7 +34,6 @@
 						processData: false,
 						success: function (response) {
 							$('#response').html(response);
-							log("response:", response);
 							if(response.includes("Error:")) {
 								defective_files.push();
 								$("#defective_files_ul").append("<li>" + files[currentIndex].name + "</li>");
