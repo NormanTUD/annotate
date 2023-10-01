@@ -2,8 +2,6 @@
 	if(file_exists("labels.json")) {
 		print file_get_contents("labels.json");
 	} else {
-		header('Content-Type: application/json; charset=utf-8');
-
 		include_once("functions.php");
 		include("export_helper.php");
 
