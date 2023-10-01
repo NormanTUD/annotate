@@ -13,12 +13,11 @@
 	$GLOBALS["db_name"] = "annotate";
 	$GLOBALS["db_port"] = 3306;
 	$GLOBALS['db_host'] = 'localhost';
+	$GLOBALS['db_username'] = "root";
+	$GLOBALS["db_password"] = "";
 
-	if(!isset($GLOBALS['db_username'])) {
-		$GLOBALS['db_username'] = "root";
-		if(file_exists("/etc/dbuser")) {
-			$GLOBALS["db_username"] = trim(fgets(fopen("/etc/dbuser", 'r')));
-		}
+	if(file_exists("/etc/dbuser")) {
+		$GLOBALS["db_username"] = trim(fgets(fopen("/etc/dbuser", 'r')));
 	}
 
 	if(file_exists("/etc/dbhost")) {
