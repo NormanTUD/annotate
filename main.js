@@ -472,10 +472,12 @@ function autonext () {
 	if(autonext_param) {
 		autonext_param = false;
 		$("#autonext_img_button").text("AutoNext");
+		$(".disable_in_autonext").prop("disabled", false);
 	} else {
 		autonext_param = true;
 		load_next_random_image()
 		$("#autonext_img_button").text("Stop AutoNext");
+		$(".disable_in_autonext").prop("disabled", true);
 	}
 }
 

@@ -68,11 +68,11 @@
 				<td style="vertical-align: baseline;">
 					<div id="content" style="padding: 30px;">
 						<p>
-							<button id="next_img_button" onClick="load_next_random_image()">Next image</button>
+							<button class="disable_in_autonext" id="next_img_button" onClick="load_next_random_image()">Next image</button>
 							<button class='ai_stuff' id="autonext_img_button" onClick="autonext()">AutoNext</button>
-							<button class='ai_stuff'><a onclick="ai_file($('#image')[0])">AI-Labelling</a></button>
-							<button onclick="move_to_offtopic()">Offtopic</button>
-							<button onclick="move_to_unidentifiable()">Not identifiable</button>
+							<button class='disable_in_autonext ai_stuff'><a onclick="ai_file($('#image')[0])">AI-Labelling</a></button>
+							<button class="disable_in_autonext" onclick="move_to_offtopic()">Offtopic</button>
+							<button class="disable_in_autonext" onclick="move_to_unidentifiable()">Not identifiable</button>
 						</p>
 						<div id="ki_detected_names"></div>
 						<img id="image" />
