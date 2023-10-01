@@ -162,4 +162,4 @@ fi
 
 echo "Building container. This needs sudo-permissions"
 
-#sudo docker-compose build && sudo docker-compose up -d || echo "Failed to build container"
+sudo docker-compose build && sudo docker-compose up -d || echo "Failed to build container"
