@@ -235,6 +235,7 @@
 
 		$str .= "<br><a href='index.php'>Home</a>, ";
 		$str .= "<a target='_blank' href='stat.php'>Statistik</a>, ";
+		$str .= "<a target='_blank' href='upload_model.php'>Upload model</a>, ";
 		$str .= "<a target='_blank' href='upload.php'>Upload</a>, ";
 		$str .= "<a target='_blank' href='export_annotations_gui.php'>Annotationen exportieren</a>";
 
