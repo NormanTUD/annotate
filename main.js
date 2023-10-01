@@ -767,7 +767,7 @@ function delete_all_anno (image) {
 			await load_dynamic_content();
 		},
 		error: async function(jqXHR, textStatus, errorThrown) {
-			error("delete Anno: " + textStatus, errorThrown);
+			error("Delete Anno: " + textStatus, errorThrown);
 			await load_dynamic_content();
 		}
 	});
