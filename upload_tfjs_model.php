@@ -39,17 +39,17 @@
 
 			if(!$has_labels) {
 				echo "<b><tt>labels.json</tt> is missing!</b>";
-			}
-
-			if(count($files)) {
-				try {
-					insert_model_into_db($modelName, $files);
-					echo "Success: Model saved into DB";
-				} catch (\Throwable $e) {
-					echo "Error: $e";
-				}
 			} else {
-				echo "Error: no files found";
+				if(count($files)) {
+					try {
+						insert_model_into_db($modelName, $files);
+						echo "Success: Model saved into DB";
+					} catch (\Throwable $e) {
+						echo "Error: $e";
+					}
+				} else {
+					echo "Error: no files found";
+				}
 			}
 		} else {
 			echo "Error: Please provide both a model name and a .pt file to upload.";

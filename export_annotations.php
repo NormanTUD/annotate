@@ -141,13 +141,19 @@
 
 		$dataset_yaml .= "names:\n";
 
+		$labels_json = "";
+		$_labels = [];
+
 		$j = 0;
 		$category_numbers = array();
 		foreach ($categories as $i => $cat) {
 			$category_numbers[$cat] = $j;
 			$dataset_yaml .= "  $j: $cat\n";
+			$_labels[] = $cat;
 			$j++;
 		}
+
+		$labels_json = json_encode($_labels);
 
 		ob_start();
 		mkdir("$tmp_dir/labels/");
@@ -162,6 +168,7 @@
 		}
 
 		file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
+		file_put_contents("$tmp_dir/labels.json", $labels_json);
 
 		$j = 0;
 
