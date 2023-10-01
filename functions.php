@@ -580,6 +580,12 @@
 		rquery($query);
 	}
 
+	function delete_model ($model_uid) {
+		$query = "delete from models where uid = ".esc($model_uid);
+
+		rquery($query);
+	}
+
 	function flag_deleted ($annotarius_id) {
 		#$query = "update annotation set deleted = 1 where annotarius_id = ".esc($annotarius_id);
 		$query = "delete from annotation where annotarius_id = ".esc($annotarius_id);
