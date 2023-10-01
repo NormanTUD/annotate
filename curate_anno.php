@@ -2,9 +2,14 @@
 	include_once("functions.php");
 
 	if(array_key_exists("image", $_GET)) {
-		mark_as_curated(get_image_id($_GET["image"]));
+		$image_id = get_image_id($_GET["image"]);
+		if(preg_match("/^\d+$/", $image_id)) {
+			mark_as_curated($image_id);
 
-		print("OK curated");
+			print("Image $image_id curated");
+		} else {
+			die("Image not found");
+		}
 	} else {
 		die("No source given");
 	}
