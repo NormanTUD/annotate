@@ -1,6 +1,10 @@
 <?php
 	include_once("functions.php");
 
+	ini_set('memory_limit', '16384M');
+	ini_set('max_execution_time', '3600');
+	set_time_limit(3600);
+
 	if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
 		$file_name = $_FILES['image']['name'];
 		$file_tmp = $_FILES['image']['tmp_name'];
