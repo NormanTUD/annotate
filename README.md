@@ -26,10 +26,6 @@ so that one user can only see his own annotations.
 # How to fill data
 Just put JPG files in the images folder.
 
-# How it will look like
-
-![Alt Text](annotate.gif)
-
 # PHP Settings
 
 In php.ini, set
