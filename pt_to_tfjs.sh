@@ -25,6 +25,8 @@ WEBMODEL="$WORK_DIR/model_web_model"
 echo "Work-Dir: $WORK_DIR"
 echo ">>PATH>>$WEBMODEL<<PATH<<"
 
+export CUDA_VISIBLE_DEVICES=""
+
 PATH="$PATH:$(pwd)/yolov5/.alpha_yoloenv_normal/bin/"
 
 cp $1 $WORK_DIR/model.pt 2>&1
