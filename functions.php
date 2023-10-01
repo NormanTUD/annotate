@@ -24,7 +24,7 @@
 	}
 
 	if(file_exists("/etc/dbport")) {
-		$GLOBALS["db_dbport"] = trim(fgets(fopen("/etc/dbport", 'r')));
+		$GLOBALS["db_port"] = trim(fgets(fopen("/etc/dbport", 'r')));
 	}
 
 	if(file_exists("/etc/dbpw")) {
