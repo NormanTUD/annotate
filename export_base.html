@@ -67,51 +67,75 @@
 			toc();
 
 			if(startUrlParams.get("curate_on_click")) {
-				$("#curate_on_click").attr("checked", true);
+				$("#curate_on_click").prop("checked", true);
 			} else {
-				$("#curate_on_click").attr("checked", false);
+				$("#curate_on_click").prop("checked", false);
 			}
 
 			if(startUrlParams.get("delete_on_click") && !startUrlParams.get("curate_on_click")) {
-				$("#delete_on_click").attr("checked", true);
+				$("#delete_on_click").prop("checked", true);
 			} else {
-				$("#delete_on_click").attr("checked", false);
+				$("#delete_on_click").prop("checked", false);
 			}
 
 			if(startUrlParams.get("open_deleted_in_new_tab")) {
-				$("#open_deleted_in_new_tab").attr("checked", true);
+				$("#open_deleted_in_new_tab").prop("checked", true);
 			} else {
-				$("#open_deleted_in_new_tab").attr("checked", false);
+				$("#open_deleted_in_new_tab").prop("checked", false);
 			}
 
 			function open_deleted_in_new_tab () {
-				$(".container_div").each((i, e) => {
-					var img = $(e).find("img").attr("src");
-					img = img.replace(/.*filename=/, "");
-					img = img.replace(/"/, "\\\"");
-					log(img);
-					$(e).attr("onclick", `delete_all_anno_new_tab("${img}")`);
-				});
+				if($("#open_deleted_in_new_tab").is(":checked")) {
+					$(".container_div").each((i, e) => {
+						var img = $(e).find("img").attr("src");
+						img = img.replace(/.*filename=/, "");
+						img = img.replace(/"/, "\\\"");
+						$(e).attr("onclick", `delete_all_anno_new_tab("${img}")`);
+					});
+				} else {
+					$(".container_div").each((i, e) => {
+						$(e).attr("onclick", "false");
+					});
+				}
+
+				$("#curate_on_click").prop("checked", false);
+				$("#delete_on_click").prop("checked", false);
 			}
 
 			function delete_on_click() {
-				$(".container_div").each((i, e) => {
-					var img = $(e).find("img").attr("src");
-					img = img.replace(/.*filename=/, "");
-					img = img.replace(/"/, "\\\"");
-					log(img);
-					$(e).attr("onclick", `delete_all_anno("${img}")`);
-				});
+				if($("#delete_on_click").is(":checked")) {
+					$(".container_div").each((i, e) => {
+						var img = $(e).find("img").attr("src");
+						img = img.replace(/.*filename=/, "");
+						img = img.replace(/"/, "\\\"");
+						$(e).attr("onclick", `delete_all_anno("${img}")`);
+					});
+				} else {
+					$(".container_div").each((i, e) => {
+						$(e).attr("onclick", "false");
+					});
+				}
+
+				$("#curate_on_click").prop("checked", false);
+				$("#open_deleted_in_new_tab").prop("checked", false);
 			}
 
 			function curate_on_click () {
-				$(".container_div").each((i, e) => {
-					var img = $(e).find("img").attr("src");
-					img = img.replace(/.*filename=/, "");
-					img = img.replace(/"/, "\\\"");
-					log(img);
-					$(e).attr("onclick", `curate_anno("${img}")`);
-				});
+				if($("#curate_on_click").is(":checked")) {
+					$(".container_div").each((i, e) => {
+						var img = $(e).find("img").attr("src");
+						img = img.replace(/.*filename=/, "");
+						img = img.replace(/"/, "\\\"");
+						$(e).attr("onclick", `curate_anno("${img}")`);
+					});
+				} else {
+					$(".container_div").each((i, e) => {
+						$(e).attr("onclick", "false");
+					});
+				}
+
+				$("#delete_on_click").prop("checked", false);
+				$("#open_deleted_in_new_tab").prop("checked", false);
 			}
 		</script>
 	</body>
