@@ -949,7 +949,7 @@
 		} catch (\Throwable $e) {
 			// Log and handle the database error
 			error_log("Database error: " . $e->getMessage());
-			die("Error: Unable to insert models into the database.<br>".$e->getMessage());
+			die("Error: Unable to insert models into the database.<br>\nError:<br>".$e->getMessage()."<br>Error End<br>\n");
 		}
 	}
 

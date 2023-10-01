@@ -30,5 +30,7 @@ RUN rm .env
 # Expose the Apache port
 EXPOSE $APACHE_PORT
 
+RUN chmod 777 -R /tmp && chmod o+t -R /tmp
+
 # Start Apache server
 CMD ["apache2-foreground"]
