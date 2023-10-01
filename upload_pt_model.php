@@ -5,58 +5,6 @@
 	ini_set('max_execution_time', '3600');
 	set_time_limit(3600);
 
-	function insert_model_into_db ($model_name, $files_array) {
-		try {
-			// Establish a database connection (replace with your actual database details)
-			$pdo = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
-
-			// Initialize an array to store the IDs of inserted models
-			$inserted_model_ids = [];
-
-			$prefix = "model_";
-			$uid = uniqid($prefix);
-
-			// Loop through the files array
-			foreach ($files_array as $path) {
-				// Generate a unique filename to avoid conflicts
-				$file = $path;
-				$file = preg_replace("/.*\//", "", $file);
-				$file_contents = file_get_contents($path);
-
-				// Insert the model into the database
-				$stmt = $pdo->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents, uid) VALUES (:model_name, now(), :filename, :file_contents, :uid)");
-				$stmt->bindParam(':model_name', $model_name);
-				$stmt->bindParam(':filename', $file);
-				$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
-				$stmt->bindParam(':uid', $uid);
-				$stmt->execute();
-
-				// Retrieve the ID of the inserted model
-				$model_id = $pdo->lastInsertId();
-
-				echo "ID for file $file: $model_id<br>";
-
-				// Store the ID in the array
-				$inserted_model_ids[] = $model_id;
-			}
-
-			// Close the database connection
-			$pdo = null;
-
-			return $inserted_model_ids;
-		} catch (\Throwable $e) {
-			// Log and handle the database error
-			error_log("Database error: " . $e->getMessage());
-			die("Error: Unable to insert models into the database.<br>".$e->getMessage());
-		}
-	}
-
-	function process_is_running ($process) {
-		$res = proc_get_status($process);
-
-		return $res["running"];
-	}
-
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		print "<pre>";
 		if (isset($_FILES['pytorch_model']) && isset($_POST['model_name'])) {
