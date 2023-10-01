@@ -10,9 +10,6 @@ LOCAL_PORT=""
 help_message() {
 	echo "Usage: bash docker.sh [OPTIONS]"
 	echo "Options:"
-	echo "  --db-user          MySQL/MariaDB user"
-	echo "  --db-password      MySQL/MariaDB password"
-	echo "  --db-host          MySQL/MariaDB host address"
 	echo "  --local-port       Local port to bind for the GUI"
 	echo "  --help             Show this help message"
 }
@@ -20,18 +17,6 @@ help_message() {
 # Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
-		--db-password*)
-			DB_PASSWORD="$2"
-			shift
-			;;
-		--db-host*)
-			DB_HOST="$2"
-			shift
-			;;
-		--db-user*)
-			DB_USER="$2"
-			shift
-			;;
 		--local-port*)
 			LOCAL_PORT="$2"
 			shift
@@ -53,21 +38,6 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check for required parameters
-if [[ -z $DB_PASSWORD ]]; then
-	echo "Error: Missing required parameter --db-password. Use --help for usage."
-	exit 1
-fi
-
-if [[ -z $DB_USER ]]; then
-	echo "Error: Missing required parameter --db-user. Use --help for usage."
-	exit 1
-fi
-
-if [[ -z $DB_HOST ]]; then
-	echo "Error: Missing required parameter --db-host. Use --help for usage."
-	exit 1
-fi
-
 
 if [[ -z $LOCAL_PORT ]]; then
 	echo "Error: Missing required parameter --local-port. Use --help for usage."
