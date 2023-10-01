@@ -697,6 +697,10 @@
 
 		$base_dir = "images";
 
+		if(!is_dir($base_dir)) {
+			return;
+		}
+
 		$files = scandir($base_dir);
 
 		shuffle($files);
