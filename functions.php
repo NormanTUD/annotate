@@ -70,6 +70,7 @@
 		try {
 			try {
 				$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS["db_port"]);
+
 				$handle = fopen("sql.txt", "r");
 				if ($handle) {
 					while (($line = fgets($handle)) !== false) {
@@ -93,7 +94,9 @@
 					$pingable_str = "No";
 				}
 
-				die("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>\n<br>Host is pingable? <tt>".$pingable_str."</tt>\n");
+				print("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>\n<br>Host is pingable? <tt>".$pingable_str."</tt>\n");
+
+				print("Error:<br><pre>".$e->getMessage()."</pre>");
 			}
 		} catch (\Throwable $e) {
 			print("$e");
