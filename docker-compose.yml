@@ -13,12 +13,12 @@ services:
   mysql:
     container_name: mysql
     restart: always
-    image: mysql:latest
+    image: mariadb:latest
     environment:
       - MYSQL_ROOT_PASSWORD=$DB_PASSWORD
       - MYSQL_PASS=$DB_PASSWORD
       - MYSQL_USER=$DB_USER
     volumes:
-      - my-datavolume:/var/lib/docker_mysql
+      - datavolume:/var/lib/docker_mysql
 volumes:
-  my-datavolume:
+  datavolume:
