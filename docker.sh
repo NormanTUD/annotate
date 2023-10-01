@@ -97,13 +97,6 @@ fi
 export DB_HOST
 export LOCAL_PORT
 
-# Write environment variables to .env file
-echo "#!/bin/bash" > .env
-echo "DB_HOST=$DB_HOST" >> .env
-echo "LOCAL_PORT=$LOCAL_PORT" >> .env
-echo "DB_PASSWORD=$DB_PASSWORD" >> .env
-echo "DB_USER=$DB_USER" >> .env
-
 echo "=== Current git hash before auto-pulling ==="
 git rev-parse HEAD
 echo "=== Current git hash before auto-pulling ==="
