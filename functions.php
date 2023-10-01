@@ -25,9 +25,32 @@
 
 	/* 2DO: in installer eintragen, wenn nicht schon sowieso */
 	if (!isset($GLOBALS['db_password'])) {
-		$GLOBALS["db_password"] = trim(fgets(fopen("/etc/dbpw", 'r')));
+		if(file_exists("/etc/dbpw")) {
+			$GLOBALS["db_password"] = trim(fgets(fopen("/etc/dbpw", 'r')));
+		} else {
+			die("<tt>/etc/dbpw</tt> not found! Cannot connect to database without.");
+		}
 	}
 
+	if(!$GLOBALS["db_password"]) {
+		die("db_password could not be determined");
+	}
+
+	if(!$GLOBALS["db_name"]) {
+		die("db_name could not be determined");
+	}
+
+	if(!$GLOBALS["db_username"]) {
+		die("db_username could not be determined");
+	}
+
+	if(!$GLOBALS["db_user"]) {
+		die("db_user could not be determined");
+	}
+
+	if(!$GLOBALS["db_host"]) {
+		die("db_host could not be determined");
+	}
 
 	try {
 		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name']);
