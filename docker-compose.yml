@@ -12,6 +12,8 @@ services:
       - datavolume:/var/lib/docker_mysql
     ports:
       - "6603:3306"
+    networks:
+      - annotate_network
   annotate:
     build:
       context: .
@@ -22,5 +24,10 @@ services:
       - DB_PORT=6603
       - DB_PASSWORD=root
       - DB_USER=root
+    networks:
+      - annotate_network
 volumes:
   datavolume:
+networks:
+  annotate_network:
+    driver: bridge
