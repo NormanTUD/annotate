@@ -11,7 +11,7 @@ services:
     volumes:
       - datavolume:/var/lib/docker_mysql
     ports:
-      - "6603:3306"
+      - "3306:6603"
     networks:
       - annotate_network
   annotate:
