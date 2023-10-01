@@ -8,7 +8,8 @@ ENV APACHE_PORT 8080
 ENV APACHE_DOCUMENT_ROOT /var/www/html
 
 # Install necessary dependencies
-RUN apt-get update && apt-get install -y libssl-dev iproute2
+RUN apt-get update
+RUN apt-get install -y libssl-dev iproute2 iputils-ping
 RUN rm -rf /var/lib/apt/lists/*
 
 # Copy the PHP files to the container
