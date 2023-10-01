@@ -735,7 +735,7 @@ done
 		return $res;
 	}
 
-	function _create_internal_html ($images, $number_of_rows = 0, $items_per_page = 0, $html = "") {
+	function _create_internal_html ($number_of_rows = 0, $items_per_page = 0, $images = [], $html = "") {
 		$page_str = "";
 
 		if($number_of_rows > $items_per_page) {
@@ -829,7 +829,7 @@ done
 	function print_export_html_and_exit ($number_of_rows, $items_per_page, $images) {
 		$annos_strings = array();
 
-		$html = _create_internal_html($images, $number_of_rows, $items_per_page);
+		$html = _create_internal_html($number_of_rows, $items_per_page, $images);
 
 		print($html);
 
