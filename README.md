@@ -40,3 +40,13 @@ post_max_size = 100M;
 ```
 
 This is needed for uploading yolov5-Models.
+
+# Apache Settings
+
+Make sure you do:
+
+``` 
+<Directory /var/www/html/>
+	AllowOverride All
+</Directory>
+```
