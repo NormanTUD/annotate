@@ -61,11 +61,11 @@
 	}
 ?>
 
-	<div id="annotation_area" style="display: <?php print $img_area_display; ?>">
-		<div id="loader"></div>
-		<table>
-			<tr>
-				<td style="vertical-align: baseline;">
+	<div id="loader"></div>
+	<table>
+		<tr>
+			<td style="vertical-align: baseline;">
+				<div id="annotation_area" style="display: <?php print $img_area_display; ?>">
 					<div id="content" style="padding: 30px;">
 						<p>
 							<button class="disable_in_autonext" id="next_img_button" onClick="load_next_random_image()">Next image</button>
@@ -79,19 +79,19 @@
 						<br>
 						<div id="filename"></div>
 					</div>
-				</td>
-				<td>
-					Current tags:
+				</div>
 
-					<div id="list"></div>
-				</td>
-			</tr>
-		</table>
-	</div>
+				<div id="no_imgs_left" style="display: <?php print $no_imgs_left_display; ?>">
+					Currently, all available images are annotated. <a href="upload.php">Upload images</a> or check again later.
+				</div>
+			</td>
+			<td>
+				Current tags:
 
-	<div id="no_imgs_left" style="display: <?php print $no_imgs_left_display; ?>">
-		Currently, all available images are annotated. <a href="upload.php">Upload images</a> or check again later.
-	</div>
+				<div id="list"></div>
+			</td>
+		</tr>
+	</table>
 
 	<script>
 		load_dynamic_content();
