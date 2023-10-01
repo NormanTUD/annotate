@@ -11,10 +11,11 @@ if [[ ! -e .alpha_yoloenv_normal/bin/activate ]]; then
         source .alpha_yoloenv_normal/bin/activate
         pip3 install -r requirements.txt
 	pip3 install tensorflowjs
+fi
 
-	if [[ "$(python -c 'import numpy; print(numpy.__version__)')" =~ *1.26.0* ]]; then
-		echo "compile yourself..."
-	fi
+if [[ "$(python -c 'import numpy; print(numpy.__version__)')" =~ "1.26.0" ]]; then
+	git clone https://github.com/numpy/numpy.git
+	echo "compile yourself..."
 fi
 
 cd -
