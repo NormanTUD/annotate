@@ -12,9 +12,7 @@ RUN apt-get update && apt-get install -y \
     libssl-dev iproute2 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install the MongoDB extension using pecl
-RUN pecl install mongodb && \
-    docker-php-ext-enable mongodb
+RUN apt-get install -y inet-utils
 
 # Copy the PHP files to the container
 COPY . $APACHE_DOCUMENT_ROOT/
