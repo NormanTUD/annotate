@@ -598,6 +598,8 @@
 		}
 
 		$query .= " and id.filename is not null ";
+		$query .= " and i.offtopic = '0' ";
+		$query .= " and i.unidentifiable = '0' ";
 		$query .= ' order by rand()) a';
 
 		$res = rquery($query);
