@@ -21,7 +21,7 @@ async function load_model () {
 		return;
 	}
 
-	var new_model_md5 = await model_md5();
+	var new_model_md5 = $("#chosen_model").val();
 
 	if(model && new_model_md5 == last_model_md5) {
 		return;
@@ -377,7 +377,19 @@ async function ai_file (elem) {
 	var [modelWidth, modelHeight] = model.inputs[0].shape.slice(1, 3);
 
 	tf.engine().startScope();
-	var res = await model.executeAsync(tf.browser.fromPixels($("#image")[0]).resizeBilinear([modelWidth, modelHeight]).div(255).expandDims());
+	var res;
+	try {
+		var image_tensor = tf.browser.fromPixels($("#image")[0]).
+			resizeBilinear([modelWidth, modelHeight]).
+			div(255).
+			expandDims();
+
+		res = await model.executeAsync(image_tensor);
+	} catch (e) {
+		console.warn(e);
+
+		return;
+	}
 	$("body").css("cursor", "default");
 
 	const [boxes, scores, classes] = res.slice(0, 3);
@@ -745,25 +757,6 @@ function delete_all_anno (image) {
 			await load_dynamic_content();
 		}
 	});
-}
-
-async function model_md5 () {
-	var res = "";
-
-	try {
-		const response = await fetch('model_md5.php');
-		if (!response.ok) {
-			throw new Error('Failed to fetch has_model.php');
-		}
-
-		const content = await response.text();
-
-		return content;
-	} catch (error) {
-		// Handle errors, log, and return 0.
-		console.warn('Error:', error.message);
-		return 0;
-	}
 }
 
 async function has_model () {
