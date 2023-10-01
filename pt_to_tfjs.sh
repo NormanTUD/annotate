@@ -23,6 +23,8 @@ if [[ "$(python -c 'import numpy; print(numpy.__version__)')" =~ "1.26.0" ]]; th
 
 	export USE_NNPACK=0
 
+	git checkout maintenance/1.26.x
+
 	pip install --upgrade pip
 
 	pip install -r build_requirements.txt
