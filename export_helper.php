@@ -740,7 +740,7 @@ done
 
 		if($number_of_rows > $items_per_page) {
 			$links = array();
-			foreach (range(0, $max_page - 1) as $page_nr) {
+			foreach (range(0, get_param("max_page", 1) - 1) as $page_nr) {
 				$query = $_GET;
 				$query['page'] = $page_nr;
 				$query_result = http_build_query($query);
