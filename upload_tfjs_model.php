@@ -1,4 +1,5 @@
 <?php
+	include("header.php");
 	include_once("functions.php");
 
 	ini_set('memory_limit', '16384M');
@@ -38,4 +39,6 @@
 			echo "Error: Please provide both a model name and a .pt file to upload.";
 		}
 	}
+
+	include_once("footer.php");
 ?>
