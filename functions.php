@@ -75,7 +75,7 @@
 
 				import_files();
 			} catch (\Throwable $e) {
-				die("Could not connect to database on ".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>");
+				die("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>");
 			}
 		} catch (\Throwable $e) {
 			print("$e");

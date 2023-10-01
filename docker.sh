@@ -30,6 +30,10 @@ while [[ "$#" -gt 0 ]]; do
 			DB_HOST="$2"
 			shift
 			;;
+		--db-user*)
+			DB_USER="$2"
+			shift
+			;;
 		--db-port*)
 			DB_PORT="$2"
 			shift
@@ -44,6 +48,9 @@ while [[ "$#" -gt 0 ]]; do
 			;;
 		*)
 			echo "Error: Unknown option '$1'. Use --help for usage."
+			echo ""
+			help_message
+
 			exit 1
 			;;
 	esac
