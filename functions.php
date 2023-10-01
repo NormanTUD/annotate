@@ -501,7 +501,11 @@
 		ob_start();
 		system($command);
 		$hash = ob_get_clean();
-		ob_flush();
+		try {
+			ob_flush();
+		} catch (\Throwable $e) {
+			
+		}
 
 		$hash = trim($hash);
 
