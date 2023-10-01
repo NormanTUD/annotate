@@ -24,6 +24,8 @@ services:
       - DB_USER=root
     networks:
       - annotate_network
+    tmpfs:
+      - /tmp:rw
 volumes:
   datavolume:
 networks:
