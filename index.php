@@ -34,9 +34,7 @@
 	}
 
 	$available_models = get_list_of_models();
-?>
-	<br>
-<?php
+
 	if(count($available_models)) {
 		if(count($available_models) == 1) {
 			print "<span style='display: none'>";
@@ -58,9 +56,10 @@
 		if(count($available_models) == 1) {
 			print "</span>";
 		}
+
+		print "<br>";
 	}
 ?>
-	<br>
 
 	<div id="annotatin_area" style="display: <?php print $img_area_display; ?>">
 		<div id="loader"></div>
