@@ -6,9 +6,34 @@ if ! command -v apt 2>&1 >/dev/null; then
 	exit 5
 fi
 
+if ! command -v dpkg-query 2>&1 >/dev/null; then
+	echo "dpkg-query not found"
+	exit 6
+fi
+
 if ! command -v sudo 2>&1 >/dev/null; then
 	echo "sudo not installed. This script is only for debian and debianlike systems."
 	exit 7
+fi
+
+# Check if Docker is installed
+if ! command -v docker &>/dev/null; then
+	echo "Docker not found. Installing Docker..."
+	# Enable non-free repository
+	sed -i 's/main$/main contrib non-free/g' /etc/apt/sources.list
+
+	# Update package lists
+	sudo apt update
+
+	# Install Docker
+	sudo apt install -y docker.io
+fi
+
+# Check if Whiptail is installed
+if ! command -v whiptail &>/dev/null; then
+	echo "Whiptail not found. Installing Whiptail..."
+	# Install Whiptail
+	sudo apt install -y whiptail
 fi
 
 # Default values
@@ -57,32 +82,9 @@ fi
 
 
 is_package_installed() {
-	if ! command -v dpkg-query 2>&1 >/dev/null; then
-		echo "dpkg-query not found"
-		exit 6
-	fi
 	dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -c "ok installed"
 }
 
-# Check if Docker is installed
-if ! command -v docker &>/dev/null; then
-	echo "Docker not found. Installing Docker..."
-	# Enable non-free repository
-	sed -i 's/main$/main contrib non-free/g' /etc/apt/sources.list
-
-	# Update package lists
-	sudo apt update
-
-	# Install Docker
-	sudo apt install -y docker.io
-fi
-
-# Check if Whiptail is installed
-if ! command -v whiptail &>/dev/null; then
-	echo "Whiptail not found. Installing Whiptail..."
-	# Install Whiptail
-	sudo apt install -y whiptail
-fi
 
 ips=$(ip addr | grep inet | grep -v : | sed -e 's#.*inet\s*##' | sed -e 's#/.*##' | grep -v "^127.")
 # Check if DB_HOST is localhost or 127.0.0.1
