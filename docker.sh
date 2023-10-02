@@ -1,5 +1,16 @@
 #!/bin/bash
 
+
+if ! command -v apt 2>&1 >/dev/null; then
+	echo "apt not installed. This script is only for debian and debianlike systems."
+	exit 5
+fi
+
+if ! command -v sudo 2>&1 >/dev/null; then
+	echo "sudo not installed. This script is only for debian and debianlike systems."
+	exit 7
+fi
+
 # Default values
 DB_HOST=""
 DB_USER=root
@@ -41,11 +52,15 @@ done
 
 if [[ -z $LOCAL_PORT ]]; then
 	echo "Error: Missing required parameter --local-port. Use --help for usage."
-	exit 1
+	exit 2
 fi
 
 
 is_package_installed() {
+	if ! command -v dpkg-query 2>&1 >/dev/null; then
+		echo "dpkg-query not found"
+		exit 6
+	fi
 	dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -c "ok installed"
 }
 
@@ -90,7 +105,7 @@ if [[ $DB_HOST == "localhost" || $DB_HOST == "127.0.0.1" ]]; then
 		# Add your logic here using the updated DB_HOST variable
 	else
 		echo "No IP selected. Exiting..."
-		exit 1
+		exit 3
 	fi
 fi
 
@@ -111,7 +126,7 @@ SYNTAX_ERRORS=0
 
 if [[ "$SYNTAX_ERRORS" -ne "0" ]]; then
 	echo "Tests failed";
-	exit 1
+	exit 4
 fi
 
 
