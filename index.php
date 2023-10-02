@@ -73,6 +73,7 @@
 							<button class='disable_in_autonext ai_stuff'><a onclick="ai_file($('#image')[0])">AI-Labelling</a></button>
 							<button class="disable_in_autonext" onclick="move_to_offtopic()">Offtopic</button>
 							<button class="disable_in_autonext" onclick="move_to_unidentifiable()">Not identifiable</button>
+							<input placeholder="Filename contains..." id="like" onchange="start_like()" />
 						</p>
 						<div id="ki_detected_names"></div>
 						<img id="image" />

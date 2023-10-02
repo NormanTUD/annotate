@@ -135,10 +135,6 @@ function move_file (to) {
 	})
 }
 
-function next_img () {
-	window.location.href = "index.php";
-}
-
 function success (title, msg) {
 	$("#status_bar").html("<span style='color: black'>" + title + ": " + msg + "</span>");
 }
@@ -813,6 +809,12 @@ async function show_or_hide_ai_stuff () {
 	} else {
 		hide_ai_stuff();
 	}
+}
+
+function start_like () {
+	var like = $("#like").val();
+	update_url_param("like", like);
+	load_next_random_image()
 }
 
 setInterval(memory_debugger, 1000);
