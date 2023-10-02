@@ -815,4 +815,6 @@ setInterval(create_selects_from_annotation, 1000);
 
 $(document).ready(() => {
 	show_or_hide_ai_stuff();
+
+	success("Loaded site", "OK");
 })
