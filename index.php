@@ -39,7 +39,7 @@
 		if(count($available_models) == 1) {
 			print "<span style='display: none'>";
 		}
-		print "Ausgewähltes KI-Modell: <select id='chosen_model'>";
+		print "AI-Model: <select class='disable_in_autonext' id='chosen_model'>";
 		$i = 0;
 		foreach ($available_models as $_model) {
 			$model_name = $_model[0];

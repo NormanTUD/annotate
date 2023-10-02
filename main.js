@@ -57,20 +57,24 @@ async function load_model () {
 	$("#upload_button").show();
 }
 
+function print_home () {
+	$.ajax({
+		url: "print_home.php",
+		type: "GET",
+		dataType: "html",
+		success: function (data) {
+			$('#tab_home_top').html("");
+			$('#tab_home_top').html(data);
+		},
+		error: function (xhr, status) {
+			error("Error loading the home ribbon", "Sorry, there was a problem!");
+		}
+	});
+}
+
 function memory_debugger () {
 	if($("#tab_home_top").html() == "") {
-		$.ajax({
-			url: "print_home.php",
-			type: "GET",
-			dataType: "html",
-			success: function (data) {
-				$('#tab_home_top').html("");
-				$('#tab_home_top').html(data);
-			},
-			error: function (xhr, status) {
-				error("Error loading the List", "Sorry, there was a problem!");
-			}
-		});
+		print_home();
 	}
 
 	try {
@@ -585,18 +589,7 @@ async function load_dynamic_content () {
 	last_load_dynamic_content = Date.now()
 	*/
 
-	await $.ajax({
-		url: "print_home.php",
-		type: "GET",
-		dataType: "html",
-		success: function (data) {
-			$('#tab_home_top').html("");
-			$('#tab_home_top').html(data);
-		},
-		error: function (xhr, status) {
-			error("Error loading the List", "Sorry, there was a problem!");
-		}
-	});
+	print_home();
 
 	await $.ajax({
 		url: "get_current_list.php?json=1",
@@ -613,7 +606,7 @@ async function load_dynamic_content () {
 			}
 		},
 		error: function (xhr, status) {
-			error("Error loading the List", "Sorry, there was a problem!");
+			error("Error loading the current list", "Sorry, there was a problem!");
 		}
 	});
 }
@@ -690,7 +683,7 @@ async function load_next_random_image (fn=false) {
 					await set_img_from_filename(fn);
 				},
 				error: function (xhr, status) {
-					error("Error loading the List", "Sorry, there was a problem!");
+					error("Error loading the next image", "Sorry, there was a problem!");
 				}
 			});
 		} catch (e) {
