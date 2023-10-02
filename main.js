@@ -705,7 +705,7 @@ document.onkeydown = function (e) {
 	}
 
 	e = e || window.event;
-	//log(e.which);
+	log(e);
 	switch (e.which) {
 		case 85:
 			move_to_unidentifiable();

@@ -66,7 +66,7 @@
 		<tr>
 			<td style="vertical-align: baseline;">
 				<div id="annotation_area" style="display: <?php print $img_area_display; ?>">
-					<div id="content" style="padding: 30px;">
+					<div id="content">
 						<p>
 							<button class="disable_in_autonext" id="next_img_button" onClick="load_next_random_image()">Next image</button>
 							<button class='ai_stuff' id="autonext_img_button" onClick="autonext()">AutoNext</button>
