@@ -16,24 +16,21 @@ if ! command -v sudo 2>&1 >/dev/null; then
 	exit 7
 fi
 
-# Check if Docker is installed
 if ! command -v docker &>/dev/null; then
-	echo "Docker not found. Installing Docker..."
-	# Enable non-free repository
+	echo "docker not found. Installing docker..."
 	sed -i 's/main$/main contrib non-free/g' /etc/apt/sources.list
-
-	# Update package lists
 	sudo apt update
-
-	# Install Docker
 	sudo apt install -y docker.io
 fi
 
-# Check if Whiptail is installed
 if ! command -v whiptail &>/dev/null; then
-	echo "Whiptail not found. Installing Whiptail..."
-	# Install Whiptail
+	echo "whiptail not found. Installing whiptail..."
 	sudo apt install -y whiptail
+fi
+
+if ! command -v git &>/dev/null; then
+	echo "git not found. Installing git..."
+	sudo apt install -y git
 fi
 
 # Default values
@@ -103,7 +100,7 @@ if [[ $DB_HOST == "localhost" || $DB_HOST == "127.0.0.1" ]]; then
 		echo "Selected IP: $selected_ip"
 		# Use the selected IP for DB_HOST
 		DB_HOST="$selected_ip"
-	echo "DB_HOST set to: $DB_HOST"
+		echo "DB_HOST set to: $DB_HOST"
 		# Add your logic here using the updated DB_HOST variable
 	else
 		echo "No IP selected. Exiting..."
