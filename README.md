@@ -1,4 +1,4 @@
-# SimpleImageAnnotationTool
+# annotate
 A simple image annotation tool in PHP/JS
 
 ![Screenshot](screens/screen1.png "No AI")
