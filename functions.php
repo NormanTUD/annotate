@@ -977,7 +977,9 @@
 		$limit = get_param("limit");
 		$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
 
-		return _get_annotated_images($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files);
+		$res = _get_annotated_images($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files);
+
+		return $res;
 	}
 
 	function _get_annotated_images ($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files) {
