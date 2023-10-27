@@ -738,9 +738,15 @@ done
 	function _create_internal_html ($number_of_rows = 0, $items_per_page = 0, $images = [], $html = "") {
 		$page_str = "";
 
+		if($items_per_page == 0) {
+			return $page_str;
+		}
+
+		$max_page = $number_of_rows / $items_per_page;
+
 		if($number_of_rows > $items_per_page) {
 			$links = array();
-			foreach (range(0, get_param("max_page", 1) - 1) as $page_nr) {
+			foreach (range(0, $max_page) as $page_nr) {
 				$query = $_GET;
 				$query['page'] = $page_nr;
 				$query_result = http_build_query($query);
