@@ -97,7 +97,9 @@
 		} else {
 			echo "Error: Please provide both a model name and a .pt file to upload.";
 		}
-	}
+    } else {
+        echo "REQUEST_METHOD is not POST, but ".$_SERVER['REQUEST_METHOD'];
+    }
 
 	include_once("footer.php");
 ?>
