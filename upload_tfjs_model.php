@@ -25,6 +25,16 @@
 
 				$new_path = "$tmp_path$filename";
 
+                if(!$new_path) {
+                    print("new_path path cannot be empty");
+                    exit(1);
+                }
+
+                if(!$tmp) {
+                    print("tmp path cannot be empty");
+                    exit(1);
+                }
+
 				copy($tmp, $new_path);
 
 				$files[] = $new_path;
