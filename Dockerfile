@@ -17,7 +17,7 @@ RUN apt-get install -y python3-pip
 RUN apt-get install -y zip
 RUN docker-php-ext-install mysqli
 RUN docker-php-ext-install pdo pdo_mysql
-#RUN pip3 install imagehash
+RUN pip3 install --break-system-packages imagehash
 RUN rm -rf /var/lib/apt/lists/*
 
 # Copy the PHP files to the container
