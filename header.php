@@ -4,7 +4,7 @@ include_once("functions.php");
 ?>
 <!DOCTYPE html>
 <head>
-	<title>Bildannotationstool</title>
+	<title>SimpleImageAnnotationTool</title>
 	<link rel="stylesheet" href="libs/annotorious.min.css">
 	<link rel="stylesheet" href="style.css">
 	<script src="libs/plotly-latest.min.js"></script>
