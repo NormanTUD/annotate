@@ -9,6 +9,7 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html
 
 # Install necessary dependencies
 RUN apt-get update
+RUN apt-get install -y apt-utils
 RUN apt-get install -y libssl-dev
 RUN apt-get install -y iproute2 
 RUN apt-get install -y iputils-ping 
