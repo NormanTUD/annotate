@@ -141,6 +141,7 @@ services:
       - MYSQL_USER=root
     volumes:
       - $local_db_dir:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/conf.d/disable_locks.cnf:ro
     networks:
       - annotate_network
   annotate:
