@@ -415,8 +415,7 @@ async function ai_file (elem) {
 		var [x, y, w, h] = box.slice(0, 4);
 		var conf = box[4];
 
-		if (conf < 0.3) {
-			log(`Skipping confidence ${conf}`)
+		if (conf < 0.1) {
 			continue;
 		} else {
 			var classScores = box.slice(5);
