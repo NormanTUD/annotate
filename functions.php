@@ -798,53 +798,106 @@
 	}
 
 	function insert_image_into_db_from_data($data, $filename) {
-		// Temporäre Datei erstellen
-		$tmpfname = tempnam(sys_get_temp_dir(), 'img_');
-		file_put_contents($tmpfname, $data);
+		if (!is_string($data) || empty($data)) {
+			error_log("Invalid image data provided");
+			dier("Error: Invalid image data.");
+		}
 
-		// Bild in DB einfügen
+		if (!is_string($filename) || trim($filename) === '') {
+			error_log("Invalid filename provided");
+			dier("Error: Filename must be a non-empty string.");
+		}
+
+		$tmpfname = tempnam(sys_get_temp_dir(), 'img_');
+		if ($tmpfname === false) {
+			error_log("Failed to create temporary file");
+			dier("Error: Could not create temporary file.");
+		}
+
+		if (file_put_contents($tmpfname, $data) === false) {
+			error_log("Failed to write image data to temporary file: $tmpfname");
+			unlink($tmpfname);
+			dier("Error: Could not write image data to temporary file.");
+		}
+
 		insert_image_into_db($tmpfname, $filename);
 
-		// Temporäre Datei löschen
-		unlink($tmpfname);
+		if (file_exists($tmpfname)) {
+			unlink($tmpfname);
+		}
 	}
 
 	function insert_image_into_db($file_tmp, $filename) {
+		if (!file_exists($file_tmp)) {
+			error_log("Temporary file does not exist: $file_tmp");
+			dier("Error: Image file not found.");
+		}
+
+		if (!is_readable($file_tmp)) {
+			error_log("Temporary file is not readable: $file_tmp");
+			dier("Error: Cannot read temporary file.");
+		}
+
+		if (!is_string($filename) || trim($filename) === '') {
+			error_log("Invalid filename in insert_image_into_db");
+			dier("Error: Invalid filename.");
+		}
+
 		try {
 			$is_in_image_data_table = is_null(get_image_data_id($filename)) ? 1 : 0;
 
 			$existing_perception_hash = get_perception_hash_from_db($filename);
 			$new_perception_hash = get_perception_hash($file_tmp);
 
-			if($existing_perception_hash == $new_perception_hash && !$is_in_image_data_table) {
+			if ($existing_perception_hash === $new_perception_hash && !$is_in_image_data_table) {
 				return get_image_id($filename);
 			}
 
-			// Establish a database connection (replace with your actual database details)
-			$pdo = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
+			$db_host = $GLOBALS["db_host"] ?? null;
+			$db_name = $GLOBALS["db_name"] ?? null;
+			$db_user = $GLOBALS["db_username"] ?? null;
+			$db_pass = $GLOBALS["db_password"] ?? null;
 
-			// Generate a unique filename to avoid conflicts
+			if (!$db_host || !$db_name || !$db_user || $db_pass === null) {
+				error_log("Database credentials are not properly set");
+				dier("Error: Database configuration missing.");
+			}
+
+			$pdo = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
+			$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
 			$unique_filename = generate_unique_filename($pdo, $filename);
+			if (!$unique_filename) {
+				error_log("Failed to generate unique filename for: $filename");
+				dier("Error: Could not generate unique filename.");
+			}
 
 			$file_contents = file_get_contents($file_tmp);
+			if ($file_contents === false) {
+				error_log("Failed to read contents of temporary file: $file_tmp");
+				dier("Error: Could not read image data.");
+			}
 
-			// Insert the unique filename into the database
-			$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content, 0)");
+			$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content)");
 			$stmt->bindParam(':filename', $filename);
 			$stmt->bindParam(':image_content', $file_contents, PDO::PARAM_LOB);
 			$stmt->execute();
 
-			// Close the database connection
 			$pdo = null;
 
 			$image_id = get_or_create_image_id($file_tmp, $filename);
+			if (!$image_id) {
+				error_log("get_or_create_image_id() returned null for: $filename");
+				dier("Error: Could not create or retrieve image ID.");
+			}
 
-			// Return the unique filename for display
 			return $image_id;
-		} catch (\Throwable $e) {
-			// Log and handle the database error
-			error_log("Database error: " . $e->getMessage());
-			dier("Error: Unable to insert image into the database.");
+		} catch (PDOException $e) {
+			error_log("PDO error during insert_image_into_db: " . $e->getMessage());
+			dier("Database error: Failed to insert image.");
+		} catch (Throwable $e) {
+			error_log("General error in insert_image_into_db: " . $e->getMessage());
+			dier("Unexpected error: Could not insert image.");
 		}
 	}
 
