@@ -20,6 +20,8 @@ RUN docker-php-ext-configure exif && \
 RUN pip3 install --break-system-packages imagehash
 RUN rm -rf /var/lib/apt/lists/*
 
+RUN apt install -y mariadb-client
+
 EXPOSE $APACHE_PORT
 
 RUN chmod 777 -R /tmp && chmod o+t -R /tmp
