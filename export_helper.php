@@ -60,7 +60,9 @@ fi
 mkdir -p images
 IFS=$\'\\n\'
 for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
-        wget -nc "'.$GLOBALS["base_url"].'/print_image.php?filename=$i" -O "images/$i"
+	if [[ ! -e "images/$i" ]]; then
+		wget -nc "'.$GLOBALS["base_url"].'/print_image.php?filename=$i" -O "images/$i"
+	fi
 done
 
 
