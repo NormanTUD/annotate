@@ -13,6 +13,7 @@ services:
     networks:
       - annotate_network
   annotate:
+    restart: unless-stopped
     build:
       context: .
     ports:
