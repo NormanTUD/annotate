@@ -161,7 +161,6 @@ yolo task=detect mode=train model=yolov8n.pt data=dataset.yaml epochs=50 imgsz=6
 
 	function write_bash_files ($tmp_dir) {
 		write_train_bash($tmp_dir);
-		write_omniopt_simple_run($tmp_dir);
 	}
 
 	function get_number_of_rows () {
