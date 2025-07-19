@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 services:
   annotate_mariadb:
     container_name: annotate_mariadb
