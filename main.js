@@ -471,6 +471,7 @@ async function ai_file (elem) {
 			var scale_x = img.width / input_size;
 			var scale_y = img.height / input_size;
 
+			log("x_start:", this_box[0]);
 
 			var x1 = this_box[0] * scale_x;
 			var y1 = this_box[1] * scale_y;
