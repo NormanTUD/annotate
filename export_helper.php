@@ -41,67 +41,32 @@ copy_paste: 0.4  # segment copy-paste (probability)
 
 	function write_train_bash ($tmp_dir) {
 		$train_bash = '#!/bin/bash
-if [ ! -d "yolov5" ]; then
-	git clone --depth 1 https://github.com/ultralytics/yolov5.git
+
+set -e
+
+VENV_PATH="$HOME/.yolov11_venv"
+
+if [[ ! -d $VENV_PATH ]]; then
+	echo "$VENV_PATH will be created"
+	python3 -m venv $VENV_PATH
+	source $VENV_PATH/bin/activate
+	echo "Installing YoloV11"
+	pip3 install ultralytics
+else
+	echo "$VENV_PATH already exists"
+	source $VENV_PATH/bin/activate
 fi
 
-cd yolov5
-ml modenv/hiera GCCcore/11.3.0 Python/3.9.6
-
-if [ -d "$HOME/.alpha_yoloenv" ]; then
-	python3 -m venv ~/.alpha_yoloenv
-	echo "~/.alpha_yoloenv already exists"
-	source ~/.alpha_yoloenv/bin/activate
-	else
-	python3 -mvenv ~/.alpha_yoloenv/
-	source ~/.alpha_yoloenv/bin/activate
-	pip3 install -r requirements.txt
-	pip3 install "albumentations>=1.0.3"
-fi
-
-mkdir -p dataset
-if [ -d "../images" ]; then
-	mv ../images/ dataset/
-fi
-if [ -d "../validation" ]; then
-	mv ../validation/ dataset/
-fi
-if [ -d "../test" ]; then
-	mv ../test/ dataset/
-fi
-
-if [ -d "../labels" ]; then
-	mv ../labels/ dataset/
-fi
-
-if [ -e "../dataset.yaml" ]; then
-	mv ../dataset.yaml data/
-fi
-
-if [ -e "../omniopt_simple_run.sh" ]; then
-	mv ../omniopt_simple_run.sh .
-fi
-
-if [ -e "../simple_run.sh" ]; then
-	mv ../simple_run.sh .
-fi
-
-if [ -e "../run.sh" ]; then
-	mv ../run.sh .
-fi
-
-if [ -e "../hyperparams.yaml" ]; then
-	mv ../hyperparams.yaml data/hyps/
-fi
+mkdir -p images
+IFS=$\'\\n\'
+for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
+        wget -nc "'.$GLOBALS["base_url"].'/print_image.php?filename=$i" -O "images/$i"
+done
 
 
-echo "ml modenv/hiera GCCcore/11.3.0 Python/3.9.6"
-echo "source ~/.alpha_yoloenv/bin/activate"
-echo "cd yolov5"
-echo "sbatch -n 1 --time=64:00:00 --mem-per-cpu=32000 --partition=alpha --gres=gpu:1 run.sh"
-';
+yolo task=detect mode=train model=yolov8n.pt data=dataset.yaml epochs=50 imgsz=640';
 
-		file_put_contents("$tmp_dir/runme.sh", $train_bash);
+		file_put_contents("$tmp_dir/train", $train_bash);
 	}
 
 	function write_simple_run ($tmp_dir) {
@@ -596,126 +561,6 @@ python3 \$SCRIPT_DIR/train.py --cfg \"\$model\" --multi-scale --batch \$batchsiz
 		file_put_contents("$tmp_dir/omniopt_simple_run.sh", $omniopt_simple_run);
 	}
 
-	function write_only_take_first_line ($tmp_dir) {
-		$only_take_first_line = "#!/bin/bash
-for i in $(ls labels); do 
-	NUMLINES=$(cat labels/\$i | wc -l)
-	if [[ \$NUMLINES -gt 1 ]]; then
-		TMPFILE=\"\${RANDOM}_\${RANDOM}.txt\"
-
-		head -n1 labels/\$i > labels/\$TMPFILE
-
-		rm labels/\$i
-		mv labels/\$TMPFILE labels/\$i
-		
-	fi
-done
-";
-
-		file_put_contents("$tmp_dir/only_take_first_line.sh", $only_take_first_line);
-	}
-
-	function write_remove_labels_with_multiple_entries ($tmp_dir) {
-		$remove_labels_with_multiple_entries = "#!/bin/bash
-for i in $(ls labels); do 
-	NUMLINES=$(cat labels/\$i | sed -e 's#\s.*##' | uniq | wc -l)
-	if [[ \$NUMLINES -gt 1 ]]; then
-		echo \"\$NUMLINES: \$i\"
-		rm labels/\$i
-	fi
-done
-";
-
-		file_put_contents("$tmp_dir/remove_labels_with_multiple_entries.sh", $remove_labels_with_multiple_entries);
-	}
-
-	function write_download_images ($tmp_dir) {
-		$download_images = "#!/bin/bash
-mkdir -p images
-IFS=\$'\n'
-for i in $(ls labels | sed -e 's#\.txt#.jpg#'); do
-	wget -nc \"".$GLOBALS["base_url"]."/print_image.php?filename=\$i\" -O \"images/\$i\"
-done
-";
-
-		file_put_contents("$tmp_dir/download_images.sh", $download_images);
-
-	}
-
-	function write_run_on_normal_hardware ($tmp_dir) {
-		$download_empty = '#!/bin/bash -l
-
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
-cd $SCRIPT_DIR
-
-if [ ! -d "yolov5" ]; then
-        git clone --depth 1 https://github.com/ultralytics/yolov5.git
-fi
-
-cd yolov5
-
-if [[ ! -e ~/.alpha_yoloenv_normal/bin/activate ]]; then
-        python3 -mvenv ~/.alpha_yoloenv_normal/
-        source ~/.alpha_yoloenv_normal/bin/activate
-        pip3 install -r requirements.txt
-fi
-
-mkdir -p dataset
-
-if [ -d "../images" ]; then
-        mv ../images/ dataset/
-fi
-
-if [ -d "../validation" ]; then
-        mv ../validation/ dataset/
-fi
-
-if [ -d "../test" ]; then
-        mv ../test/ dataset/
-fi
-
-if [ -d "../labels" ]; then
-        mv ../labels/ dataset/
-fi
-
-if [ -e "../dataset.yaml" ]; then
-        mv ../dataset.yaml data/
-fi
-
-if [ -e "../omniopt_simple_run.sh" ]; then
-        mv ../omniopt_simple_run.sh .
-fi
-
-if [ -e "../simple_run.sh" ]; then
-        mv ../simple_run.sh .
-fi
-
-if [ -e "../run.sh" ]; then
-        mv ../run.sh .
-fi
-
-if [ -e "../hyperparams.yaml" ]; then
-        mv ../hyperparams.yaml data/hyps/
-fi
-
-python3 train.py --cfg yolov5s.yaml --multi-scale --batch 130 --data data/dataset.yaml --epochs 1500 --cache --img 512 --hyp data/hyps/hyperparams.yaml --patience 200
-';
-
-		file_put_contents("$tmp_dir/run_on_normal_hardware.sh", $download_empty);
-	}
-
-	function write_download_empty ($tmp_dir) {
-		$download_empty = "#!/bin/bash
-mkdir -p images
-for i in $(curl ".$GLOBALS["base_url"]."empty/ | grep href | egrep -i \"(jpg|jpeg|png)\" | sed -e 's/.*href=\"//' | sed -e 's#\".*##'); do
-	wget -nc \"".$GLOBALS["base_url"]."empty/\$i\" -O \"images/\$i\";
-done
-";
-
-		file_put_contents("$tmp_dir/download_empty.sh", $download_empty);
-	}
-
 	function get_rand_between_0_and_1 () {
 		return mt_rand() / mt_getrandmax();
 	}
@@ -849,11 +694,6 @@ done
 		write_train_bash($tmp_dir);
 		write_simple_run($tmp_dir);
 		write_omniopt_simple_run($tmp_dir);
-		write_only_take_first_line($tmp_dir);
-		write_remove_labels_with_multiple_entries($tmp_dir);
-		write_download_images($tmp_dir);
-		write_download_empty($tmp_dir);
-		write_run_on_normal_hardware($tmp_dir);
 	}
 
 	function get_number_of_rows () {

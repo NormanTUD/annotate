@@ -28,11 +28,11 @@
 
 	if(is_dir($tmp_dir)) {
 		$dataset_yaml = "path: ./\n";
-		$dataset_yaml .= "train: dataset/images/\n";
+		$dataset_yaml .= "train: images/\n";
 		if($validation_split) {
-			$dataset_yaml .= "val: dataset/validation/\n";
+			$dataset_yaml .= "val: validation/\n";
 		} else {
-			$dataset_yaml .= "val: dataset/images/\n";
+			$dataset_yaml .= "val: images/\n";
 		}
 
 		$dataset_yaml .= "names:\n";
