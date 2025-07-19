@@ -1,5 +1,5 @@
 <?php
-	function write_train_bash ($tmp_dir) {
+	function write_train_bash ($tmp_dir, $epochs) {
 		$train_bash = '#!/bin/bash
 
 set -e
