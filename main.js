@@ -501,8 +501,10 @@ async function ai_file (elem) {
 			}
 		}
 
-
 		success("Success", "Image Detection ran successfully");
+
+		log("anno_boxes", anno_boxes);
+
 		await anno.setAnnotations(anno_boxes);
 
 		var new_annos = await anno.getAnnotations();
