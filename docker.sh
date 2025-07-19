@@ -44,6 +44,7 @@ LOCAL_PORT=""
 help_message() {
 	echo "Usage: bash docker.sh [OPTIONS]"
 	echo "Options:"
+	echo "  --local-db-dir     Path to local db dir (i.e. on NFS for large images)"
 	echo "  --local-port       Local port to bind for the GUI"
 	echo "  --help             Show this help message"
 }
