@@ -393,7 +393,9 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
-	console.log(`res (shape: ${getShape(res)}:`, res.arraySync());
+	var shape = getShape(res);
+
+	console.log(`res (shape: ${shape}):`, res.arraySync());
 
 	var { boxes, scores, classes } = await processModelOutput(res);
 
