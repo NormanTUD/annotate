@@ -98,19 +98,11 @@ renderTable("Categories", ['id', 'name'], $cats, [
 // USERS
 $users = fetchAll("SELECT * FROM user ORDER BY id");
 renderTable("Users", ['id', 'name'], $users);
-?>
 
-<h2>Category Table Check</h2>
-<pre>
-<?php
-$res = $dbh->query("SHOW CREATE TABLE category");
-if ($res) {
-    $row = $res->fetch_assoc();
-    echo h($row['Create Table']);
-} else {
-    echo "Could not retrieve table definition.";
-}
+// CATEGORIES
+$categories = fetchAll("SELECT * FROM category");
+renderTable("Categories", ['id', 'name'], $categories);
 ?>
-</pre>
+?>
 
 <?php include_once("footer.php"); ?>
