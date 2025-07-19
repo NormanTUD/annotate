@@ -14,6 +14,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils libssl-dev iprou
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 RUN docker-php-ext-configure gd --with-jpeg && \
     docker-php-ext-install gd
+RUN docker-php-ext-configure exif && \
+	docker-php-ext-install exif
+
 RUN pip3 install --break-system-packages imagehash
 RUN rm -rf /var/lib/apt/lists/*
 
