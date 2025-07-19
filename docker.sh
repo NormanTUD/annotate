@@ -111,8 +111,12 @@ fi
 export DB_HOST
 export LOCAL_PORT
 
-# Write environment variables to .env file
-sed -i "s#LOCAL_PORT=.*#LOCAL_PORT=$LOCAL_PORT#" .env
+echo "DB_HOST=annotate_mariadb
+DB_PORT=3306
+LOCAL_PORT=$LOCAL_PORT
+DB_PASSWORD=root
+DB_USER=root
+" > .env
 
 echo "=== Current git hash before auto-pulling ==="
 git rev-parse HEAD
