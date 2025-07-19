@@ -162,7 +162,7 @@ async function make_item_anno(elem, widgets={}) {
 	// Add event handlers using .on  
 	anno.on('createAnnotation', function(annotation) {
 		// Do something
-		var a = {
+		var data = {
 			"position": annotation.target.selector.value,
 			"body": annotation.body,
 			"id": annotation.id,
@@ -173,7 +173,7 @@ async function make_item_anno(elem, widgets={}) {
 		$.ajax({
 			url: "submit.php",
 			type: "post",
-			data: a,
+			data: data,
 			success: async function (response) {
 				success("Create Anno: OK", response);
 				await load_dynamic_content();
@@ -186,7 +186,7 @@ async function make_item_anno(elem, widgets={}) {
 	});
 
 	anno.on('updateAnnotation', function(annotation) {
-		var a = {
+		var data = {
 			"position": annotation.target.selector.value,
 			"body": annotation.body,
 			"id": annotation.id,
@@ -196,7 +196,7 @@ async function make_item_anno(elem, widgets={}) {
 		$.ajax({
 			url: "submit.php",
 			type: "post",
-			data: a,
+			data: data,
 			success: async function (response) {
 				success("Update Anno: OK", response)
 				await load_dynamic_content();
@@ -210,7 +210,7 @@ async function make_item_anno(elem, widgets={}) {
 
 
 	anno.on('deleteAnnotation', function(annotation) {
-		var a = {
+		var data = {
 			"position": annotation.target.selector.value,
 			"body": annotation.body,
 			"id": annotation.id,
@@ -220,7 +220,7 @@ async function make_item_anno(elem, widgets={}) {
 		$.ajax({
 			url: "delete_annotation.php",
 			type: "post",
-			data: a,
+			data: data,
 			success: async function (response) {
 				success("Delete Anno: OK", response)
 				await load_dynamic_content();
@@ -311,8 +311,7 @@ const toDataURL = url => fetch(url)
 	}));
 
 async function save_anno (annotation) {
-	// Do something
-	var a = {
+	var data = {
 		"position": annotation.target.selector.value,
 		"body": annotation.body,
 		"id": annotation.id,
@@ -320,10 +319,12 @@ async function save_anno (annotation) {
 		"full": JSON.stringify(annotation)
 	};
 
+	log("save anno data:", data);
+
 	$.ajax({
 		url: "submit.php",
 		type: "post",
-		data: a,
+		data: data,
 		success: async function (response) {
 			success("Save Anno: OK", response);
 			await load_dynamic_content();
