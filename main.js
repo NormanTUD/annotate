@@ -379,7 +379,8 @@ async function ai_file (elem) {
 	tf.engine().startScope();
 	var res;
 	try {
-		var image_tensor = tf.browser.fromPixels($("#image")[0]).
+		var img_from_browser = tf.browser.fromPixels($("#image");
+		var image_tensor = img_from_browser[0]).
 			resizeBilinear([modelWidth, modelHeight]).
 			div(255).
 			expandDims();
