@@ -393,7 +393,7 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
-	var shape = getShape(res);
+	var shape = getShape(res.arraySync());
 
 	console.log(`res (shape: ${shape}):`, res.arraySync());
 
