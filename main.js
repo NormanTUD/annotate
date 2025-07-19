@@ -393,7 +393,7 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
-	console.log("res:", res.arraySync());
+	console.log(`res (shape: ${getShape(res)}:`, res.arraySync());
 
 	var { boxes, scores, classes } = await processModelOutput(res);
 
@@ -405,6 +405,15 @@ async function ai_file(elem) {
 		await sleep(1500);
 		await load_next_random_image();
 	}
+}
+
+function getShape(arr) {
+	const shape = [];
+	while (Array.isArray(arr)) {
+		shape.push(arr.length);
+		arr = arr[0];
+	}
+	return shape;
 }
 
 // prüft, ob Model vorhanden ist, zeigt UI entsprechend an, gibt bool zurück
