@@ -457,11 +457,23 @@ async function ai_file (elem) {
 			var this_score = scores[i];
 			var this_class = classes[i];
 
+			var img = $("#image")[0];
+
+			var img_display_width = img.width;
+			var img_display_height = img.height;
+
+			var img_natural_width = img.naturalWidth;
+			var img_natural_height = img.naturalHeight;
+
+			// Skalierungsfaktor berechnen
+			var scale_x = img_display_width / img_natural_width;
+			var scale_y = img_display_height / img_natural_height;
+
 			var box_x_start = this_box[0];
 			var box_y_start = this_box[1];
 
 			var box_x_end = this_box[2];
-			var box_y_end = this_box[2];
+			var box_y_end = this_box[3];
 
 			log("box_x_start", box_x_start, "box_y_start", box_y_start, "box_x_end", box_x_end, "box_y_end", box_y_end);
 
@@ -475,14 +487,10 @@ async function ai_file (elem) {
 
 				var name = this_label + " (" + (this_score * 100).toFixed(0) + "%)";
 
-				var img_width = $("#image")[0].width;
-				var img_height = $("#image")[0].height;
-
-				var x_start = parseInt(box_x_start);
-				var y_start = parseInt(box_y_start);
-
-				var w = Math.abs(x_start - parseInt(box_x_end));
-				var h = Math.abs(y_start - parseInt(box_y_end));
+				var x_start = Math.round(box_x_start * scale_x);
+				var y_start = Math.round(box_y_start * scale_y);
+				var x_end = Math.round(box_x_end * scale_x);
+				var y_end = Math.round(box_y_end * scale_y);
 
 				var this_elem = {
 					"type": "Annotation", 
