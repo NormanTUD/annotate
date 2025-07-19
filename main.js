@@ -493,7 +493,7 @@ async function ai_file (elem) {
 		}
 	}
 
-	success("Success", "AI ran successfully");
+	success("Success", "Image Detection ran successfully");
 	await anno.setAnnotations(a);
 
 	var new_annos = await anno.getAnnotations();
@@ -502,7 +502,7 @@ async function ai_file (elem) {
 	}
 	running_ki = false;
 
-	success("Success", "AI done...");
+	success("Success", "Image Detection done.");
 
 	if(autonext_param) {
 		await sleep(1500);
@@ -577,8 +577,10 @@ async function create_selects_from_annotation(force=0) {
 				$("#ki_detected_names").html("");
 			}
 		} else {
-			if($("#ki_detected_names").html() != "Please wait, AI is running...") {
-				$("#ki_detected_names").html("Please wait, AI is running...");
+			var msg = "Please wait, Image Detection is running...";
+
+			if($("#ki_detected_names").html() != msg) {
+				$("#ki_detected_names").html(msg);
 			}
 		}
 	}
