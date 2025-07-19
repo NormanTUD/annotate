@@ -139,6 +139,10 @@ function move_file (to) {
 	})
 }
 
+function info(title, msg) {
+	$("#status_bar").html("<span style='color: black'>" + title + ": " + msg + "</span>");
+}
+
 function success (title, msg) {
 	$("#status_bar").html("<span style='color: black'>" + title + ": " + msg + "</span>");
 }
@@ -433,20 +437,19 @@ async function ai_file (elem) {
 	console.log("scores", scores);
 	console.log("classes", classes);
 
-
-
-
-	var boxes_data = boxes;
-	var scores_data = scores;
-	var classes_data = classes;
 	tf.engine().endScope();
 
 	var a = [];
 
-	for (var i = 0; i < boxes_data.length; i++) {
-		var this_box = boxes_data[i];
-		var this_score = scores_data[i];
-		var this_class = classes_data[i];
+	if(boxes.length == 0) {
+		info("Nothing found", "Annotate manually");
+		return;
+	}
+
+	for (var i = 0; i < boxes.length; i++) {
+		var this_box = boxes[i];
+		var this_score = scores[i];
+		var this_class = classes[i];
 
 		if(this_class != -1) {
 			if(Object.keys(labels).length == 0) {
