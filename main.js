@@ -434,14 +434,22 @@ async function runModelPrediction(modelWidth, modelHeight) {
 	return res;
 }
 
-// verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
+function getShape(arr) {
+	const shape = [];
+	while (Array.isArray(arr)) {
+		shape.push(arr.length);
+		arr = arr[0];
+	}
+	return shape;
+}
+
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
 	// res: Tensor mit Shape [1, numDetections, 6] 
 	// Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
 	const raw = res.arraySync()[0]; // Array mit numDetections Elementen
 
-	log("processModelOutput, raw:", raw)
+	log("processModelOutput, raw:", raw, "shape:", getShape(raw))
 
 	const requiredConf = parseFloat(getUrlParam("conf", 0.1));
 
