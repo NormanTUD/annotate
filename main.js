@@ -361,6 +361,12 @@ function get_names_from_ki_anno (anno) {
 	return uniq;
 }
 
+function getUrlParam(name, defaultValue) {
+	var params = new URLSearchParams(window.location.search);
+	var val = parseFloat(params.get(name));
+	return isNaN(val) ? defaultValue : val;
+}
+
 async function ai_file (elem) {
 	if(!await has_model()) {
 		hide_ai_stuff();
@@ -419,7 +425,9 @@ async function ai_file (elem) {
 		var [x, y, w, h] = box.slice(0, 4);
 		var conf = box[4];
 
-		if (conf < 0.1) {
+		var required_conf = getUrlParam("conf", 0.1);
+
+		if (conf < required_conf) {
 			continue;
 		} else {
 			var classScores = box.slice(5);
