@@ -393,8 +393,6 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
-	log("model res:", res);
-
 	const { boxes, scores, classes } = await processModelOutput(res);
 
 	await handleAnnotations(boxes, scores, classes);
@@ -439,47 +437,49 @@ async function runModelPrediction(modelWidth, modelHeight) {
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
-  // res: Tensor mit Shape [1, numDetections, 6] 
-  // Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
-  const raw = res.arraySync()[0]; // Array mit numDetections Elementen
+	// res: Tensor mit Shape [1, numDetections, 6] 
+	// Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
+	const raw = res.arraySync()[0]; // Array mit numDetections Elementen
 
-  const requiredConf = parseFloat(getUrlParam("conf", 0.1));
+	log("processModelOutput, raw:", raw)
 
-  const boxes = [];
-  const scores = [];
-  const classes = [];
+	const requiredConf = parseFloat(getUrlParam("conf", 0.1));
 
-  raw.forEach((det, i) => {
-    const [cxNorm, cyNorm, wNorm, hNorm, score, cls] = det;
-    if (score < requiredConf) return;
+	const boxes = [];
+	const scores = [];
+	const classes = [];
 
-    // Normale Koordinaten in Pixel umrechnen
-    let cx = cxNorm * imageWidth;
-    let cy = cyNorm * imageHeight;
-    let w  = wNorm * imageWidth;
-    let h  = hNorm * imageHeight;
+	raw.forEach((det, i) => {
+		const [cxNorm, cyNorm, wNorm, hNorm, score, cls] = det;
+		if (score < requiredConf) return;
 
-    // Von Center- zu Top-Left-Koordinaten
-    let x = cx - w / 2;
-    let y = cy - h / 2;
+		// Normale Koordinaten in Pixel umrechnen
+		let cx = cxNorm * imageWidth;
+		let cy = cyNorm * imageHeight;
+		let w  = wNorm * imageWidth;
+		let h  = hNorm * imageHeight;
 
-    // Clamping an Bildgrenzen
-    x = Math.max(0, Math.min(x, imageWidth));
-    y = Math.max(0, Math.min(y, imageHeight));
-    w = Math.max(0, Math.min(w, imageWidth - x));
-    h = Math.max(0, Math.min(h, imageHeight - y));
+		// Von Center- zu Top-Left-Koordinaten
+		let x = cx - w / 2;
+		let y = cy - h / 2;
 
-    if (w > 0 && h > 0) {
-      boxes.push([x, y, w, h]);
-      scores.push(score);
-      classes.push(cls);
-    }
-  });
+		// Clamping an Bildgrenzen
+		x = Math.max(0, Math.min(x, imageWidth));
+		y = Math.max(0, Math.min(y, imageHeight));
+		w = Math.max(0, Math.min(w, imageWidth - x));
+		h = Math.max(0, Math.min(h, imageHeight - y));
 
-  tf.engine().endScope();
+		if (w > 0 && h > 0) {
+			boxes.push([x, y, w, h]);
+			scores.push(score);
+			classes.push(cls);
+		}
+	});
 
-  console.log(`Processed boxes: ${boxes.length}`);
-  return { boxes, scores, classes };
+	tf.engine().endScope();
+
+	console.log(`Processed boxes: ${boxes.length}`);
+	return { boxes, scores, classes };
 }
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
