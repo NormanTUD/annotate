@@ -45,6 +45,12 @@
 		</tr>
 
 		<tr>
+			<td>Epochs</td>
+			<td style="display: none">epochs</td>
+			<td><input onchange="change_url()" type="number" value="50" /></td>
+		</tr>
+
+		<tr>
 			<td>Validation Split Size</td>
 			<td style="display: none">validation_split</td>
 			<td><input onchange="change_url()" type="number" value="0" /></td>

@@ -26,7 +26,7 @@ for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
 done
 
 
-yolo task=detect mode=train model=yolov8n.pt data=dataset.yaml epochs=50 imgsz=640';
+yolo task=detect mode=train model=yolov8n.pt data=dataset.yaml epochs='.$epochs.' imgsz=640';
 
 		file_put_contents("$tmp_dir/train", $train_bash);
 	}
@@ -159,8 +159,8 @@ yolo task=detect mode=train model=yolov8n.pt data=dataset.yaml epochs=50 imgsz=6
 		exit(0);
 	}
 
-	function write_bash_files ($tmp_dir) {
-		write_train_bash($tmp_dir);
+	function write_bash_files ($tmp_dir, $epochs) {
+		write_train_bash($tmp_dir, $epochs);
 	}
 
 	function get_number_of_rows () {

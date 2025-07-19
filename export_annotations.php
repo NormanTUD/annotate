@@ -25,6 +25,7 @@
 	$tmp_dir = create_tmp_dir();
 
 	$validation_split = get_get("validation_split", 0);
+	$validation_split = get_get("epochs", 50);
 
 	if(is_dir($tmp_dir)) {
 		$dataset_yaml = "path: ./\n";
@@ -80,7 +81,7 @@
 			file_put_contents("$tmp_dir/labels/$fn_txt", "$str\n");
 		}
 
-		write_bash_files($tmp_dir);
+		write_bash_files($tmp_dir, $epochs);
 
 		#die("a");
 
