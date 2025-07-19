@@ -180,11 +180,10 @@ if [[ "$SYNTAX_ERRORS" -ne "0" ]]; then
 	exit 4
 fi
 
-echo "Building container. This may need sudo-permissions"
-
-if groups "$USER" | grep -q '\bdocker\b'; then
+if [ "$(id -u)" -eq 0 ] || groups "$USER" | grep -q '\bdocker\b'; then
 	CMD="docker-compose"
 else
+	echo "Building container. This may need sudo-permissions"
 	CMD="sudo docker-compose"
 fi
 
