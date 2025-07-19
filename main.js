@@ -447,7 +447,7 @@ function getShape(arr) {
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
 	// res: Tensor mit Shape [1, numDetections, 6] 
 	// Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
-	const raw = res.arraySync()[0]; // Array mit numDetections Elementen
+	const raw = res.arraySync();
 
 	log("processModelOutput, raw:", raw, "shape:", getShape(raw))
 
