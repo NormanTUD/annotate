@@ -505,7 +505,11 @@ async function handleAnnotations(boxes, scores, classes) {
 		}
 
 		const this_label = labels[this_class];
-		anno_boxes.push(get_annotate_element(this_label, x_start, y_start, w, h));
+		if(this_label) {
+			anno_boxes.push(get_annotate_element(this_label, x_start, y_start, w, h));
+		} else {
+			error("ERROR", `this_label was empty: ${this_label}`);
+		}
 	}
 
 	success("Success", "Image Detection ran successfully");
