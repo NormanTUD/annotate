@@ -462,7 +462,7 @@ async function ai_file (elem) {
 	success("Success", "AI done...");
 
 	if(autonext_param) {
-        await sleep(1500);
+		await sleep(1500);
 
 		await load_next_random_image();
 	}
