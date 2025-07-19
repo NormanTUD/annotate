@@ -1,3 +1,10 @@
+body { font-family: Arial; margin: 20px; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+th, td { border: 1px solid #aaa; padding: 8px; }
+th { background: #f0f0f0; }
+form { display: inline; }
+.btn { padding: 4px 8px; }
+
 /* Style the tab */
 .tab {
 	overflow: hidden;
