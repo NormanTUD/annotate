@@ -44,11 +44,6 @@
 		<input type="text" name="model_name" placeholder="Model Name">
 		<input type="submit" value="Upload and Process Model">
 	</form>
-
-	<h1>Upload yolov5-PyTorch Model</h1>
-	<p>Upload a .pt-file of your model. Name it, and you can then use it to annotate files.</p>
-	
-	<em>Warning: This, depending on your server hardware, may not work. If it doesn't, do it manually on a supported system and upload the model.json and .bin files manually afterwards. Use this command to convert:</em>
 <?php
 	include_once("footer.php");
 ?>
