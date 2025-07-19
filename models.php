@@ -34,7 +34,11 @@
 ?>
 
 	<h1>Upload tfjs Model</h1>
+
 	<p>Upload a model.json and the according .bin files of your model. Name it, and you can then use it to annotate files.</p>
+
+	Code for export: <tt>yolo export model=best.pt format=tfjs</tt>, don't forget to also add the <tt>labels.json</tt>.
+
 	<form enctype="multipart/form-data" method="POST" action="upload_tfjs_model.php">
 		<input type="file" multiple name="tfjs_model[]" accept=".json,.bin">
 		<input type="text" name="model_name" placeholder="Model Name">

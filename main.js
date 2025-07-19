@@ -379,7 +379,8 @@ async function ai_file (elem) {
 	tf.engine().startScope();
 	var res;
 	try {
-		var image_tensor = tf.browser.fromPixels($("#image")[0]).
+		var img_from_browser = tf.browser.fromPixels($("#image");
+		var image_tensor = img_from_browser[0]).
 			resizeBilinear([modelWidth, modelHeight]).
 			div(255).
 			expandDims();
@@ -450,9 +451,7 @@ async function ai_file (elem) {
 		}
 	}
 
-	var msg = "AI ran successfully";
-
-	success("Success", msg);
+	success("Success", "AI ran successfully");
 	await anno.setAnnotations(a);
 
 	var new_annos = await anno.getAnnotations();
@@ -464,7 +463,7 @@ async function ai_file (elem) {
 	success("Success", "AI done...");
 
 	if(autonext_param) {
-        await sleep(1500);
+		await sleep(1500);
 
 		await load_next_random_image();
 	}
