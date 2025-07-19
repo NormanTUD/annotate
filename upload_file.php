@@ -19,23 +19,33 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $src_image = imagecreatefromjpeg($file_tmp);
 
             // --- EXIF-based orientation fix ---
-            if (function_exists('exif_read_data')) {
-                $exif = @exif_read_data($file_tmp);
-                if (!empty($exif['Orientation'])) {
-                    switch ($exif['Orientation']) {
-                        case 3:
-                            $src_image = imagerotate($src_image, 180, 0);
-                            break;
-                        case 6:
-                            $src_image = imagerotate($src_image, -90, 0);
-                            break;
-                        case 8:
-                            $src_image = imagerotate($src_image, 90, 0);
-                            break;
-                        // No rotation needed for 1 (normal)
-                    }
-                }
-            }
+	    if (function_exists('exif_read_data')) {
+		    $mime = mime_content_type($file_tmp);
+		    if ($mime === 'image/jpeg' || $mime === 'image/tiff') {
+			    // alter Fehlerhandler sichern
+			    $oldErrorHandler = set_error_handler(null);
+
+			    // jetzt exif_read_data aufrufen (Warnings gehen wieder normal durch und werden nicht zu Exceptions)
+			    $exif = @exif_read_data($file_tmp);
+
+			    // alten Fehlerhandler wiederherstellen
+			    set_error_handler("exception_error_handler");
+
+			    if ($exif !== false && !empty($exif['Orientation'])) {
+				    switch ($exif['Orientation']) {
+				    case 3:
+					    $src_image = imagerotate($src_image, 180, 0);
+					    break;
+				    case 6:
+					    $src_image = imagerotate($src_image, -90, 0);
+					    break;
+				    case 8:
+					    $src_image = imagerotate($src_image, 90, 0);
+					    break;
+				    }
+			    }
+		    }
+	    }
             // ------------------------------------
 
             // Original dimensions        
