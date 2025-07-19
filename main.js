@@ -450,9 +450,7 @@ async function ai_file (elem) {
 		}
 	}
 
-	var msg = "AI ran successfully";
-
-	success("Success", msg);
+	success("Success", "AI ran successfully");
 	await anno.setAnnotations(a);
 
 	var new_annos = await anno.getAnnotations();
