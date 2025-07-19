@@ -463,6 +463,8 @@ async function ai_file (elem) {
 			var box_x_end = this_box[2];
 			var box_y_end = this_box[2];
 
+			log("box_x_start", box_x_start, "box_y_start", box_y_start, "box_x_end", box_x_end, "box_y_end", box_y_end);
+
 			if(this_class != -1) {
 				if(Object.keys(labels).length == 0) {
 					error("ERROR", "has no labels");
