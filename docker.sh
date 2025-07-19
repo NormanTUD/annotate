@@ -125,6 +125,10 @@ DB_PASSWORD=root
 DB_USER=root
 " > .env
 
+if [[ ! -d $local_db_dir ]]; then
+	mkdir -p $local_db_dir
+fi
+
 echo "version: '3.8'
 services:
   annotate_mariadb:
