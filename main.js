@@ -393,11 +393,50 @@ async function ai_file (elem) {
 	}
 	$("body").css("cursor", "default");
 
-	var [boxes, scores, classes] = res.arraySync().slice(0, 3);
+	log("res", res)
 
-	var boxes_data = await boxes.arraySync()[0];
-	var scores_data = await scores.arraySync()[0];
-	var classes_data = await classes.arraySync()[0];
+	var data = res.arraySync()[0];  // shape: [27, 8400]
+
+	// Transponiere: Wir wollen die 8400 Boxen einzeln durchgehen
+	// also von [27][8400] → [8400][27]
+	var transposed = data[0].map((_, i) => data.map(row => row[i]));
+
+	// Jetzt hast du 8400 Boxen, jede ist ein Array mit 27 Werten
+	// Annahme:
+	//   [0..3] = x,y,w,h
+	//   [4] = confidence score
+	//   [5..] = class scores
+
+	var boxes = [];
+	var scores = [];
+	var classes = [];
+
+	for (const box of transposed) {
+		var [x, y, w, h] = box.slice(0, 4);
+		var conf = box[4];
+
+		if (conf < 0.3) continue;
+
+		var classScores = box.slice(5);
+		var classIdx = classScores.indexOf(Math.max(...classScores));
+		var score = conf * classScores[classIdx];
+
+		boxes.push([x, y, w, h]);
+		scores.push(score);
+		classes.push(classIdx);
+	}
+
+	// Jetzt kannst du mit boxes, scores, classes weiterarbeiten
+	console.log("boxes", boxes);
+	console.log("scores", scores);
+	console.log("classes", classes);
+
+
+
+
+	var boxes_data = boxes;
+	var scores_data = scores;
+	var classes_data = classes;
 	tf.engine().endScope();
 
 	var a = [];
@@ -667,8 +706,8 @@ async function load_next_random_image (fn=false) {
 		set_img_from_filename(fn);
 	} else {
 		var ajax_url = "get_random_unannotated_image.php";
-		const queryString = window.location.search;
-		const urlParams = new URLSearchParams(queryString);
+		var queryString = window.location.search;
+		var urlParams = new URLSearchParams(queryString);
 		var like = urlParams.get('like');
 
 		if(like) {
