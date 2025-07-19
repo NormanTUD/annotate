@@ -37,6 +37,7 @@ fi
 DB_HOST=""
 DB_USER=root
 DB_PASSWORD=""
+local_db_dir=/var/lib/mysql
 LOCAL_PORT=""
 
 # Help message
@@ -50,6 +51,11 @@ help_message() {
 # Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
+		--local-db-dir*)
+			local_db_dir="$2"
+			shift
+			;;
+
 		--local-port*)
 			LOCAL_PORT="$2"
 			shift
@@ -117,6 +123,42 @@ LOCAL_PORT=$LOCAL_PORT
 DB_PASSWORD=root
 DB_USER=root
 " > .env
+
+echo "version: '3.8'
+services:
+  annotate_mariadb:
+    container_name: annotate_mariadb
+    restart: always
+    image: mariadb:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_PASS=root
+      - MYSQL_USER=root
+    volumes:
+      - $local_db_dir:/var/lib/mysql
+    networks:
+      - annotate_network
+  annotate:
+    restart: unless-stopped
+    build:
+      context: .
+    ports:
+      - $LOCAL_PORT:80
+    environment:
+      - DB_HOST=annotate_mariadb
+      - DB_PORT=3306
+      - DB_PASSWORD=root
+      - DB_USER=root
+    networks:
+      - annotate_network
+    tmpfs:
+      - /tmp:rw
+volumes:
+  datavolume:
+networks:
+  annotate_network:
+    driver: bridge
+" > docker-compose.yml
 
 echo "=== Current git hash before auto-pulling ==="
 git rev-parse HEAD
