@@ -443,68 +443,69 @@ async function ai_file (elem) {
 
 	if(boxes.length == 0) {
 		info("Nothing found", "Annotate manually");
-		return;
-	}
+	} else {
+		for (var i = 0; i < boxes.length; i++) {
+			var this_box = boxes[i];
+			var this_score = scores[i];
+			var this_class = classes[i];
 
-	for (var i = 0; i < boxes.length; i++) {
-		var this_box = boxes[i];
-		var this_score = scores[i];
-		var this_class = classes[i];
+			if(this_class != -1) {
+				if(Object.keys(labels).length == 0) {
+					error("ERROR", "has no labels");
+					return;
+				}
 
-		if(this_class != -1) {
-			if(Object.keys(labels).length == 0) {
-				error("ERROR", "has no labels");
-				return;
-			}
+				var this_label = labels[this_class];
 
-			var this_label = labels[this_class];
+				var name = this_label + " (" + (this_score * 100).toFixed(0) + "%)";
 
-			var name = this_label + " (" + (this_score * 100).toFixed(0) + "%)";
+				var img_width = $("#image")[0].width;
+				var img_height = $("#image")[0].height;
 
-			var img_width = $("#image")[0].width;
-			var img_height = $("#image")[0].height;
-			
-			var x_start = parseInt(this_box[0] * img_width);
-			var y_start = parseInt(this_box[1] * img_height);
+				var x_start = parseInt(this_box[0] * img_width);
+				var y_start = parseInt(this_box[1] * img_height);
 
-			var w = Math.abs(x_start - parseInt(this_box[2] * img_width));
-			var h = Math.abs(y_start - parseInt(this_box[3] * img_height));
+				var w = Math.abs(x_start - parseInt(this_box[2] * img_width));
+				var h = Math.abs(y_start - parseInt(this_box[3] * img_height));
 
-			var this_elem = {
-				"type": "Annotation", 
-				"body": [ 
-					{
-						"type": "TextualBody", 
+				var this_elem = {
+					"type": "Annotation", 
+					"body": [ 
+						{
+							"type": "TextualBody", 
 							"value": this_label,
 							"purpose": "tagging"
-					} 
-				], 
-				"target": { 
-					"source": $("#image")[0].src,
-					"selector": { 
-						"type": "FragmentSelector", 
-						"conformsTo": "http://www.w3.org/TR/media-frags/", 
-						"value": `xywh=pixel:${x_start},${y_start},${w},${h}`
-					} 
-				}, 
-				"@context": "http://www.w3.org/ns/anno.jsonld", 
-				"id": "#" + uuidv4()
-			};
+						} 
+					], 
+					"target": { 
+						"source": $("#image")[0].src,
+						"selector": { 
+							"type": "FragmentSelector", 
+							"conformsTo": "http://www.w3.org/TR/media-frags/", 
+							"value": `xywh=pixel:${x_start},${y_start},${w},${h}`
+						} 
+					}, 
+					"@context": "http://www.w3.org/ns/anno.jsonld", 
+					"id": "#" + uuidv4()
+				};
 
-			a.push(this_elem);
+				a.push(this_elem);
+			}
 		}
+
+
+		success("Success", "Image Detection ran successfully");
+		await anno.setAnnotations(a);
+
+		var new_annos = await anno.getAnnotations();
+		for (var i = 0; i < new_annos.length; i++) {
+			await save_anno(new_annos[i]);
+		}
+
+		success("Success", "Image Detection done.");
 	}
 
-	success("Success", "Image Detection ran successfully");
-	await anno.setAnnotations(a);
-
-	var new_annos = await anno.getAnnotations();
-	for (var i = 0; i < new_annos.length; i++) {
-		await save_anno(new_annos[i]);
-	}
 	running_ki = false;
-
-	success("Success", "Image Detection done.");
 
 	if(autonext_param) {
 		await sleep(1500);
