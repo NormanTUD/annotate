@@ -392,7 +392,7 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
-	const { boxes, scores, classes } = processModelOutput(res);
+	const { boxes, scores, classes } = await processModelOutput(res);
 
 	await handleAnnotations(boxes, scores, classes);
 
@@ -434,34 +434,33 @@ async function runModelPrediction(modelWidth, modelHeight) {
 }
 
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
-function processModelOutput(res) {
-	const data = res.arraySync()[0];
-	log("data:", data);
-
-	const boxes = [];
-	const scores = [];
-	const classes = [];
+async function processModelOutput(res) {
+	res = res.arraySync();
+	const boxes = await res[0];
+	const scores = await res[1];
+	const classScores = await res[2];
 
 	const required_conf = getUrlParam("conf", 0.1);
 
-	for (const box of data) {
-		const [x, y, w, h] = box.slice(0, 4);
-		const conf = box[4];
+	const filteredBoxes = [];
+	const filteredScores = [];
+	const filteredClasses = [];
 
-		if (conf < required_conf) continue;
+	for (let i = 0; i < boxes.length; i++) {
+		if (scores[i] < required_conf) continue;
 
-		const classScores = box.slice(5);
-		const classIdx = classScores.indexOf(Math.max(...classScores));
-		const score = conf * classScores[classIdx];
+		const thisClassScores = classScores[i];
+		const classIdx = thisClassScores.indexOf(Math.max(...thisClassScores));
+		const score = scores[i] * thisClassScores[classIdx];
 
-		boxes.push([x, y, w, h]);
-		scores.push(score);
-		classes.push(classIdx);
+		filteredBoxes.push(boxes[i]);
+		filteredScores.push(score);
+		filteredClasses.push(classIdx);
 	}
 
 	tf.engine().endScope();
 
-	return { boxes, scores, classes };
+	return { boxes: filteredBoxes, scores: filteredScores, classes: filteredClasses };
 }
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
