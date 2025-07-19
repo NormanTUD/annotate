@@ -434,33 +434,37 @@ async function runModelPrediction(modelWidth, modelHeight) {
 }
 
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
-async function processModelOutput(res) {
+function processModelOutput(res) {
 	res = res.arraySync();
-	const boxes = res[0];
-	const scores = res[1];
-	const classScores = res[2];
+	// Entpacken des inneren Arrays (das mit 5 Arrays)
+	const data = res[0];
+
+	// data[0..3] sind x,y,w,h
+	const xs = data[0];
+	const ys = data[1];
+	const ws = data[2];
+	const hs = data[3];
+
+	// data[4] ist confidence
+	const confs = data[4];
+
+	const boxes = [];
+	const scores = [];
+	const classes = []; // Da keine Klasseninfos, setze placeholder
 
 	const required_conf = getUrlParam("conf", 0.1);
 
-	const filteredBoxes = [];
-	const filteredScores = [];
-	const filteredClasses = [];
+	for (let i = 0; i < confs.length; i++) {
+		if (confs[i] < required_conf) continue;
 
-	for (let i = 0; i < boxes.length; i++) {
-		if (scores[i] < required_conf) continue;
-
-		const thisClassScores = classScores[i];
-		const classIdx = thisClassScores.indexOf(Math.max(...thisClassScores));
-		const score = scores[i] * thisClassScores[classIdx];
-
-		filteredBoxes.push(boxes[i]);
-		filteredScores.push(score);
-		filteredClasses.push(classIdx);
+		boxes.push([xs[i], ys[i], ws[i], hs[i]]);
+		scores.push(confs[i]);
+		classes.push(0); // z.B. Klasse 0 als Dummy
 	}
 
 	tf.engine().endScope();
 
-	return { boxes: filteredBoxes, scores: filteredScores, classes: filteredClasses };
+	return { boxes, scores, classes };
 }
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
