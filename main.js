@@ -407,13 +407,11 @@ async function ai_file (elem) {
 
 	var data = res.arraySync()[0];
 
-	var transposed = data[0].map((_, i) => data.map(row => row[i]));
-
 	var boxes = [];
 	var scores = [];
 	var classes = [];
 
-	for (const box of transposed) {
+	for (const box of data) {  // data ist die Liste von Boxen
 		var [x, y, w, h] = box.slice(0, 4);
 		var conf = box[4];
 
