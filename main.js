@@ -393,6 +393,8 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
+	log("model res:", res);
+
 	const { boxes, scores, classes } = await processModelOutput(res);
 
 	await handleAnnotations(boxes, scores, classes);
@@ -482,7 +484,7 @@ function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
 async function handleAnnotations(boxes, scores, classes) {
-	log("boxes:", boxes, "scores:", scores, "classes:", classes);
+	log("handleAnnotations:", "boxes:", boxes, "scores:", scores, "classes:", classes);
 	if (boxes.length === 0) {
 		info("Nothing found", "Annotate manually");
 		return;
