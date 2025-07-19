@@ -604,6 +604,7 @@ function get_annotate_element(this_label, x_start, y_start, w, h) {
 				"purpose": "tagging"
 			} 
 		], 
+		"source": $("#image")[0].src,
 		"target": { 
 			"source": $("#image")[0].src,
 			"selector": { 
