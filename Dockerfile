@@ -16,24 +16,23 @@ RUN docker-php-ext-install pdo pdo_mysql
 RUN pip3 install --break-system-packages imagehash
 RUN rm -rf /var/lib/apt/lists/*
 
-# Copy the PHP files to the container
-COPY . $APACHE_DOCUMENT_ROOT/
-COPY .env /var/www/html/.env
-
-# Configure Apache
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-RUN cat .env | grep "DB_PASSWORD" | sed -e 's#.*=##' >> /etc/dbpw
-RUN cat .env | grep "DB_USER" | sed -e 's#.*=##' >> /etc/dbuser
-RUN cat .env | grep "DB_HOST" | sed -e 's#.*=##' >> /etc/dbhost
-RUN cat .env | grep "DB_PORT" | sed -e 's#.*=##' >> /etc/dbport
-
-RUN rm .env
-
-# Expose the Apache port
 EXPOSE $APACHE_PORT
 
 RUN chmod 777 -R /tmp && chmod o+t -R /tmp
+
+# Copy the PHP files to the container
+COPY .env /var/www/html/.env
+
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf && \
+    sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
+    grep "DB_PASSWORD" .env | sed -e 's#.*=##' >> /etc/dbpw && \
+    grep "DB_USER" .env | sed -e 's#.*=##' >> /etc/dbuser && \
+    grep "DB_HOST" .env | sed -e 's#.*=##' >> /etc/dbhost && \
+    grep "DB_PORT" .env | sed -e 's#.*=##' >> /etc/dbport
+
+RUN rm .env
+
+COPY . $APACHE_DOCUMENT_ROOT/
 
 # Start Apache server
 CMD ["apache2-foreground"]
