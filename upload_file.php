@@ -20,8 +20,9 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
 
             // --- EXIF-based orientation fix ---
 	    if (function_exists('exif_read_data')) {
-		    $mime = mime_content_type($file_tmp);
-		    if ($mime === 'image/jpeg' || $mime === 'image/tiff') {
+		    $imgType = @exif_imagetype($file_tmp);
+		    if ($imgType === IMAGETYPE_JPEG || $imgType === IMAGETYPE_TIFF_II || $imgType === IMAGETYPE_TIFF_MM) {
+			    // same as above: temporarily disable error handler or just suppress warnings with @
 			    $exif = @exif_read_data($file_tmp);
 			    if ($exif !== false && !empty($exif['Orientation'])) {
 				    switch ($exif['Orientation']) {
