@@ -392,11 +392,11 @@ async function ai_file (elem) {
 	}
 	$("body").css("cursor", "default");
 
-	const [boxes, scores, classes] = res.slice(0, 3);
+	var [boxes, scores, classes] = res.arraySync().slice(0, 3);
 
-	const boxes_data = await boxes.arraySync()[0];
-	const scores_data = await scores.arraySync()[0];
-	const classes_data = await classes.arraySync()[0];
+	var boxes_data = await boxes.arraySync()[0];
+	var scores_data = await scores.arraySync()[0];
+	var classes_data = await classes.arraySync()[0];
 	tf.engine().endScope();
 
 	var a = [];
