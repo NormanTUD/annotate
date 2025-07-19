@@ -47,7 +47,7 @@
                                 imagedestroy($resized_image);
 
                                 // Insert into DB
-                                insert_image_into_db_from_data($resized_image_data, $file_name);
+                                insert_image_into_db($resized_image_data, $file_name);
 
                                 // Display the uploaded image
                                 echo "<img style='max-height: 400px; max-width: 400px;' src='print_image.php?filename=".htmlentities(urlencode($file_name))."' alt='Uploaded Image'>";
