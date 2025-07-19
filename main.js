@@ -447,15 +447,13 @@ async function ai_file (elem) {
 			var this_score = scores[i];
 			var this_class = classes[i];
 
-			var x1 = this_box[0];
-			var y1 = this_box[1];
-			var x2 = this_box[2];
-			var y2 = this_box[3];
+			var x_start = Math.round(this_box[0]);
+			var y_start = Math.round(this_box[1]);
+			var x_end = Math.round(this_box[2]);
+			var y_end = Math.round(this_box[3]);
 
-			var x_start = Math.round(x1);
-			var y_start = Math.round(y1);
-			var w = Math.round(x2 - x1);
-			var h = Math.round(y2 - y1);
+			var w = x_end - x_start;
+			var h = y_end - y_start;
 
 			if(this_class != -1) {
 				if(Object.keys(labels).length == 0) {
@@ -464,8 +462,6 @@ async function ai_file (elem) {
 				}
 
 				var this_label = labels[this_class];
-
-				var name = this_label + " (" + (this_score * 100).toFixed(0) + "%)";
 
 				anno_boxes.push(get_annotate_element(this_label, x_start, y_start, w, h));
 			}
