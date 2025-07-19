@@ -478,11 +478,11 @@ async function ai_file (elem) {
 				var img_width = $("#image")[0].width;
 				var img_height = $("#image")[0].height;
 
-				var x_start = parseInt(box_x_start * img_width);
-				var y_start = parseInt(box_y_start * img_height);
+				var x_start = parseInt(box_x_start);
+				var y_start = parseInt(box_y_start);
 
-				var w = Math.abs(x_start - parseInt(box_x_end * img_width));
-				var h = Math.abs(y_start - parseInt(box_y_end * img_height));
+				var w = Math.abs(x_start - parseInt(box_x_end));
+				var h = Math.abs(y_start - parseInt(box_y_end));
 
 				var this_elem = {
 					"type": "Annotation", 
