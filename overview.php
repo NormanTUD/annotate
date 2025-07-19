@@ -41,25 +41,6 @@ function renderTable($title, $headers, $rows, $actions = []) {
 }
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Annotation Overview</title>
-    <style>
-        body { font-family: Arial; margin: 20px; }
-        h2 { margin-top: 40px; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
-        th, td { border: 1px solid #aaa; padding: 8px; }
-        th { background: #f0f0f0; }
-        form { display: inline; }
-        input[type="text"] { width: 100px; }
-        textarea { width: 90%; height: 50px; }
-        .btn { padding: 4px 8px; }
-    </style>
-</head>
-<body>
-
 <h1>Annotation Dashboard</h1>
 
 <?php
