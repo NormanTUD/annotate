@@ -465,15 +465,19 @@ async function ai_file (elem) {
 			var img_natural_width = img.naturalWidth;
 			var img_natural_height = img.naturalHeight;
 
-			// Skalierungsfaktor berechnen
-			var scale_x = img_display_width / img_natural_width;
-			var scale_y = img_display_height / img_natural_height;
+			var input_size = 640;
+			var img = $("#image")[0];
 
-			var box_x_start = this_box[0];
-			var box_y_start = this_box[1];
+			var x1 = this_box[0] * scale_x;
+			var y1 = this_box[1] * scale_y;
+			var x2 = this_box[2] * scale_x;
+			var y2 = this_box[3] * scale_y;
 
-			var box_x_end = this_box[2];
-			var box_y_end = this_box[3];
+			var x_start = Math.round(x1);
+			var y_start = Math.round(y1);
+			var w = Math.round(x2 - x1);
+			var h = Math.round(y2 - y1);
+
 
 			log("box_x_start", box_x_start, "box_y_start", box_y_start, "box_x_end", box_x_end, "box_y_end", box_y_end);
 
