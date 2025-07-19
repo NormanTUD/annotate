@@ -482,6 +482,7 @@ function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
 async function handleAnnotations(boxes, scores, classes) {
+	log("boxes:", boxes, "scores:", scores, "classes:", classes);
 	if (boxes.length === 0) {
 		info("Nothing found", "Annotate manually");
 		return;
