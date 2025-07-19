@@ -415,15 +415,18 @@ async function ai_file (elem) {
 		var [x, y, w, h] = box.slice(0, 4);
 		var conf = box[4];
 
-		if (conf < 0.3) continue;
+		if (conf < 0.3) {
+			log(`Skipping confidence ${conf}`)
+			continue;
+		} else {
+			var classScores = box.slice(5);
+			var classIdx = classScores.indexOf(Math.max(...classScores));
+			var score = conf * classScores[classIdx];
 
-		var classScores = box.slice(5);
-		var classIdx = classScores.indexOf(Math.max(...classScores));
-		var score = conf * classScores[classIdx];
-
-		boxes.push([x, y, w, h]);
-		scores.push(score);
-		classes.push(classIdx);
+			boxes.push([x, y, w, h]);
+			scores.push(score);
+			classes.push(classIdx);
+		}
 	}
 
 	// Jetzt kannst du mit boxes, scores, classes weiterarbeiten
