@@ -26,7 +26,7 @@ for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
 done
 
 
-yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz=640
+yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz=640 weights=""
 ';
 
 		file_put_contents("$tmp_dir/train", $train_bash);
