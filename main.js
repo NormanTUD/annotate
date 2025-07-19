@@ -434,95 +434,49 @@ async function runModelPrediction(modelWidth, modelHeight) {
 }
 
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
-function processModelOutput(res, imageWidth=640, imageHeight=480) {
-	res = res.arraySync();
+// verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
+function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
+  // res: Tensor mit Shape [1, numDetections, 6] 
+  // Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
+  const raw = res.arraySync()[0]; // Array mit numDetections Elementen
 
-	console.log("Raw model output (res):", res);
+  const requiredConf = parseFloat(getUrlParam("conf", 0.1));
 
-	const data = res[0]; // 5 arrays: centerX, centerY, w, h, conf
-	const centerXs = data[0];
-	const centerYs = data[1];
-	const ws = data[2];
-	const hs = data[3];
-	const confs = data[4];
+  const boxes = [];
+  const scores = [];
+  const classes = [];
 
-	const required_conf = getUrlParam("conf", 0.1);
+  raw.forEach((det, i) => {
+    const [cxNorm, cyNorm, wNorm, hNorm, score, cls] = det;
+    if (score < requiredConf) return;
 
-	const boxes = [];
-	const scores = [];
-	const classes = []; // Dummy class 0
+    // Normale Koordinaten in Pixel umrechnen
+    let cx = cxNorm * imageWidth;
+    let cy = cyNorm * imageHeight;
+    let w  = wNorm * imageWidth;
+    let h  = hNorm * imageHeight;
 
-	for (let i = 0; i < confs.length; i++) {
-		const conf = confs[i];
-		if (conf < required_conf) continue;
+    // Von Center- zu Top-Left-Koordinaten
+    let x = cx - w / 2;
+    let y = cy - h / 2;
 
-		let cx = centerXs[i];
-		let cy = centerYs[i];
-		let w = ws[i];
-		let h = hs[i];
+    // Clamping an Bildgrenzen
+    x = Math.max(0, Math.min(x, imageWidth));
+    y = Math.max(0, Math.min(y, imageHeight));
+    w = Math.max(0, Math.min(w, imageWidth - x));
+    h = Math.max(0, Math.min(h, imageHeight - y));
 
-		// Log raw values
-		if (i < 10) { // nur für die ersten 10 Boxen
-			console.log(`Box ${i}: cx=${cx}, cy=${cy}, w=${w}, h=${h}, conf=${conf}`);
-		}
+    if (w > 0 && h > 0) {
+      boxes.push([x, y, w, h]);
+      scores.push(score);
+      classes.push(cls);
+    }
+  });
 
-		// Check auf negative oder unrealistische Werte
-		if (w < 0) {
-			console.warn(`Box ${i}: width < 0 (${w}), set to 0`);
-			w = 0;
-		}
-		if (h < 0) {
-			console.warn(`Box ${i}: height < 0 (${h}), set to 0`);
-			h = 0;
-		}
-		if (cx < 0 || cx > imageWidth) {
-			console.warn(`Box ${i}: centerX out of bounds (${cx})`);
-			cx = Math.min(Math.max(cx, 0), imageWidth);
-		}
-		if (cy < 0 || cy > imageHeight) {
-			console.warn(`Box ${i}: centerY out of bounds (${cy})`);
-			cy = Math.min(Math.max(cy, 0), imageHeight);
-		}
+  tf.engine().endScope();
 
-		// Umrechnen von (centerX, centerY, w, h) zu (x, y, w, h) mit x,y linke obere Ecke
-		// Clamping der Box an Bildgrenzen
-		let x = cx - w / 2;
-		let y = cy - h / 2;
-
-		if (x < 0) {
-			console.warn(`Box ${i}: x < 0 (${x}), set to 0`);
-			x = 0;
-		}
-		if (y < 0) {
-			console.warn(`Box ${i}: y < 0 (${y}), set to 0`);
-			y = 0;
-		}
-		if (x + w > imageWidth) {
-			const oldW = w;
-			w = imageWidth - x;
-			console.warn(`Box ${i}: width adjusted from ${oldW} to ${w} due to image width`);
-		}
-		if (y + h > imageHeight) {
-			const oldH = h;
-			h = imageHeight - y;
-			console.warn(`Box ${i}: height adjusted from ${oldH} to ${h} due to image height`);
-		}
-
-		// Nur Boxen mit validen Größe pushen
-		if (w > 0 && h > 0) {
-			boxes.push([x, y, w, h]);
-			scores.push(conf);
-			classes.push(0); // Dummy-Klasse
-		} else {
-			console.warn(`Box ${i}: skipped due to invalid size w=${w}, h=${h}`);
-		}
-	}
-
-	tf.engine().endScope();
-
-	console.log(`Processed boxes: ${boxes.length}`);
-
-	return { boxes, scores, classes };
+  console.log(`Processed boxes: ${boxes.length}`);
+  return { boxes, scores, classes };
 }
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
