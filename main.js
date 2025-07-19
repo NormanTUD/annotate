@@ -428,7 +428,7 @@ async function runModelPrediction(modelWidth, modelHeight) {
 		.div(255)
 		.expandDims();
 
-	const res = await model.executeAsync(image_tensor);
+	const res = await model.execute(image_tensor);
 	// hier Scope noch nicht schließen, da arraySync gebraucht wird
 	return res;
 }
