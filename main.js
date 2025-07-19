@@ -447,7 +447,7 @@ async function ai_file (elem) {
 
 	tf.engine().endScope();
 
-	var a = [];
+	var anno_boxes = [];
 
 	if(boxes.length == 0) {
 		info("Nothing found", "Annotate manually");
@@ -497,13 +497,13 @@ async function ai_file (elem) {
 					"id": "#" + uuidv4()
 				};
 
-				a.push(this_elem);
+				anno_boxes.push(this_elem);
 			}
 		}
 
 
 		success("Success", "Image Detection ran successfully");
-		await anno.setAnnotations(a);
+		await anno.setAnnotations(anno_boxes);
 
 		var new_annos = await anno.getAnnotations();
 		for (var i = 0; i < new_annos.length; i++) {
