@@ -436,6 +436,7 @@ async function runModelPrediction(modelWidth, modelHeight) {
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
 function processModelOutput(res) {
 	const data = res.arraySync()[0];
+	log("data:", data);
 
 	const boxes = [];
 	const scores = [];
