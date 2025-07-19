@@ -457,18 +457,6 @@ async function ai_file (elem) {
 			var this_score = scores[i];
 			var this_class = classes[i];
 
-			var img = $("#image")[0];
-
-			var img_display_width = img.width;
-			var img_display_height = img.height;
-
-			var img_natural_width = img.naturalWidth;
-			var img_natural_height = img.naturalHeight;
-
-			var img = $("#image")[0];
-
-			log("x_start:", this_box[0]);
-
 			var x1 = this_box[0];
 			var y1 = this_box[1];
 			var x2 = this_box[2];
