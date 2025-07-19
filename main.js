@@ -405,17 +405,9 @@ async function ai_file (elem) {
 
 	log("res", res)
 
-	var data = res.arraySync()[0];  // shape: [27, 8400]
+	var data = res.arraySync()[0];
 
-	// Transponiere: Wir wollen die 8400 Boxen einzeln durchgehen
-	// also von [27][8400] → [8400][27]
 	var transposed = data[0].map((_, i) => data.map(row => row[i]));
-
-	// Jetzt hast du 8400 Boxen, jede ist ein Array mit 27 Werten
-	// Annahme:
-	//   [0..3] = x,y,w,h
-	//   [4] = confidence score
-	//   [5..] = class scores
 
 	var boxes = [];
 	var scores = [];
