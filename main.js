@@ -367,128 +367,143 @@ function getUrlParam(name, defaultValue) {
 	return isNaN(val) ? defaultValue : val;
 }
 
-async function ai_file (elem) {
-	if(!await has_model()) {
-		hide_ai_stuff();
-		console.info("No AI model found. Not allowing ai_file stuff");
-		return;
-	}
+async function ai_file(elem) {
+	if (!await checkModelAvailable()) return;
 
 	show_ai_stuff();
-
 	running_ki = true;
 	$("body").css("cursor", "progress");
 	success("Success", "KI gestartet... Bitte warten");
-	await anno.clearAnnotations();
 
+	await anno.clearAnnotations();
 	await load_model();
 	await tf.ready();
 
-	var [modelWidth, modelHeight] = model.inputs[0].shape.slice(1, 3);
+	const [modelWidth, modelHeight] = getModelInputShape();
 
-	tf.engine().startScope();
-	var res;
+	let res;
 	try {
-		var img_from_browser = tf.browser.fromPixels($("#image")[0]);
-		var image_tensor = img_from_browser.
-			resizeBilinear([modelWidth, modelHeight]).
-			div(255).
-			expandDims();
-
-		res = await model.executeAsync(image_tensor);
+		res = await runModelPrediction(modelWidth, modelHeight);
 	} catch (e) {
 		console.warn(e);
-
+		$("body").css("cursor", "default");
+		running_ki = false;
 		return;
 	}
 	$("body").css("cursor", "default");
 
-	log("res", res)
+	const { boxes, scores, classes } = processModelOutput(res);
 
-	var data = res.arraySync()[0];
-
-	var boxes = [];
-	var scores = [];
-	var classes = [];
-
-	for (const box of data) {  // data ist die Liste von Boxen
-		var [x, y, w, h] = box.slice(0, 4);
-		var conf = box[4];
-
-		var required_conf = getUrlParam("conf", 0.1);
-
-		if (conf < required_conf) {
-			continue;
-		} else {
-			var classScores = box.slice(5);
-			var classIdx = classScores.indexOf(Math.max(...classScores));
-			var score = conf * classScores[classIdx];
-
-			boxes.push([x, y, w, h]);
-			scores.push(score);
-			classes.push(classIdx);
-		}
-	}
-
-	// Jetzt kannst du mit boxes, scores, classes weiterarbeiten
-	console.log("boxes", boxes);
-	console.log("scores", scores);
-	console.log("classes", classes);
-
-	tf.engine().endScope();
-
-	var anno_boxes = [];
-
-	if(boxes.length == 0) {
-		info("Nothing found", "Annotate manually");
-	} else {
-		for (var i = 0; i < boxes.length; i++) {
-			var this_box = boxes[i];
-			var this_score = scores[i];
-			var this_class = classes[i];
-
-			var x_start = Math.round(this_box[0]);
-			var y_start = Math.round(this_box[1]);
-			var x_end = Math.round(this_box[2]);
-			var y_end = Math.round(this_box[3]);
-
-			var w = x_end - x_start;
-			var h = y_end - y_start;
-
-			if(this_class != -1) {
-				if(Object.keys(labels).length == 0) {
-					error("ERROR", "has no labels");
-					return;
-				}
-
-				var this_label = labels[this_class];
-
-				anno_boxes.push(get_annotate_element(this_label, x_start, y_start, w, h));
-			}
-		}
-
-		success("Success", "Image Detection ran successfully");
-
-		log("anno_boxes", anno_boxes);
-
-		await anno.setAnnotations(anno_boxes);
-
-		var new_annos = await anno.getAnnotations();
-		for (var i = 0; i < new_annos.length; i++) {
-			await save_anno(new_annos[i]);
-		}
-
-		success("Success", "Image Detection done.");
-	}
+	await handleAnnotations(boxes, scores, classes);
 
 	running_ki = false;
 
-	if(autonext_param) {
+	if (autonext_param) {
 		await sleep(1500);
-
 		await load_next_random_image();
 	}
 }
+
+// prüft, ob Model vorhanden ist, zeigt UI entsprechend an, gibt bool zurück
+async function checkModelAvailable() {
+	if (!await has_model()) {
+		hide_ai_stuff();
+		console.info("No AI model found. Not allowing ai_file stuff");
+		return false;
+	}
+	return true;
+}
+
+// liefert Inputgröße des Models
+function getModelInputShape() {
+	return model.inputs[0].shape.slice(1, 3);
+}
+
+// führt die Model-Ausführung mit Bild-Tensor aus
+async function runModelPrediction(modelWidth, modelHeight) {
+	tf.engine().startScope();
+	const img_from_browser = tf.browser.fromPixels($("#image")[0]);
+	const image_tensor = img_from_browser
+		.resizeBilinear([modelWidth, modelHeight])
+		.div(255)
+		.expandDims();
+
+	const res = await model.executeAsync(image_tensor);
+	// hier Scope noch nicht schließen, da arraySync gebraucht wird
+	return res;
+}
+
+// verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
+function processModelOutput(res) {
+	const data = res.arraySync()[0];
+
+	const boxes = [];
+	const scores = [];
+	const classes = [];
+
+	const required_conf = getUrlParam("conf", 0.1);
+
+	for (const box of data) {
+		const [x, y, w, h] = box.slice(0, 4);
+		const conf = box[4];
+
+		if (conf < required_conf) continue;
+
+		const classScores = box.slice(5);
+		const classIdx = classScores.indexOf(Math.max(...classScores));
+		const score = conf * classScores[classIdx];
+
+		boxes.push([x, y, w, h]);
+		scores.push(score);
+		classes.push(classIdx);
+	}
+
+	tf.engine().endScope();
+
+	return { boxes, scores, classes };
+}
+
+// verarbeitet die boxes/scores/classes und erstellt Annotationen
+async function handleAnnotations(boxes, scores, classes) {
+	if (boxes.length === 0) {
+		info("Nothing found", "Annotate manually");
+		return;
+	}
+
+	const anno_boxes = [];
+
+	for (let i = 0; i < boxes.length; i++) {
+		const [x_start, y_start, x_end, y_end] = boxes[i].map(Math.round);
+		const w = x_end - x_start;
+		const h = y_end - y_start;
+
+		const this_class = classes[i];
+		const this_score = scores[i];
+
+		if (this_class === -1) continue;
+
+		if (Object.keys(labels).length === 0) {
+			error("ERROR", "has no labels");
+			return;
+		}
+
+		const this_label = labels[this_class];
+		anno_boxes.push(get_annotate_element(this_label, x_start, y_start, w, h));
+	}
+
+	success("Success", "Image Detection ran successfully");
+	log("anno_boxes", anno_boxes);
+
+	await anno.setAnnotations(anno_boxes);
+
+	const new_annos = await anno.getAnnotations();
+	for (const ann of new_annos) {
+		await save_anno(ann);
+	}
+
+	success("Success", "Image Detection done.");
+}
+
 
 function get_annotate_element(this_label, x_start, y_start, w, h) {
 	return {
