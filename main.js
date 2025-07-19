@@ -482,9 +482,6 @@ async function ai_file (elem) {
 			var w = Math.round(x2 - x1);
 			var h = Math.round(y2 - y1);
 
-
-			log("box_x_start", box_x_start, "box_y_start", box_y_start, "box_x_end", box_x_end, "box_y_end", box_y_end);
-
 			if(this_class != -1) {
 				if(Object.keys(labels).length == 0) {
 					error("ERROR", "has no labels");
@@ -494,11 +491,6 @@ async function ai_file (elem) {
 				var this_label = labels[this_class];
 
 				var name = this_label + " (" + (this_score * 100).toFixed(0) + "%)";
-
-				var x_start = Math.round(box_x_start * scale_x);
-				var y_start = Math.round(box_y_start * scale_y);
-				var x_end = Math.round(box_x_end * scale_x);
-				var y_end = Math.round(box_y_end * scale_y);
 
 				var this_elem = {
 					"type": "Annotation", 
