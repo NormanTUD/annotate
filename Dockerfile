@@ -16,8 +16,8 @@ RUN apt-get update && \
     wget -qO - https://packages.sury.org/php/apt.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/php.gpg && \
     echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list && \
     apt-get update && \
-    apt-get install -y php8.2 php8.2-gd
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get install -y php8.2 php8.2-gd && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-install mysqli
 RUN docker-php-ext-install pdo pdo_mysql
