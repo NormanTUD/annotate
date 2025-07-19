@@ -435,49 +435,49 @@ async function runModelPrediction(modelWidth, modelHeight) {
 }
 
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
-// verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
-  // res: Tensor mit Shape [1, numDetections, 6] 
-  // Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
-  const raw = res.arraySync()[0]; // Array mit numDetections Elementen
+	// res: Tensor mit Shape [1, numDetections, 6] 
+	// Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
+	const raw = res.arraySync()[0]; // Array mit numDetections Elementen
+	log(raw)
 
-  const requiredConf = parseFloat(getUrlParam("conf", 0.1));
+	const requiredConf = parseFloat(getUrlParam("conf", 0.1));
 
-  const boxes = [];
-  const scores = [];
-  const classes = [];
+	const boxes = [];
+	const scores = [];
+	const classes = [];
 
-  raw.forEach((det, i) => {
-    const [cxNorm, cyNorm, wNorm, hNorm, score, cls] = det;
-    if (score < requiredConf) return;
+	raw.forEach((det, i) => {
+		const [cxNorm, cyNorm, wNorm, hNorm, score, cls] = det;
+		if (score < requiredConf) return;
 
-    // Normale Koordinaten in Pixel umrechnen
-    let cx = cxNorm * imageWidth;
-    let cy = cyNorm * imageHeight;
-    let w  = wNorm * imageWidth;
-    let h  = hNorm * imageHeight;
+		// Normale Koordinaten in Pixel umrechnen
+		let cx = cxNorm * imageWidth;
+		let cy = cyNorm * imageHeight;
+		let w  = wNorm * imageWidth;
+		let h  = hNorm * imageHeight;
 
-    // Von Center- zu Top-Left-Koordinaten
-    let x = cx - w / 2;
-    let y = cy - h / 2;
+		// Von Center- zu Top-Left-Koordinaten
+		let x = cx - w / 2;
+		let y = cy - h / 2;
 
-    // Clamping an Bildgrenzen
-    x = Math.max(0, Math.min(x, imageWidth));
-    y = Math.max(0, Math.min(y, imageHeight));
-    w = Math.max(0, Math.min(w, imageWidth - x));
-    h = Math.max(0, Math.min(h, imageHeight - y));
+		// Clamping an Bildgrenzen
+		x = Math.max(0, Math.min(x, imageWidth));
+		y = Math.max(0, Math.min(y, imageHeight));
+		w = Math.max(0, Math.min(w, imageWidth - x));
+		h = Math.max(0, Math.min(h, imageHeight - y));
 
-    if (w > 0 && h > 0) {
-      boxes.push([x, y, w, h]);
-      scores.push(score);
-      classes.push(cls);
-    }
-  });
+		if (w > 0 && h > 0) {
+			boxes.push([x, y, w, h]);
+			scores.push(score);
+			classes.push(cls);
+		}
+	});
 
-  tf.engine().endScope();
+	tf.engine().endScope();
 
-  console.log(`Processed boxes: ${boxes.length}`);
-  return { boxes, scores, classes };
+	console.log(`Processed boxes: ${boxes.length}`);
+	return { boxes, scores, classes };
 }
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
