@@ -9,10 +9,9 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html
 
 # Install necessary dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils libssl-dev iproute2 iputils-ping python3 python3-pip zip php-gd
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils libssl-dev iproute2 iputils-ping python3 python3-pip zip
 
-RUN docker-php-ext-install mysqli
-RUN docker-php-ext-install pdo pdo_mysql
+RUN docker-php-ext-install mysqli gd pdo pdo_mysql
 RUN pip3 install --break-system-packages imagehash
 RUN rm -rf /var/lib/apt/lists/*
 
