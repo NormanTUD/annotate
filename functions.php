@@ -288,6 +288,7 @@
 		$str .= "<a target='_blank' href='stat.php'>Statistics</a>, ";
 		$str .= "<a target='_blank' href='models.php'>Models</a>, ";
 		$str .= "<a target='_blank' href='upload.php'>Upload Images</a>, ";
+		$str .= "<a target='_blank' href='overview.php'>Overview</a>, ";
 		$str .= "<a target='_blank' href='export_annotations_gui.php'>Export annotations</a>";
 
 		return $str;
