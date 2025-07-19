@@ -76,7 +76,7 @@
 							<input class="disable_in_autonext" placeholder="Filename contains..." id="like" onchange="start_like()" />
 						</p>
 						<div id="ki_detected_names"></div>
-						<img id="image" />
+						<img id="image" style="max-height: 640px; max-width: 640px;" />
 						<br>
 						<div id="filename"></div>
 					</div>
