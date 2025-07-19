@@ -467,28 +467,7 @@ async function ai_file (elem) {
 
 				var name = this_label + " (" + (this_score * 100).toFixed(0) + "%)";
 
-				var this_elem = {
-					"type": "Annotation", 
-					"body": [ 
-						{
-							"type": "TextualBody", 
-							"value": this_label,
-							"purpose": "tagging"
-						} 
-					], 
-					"target": { 
-						"source": $("#image")[0].src,
-						"selector": { 
-							"type": "FragmentSelector", 
-							"conformsTo": "http://www.w3.org/TR/media-frags/", 
-							"value": `xywh=pixel:${x_start},${y_start},${w},${h}`
-						} 
-					}, 
-					"@context": "http://www.w3.org/ns/anno.jsonld", 
-					"id": "#" + uuidv4()
-				};
-
-				anno_boxes.push(this_elem);
+				anno_boxes.push(get_annotate_element(this_label, x_start, y_start, w, h));
 			}
 		}
 
@@ -512,6 +491,29 @@ async function ai_file (elem) {
 		await sleep(1500);
 
 		await load_next_random_image();
+	}
+}
+
+function get_annotate_element(this_label, x_start, y_start, w, h) {
+	return {
+		"type": "Annotation", 
+		"body": [ 
+			{
+				"type": "TextualBody", 
+				"value": this_label,
+				"purpose": "tagging"
+			} 
+		], 
+		"target": { 
+			"source": $("#image")[0].src,
+			"selector": { 
+				"type": "FragmentSelector", 
+				"conformsTo": "http://www.w3.org/TR/media-frags/", 
+				"value": `xywh=pixel:${x_start},${y_start},${w},${h}`
+			} 
+		}, 
+		"@context": "http://www.w3.org/ns/anno.jsonld", 
+		"id": "#" + uuidv4()
 	}
 }
 
