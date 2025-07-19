@@ -81,10 +81,10 @@
 						contentType: false,
 						processData: false,
 						success: function (response) {
-							$('#response').append(response + "<hr>");  // <-- fixiert das Problem
+							$('#response').html(response);
 							if(response.includes("Error:")) {
-								defective_files.push(file.name);
-								$("#defective_files_ul").append("<li>" + file.name + "</li>");
+								defective_files.push();
+								$("#defective_files_ul").append("<li>" + files[currentIndex].name + "</li>");
 								$("#defective_files").show();
 							}
 							currentIndex++;
