@@ -436,9 +436,9 @@ async function runModelPrediction(modelWidth, modelHeight) {
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
 async function processModelOutput(res) {
 	res = res.arraySync();
-	const boxes = await res[0];
-	const scores = await res[1];
-	const classScores = await res[2];
+	const boxes = res[0];
+	const scores = res[1];
+	const classScores = res[2];
 
 	const required_conf = getUrlParam("conf", 0.1);
 
