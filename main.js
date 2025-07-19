@@ -393,7 +393,7 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
-	console.log("res:", res);
+	console.log("res:", res.arraySync());
 
 	var { boxes, scores, classes } = await processModelOutput(res);
 
