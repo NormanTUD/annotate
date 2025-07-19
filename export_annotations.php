@@ -25,7 +25,7 @@
 	$tmp_dir = create_tmp_dir();
 
 	$validation_split = get_get("validation_split", 0);
-	$validation_split = get_get("epochs", 50);
+	$epochs = get_get("epochs", 50);
 
 	if(is_dir($tmp_dir)) {
 		$dataset_yaml = "path: ./\n";
