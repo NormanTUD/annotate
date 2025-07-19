@@ -434,22 +434,8 @@ async function runModelPrediction(modelWidth, modelHeight) {
 	return res;
 }
 
-function getShape(arr) {
-	const shape = [];
-	while (Array.isArray(arr)) {
-		shape.push(arr.length);
-		arr = arr[0];
-	}
-	return shape;
-}
-
-// verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
-	// res: Tensor mit Shape [1, numDetections, 6] 
-	// Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
-	const raw = res.arraySync();
-
-	log("processModelOutput, raw:", raw, "shape:", getShape(raw))
+	const raw = res.arraySync()[0];
 
 	const requiredConf = parseFloat(getUrlParam("conf", 0.1));
 
@@ -459,7 +445,9 @@ function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
 
 	raw.forEach((det, i) => {
 		const [cxNorm, cyNorm, wNorm, hNorm, score, cls] = det;
-		if (score < requiredConf) return;
+		if (score < requiredConf) {
+			return;
+		}
 
 		// Normale Koordinaten in Pixel umrechnen
 		let cx = cxNorm * imageWidth;
