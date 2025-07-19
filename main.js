@@ -435,58 +435,49 @@ async function runModelPrediction(modelWidth, modelHeight) {
 }
 
 // verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
+// verarbeitet das Resultat des Modells und extrahiert boxes, scores, classes
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
-	const raw = res.arraySync()[0]; // raw shape: [11, 8400]
+  // res: Tensor mit Shape [1, numDetections, 6] 
+  // Format pro Detection: [x_center_norm, y_center_norm, w_norm, h_norm, score, class]
+  const raw = res.arraySync()[0]; // Array mit numDetections Elementen
 
-	const requiredConf = parseFloat(getUrlParam("conf", 0.1));
-	const boxes = [];
-	const scores = [];
-	const classes = [];
+  const requiredConf = parseFloat(getUrlParam("conf", 0.1));
 
-	const numDetections = raw[0].length;
-	const numClasses = raw.length - 5; // 5: x, y, w, h, objectness
+  const boxes = [];
+  const scores = [];
+  const classes = [];
 
-	for (let i = 0; i < numDetections; i++) {
-		const cx = raw[0][i];
-		const cy = raw[1][i];
-		const w  = raw[2][i];
-		const h  = raw[3][i];
-		const objectness = raw[4][i];
+  raw.forEach((det, i) => {
+    const [cxNorm, cyNorm, wNorm, hNorm, score, cls] = det;
+    if (score < requiredConf) return;
 
-		// Klasse bestimmen: max logit
-		let bestClassIdx = 0;
-		let bestClassScore = raw[5][i];
-		for (let c = 1; c < numClasses; c++) {
-			const clsScore = raw[5 + c][i];
-			if (clsScore > bestClassScore) {
-				bestClassScore = clsScore;
-				bestClassIdx = c;
-			}
-		}
+    // Normale Koordinaten in Pixel umrechnen
+    let cx = cxNorm * imageWidth;
+    let cy = cyNorm * imageHeight;
+    let w  = wNorm * imageWidth;
+    let h  = hNorm * imageHeight;
 
-		const finalScore = objectness * bestClassScore;
-		if (finalScore < requiredConf) continue;
+    // Von Center- zu Top-Left-Koordinaten
+    let x = cx - w / 2;
+    let y = cy - h / 2;
 
-		// Bounding Box berechnen
-		let x = cx - w / 2;
-		let y = cy - h / 2;
+    // Clamping an Bildgrenzen
+    x = Math.max(0, Math.min(x, imageWidth));
+    y = Math.max(0, Math.min(y, imageHeight));
+    w = Math.max(0, Math.min(w, imageWidth - x));
+    h = Math.max(0, Math.min(h, imageHeight - y));
 
-		// Clamping
-		x = Math.max(0, Math.min(x, imageWidth));
-		y = Math.max(0, Math.min(y, imageHeight));
-		let boxW = Math.max(0, Math.min(w, imageWidth - x));
-		let boxH = Math.max(0, Math.min(h, imageHeight - y));
+    if (w > 0 && h > 0) {
+      boxes.push([x, y, w, h]);
+      scores.push(score);
+      classes.push(cls);
+    }
+  });
 
-		if (boxW > 0 && boxH > 0) {
-			boxes.push([x, y, boxW, boxH]);
-			scores.push(finalScore);
-			classes.push(bestClassIdx);
-		}
-	}
+  tf.engine().endScope();
 
-	tf.engine().endScope();
-	console.log(`Processed boxes: ${boxes.length}`);
-	return { boxes, scores, classes };
+  console.log(`Processed boxes: ${boxes.length}`);
+  return { boxes, scores, classes };
 }
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
@@ -515,7 +506,7 @@ async function handleAnnotations(boxes, scores, classes) {
 
 		const this_label = labels[this_class];
 
-		log(`this_label: ${this_label}, this_class: ${this_class}`);
+		log(`this_label: ${this_label}, this_class: {this_class}`);
 
 		if(this_label) {
 			anno_boxes.push(get_annotate_element(this_label, x_start, y_start, w, h));
