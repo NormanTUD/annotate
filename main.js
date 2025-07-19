@@ -393,6 +393,8 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
+	console.log("res:", res);
+
 	var { boxes, scores, classes } = await processModelOutput(res);
 
 	await handleAnnotations(boxes, scores, classes);
