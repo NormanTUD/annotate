@@ -797,6 +797,18 @@
 		return $b;
 	}
 
+	function insert_image_into_db_from_data($data, $filename) {
+		// Temporäre Datei erstellen
+		$tmpfname = tempnam(sys_get_temp_dir(), 'img_');
+		file_put_contents($tmpfname, $data);
+
+		// Bild in DB einfügen
+		insert_image_into_db($tmpfname, $filename);
+
+		// Temporäre Datei löschen
+		unlink($tmpfname);
+	}
+
 	function insert_image_into_db($file_tmp, $filename) {
 		try {
 			$is_in_image_data_table = is_null(get_image_data_id($filename)) ? 1 : 0;
