@@ -2,3 +2,4 @@ yolov5
 .git
 tmp
 db
+db_old
