@@ -11,7 +11,9 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html
 RUN DEBIAN_FRONTEND=noninteractive apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils libssl-dev iproute2 iputils-ping python3 python3-pip zip libjpeg-dev libpng-dev libfreetype6-dev
 
-RUN docker-php-ext-install mysqli gd pdo pdo_mysql
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+RUN docker-php-ext-configure gd --with-jpeg && \
+    docker-php-ext-install gd
 RUN pip3 install --break-system-packages imagehash
 RUN rm -rf /var/lib/apt/lists/*
 
