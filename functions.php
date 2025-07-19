@@ -817,7 +817,7 @@
 			$file_contents = file_get_contents($file_tmp);
 
 			// Insert the unique filename into the database
-			$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content)");
+			$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content, 0)");
 			$stmt->bindParam(':filename', $filename);
 			$stmt->bindParam(':image_content', $file_contents, PDO::PARAM_LOB);
 			$stmt->execute();
