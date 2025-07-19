@@ -20,4 +20,5 @@ real_world_pytorch_model*
 numpy
 labels.json
 .env
+gartenki
 docker-compose.yml
