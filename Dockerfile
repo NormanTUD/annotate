@@ -9,15 +9,7 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html
 
 # Install necessary dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev iproute2 iputils-ping python3 python3-pip zip
-RUN apt-get update && \
-    apt-get install -y wget lsb-release ca-certificates apt-transport-https gnupg && \
-    wget -qO - https://packages.sury.org/php/apt.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/php.gpg && \
-    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list && \
-    apt-get update && \
-    apt-get install -y php8.2 php8.2-gd && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils libssl-dev iproute2 iputils-ping python3 python3-pip zip php-gd
 
 RUN docker-php-ext-install mysqli
 RUN docker-php-ext-install pdo pdo_mysql
