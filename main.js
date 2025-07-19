@@ -457,6 +457,12 @@ async function ai_file (elem) {
 			var this_score = scores[i];
 			var this_class = classes[i];
 
+			var box_x_start = this_box[0];
+			var box_y_start = this_box[1];
+
+			var box_x_end = this_box[2];
+			var box_y_end = this_box[2];
+
 			if(this_class != -1) {
 				if(Object.keys(labels).length == 0) {
 					error("ERROR", "has no labels");
@@ -470,11 +476,11 @@ async function ai_file (elem) {
 				var img_width = $("#image")[0].width;
 				var img_height = $("#image")[0].height;
 
-				var x_start = parseInt(this_box[0] * img_width);
-				var y_start = parseInt(this_box[1] * img_height);
+				var x_start = parseInt(box_x_start * img_width);
+				var y_start = parseInt(box_y_start * img_height);
 
-				var w = Math.abs(x_start - parseInt(this_box[2] * img_width));
-				var h = Math.abs(y_start - parseInt(this_box[3] * img_height));
+				var w = Math.abs(x_start - parseInt(box_x_end * img_width));
+				var h = Math.abs(y_start - parseInt(box_y_end * img_height));
 
 				var this_elem = {
 					"type": "Annotation", 
