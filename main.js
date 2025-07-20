@@ -3,6 +3,7 @@
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
 const imgsz = 800;
+const conf = 0.01;
 
 var autonext_param = startUrlParams.get('autonext');
 var model;
@@ -518,7 +519,7 @@ function analyzeScores(res, labelCount) {
 	return { min: minScore, max: maxScore, avg: avgScore, histo };
 }
 
-function processModelOutput(res, imageWidth = imgsz, imageHeight = imgsz) {
+function processModelOutput(res) {
 	// res: Float32Array or array with shape [1, C, 8400]
 	analyzeScores(res, labels.length);
 
@@ -548,12 +549,12 @@ function processModelOutput(res, imageWidth = imgsz, imageHeight = imgsz) {
 		}
 
 		// Optional: Konfidenzfilter
-		if (bestScore > 0.024) {  // Threshold nach Bedarf
+		if (bestScore > conf) {  // Threshold nach Bedarf
 			// Box-Koordinaten in relativen Werten (0..1)
-			const relX = x / imageWidth;
-			const relY = y / imageHeight;
-			const relW = w / imageWidth;
-			const relH = h / imageHeight;
+			const relX = x / imgsz;
+			const relY = y / imgsz;
+			const relW = w / imgsz;
+			const relH = h / imgsz;
 
 			boxes.push([relX, relY, relW, relH]);
 			scores.push(bestScore);
