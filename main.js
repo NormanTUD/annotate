@@ -384,7 +384,7 @@ async function ai_file(elem) {
 
 	let res;
 	try {
-		res = await runModelPrediction(modelWidth, modelHeight);
+		res = await predict(modelWidth, modelHeight);
 	} catch (e) {
 		console.warn(e);
 		$("body").css("cursor", "default");
@@ -434,21 +434,30 @@ function getModelInputShape() {
 }
 
 // führt die Model-Ausführung mit Bild-Tensor aus
-async function runModelPrediction(modelWidth, modelHeight) {
+async function predict(modelWidth, modelHeight) {
 	tf.engine().startScope();
+
 	const img_from_browser = tf.browser.fromPixels($("#image")[0]);
 	const image_tensor = img_from_browser
 		.resizeBilinear([modelWidth, modelHeight])
 		.div(255)
 		.expandDims();
 
-	const res = await model.execute(image_tensor);
-	// hier Scope noch nicht schließen, da arraySync gebraucht wird
+	var res;
+
+	try {
+		res = await model.execute(image_tensor).arraySync();
+	} catch (e) {
+		error("Exception: e", e)
+	}
+
+	tf.engine().endScope();
+
 	return res;
 }
 
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
-	const raw = res.arraySync()[0];
+	const raw = res[0];
 
 	const requiredConf = parseFloat(getUrlParam("conf", 0.1));
 
@@ -484,8 +493,6 @@ function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
 			classes.push(cls);
 		}
 	});
-
-	tf.engine().endScope();
 
 	console.log(`Processed boxes: ${boxes.length}`);
 	return { boxes, scores, classes };
