@@ -594,7 +594,10 @@ async function handleAnnotations(boxes, scores, classes) {
 		log(`this_label: ${this_label}, this_class: ${this_class}`);
 
 		if(this_label) {
-			anno_boxes.push(get_annotate_element(this_label, x_start, y_start, w, h));
+			var anno_element = get_annotate_element(this_label, x_start, y_start, w, h);
+			if(anno_element) {
+				anno_boxes.push(anno_element);
+			}
 		} else {
 			error("ERROR", `this_label was empty: ${this_label}`);
 		}
@@ -616,30 +619,38 @@ async function handleAnnotations(boxes, scores, classes) {
 
 function get_annotate_element(this_label, x_start, y_start, w, h) {
 	if (!Number.isInteger(x_start)) {
-		throw new Error(`x_start (${x_start}) is not an integer`);
+		error("get_annotate_element", `x_start (${x_start}) is not an integer`);
+		return null;
 	}
 	if (!Number.isInteger(y_start)) {
-		throw new Error(`y_start (${y_start}) is not an integer`);
+		error("get_annotate_element", `y_start (${y_start}) is not an integer`);
+		return null;
 	}
 	if (!Number.isInteger(w)) {
-		throw new Error(`w (${w}) is not an integer`);
+		error("get_annotate_element", `w (${w}) is not an integer`);
+		return null;
 	}
 	if (!Number.isInteger(h)) {
-		throw new Error(`h (${h}) is not an integer`);
+		error("get_annotate_element", `h (${h}) is not an integer`);
+		return null;
 	}
 
 	// Prüfen, ob alle Werte > 0 sind
 	if (x_start < 0) {
-		throw new Error(`x_start (${x_start}) must be >= 0`);
+		error("get_annotate_element", `x_start (${x_start}) must be >= 0`);
+		return null;
 	}
 	if (y_start < 0) {
-		throw new Error(`y_start (${y_start}) must be >= 0`);
+		error("get_annotate_element", `y_start (${y_start}) must be >= 0`);
+		return null;
 	}
-	if (w < 0) {
-		throw new Error(`w (${w}) must be >= 0`);
+	if (w <= 0) {
+		error("get_annotate_element", `w (${w}) must be > 0`);
+		return null;
 	}
-	if (h < 0) {
-		throw new Error(`h (${h}) must be >= 0`);
+	if (h <= 0) {
+		error("get_annotate_element", `h (${h}) must be > 0`);
+		return null;
 	}
 
 	return {
