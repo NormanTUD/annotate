@@ -520,7 +520,7 @@ function analyzeScores(res, labelCount) {
 
 function processModelOutput(res) {
 	// res: Float32Array or array with shape [1, C, 8400]
-	analyzeScores(res, labels.length);
+	//analyzeScores(res, labels.length);
 
 	const C = res[0].length;
 	const numPredictions = res[0][0].length;
