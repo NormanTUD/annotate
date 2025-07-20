@@ -108,7 +108,7 @@ if [[ ! -d $VENV_PATH ]]; then
 	python3 -m venv $VENV_PATH
 	source $VENV_PATH/bin/activate
 	echo "Installing YoloV11"
-	pip3 install ultralytics onnx2tf tf_keras
+	pip3 install ultralytics onnx2tf tf_keras onnx_graphsurgeon
 else
 	echo "$VENV_PATH already exists"
 	source $VENV_PATH/bin/activate
