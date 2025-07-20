@@ -147,6 +147,10 @@ function success (title, msg) {
 	$("#status_bar").html("<span style='color: black'>" + title + ": " + msg + "</span>");
 }
 
+function warn(title, msg) {
+	$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>");
+}
+
 function error (title, msg) {
 	$("#status_bar").html("<span style='color: red'>" + title + ": " + msg + "</span>");
 }
@@ -447,6 +451,14 @@ async function predict(modelWidth, modelHeight) {
 
 	try {
 		res = await model.executeAsync(image_tensor);
+
+
+		try {
+			res = res.arraySync();
+		} catch (e) {
+			// If cannot be converted is already float32array
+		}
+
 	} catch (e) {
 		error("Exception: e", e)
 	}
@@ -457,7 +469,8 @@ async function predict(modelWidth, modelHeight) {
 }
 
 function analyzeScores(res, labelCount) {
-	const C = res[0].length;
+	log(res);
+	const C = res.length;
 	const numPredictions = res[0][0].length;
 	const numClasses = C - 4;
 
