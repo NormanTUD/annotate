@@ -380,7 +380,9 @@ function getUrlParam(name, defaultValue) {
 }
 
 async function ai_file(elem) {
-	if (!await checkModelAvailable()) return;
+	if (!await checkModelAvailable()) {
+		return;
+	}
 
 	show_ai_stuff();
 	running_ki = true;
@@ -521,6 +523,8 @@ async function handleAnnotations(boxes, scores, classes) {
 		info("Nothing found", "Annotate manually");
 		return;
 	}
+
+	delete_all_anno_current_image();
 
 	const anno_boxes = [];
 
@@ -926,6 +930,15 @@ function delete_all_anno_new_tab (image) {
 	var url = "index.php?edit=" + image;
 
 	window.open(url, '_blank').focus();
+}
+
+function delete_all_anno_current_image() {
+	var image_filename = $("#image").attr("src").replace(/.*filename=/, "");
+	if(image_filename) {
+		delete_all_anno(image_filename);
+	} else {
+		error("delete_all_anno:", "Cannot find image");
+	}
 }
 
 function delete_all_anno (image) {
