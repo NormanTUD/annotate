@@ -515,7 +515,6 @@ function processModelOutput(res) {
 	return { boxes, scores, classes };
 }
 
-// verarbeitet die boxes/scores/classes und erstellt Annotationen
 async function handleAnnotations(boxes, scores, classes) {
 	log("handleAnnotations:", "boxes:", boxes, "scores:", scores, "classes:", classes);
 	if (boxes.length === 0) {
