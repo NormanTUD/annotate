@@ -619,14 +619,18 @@ async function handleAnnotations(boxes, scores, classes) {
 		const this_class = classes[i];
 		const this_score = scores[i];
 
-		if (this_class === -1) continue;
+		if (this_class === -1) {
+			continue;
+		}
 
-		if (Object.keys(labels).length === 0) {
+		var this_labels = get_labels();
+
+		if (Object.keys(get_labels()).length === 0) {
 			error("ERROR", "has no labels");
 			return;
 		}
 
-		const this_label = labels[this_class];
+		const this_label = this_labels[this_class];
 
 		if(enable_debug) {
 			log(`this_label: ${this_label}, this_class: ${this_class}, x: ${x}, y: ${y}, h: ${h}, w: ${w}`);
@@ -657,6 +661,9 @@ async function handleAnnotations(boxes, scores, classes) {
 	success("Success", "Image Detection done.");
 }
 
+function get_labels() {
+	return labels;
+}
 
 function get_annotate_element(this_label, x_start, y_start, w, h) {
 	if (!Number.isInteger(x_start)) {
