@@ -122,7 +122,7 @@ for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
 	fi
 done
 
-yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model=yolo11n.yaml hsv_h=0.03 hsv_s=0.6 hsv_v=0.5 degrees=180 translate=0.5 scale=0.5 shear=180 perspective=0.001 fliplr=1 mosaic=0.5 mixup=0.5 cutmix=0.5 copy_paste=0.5 erasing=0.1
+yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model=yolo11n.yaml hsv_h=0.03 hsv_s=0.6 hsv_v=0.5 degrees=180 translate=0.5 scale=0.5 shear=180 perspective=0.001 fliplr=1 mosaic=0.5 mixup=0.1 cutmix=0.1 copy_paste=0.1 erasing=0.1
 
 run_dir=runs/detect/train/weights/
 if [[ -d $run_dir ]]; then
