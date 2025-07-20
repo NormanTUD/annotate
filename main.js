@@ -635,11 +635,11 @@ function get_annotate_element(this_label, x_start, y_start, w, h) {
 	if (y_start < 0) {
 		throw new Error(`y_start (${y_start}) must be >= 0`);
 	}
-	if (w <= 0) {
-		throw new Error(`w (${w}) must be > 0`);
+	if (w < 0) {
+		throw new Error(`w (${w}) must be >= 0`);
 	}
-	if (h <= 0) {
-		throw new Error(`h (${h}) must be > 0`);
+	if (h < 0) {
+		throw new Error(`h (${h}) must be >= 0`);
 	}
 
 	return {
