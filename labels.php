@@ -1,20 +1,37 @@
 <?php
-	if(file_exists("labels.json")) {
+	include_once("functions.php");
+
+	$labelsJsonFromDB = null;
+
+	// Hole die neueste "labels.json"-Datei aus der DB
+	$query = "SELECT file_contents FROM models WHERE filename = 'labels.json' ORDER BY upload_time DESC LIMIT 1";
+	$res = rquery($query);
+
+	if ($row = mysqli_fetch_assoc($res)) {
+		$contents = $row['file_contents'];
+		$json = json_decode($contents, true);
+		if (is_array($json)) {
+			// Direkt JSON aus der DB ausgeben
+			print json_encode($json);
+			exit;
+		}
+	}
+
+	// Falls nichts in der DB oder ungültig, prüfe lokale Datei
+	if (file_exists("labels.json")) {
 		print file_get_contents("labels.json");
 	} else {
-		include_once("functions.php");
 		include("export_helper.php");
 
 		$labels = [];
-
 		$categories = [];
 
-		$annotated_image_ids_query = 'select name from category order by id';
+		$annotated_image_ids_query = 'SELECT name FROM category ORDER BY id';
 		$res = rquery($annotated_image_ids_query);
 
 		while ($row = mysqli_fetch_row($res)) {
 			$category = $row[0];
-			if(!in_array($category, $categories)) {
+			if (!in_array($category, $categories)) {
 				$categories[] = $category;
 			}
 		}
