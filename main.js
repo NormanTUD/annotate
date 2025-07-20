@@ -446,7 +446,7 @@ async function predict(modelWidth, modelHeight) {
 	var res;
 
 	try {
-		res = await model.execute(image_tensor).arraySync();
+		res = await model.executeAsync(image_tensor);
 	} catch (e) {
 		error("Exception: e", e)
 	}
@@ -456,48 +456,97 @@ async function predict(modelWidth, modelHeight) {
 	return res;
 }
 
+function analyzeScores(res, labelCount) {
+	const C = res[0].length;
+	const numPredictions = res[0][0].length;
+	const numClasses = C - 4;
+
+	if (numClasses !== labelCount) {
+		warn("Label mismatch", `Expected ${labelCount} classes but model has ${numClasses}`);
+	}
+
+	let minScore = Infinity;
+	let maxScore = -Infinity;
+	let scoreSum = 0;
+	let scoreCount = 0;
+
+	const histo = Array(10).fill(0);  // 10 bins: 0-0.1, ..., 0.9-1.0
+
+	for (let i = 0; i < numPredictions; i++) {
+		for (let c = 0; c < numClasses; c++) {
+			const score = res[0][4 + c][i];
+			if (!Number.isFinite(score)) {
+				error("Invalid score", `Score at pred ${i}, class ${c} is not a number: ${score}`);
+				continue;
+			}
+
+			if (score < minScore) minScore = score;
+			if (score > maxScore) maxScore = score;
+			scoreSum += score;
+			scoreCount++;
+
+			const bin = Math.min(9, Math.floor(score * 10));
+			histo[bin]++;
+		}
+	}
+
+	const avgScore = scoreSum / scoreCount;
+
+	console.log("[Score Analysis]");
+	console.log(`Min: ${minScore.toFixed(6)}, Max: ${maxScore.toFixed(6)}, Avg: ${avgScore.toFixed(6)}`);
+	console.log("Histogram (bins 0.0–1.0):");
+	histo.forEach((count, i) => {
+		const label = `${(i / 10).toFixed(1)}–${((i + 1) / 10).toFixed(1)}`;
+		console.log(`${label}: ${count}`);
+	});
+
+	return { min: minScore, max: maxScore, avg: avgScore, histo };
+}
+
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
-    // res: Float32Array or array with shape [1, C, 8400]
-    const C = res[0].length;
-    const numPredictions = res[0][0].length;
-    const numClasses = C - 4;
+	// res: Float32Array or array with shape [1, C, 8400]
+	analyzeScores(res, labels.length);
 
-    const boxes = [];
-    const scores = [];
-    const classes = [];
+	const C = res[0].length;
+	const numPredictions = res[0][0].length;
+	const numClasses = C - 4;
 
-    for (let i = 0; i < numPredictions; i++) {
-        const x = res[0][0][i]; // center x
-        const y = res[0][1][i]; // center y
-        const w = res[0][2][i]; // width
-        const h = res[0][3][i]; // height
+	const boxes = [];
+	const scores = [];
+	const classes = [];
 
-        // Klassenscores extrahieren
-        let bestScore = -Infinity;
-        let bestClass = -1;
-        for (let c = 0; c < numClasses; c++) {
-            const score = res[0][4 + c][i];
-            if (score > bestScore) {
-                bestScore = score;
-                bestClass = c;
-            }
-        }
+	for (let i = 0; i < numPredictions; i++) {
+		const x = res[0][0][i]; // center x
+		const y = res[0][1][i]; // center y
+		const w = res[0][2][i]; // width
+		const h = res[0][3][i]; // height
 
-        // Optional: Konfidenzfilter
-        if (bestScore > 0.25) {  // Threshold nach Bedarf
-            // Box-Koordinaten in relativen Werten (0..1)
-            const relX = x / imageWidth;
-            const relY = y / imageHeight;
-            const relW = w / imageWidth;
-            const relH = h / imageHeight;
+		// Klassenscores extrahieren
+		let bestScore = -Infinity;
+		let bestClass = -1;
+		for (let c = 0; c < numClasses; c++) {
+			const score = res[0][4 + c][i];
+			if (score > bestScore) {
+				bestScore = score;
+				bestClass = c;
+			}
+		}
 
-            boxes.push([relX, relY, relW, relH]);
-            scores.push(bestScore);
-            classes.push(bestClass);
-        }
-    }
+		// Optional: Konfidenzfilter
+		if (bestScore > 0.024) {  // Threshold nach Bedarf
+			// Box-Koordinaten in relativen Werten (0..1)
+			const relX = x / imageWidth;
+			const relY = y / imageHeight;
+			const relW = w / imageWidth;
+			const relH = h / imageHeight;
 
-    return { boxes, scores, classes };
+			boxes.push([relX, relY, relW, relH]);
+			scores.push(bestScore);
+			classes.push(bestClass);
+		}
+	}
+
+	return { boxes, scores, classes };
 }
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
