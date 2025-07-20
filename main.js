@@ -2,7 +2,7 @@
 
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
-var conf = 0.01;
+var conf = 0.039;
 
 var enable_debug = false;
 
