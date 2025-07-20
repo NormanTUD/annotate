@@ -88,7 +88,7 @@ plot \\
 unset multiplot
 EOF
 
-gnuplot -persist "$GNUPLOT_SCRIPT"
+gnuplot -persist "$GNUPLOT_SCRIPT" 2>/dev/null
 rm "$GNUPLOT_SCRIPT"
 ';
 
