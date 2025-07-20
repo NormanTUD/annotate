@@ -19,7 +19,7 @@ if ! command -v gnuplot >/dev/null 2>&1; then
 fi
 
 # Extract max epoch number (skip header)
-max_epoch=$(tail -n +2 "$FILE" | cut -d',' -f1 | sort -nr | head -n1)
+max_epoch=$(tail -n +2 "$FILE" | cut -d\',\' -f1 | sort -nr | head -n1)
 
 # Determine xtic step size dynamically
 if (( max_epoch <= 20 )); then
