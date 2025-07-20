@@ -123,7 +123,7 @@ for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
 done
 
 
-yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model=yolo11n.yaml
+yolo task=train mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model=yolo11n.yaml
 
 
 run_dir=runs/detect/train/weights/
