@@ -3,6 +3,7 @@
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
 const conf = 0.01;
+
 var enable_debug = false;
 
 var autonext_param = startUrlParams.get('autonext');
@@ -11,6 +12,7 @@ var last_load_dynamic_content = false;
 var running_ki = false;
 var tags = [];
 var last_model_md5 = "";
+var last_detected_names = [];
 
 function uuidv4() {
 	return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
@@ -714,54 +716,63 @@ async function create_selects_from_annotation(force=0) {
 	if(typeof(anno) != "object") {
 		return;
 	}
+
 	var ki_names = get_names_from_ki_anno(await anno.getAnnotations());
 
-	if(Object.keys(ki_names).length) {
-		var html = "";
+	var joined_ki_names = JSON.stringify(ki_names);
 
-		var selects = [];
+	if(last_detected_names != joined_ki_names) {
+		last_detected_names = joined_ki_names;
 
-		var ki_names_keys = Object.keys(ki_names);
+		if(Object.keys(ki_names).length) {
+			var html = "";
 
-		for (var i = 0; i < ki_names_keys.length; i++) {
-			previous[i] = ki_names_keys[i];
-			var this_select = "<select data-nr='" + i + "' class='ki_select_box'>";
-			for (var j = 0; j < tags.length; j++) {
-				this_select += '<option ' + ((ki_names_keys[i] == tags[j]) ? 'selected' : '') + ' value="' + tags[j] + '">' + tags[j] + '</option>'
+			var selects = [];
+
+			var ki_names_keys = Object.keys(ki_names);
+
+			for (var i = 0; i < ki_names_keys.length; i++) {
+				previous[i] = ki_names_keys[i];
+				var this_select = "<select data-nr='" + i + "' class='ki_select_box'>";
+				for (var j = 0; j < tags.length; j++) {
+					this_select += '<option ' + ((ki_names_keys[i] == tags[j]) ? 'selected' : '') + ' value="' + tags[j] + '">' + tags[j] + '</option>'
+				}
+
+				this_select += "<select> (" + ki_names[ki_names_keys[i]] + ")";
+
+				selects.push(this_select);
 			}
 
-			this_select += "<select> (" + ki_names[ki_names_keys[i]] + ")";
+			html += selects.join(", ");
 
-			selects.push(this_select);
-		}
-
-		html += selects.join(", ");
-
-		if($("#ki_detected_names").html() != html) {
-			$("#ki_detected_names").html(html);
-		}
-
-		$(".ki_select_box").change(async function (x, y, z) {
-			var old_value = previous[$(this).data("nr")];
-			var new_value = x.currentTarget.value
-
-			await set_all_current_annotations_from_to(old_value, new_value);
-			await create_selects_from_annotation(1);
-
-			previous[$(this).data("nr")] = new_value;
-		});
-	} else {
-		if(!running_ki) {
-			if($("#ki_detected_names").html() != "") {
-				$("#ki_detected_names").html("");
+			if($("#ki_detected_names").html() != html) {
+				$("#ki_detected_names").html(html);
 			}
+
+			$(".ki_select_box").change(async function (x, y, z) {
+				var old_value = previous[$(this).data("nr")];
+				var new_value = x.currentTarget.value
+
+				await set_all_current_annotations_from_to(old_value, new_value);
+				await create_selects_from_annotation(1);
+
+				previous[$(this).data("nr")] = new_value;
+			});
 		} else {
-			var msg = "Please wait, Image Detection is running...";
+			if(!running_ki) {
+				if($("#ki_detected_names").html() != "") {
+					$("#ki_detected_names").html("");
+				}
+			} else {
+				var msg = "Please wait, Image Detection is running...";
 
-			if($("#ki_detected_names").html() != msg) {
-				$("#ki_detected_names").html(msg);
+				if($("#ki_detected_names").html() != msg) {
+					$("#ki_detected_names").html(msg);
+				}
 			}
 		}
+
+		last_detected_names = joined_ki_names;
 	}
 }
 
