@@ -159,7 +159,7 @@ services:
     networks:
       - annotate_network
     ports:
-      - 1113:80
+      - $LOCAL_PORT:80
     tmpfs:
       - /tmp:rw
 
