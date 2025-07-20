@@ -408,7 +408,9 @@ async function ai_file(elem) {
 
 	var shape = getShape(res);
 
-	console.log(`res (shape: ${shape}):`, res);
+	if(enable_debug) {
+		console.log(`res (shape: ${shape}):`, res);
+	}
 
 	var { boxes, scores, classes } = await processModelOutput(res);
 
@@ -518,7 +520,10 @@ function processModelOutput(res) {
 }
 
 async function handleAnnotations(boxes, scores, classes) {
-	log("handleAnnotations:", "boxes:", boxes, "scores:", scores, "classes:", classes);
+	if(enable_debug) {
+		log("handleAnnotations:", "boxes:", boxes, "scores:", scores, "classes:", classes);
+	}
+
 	if (boxes.length === 0) {
 		info("Nothing found", "Annotate manually");
 		return;
