@@ -600,7 +600,7 @@ async function handleAnnotations(boxes, scores, classes) {
 
 		const this_label = labels[this_class];
 
-		log(`this_label: ${this_label}, this_class: ${this_class}, x_start: ${x_start}, x_end: ${x_end}, x_end: ${x_end}, y_end: ${y_end}, x: ${x}, y: ${y}, h: ${h}, w: ${w}`);
+		//log(`this_label: ${this_label}, this_class: ${this_class}, x_start: ${x_start}, x_end: ${x_end}, x_end: ${x_end}, y_end: ${y_end}, x: ${x}, y: ${y}, h: ${h}, w: ${w}`);
 
 		if(this_label) {
 			var anno_element = get_annotate_element(this_label, x, y, w, h);
