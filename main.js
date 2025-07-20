@@ -379,6 +379,68 @@ function getUrlParam(name, defaultValue) {
 	return isNaN(val) ? defaultValue : val;
 }
 
+function show_spinner(msg) {
+	let overlay = document.getElementById("ai_spinner_overlay");
+	if (!overlay) {
+		overlay = document.createElement("div");
+		overlay.id = "ai_spinner_overlay";
+		Object.assign(overlay.style, {
+			position: "fixed",
+			top: 0,
+			left: 0,
+			width: "100%",
+			height: "100%",
+			background: "rgba(0, 0, 0, 0.7)",
+			color: "white",
+			display: "flex",
+			flexDirection: "column",
+			alignItems: "center",
+			justifyContent: "center",
+			zIndex: 9999,
+			fontSize: "1.5em",
+			textAlign: "center"
+		});
+
+		const spinner = document.createElement("div");
+		spinner.className = "spinner";
+		Object.assign(spinner.style, {
+			border: "12px solid #f3f3f3",
+			borderTop: "12px solid #3498db",
+			borderRadius: "50%",
+			width: "80px",
+			height: "80px",
+			animation: "spin 1s linear infinite",
+			marginBottom: "20px"
+		});
+		overlay.appendChild(spinner);
+
+		const msgElem = document.createElement("div");
+		msgElem.id = "ai_spinner_msg";
+		msgElem.textContent = msg;
+		overlay.appendChild(msgElem);
+
+		document.body.appendChild(overlay);
+
+		const style = document.createElement("style");
+		style.textContent = `
+			@keyframes spin {
+				0% { transform: rotate(0deg); }
+				100% { transform: rotate(360deg); }
+			}`;
+		document.head.appendChild(style);
+	} else {
+		const msgElem = document.getElementById("ai_spinner_msg");
+		if (msgElem) msgElem.textContent = msg;
+	}
+}
+
+function hide_spinner() {
+	const overlay = document.getElementById("ai_spinner_overlay");
+	if (overlay) {
+		overlay.remove();
+	}
+}
+
 async function ai_file(elem) {
 	if (!await checkModelAvailable()) {
 		return;
@@ -387,7 +449,7 @@ async function ai_file(elem) {
 	show_ai_stuff();
 	running_ki = true;
 	$("body").css("cursor", "progress");
-	success("Success", "KI gestartet... Bitte warten");
+	show_spinner("AI is being loaded...");
 
 	await anno.clearAnnotations();
 	await load_model();
@@ -397,10 +459,12 @@ async function ai_file(elem) {
 
 	let res;
 	try {
+		show_spinner("Prediction...");
 		res = await predict(modelWidth, modelHeight);
 	} catch (e) {
 		console.warn(e);
 		$("body").css("cursor", "default");
+		hide_spinner();
 		running_ki = false;
 		return;
 	}
@@ -408,15 +472,18 @@ async function ai_file(elem) {
 
 	var shape = getShape(res);
 
-	if(enable_debug) {
+	if (enable_debug) {
 		console.log(`res (shape: ${shape}):`, res);
 	}
 
 	var { boxes, scores, classes } = await processModelOutput(res);
 
+	show_spinner("Working on results...");
 	await handleAnnotations(boxes, scores, classes);
 
 	running_ki = false;
+
+	hide_spinner();
 
 	if (autonext_param) {
 		await sleep(1500);
@@ -718,12 +785,6 @@ async function create_selects_from_annotation(force=0) {
 			if(!running_ki) {
 				if($("#ki_detected_names").html() != "") {
 					$("#ki_detected_names").html("");
-				}
-			} else {
-				var msg = "Please wait, Image Detection is running...";
-
-				if($("#ki_detected_names").html() != msg) {
-					$("#ki_detected_names").html(msg);
 				}
 			}
 		}
