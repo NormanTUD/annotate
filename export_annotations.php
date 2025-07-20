@@ -26,6 +26,7 @@
 
 	$validation_split = get_get("validation_split", 0);
 	$epochs = get_get("epochs", 50);
+	$model_name = get_get("model_name", "yolo11s.yaml");
 
 	if(is_dir($tmp_dir)) {
 		$dataset_yaml = "path: ./\n";
@@ -81,7 +82,7 @@
 			file_put_contents("$tmp_dir/labels/$fn_txt", "$str\n");
 		}
 
-		write_bash_files($tmp_dir, $epochs);
+		write_bash_files($tmp_dir, $epochs, $model_name);
 
 		#die("a");
 

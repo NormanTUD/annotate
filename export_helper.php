@@ -96,7 +96,7 @@ rm "$GNUPLOT_SCRIPT"
 	}
 
 
-	function write_train_bash ($tmp_dir, $epochs) {
+	function write_train_bash ($tmp_dir, $epochs, $model_name) {
 		$train_bash = '#!/bin/bash
 
 set -e
@@ -122,7 +122,7 @@ for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
 	fi
 done
 
-yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model=yolo11n.yaml hsv_h=0.03 hsv_s=0.6 hsv_v=0.5 degrees=180 shear=30 perspective=0.0001 fliplr=1 mosaic=0.1 mixup=0.1 cutmix=0.1 copy_paste=0.1
+yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model='.$model_name.' hsv_h=0.03 hsv_s=0.6 hsv_v=0.5 degrees=180 shear=30 perspective=0.0001 fliplr=1 mosaic=0.1 mixup=0.1 cutmix=0.1 copy_paste=0.1
 
 run_dir=runs/detect/train/weights/
 if [[ -d $run_dir ]]; then
@@ -264,8 +264,8 @@ fi
 		exit(0);
 	}
 
-	function write_bash_files ($tmp_dir, $epochs) {
-		write_train_bash($tmp_dir, $epochs);
+	function write_bash_files ($tmp_dir, $epochs, $model_name) {
+		write_train_bash($tmp_dir, $epochs, $model_name);
 		write_visualization_script($tmp_dir);
 	}
 
