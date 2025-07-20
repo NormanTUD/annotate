@@ -913,18 +913,22 @@ async function set_img_from_filename (fn) {
 	}
 }
 
-async function load_next_random_image (fn=false) {
-	if(fn) {
-		set_img_from_filename(fn);
+async function load_next_random_image(fn = false) {
+	if (fn) {
+		show_spinner("Loading image...");
+		await set_img_from_filename(fn);
+		hide_spinner();
 	} else {
-		var ajax_url = "get_random_unannotated_image.php";
-		var queryString = window.location.search;
-		var urlParams = new URLSearchParams(queryString);
-		var like = urlParams.get('like');
+		let ajax_url = "get_random_unannotated_image.php";
+		let queryString = window.location.search;
+		let urlParams = new URLSearchParams(queryString);
+		let like = urlParams.get('like');
 
-		if(like) {
-			ajax_url += "?like=" + encodeURI(like);
+		if (like) {
+			ajax_url += "?like=" + encodeURIComponent(like);
 		}
+
+		show_spinner("Loading next image...");
 
 		try {
 			await $.ajax({
@@ -935,18 +939,21 @@ async function load_next_random_image (fn=false) {
 					await set_img_from_filename(fn);
 				},
 				error: function (xhr, status) {
+					hide_spinner();
 					error("Error loading the next image", "Sorry, there was a problem!");
 				}
 			});
 		} catch (e) {
-			if(Object.keys(e).includes("message")) {
-				e = e.message;
+			hide_spinner();
+			if (e && typeof e === "object" && "message" in e) {
+				error("Error", e.message);
+			} else {
+				error("Error", "" + e);
 			}
-
-			error("" + e);
 		}
-	}
 
+		hide_spinner();
+	}
 
 	await load_dynamic_content();
 }
