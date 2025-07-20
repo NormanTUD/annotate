@@ -53,7 +53,7 @@ help_message() {
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
 		--local-db-dir*)
-			local_db_dir="$2"
+			local_db_dir="$(realpath "$2")"
 			shift
 			;;
 
