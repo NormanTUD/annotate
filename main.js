@@ -643,7 +643,9 @@ async function handleAnnotations(boxes, scores, classes) {
 	}
 
 	success("Success", "Image Detection ran successfully");
-	log("anno_boxes", anno_boxes);
+	if(enable_debug) {
+		log("anno_boxes", anno_boxes);
+	}
 
 	await anno.setAnnotations(anno_boxes);
 
