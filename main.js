@@ -575,9 +575,9 @@ async function handleAnnotations(boxes, scores, classes) {
 	const anno_boxes = [];
 
 	for (let i = 0; i < boxes.length; i++) {
-		const [x_start, y_start, x_end, y_end] = boxes[i].map(Math.round);
-		const w = x_end - x_start;
-		const h = y_end - y_start;
+		const [x_start, y_start, x_end, y_end] = boxes[i];
+		const w = Math.round((x_end - x_start) * imgsz);
+		const h = Math.round((y_end - y_start) * imgsz);
 
 		const this_class = classes[i];
 		const this_score = scores[i];
