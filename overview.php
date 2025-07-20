@@ -15,8 +15,12 @@
 	function renderTable($title, $headers, $rows, $actions = []) {
 		echo "<h2>" . h($title) . "</h2>";
 		echo "<table><tr>";
-		foreach ($headers as $h) echo "<th>" . h($h) . "</th>";
-		if ($actions) echo "<th>Actions</th>";
+		foreach ($headers as $h) {
+			echo "<th>" . h($h) . "</th>";
+		}
+		if ($actions) {
+			echo "<th>Actions</th>";
+		}
 		echo "</tr>";
 
 		foreach ($rows as $row) {
