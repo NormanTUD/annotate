@@ -576,8 +576,17 @@ async function handleAnnotations(boxes, scores, classes) {
 
 	for (let i = 0; i < boxes.length; i++) {
 		const [x_start, y_start, x_end, y_end] = boxes[i];
-		const w = Math.round((x_end - x_start) * imgsz);
-		const h = Math.round((y_end - y_start) * imgsz);
+
+		const x_min = Math.min(x_start, x_end);
+		const x_max = Math.max(x_start, x_end);
+		const y_min = Math.min(y_start, y_end);
+		const y_max = Math.max(y_start, y_end);
+
+		const w = Math.round((x_max - x_min) * imgsz);
+		const h = Math.round((y_max - y_min) * imgsz);
+
+		const x = Math.round(x_start * imgsz);
+		const y = Math.round(y_start * imgsz);
 
 		const this_class = classes[i];
 		const this_score = scores[i];
@@ -591,10 +600,10 @@ async function handleAnnotations(boxes, scores, classes) {
 
 		const this_label = labels[this_class];
 
-		log(`this_label: ${this_label}, this_class: ${this_class}`);
+		log(`this_label: ${this_label}, this_class: ${this_class}, x_start: ${x_start}, x_end: ${x_end}, x_end: ${x_end}, y_end: ${y_end}, x: ${x}, y: ${y}, h: ${h}, w: ${w}`);
 
 		if(this_label) {
-			var anno_element = get_annotate_element(this_label, x_start, y_start, w, h);
+			var anno_element = get_annotate_element(this_label, x, y, w, h);
 			if(anno_element) {
 				anno_boxes.push(anno_element);
 			}
