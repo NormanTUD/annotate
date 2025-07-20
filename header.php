@@ -15,6 +15,7 @@ include_once("functions.php");
 	<script src='libs/tf-backend-wasm.min.js'></script>
 	<script>
 		var labels = <?php include("labels.php"); ?>;
+		const imgsz = <?php print $GLOBALS["imgsz"]; ?>;
 	</script>
 </head>
 
@@ -32,7 +33,3 @@ include_once("functions.php");
 	}
 ?>
 </div>
-
-<script>
-const imgsz = <?php print $GLOBALS["imgsz"]; ?>;
-</script>
