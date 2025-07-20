@@ -37,7 +37,7 @@
 
 	if(count($available_models)) {
 		if(count($available_models) == 1) {
-			print "<span style='display: none'>";
+			print "<span style='visibility: none'>";
 		}
 		print "AI-Model: <select class='disable_in_autonext' id='chosen_model'>";
 		$i = 0;
