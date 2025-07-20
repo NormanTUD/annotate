@@ -393,9 +393,9 @@ async function ai_file(elem) {
 	}
 	$("body").css("cursor", "default");
 
-	var shape = getShape(res.arraySync());
+	var shape = getShape(res);
 
-	console.log(`res (shape: ${shape}):`, res.arraySync());
+	console.log(`res (shape: ${shape}):`, res);
 
 	var { boxes, scores, classes } = await processModelOutput(res);
 
@@ -457,45 +457,47 @@ async function predict(modelWidth, modelHeight) {
 }
 
 function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
-	const raw = res[0];
+    // res: Float32Array or array with shape [1, C, 8400]
+    const C = res[0].length;
+    const numPredictions = res[0][0].length;
+    const numClasses = C - 4;
 
-	const requiredConf = parseFloat(getUrlParam("conf", 0.1));
+    const boxes = [];
+    const scores = [];
+    const classes = [];
 
-	const boxes = [];
-	const scores = [];
-	const classes = [];
+    for (let i = 0; i < numPredictions; i++) {
+        const x = res[0][0][i]; // center x
+        const y = res[0][1][i]; // center y
+        const w = res[0][2][i]; // width
+        const h = res[0][3][i]; // height
 
-	raw.forEach((det, i) => {
-		const [cxNorm, cyNorm, wNorm, hNorm, score, cls] = det;
-		if (score < requiredConf) {
-			return;
-		}
+        // Klassenscores extrahieren
+        let bestScore = -Infinity;
+        let bestClass = -1;
+        for (let c = 0; c < numClasses; c++) {
+            const score = res[0][4 + c][i];
+            if (score > bestScore) {
+                bestScore = score;
+                bestClass = c;
+            }
+        }
 
-		// Normale Koordinaten in Pixel umrechnen
-		let cx = cxNorm * imageWidth;
-		let cy = cyNorm * imageHeight;
-		let w  = wNorm * imageWidth;
-		let h  = hNorm * imageHeight;
+        // Optional: Konfidenzfilter
+        if (bestScore > 0.25) {  // Threshold nach Bedarf
+            // Box-Koordinaten in relativen Werten (0..1)
+            const relX = x / imageWidth;
+            const relY = y / imageHeight;
+            const relW = w / imageWidth;
+            const relH = h / imageHeight;
 
-		// Von Center- zu Top-Left-Koordinaten
-		let x = cx - w / 2;
-		let y = cy - h / 2;
+            boxes.push([relX, relY, relW, relH]);
+            scores.push(bestScore);
+            classes.push(bestClass);
+        }
+    }
 
-		// Clamping an Bildgrenzen
-		x = Math.max(0, Math.min(x, imageWidth));
-		y = Math.max(0, Math.min(y, imageHeight));
-		w = Math.max(0, Math.min(w, imageWidth - x));
-		h = Math.max(0, Math.min(h, imageHeight - y));
-
-		if (w > 0 && h > 0) {
-			boxes.push([x, y, w, h]);
-			scores.push(score);
-			classes.push(cls);
-		}
-	});
-
-	console.log(`Processed boxes: ${boxes.length}`);
-	return { boxes, scores, classes };
+    return { boxes, scores, classes };
 }
 
 // verarbeitet die boxes/scores/classes und erstellt Annotationen
