@@ -1,4 +1,6 @@
 <?php
+	$GLOBALS["imgsz"];
+
 	// alle warnings als fatal errors ausgeben
 	function exception_error_handler($errno, $errstr, $errfile, $errline ) {
 	    throw new ErrorException($errstr, $errno, 0, $errfile, $errline);

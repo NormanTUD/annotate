@@ -1,4 +1,6 @@
 <?php
+	include_once("functions.php");
+
 	function write_train_bash ($tmp_dir, $epochs) {
 		$train_bash = '#!/bin/bash
 
@@ -26,7 +28,7 @@ for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
 done
 
 
-yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz=640 model=yolo11n.yaml
+yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model=yolo11n.yaml
 
 
 run_dir=runs/detect/train/weights/

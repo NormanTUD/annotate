@@ -52,8 +52,7 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $orig_width = imagesx($src_image);    
             $orig_height = imagesy($src_image);    
 
-            // Scale down to max 640x640 while keeping aspect ratio    
-            $max_dim = 640;               
+            $max_dim = $GLOBALS["imgsz"];               
             $scale = min($max_dim / $orig_width, $max_dim / $orig_height, 1); // don't upscale    
             $new_width = (int)($orig_width * $scale);    
             $new_height = (int)($orig_height * $scale);    

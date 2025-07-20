@@ -32,3 +32,7 @@ include_once("functions.php");
 	}
 ?>
 </div>
+
+<script>
+const imgsz = <?php print $GLOBALS["imgsz"]; ?>;
+</script>

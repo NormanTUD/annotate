@@ -2,6 +2,8 @@
 
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
+const imgsz = 800;
+
 var autonext_param = startUrlParams.get('autonext');
 var model;
 var last_load_dynamic_content = false;
@@ -516,7 +518,7 @@ function analyzeScores(res, labelCount) {
 	return { min: minScore, max: maxScore, avg: avgScore, histo };
 }
 
-function processModelOutput(res, imageWidth = 640, imageHeight = 480) {
+function processModelOutput(res, imageWidth = imgsz, imageHeight = imgsz) {
 	// res: Float32Array or array with shape [1, C, 8400]
 	analyzeScores(res, labels.length);
 
