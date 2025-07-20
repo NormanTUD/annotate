@@ -95,7 +95,14 @@
 
 				print("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>\n<br>Host is pingable? <tt>".$pingable_str."</tt>\n");
 
-				print("Error:<br><pre>".$e->getMessage()."</pre>");
+				$error_msg = $e->getMessage();
+
+				print("Error:<br><pre>".$error_msg."</pre>");
+
+				if(preg_match("/php_network_getaddresses: getaddrinfo for annotate_mariadb failed: Name or service not known/", $error_msg)) {
+					print("Have you stopped the docker process for <tt>annotate_mariadb</tt>? Try <pre>docker start annotate_mariadb</pre>.");
+
+				}
 			}
 		} catch (\Throwable $e) {
 			print("$e");
