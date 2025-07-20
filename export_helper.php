@@ -270,7 +270,7 @@ fi
 
 	function write_bash_files ($tmp_dir, $epochs) {
 		write_train_bash($tmp_dir, $epochs);
-		write_visualization_script($tmp_name);
+		write_visualization_script($tmp_dir);
 	}
 
 	function get_number_of_rows () {
