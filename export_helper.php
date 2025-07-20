@@ -128,9 +128,7 @@ yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBAL
 
 run_dir=runs/detect/train/weights/
 if [[ -d $run_dir ]]; then
-	yolo export model=$run_dir/best.pt format=tfjs
-
-	cp labels.json $run_dir 
+	yolo export model=$run_dir/best.pt format=tfjs && cp labels.json $run_dir/best_web_model/
 else
 	echo "$run_dir could not be found"
 fi
