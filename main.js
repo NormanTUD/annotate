@@ -4,7 +4,7 @@ const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
 
 var conf = 0.09;
-var enable_debug = true;
+var enable_debug = false;
 
 var autonext_param = startUrlParams.get('autonext');
 var model;
