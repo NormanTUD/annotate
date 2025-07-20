@@ -100,8 +100,11 @@
 				print("Error:<br><pre>".$error_msg."</pre>");
 
 				if(preg_match("/php_network_getaddresses: getaddrinfo for annotate_mariadb failed: Name or service not known/", $error_msg)) {
-					print("Have you stopped the docker process for <tt>annotate_mariadb</tt>? Try <pre>docker start annotate_mariadb</pre>.");
+					print("Have you stopped the docker process for <tt>annotate_mariadb</tt>? Try <pre>docker start annotate_mariadb</pre>.<br>");
+				}
 
+				if(preg_match("/Connection refused/", $error_msg)) {
+					print("Is the database docker process started and does it's mounting point exist?");
 				}
 			}
 		} catch (\Throwable $e) {
