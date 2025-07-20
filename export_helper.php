@@ -1,6 +1,101 @@
 <?php
 	include_once("functions.php");
 
+	function write_visualization_script($tmp_dir) {
+		$train_bash = '#!/bin/bash
+
+FILE=${1:-runs/detect/train/results.csv}
+
+if [ ! -f "$FILE" ]; then
+  echo "Error: File '$FILE' not found."
+  echo "Provide a CSV path as first argument or place it at runs/detect/train/results.csv"
+  exit 1
+fi
+
+if ! command -v gnuplot >/dev/null 2>&1; then
+  echo "Error: gnuplot is not installed."
+  echo "Install with: sudo apt update && sudo apt install gnuplot"
+  exit 1
+fi
+
+# Extract max epoch number (skip header)
+max_epoch=$(tail -n +2 "$FILE" | cut -d',' -f1 | sort -nr | head -n1)
+
+# Determine xtic step size dynamically
+if (( max_epoch <= 20 )); then
+  step=2
+elif (( max_epoch <= 50 )); then
+  step=5
+elif (( max_epoch <= 100 )); then
+  step=10
+elif (( max_epoch <= 300 )); then
+  step=20
+else
+  step=50
+fi
+
+GNUPLOT_SCRIPT=$(mktemp)
+
+cat > "$GNUPLOT_SCRIPT" <<EOF
+set datafile separator ","
+set multiplot layout 2,2 title "Training Results Overview" font "Arial,10"
+
+set xtics $step
+set grid ytics
+line_width = 1
+
+# Plot 1: Training Losses (smaller = better)
+set title "Training Losses (smaller is better)" font ",11"
+set xlabel "Epoch" offset 0,-1
+set ylabel "Loss" offset -2,0
+set key outside right vertical samplen 1 spacing 1.2 font ",9"
+plot \\
+  "$FILE" using 1:3 with lines lw line_width lc rgb "red" title "train/box_loss", \\\\
+  "$FILE" using 1:4 with lines lw line_width lc rgb "orange" title "train/cls_loss", \\\\
+  "$FILE" using 1:5 with lines lw line_width lc rgb "gold" title "train/dfl_loss"
+
+# Plot 2: Validation Losses (smaller = better)
+set title "Validation Losses (smaller is better)" font ",11"
+set xlabel "Epoch" offset 0,-1
+set ylabel "Loss" offset -2,0
+set key outside right vertical samplen 1 spacing 1.2 font ",9"
+plot \\
+  "$FILE" using 1:10 with lines lw line_width lc rgb "blue" title "val/box_loss", \\\\
+  "$FILE" using 1:11 with lines lw line_width lc rgb "cyan" title "val/cls_loss", \\\\
+  "$FILE" using 1:12 with lines lw line_width lc rgb "green" title "val/dfl_loss"
+
+# Plot 3: Metrics (larger = better)
+set title "Metrics (larger is better)" font ",11"
+set xlabel "Epoch" offset 0,-1
+set ylabel "Value" offset -2,0
+set key outside right vertical samplen 1 spacing 1.2 font ",9"
+plot \\
+  "$FILE" using 1:6 with lines lw line_width lc rgb "magenta" title "precision", \\\\
+  "$FILE" using 1:7 with lines lw line_width lc rgb "violet" title "recall", \\\\
+  "$FILE" using 1:8 with lines lw line_width lc rgb "purple" title "mAP50", \\\\
+  "$FILE" using 1:9 with lines lw line_width lc rgb "dark-violet" title "mAP50-95"
+
+# Plot 4: Learning Rates
+set title "Learning Rates (pg0, pg1, pg2)" font ",11"
+set xlabel "Epoch" offset 0,-1
+set ylabel "LR" offset -2,0
+set key outside right vertical samplen 1 spacing 1.2 font ",9"
+plot \\
+  "$FILE" using 1:13 with lines lw line_width lc rgb "brown" title "lr/pg0", \\\\
+  "$FILE" using 1:14 with lines lw line_width lc rgb "dark-orange" title "lr/pg1", \\\\
+  "$FILE" using 1:15 with lines lw line_width lc rgb "dark-red" title "lr/pg2"
+
+unset multiplot
+EOF
+
+gnuplot -persist "$GNUPLOT_SCRIPT"
+rm "$GNUPLOT_SCRIPT"
+';
+
+		file_put_contents("$tmp_dir/train", $train_bash);
+	}
+
+
 	function write_train_bash ($tmp_dir, $epochs) {
 		$train_bash = '#!/bin/bash
 
@@ -175,6 +270,7 @@ fi
 
 	function write_bash_files ($tmp_dir, $epochs) {
 		write_train_bash($tmp_dir, $epochs);
+		write_visualization_script($tmp_name);
 	}
 
 	function get_number_of_rows () {
