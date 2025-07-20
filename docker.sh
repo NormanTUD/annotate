@@ -130,40 +130,46 @@ if [[ ! -d $local_db_dir ]]; then
 fi
 
 echo "version: '3.8'
+
 services:
   annotate_mariadb:
+    image: mariadb:latest
     container_name: annotate_mariadb
     restart: always
-    image: mariadb:latest
     environment:
       - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_PASS=root
-      - MYSQL_USER=root
     volumes:
       - $local_db_dir:/var/lib/mysql
       - ./my.cnf:/etc/mysql/conf.d/disable_locks.cnf:ro
     networks:
       - annotate_network
+
   annotate:
-    restart: unless-stopped
     build:
       context: .
-    ports:
-      - $LOCAL_PORT:80
+    container_name: annotate
+    restart: unless-stopped
+    depends_on:
+      - annotate_mariadb
     environment:
       - DB_HOST=annotate_mariadb
       - DB_PORT=3306
-      - DB_PASSWORD=root
       - DB_USER=root
+      - DB_PASSWORD=root
     networks:
       - annotate_network
+    ports:
+      - 1113:80
     tmpfs:
       - /tmp:rw
+
 volumes:
-  datavolume:
+  mariadb_data:
+
 networks:
   annotate_network:
     driver: bridge
+
 " > docker-compose.yml
 
 echo "=== Current git hash before auto-pulling ==="
