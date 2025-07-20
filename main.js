@@ -529,12 +529,12 @@ async function handleAnnotations(boxes, scores, classes) {
 		const img_width = $("#image").width();
 		const img_height = $("#image").height();
 
-		const [x_start, y_start, x_end, y_end] = boxes[i];
 
-		const x_min = Math.min(x_start, x_end);
-		const x_max = Math.max(x_start, x_end);
-		const y_min = Math.min(y_start, y_end);
-		const y_max = Math.max(y_start, y_end);
+		const [cx, cy, bw, bh] = boxes[i];
+		const x_min = cx - bw / 2;
+		const x_max = cx + bw / 2;
+		const y_min = cy - bh / 2;
+		const y_max = cy + bh / 2;
 
 		const x = Math.round(x_min * img_width);
 		const y = Math.round(y_min * img_height);
@@ -554,7 +554,7 @@ async function handleAnnotations(boxes, scores, classes) {
 		const this_label = labels[this_class];
 
 		if(enable_debug) {
-			log(`this_label: ${this_label}, this_class: ${this_class}, x_start: ${x_start}, x_end: ${x_end}, x_end: ${x_end}, y_end: ${y_end}, x: ${x}, y: ${y}, h: ${h}, w: ${w}`);
+			log(`this_label: ${this_label}, this_class: ${this_class}, x: ${x}, y: ${y}, h: ${h}, w: ${w}`);
 		}
 
 		if(this_label) {
