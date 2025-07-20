@@ -528,7 +528,7 @@ async function predict(modelWidth, modelHeight) {
 	var res;
 
 	try {
-		res = await model.executeAsync(image_tensor);
+		res = await model.execute(image_tensor);
 
 
 		try {
