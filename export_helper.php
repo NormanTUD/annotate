@@ -2,7 +2,7 @@
 	include_once("functions.php");
 
 	function write_visualization_script($tmp_dir) {
-		$train_bash = '#!/bin/bash
+		$train_visualization = '#!/bin/bash
 
 FILE=${1:-runs/detect/train/results.csv}
 
@@ -137,7 +137,7 @@ fi
 
 ';
 
-		file_put_contents("$tmp_dir/train", $train_bash);
+		file_put_contents("$tmp_dir/visualize", $train_visualization);
 	}
 
 	function get_rand_between_0_and_1 () {
