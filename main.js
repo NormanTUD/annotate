@@ -582,6 +582,9 @@ async function handleAnnotations(boxes, scores, classes) {
 	const anno_boxes = [];
 
 	for (let i = 0; i < boxes.length; i++) {
+		const img_width = $("#image").width();
+		const img_height = $("#image").height();
+
 		const [x_start, y_start, x_end, y_end] = boxes[i];
 
 		const x_min = Math.min(x_start, x_end);
@@ -589,11 +592,11 @@ async function handleAnnotations(boxes, scores, classes) {
 		const y_min = Math.min(y_start, y_end);
 		const y_max = Math.max(y_start, y_end);
 
-		const w = Math.round((x_max - x_min) * imgsz);
-		const h = Math.round((y_max - y_min) * imgsz);
+		const w = Math.round((x_max - x_min) * img_width);
+		const h = Math.round((y_max - y_min) * img_height);
 
-		const x = Math.round(x_start * imgsz);
-		const y = Math.round(y_start * imgsz);
+		const x = Math.round(x_start * img_width);
+		const y = Math.round(y_start * img_height);
 
 		const this_class = classes[i];
 		const this_score = scores[i];
