@@ -3,7 +3,7 @@
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
 
-var conf = 0.039;
+var conf = 0.09;
 var enable_debug = true;
 
 var autonext_param = startUrlParams.get('autonext');
@@ -592,11 +592,10 @@ async function handleAnnotations(boxes, scores, classes) {
 		const y_min = Math.min(y_start, y_end);
 		const y_max = Math.max(y_start, y_end);
 
+		const x = Math.round(x_min * img_width);
+		const y = Math.round(y_min * img_height);
 		const w = Math.round((x_max - x_min) * img_width);
 		const h = Math.round((y_max - y_min) * img_height);
-
-		const x = Math.round(x_start * img_width);
-		const y = Math.round(y_start * img_height);
 
 		const this_class = classes[i];
 		const this_score = scores[i];
