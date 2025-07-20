@@ -2,7 +2,6 @@
 
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
-const imgsz = 800;
 const conf = 0.01;
 
 var autonext_param = startUrlParams.get('autonext');
