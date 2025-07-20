@@ -92,7 +92,7 @@ gnuplot -persist "$GNUPLOT_SCRIPT"
 rm "$GNUPLOT_SCRIPT"
 ';
 
-		file_put_contents("$tmp_dir/train", $train_bash);
+		file_put_contents("$tmp_dir/train", $train_visualization);
 	}
 
 
@@ -137,7 +137,7 @@ fi
 
 ';
 
-		file_put_contents("$tmp_dir/visualize", $train_visualization);
+		file_put_contents("$tmp_dir/visualize", $train_bash);
 	}
 
 	function get_rand_between_0_and_1 () {
