@@ -127,7 +127,7 @@ yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBAL
 
 
 run_dir=runs/detect/train/weights/
-if [[ -d $run_dir ]]
+if [[ -d $run_dir ]]; then
 	yolo export model=$run_dir/best.pt format=tfjs
 
 	cp labels.json $run_dir 
