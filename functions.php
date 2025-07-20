@@ -1,5 +1,5 @@
 <?php
-	$GLOBALS["imgsz"];
+	$GLOBALS["imgsz"] = 800;
 
 	// alle warnings als fatal errors ausgeben
 	function exception_error_handler($errno, $errstr, $errfile, $errline ) {
