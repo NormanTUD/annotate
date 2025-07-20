@@ -71,6 +71,38 @@
 	");
 	renderTable("Annotations", ['id', 'filename', 'user', 'category', 'box', 'modified', 'deleted'], $annots);
 
+	$annots_bare = fetchAll("
+		select
+			id,
+			image_id,
+			user_id,
+			category_id,
+			x_start,
+			y_start,
+			w,
+			h,
+			json,
+			annotarius_id,
+			modified,
+			deleted
+		from annotation
+	");
+
+	renderTable("Annotations (bare)", [
+		"id",
+		"image_id",
+		"user_id",
+		"category_id",
+		"x_start",
+		"y_start",
+		"w",
+		"h",
+		"json",
+		"annotarius_id",
+		"modified",
+		"deleted"
+	], $annots_bare);
+
 	$cats = fetchAll("SELECT * FROM category ORDER BY id");
 	renderTable("Categories", ['id', 'name'], $cats, [
 	    ['target' => 'delete_category.php', 'label' => 'Delete', 'confirm' => 'Delete this category?']
