@@ -3,6 +3,7 @@
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
 const conf = 0.01;
+var enable_debug = false;
 
 var autonext_param = startUrlParams.get('autonext');
 var model;
@@ -325,7 +326,9 @@ async function save_anno (annotation) {
 		"full": JSON.stringify(annotation)
 	};
 
-	log("save anno data:", data);
+	if(enable_debug) {
+		log("save anno data:", data);
+	}
 
 	$.ajax({
 		url: "submit.php",
@@ -520,7 +523,9 @@ function analyzeScores(res, labelCount) {
 
 function processModelOutput(res) {
 	// res: Float32Array or array with shape [1, C, 8400]
-	//analyzeScores(res, labels.length);
+	if(enable_debug) {
+		analyzeScores(res, labels.length);
+	}
 
 	const C = res[0].length;
 	const numPredictions = res[0][0].length;
