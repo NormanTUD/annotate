@@ -538,12 +538,11 @@ function processModelOutput(res) {
 	const classes = [];
 
 	for (let i = 0; i < numPredictions; i++) {
-		const x = res[0][0][i]; // center x
-		const y = res[0][1][i]; // center y
-		const w = res[0][2][i]; // width
-		const h = res[0][3][i]; // height
+		const x = res[0][0][i];
+		const y = res[0][1][i];
+		const w = res[0][2][i];
+		const h = res[0][3][i];
 
-		// Klassenscores extrahieren
 		let bestScore = -Infinity;
 		let bestClass = -1;
 		for (let c = 0; c < numClasses; c++) {
@@ -554,9 +553,7 @@ function processModelOutput(res) {
 			}
 		}
 
-		// Optional: Konfidenzfilter
-		if (bestScore > conf) {  // Threshold nach Bedarf
-			// Box-Koordinaten in relativen Werten (0..1)
+		if (bestScore > conf) {
 			const relX = x / imgsz;
 			const relY = y / imgsz;
 			const relW = w / imgsz;
