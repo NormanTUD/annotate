@@ -50,9 +50,9 @@ set xlabel "Epoch" offset 0,-1
 set ylabel "Loss" offset -2,0
 set key outside right vertical samplen 1 spacing 1.2 font ",9"
 plot \\
-  "$FILE" using 1:3 with lines lw line_width lc rgb "red" title "train/box_loss", \\\\
-  "$FILE" using 1:4 with lines lw line_width lc rgb "orange" title "train/cls_loss", \\\\
-  "$FILE" using 1:5 with lines lw line_width lc rgb "gold" title "train/dfl_loss"
+  "$FILE" using 1:3 with lines lw line_width lc rgb "red" title "train/box-loss", \\\\
+  "$FILE" using 1:4 with lines lw line_width lc rgb "orange" title "train/cls-loss", \\\\
+  "$FILE" using 1:5 with lines lw line_width lc rgb "gold" title "train/dfl-loss"
 
 # Plot 2: Validation Losses (smaller = better)
 set title "Validation Losses (smaller is better)" font ",11"
@@ -60,9 +60,9 @@ set xlabel "Epoch" offset 0,-1
 set ylabel "Loss" offset -2,0
 set key outside right vertical samplen 1 spacing 1.2 font ",9"
 plot \\
-  "$FILE" using 1:10 with lines lw line_width lc rgb "blue" title "val/box_loss", \\\\
-  "$FILE" using 1:11 with lines lw line_width lc rgb "cyan" title "val/cls_loss", \\\\
-  "$FILE" using 1:12 with lines lw line_width lc rgb "green" title "val/dfl_loss"
+  "$FILE" using 1:10 with lines lw line_width lc rgb "blue" title "val/box-loss", \\\\
+  "$FILE" using 1:11 with lines lw line_width lc rgb "cyan" title "val/cls-loss", \\\\
+  "$FILE" using 1:12 with lines lw line_width lc rgb "green" title "val/dfl-loss"
 
 # Plot 3: Metrics (larger = better)
 set title "Metrics (larger is better)" font ",11"
