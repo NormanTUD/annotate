@@ -27,6 +27,17 @@ done
 
 
 yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz=640 model=yolo11n.yaml
+
+
+run_dir=runs/detect/train/weights/
+if [[ -d $run_dir ]]
+	yolo export model=$run_dir/best.pt format=tfjs
+
+	cp labels.json $run_dir 
+else
+	echo "$run_dir could not be found"
+fi
+
 ';
 
 		file_put_contents("$tmp_dir/train", $train_bash);
