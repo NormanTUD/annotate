@@ -47,7 +47,7 @@
 		<tr>
 			<td>Epochs</td>
 			<td style="display: none">epochs</td>
-			<td><input onchange="change_url()" type="number" value="50" /></td>
+			<td><input onchange="change_url()" type="number" value="2000" /></td>
 		</tr>
 
 		<tr>
