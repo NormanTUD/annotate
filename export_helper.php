@@ -7,7 +7,7 @@
 FILE=${1:-runs/detect/train/results.csv}
 
 if [ ! -f "$FILE" ]; then
-  echo "Error: File '$FILE' not found."
+  echo "Error: File \'$FILE\' not found."
   echo "Provide a CSV path as first argument or place it at runs/detect/train/results.csv"
   exit 1
 fi
