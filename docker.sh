@@ -181,9 +181,9 @@ git pull
 #!/usr/bin/env bash
 set -euo pipefail
 
-if ! command -v docker compose >/dev/null 2>&1 || command -v docker-compose >/dev/null 2>&1; then
-    sudo apt-get update -qq
-    sudo apt-get install -y docker-compose-plugin
+if ! command -v docker compose >/dev/null 2>&1 || ! command -v docker-compose >/dev/null 2>&1; then
+	sudo apt-get update -qq
+	sudo apt-get install -y docker-compose-plugin
 fi
 
 SYNTAX_ERRORS=0
