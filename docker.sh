@@ -129,9 +129,7 @@ if [[ ! -d $local_db_dir ]]; then
 	mkdir -p $local_db_dir
 fi
 
-echo "version: '3.8'
-
-services:
+echo "services:
   annotate_mariadb:
     image: mariadb:latest
     container_name: annotate_mariadb
