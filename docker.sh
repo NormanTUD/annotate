@@ -195,10 +195,10 @@ if [[ "$SYNTAX_ERRORS" -ne "0" ]]; then
 fi
 
 if [ "$(id -u)" -eq 0 ] || groups "$USER" | grep -q '\bdocker\b'; then
-	CMD="docker-compose"
+	CMD="docker compose"
 else
 	echo "Building container. This may need sudo-permissions"
-	CMD="sudo docker-compose"
+	CMD="sudo docker compose"
 fi
 
 $CMD build && $CMD up -d || echo "Failed to build container"
