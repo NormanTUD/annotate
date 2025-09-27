@@ -450,114 +450,114 @@ function get_element() {
 }
 
 async function predictImageWithModel() {
-    log("Starting prediction workflow...");
+	log("Starting prediction workflow...");
 
-    const imageElement = await getValidImageElement();
-    if (!imageElement) return;
+	const imageElement = await getValidImageElement();
+	if (!imageElement) return;
 
-    if (!await isModelReady()) return;
+	if (!await isModelReady()) return;
 
-    await prepareUIForPrediction();
+	await prepareUIForPrediction();
 
-    const [modelWidth, modelHeight] = getModelInputShape();
-    log(`Model input shape: width=${modelWidth}, height=${modelHeight}`);
+	const [modelWidth, modelHeight] = getModelInputShape();
+	log(`Model input shape: width=${modelWidth}, height=${modelHeight}`);
 
-    const predictionResult = await runPrediction(modelWidth, modelHeight);
-    if (!predictionResult) return;
+	const predictionResult = await runPrediction(modelWidth, modelHeight);
+	if (!predictionResult) return;
 
-    const { boxes, scores, classes } = await extractDetectionData(predictionResult);
-    log(`Detection data extracted: ${boxes.length} boxes`);
+	const { boxes, scores, classes } = await extractDetectionData(predictionResult);
+	log(`Detection data extracted: ${boxes.length} boxes`);
 
-    await displayPredictionResults(boxes, scores, classes);
+	await displayPredictionResults(boxes, scores, classes);
 
-    await cleanupAfterPrediction();
+	await cleanupAfterPrediction();
 
-    if (autonext_param) await loadNextRandomImageWithDelay();
+	if (autonext_param) await loadNextRandomImageWithDelay();
 
-    log("Prediction workflow finished.");
+	log("Prediction workflow finished.");
 }
 
 // --- Hilfsfunktionen ---
 async function getValidImageElement() {
-    const elem = get_element();
-    if (!elem) {
-        warn("#image not found");
-        log("No image element found, aborting.");
-    } else {
-        log("Image element found.");
-    }
-    return elem;
+	const elem = get_element();
+	if (!elem) {
+		warn("#image not found");
+		log("No image element found, aborting.");
+	} else {
+		log("Image element found.");
+	}
+	return elem;
 }
 
 async function isModelReady() {
-    if (!await checkModelAvailable()) {
-        warn("model not available");
-        log("Model not available, aborting.");
-        return false;
-    }
-    log("Model is available.");
-    return true;
+	if (!await checkModelAvailable()) {
+		warn("model not available");
+		log("Model not available, aborting.");
+		return false;
+	}
+	log("Model is available.");
+	return true;
 }
 
 async function prepareUIForPrediction() {
-    log("Preparing UI for prediction...");
-    show_ai_stuff();
-    running_ki = true;
-    $("body").css("cursor", "progress");
-    show_spinner("AI is being loaded...");
-    await anno.clearAnnotations();
-    log("Annotations cleared.");
-    await load_model();
-    log("Model loaded.");
-    await tf.ready();
-    log("TensorFlow ready.");
+	log("Preparing UI for prediction...");
+	show_ai_stuff();
+	running_ki = true;
+	$("body").css("cursor", "progress");
+	show_spinner("AI is being loaded...");
+	await anno.clearAnnotations();
+	log("Annotations cleared.");
+	await load_model();
+	log("Model loaded.");
+	await tf.ready();
+	log("TensorFlow ready.");
 }
 
 async function runPrediction(width, height) {
-    try {
-        log("Running prediction...");
-        show_spinner("Prediction...");
-        const res = await predict(width, height);
-        $("body").css("cursor", "default");
-        log(`Prediction completed. Shape: ${getShape(res)}`);
-        if (enable_debug) log("Prediction result:", res);
-        return res;
-    } catch (e) {
-        warn(e);
-        log("Prediction failed with error:", e);
-        $("body").css("cursor", "default");
-        hide_spinner();
-        running_ki = false;
-        return null;
-    }
+	try {
+		log("Running prediction...");
+		show_spinner("Prediction...");
+		const res = await predict(width, height);
+		$("body").css("cursor", "default");
+		log(`Prediction completed. Shape: ${getShape(res)}`);
+		if (enable_debug) log("Prediction result:", res);
+		return res;
+	} catch (e) {
+		warn(e);
+		log("Prediction failed with error:", e);
+		$("body").css("cursor", "default");
+		hide_spinner();
+		running_ki = false;
+		return null;
+	}
 }
 
 async function extractDetectionData(predictionResult) {
-    log("Processing model output...");
-    const data = await processModelOutput(predictionResult);
-    log(`Processed output: ${data.boxes.length} boxes`);
-    return data;
+	log("Processing model output...");
+	const data = await processModelOutput(predictionResult);
+	log(`Processed output: ${data.boxes.length} boxes`);
+	return data;
 }
 
 async function displayPredictionResults(boxes, scores, classes) {
-    log("Displaying prediction results...");
-    show_spinner("Working on results...");
-    await handleAnnotations(boxes, scores, classes);
-    log("Results displayed.");
+	log("Displaying prediction results...");
+	show_spinner("Working on results...");
+	await handleAnnotations(boxes, scores, classes);
+	log("Results displayed.");
 }
 
 async function cleanupAfterPrediction() {
-    log("Cleaning up after prediction...");
-    running_ki = false;
-    hide_spinner();
-    log("Cleanup done.");
+	log("Cleaning up after prediction...");
+	running_ki = false;
+	hide_spinner();
+	log("Cleanup done.");
 }
 
 async function loadNextRandomImageWithDelay() {
-    log("Loading next random image in 1.5s...");
-    await sleep(1500);
-    await load_next_random_image();
-    log("Next image loaded.");
+	log("Loading next random image in 1.5s...");
+	await sleep(1500);
+	await load_next_random_image();
+	log("Next image loaded.");
 }
 
 function getShape(arr) {
