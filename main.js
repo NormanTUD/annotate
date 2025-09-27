@@ -615,23 +615,56 @@ async function predict(modelWidth, modelHeight) {
 }
 
 function processModelOutput(res) {
+	log("processModelOutput: Starting...");
+	log("Raw res shape:", res.shape || `${res.length} x ${res[0].length} x ${res[0][0].length}`);
+
 	const boxes = [];
 	const scores = [];
 	const classes = [];
 
-	const data = res[0]; // evtl. direkt res, je nach TFJS Model
+	const data = res[0];
+	log("data shape:", data.length, data[0]?.length);
 
-	for (let i = 0; i < data.length; i++) {
-		const [x1, y1, x2, y2, score, classId] = data[i];
-		if (score > conf) {
-			const relX = x1 / imgsz;
-			const relY = y1 / imgsz;
-			const relW = (x2 - x1) / imgsz;
-			const relH = (y2 - y1) / imgsz;
+	// Check first few entries
+	for (let i = 0; i < Math.min(5, data[0].length); i++) {
+		const row = data.map(arr => arr[i]);
+		log(`Index ${i}:`, row);
+	}
+
+	const numPredictions = data[0].length;
+	const numFeatures = data.length;
+	log(`numPredictions: ${numPredictions}, numFeatures: ${numFeatures}`);
+
+	for (let i = 0; i < numPredictions; i++) {
+		const features = data.map(arr => arr[i]);
+		const [x, y, w, h, ...classScores] = features;
+
+		// Debug: show top 3 class scores
+		const topScores = classScores
+			.map((s, idx) => ({ score: s, classId: idx }))
+			.sort((a, b) => b.score - a.score)
+			.slice(0, 3);
+		log(`Prediction ${i}: x=${x}, y=${y}, w=${w}, h=${h}, topScores=`, topScores);
+
+		// Find best class
+		let bestScore = -Infinity;
+		let bestClass = -1;
+		for (let c = 0; c < classScores.length; c++) {
+			if (classScores[c] > bestScore) {
+				bestScore = classScores[c];
+				bestClass = c;
+			}
+		}
+
+		if (bestScore > conf) {
+			const relX = x / imgsz;
+			const relY = y / imgsz;
+			const relW = w / imgsz;
+			const relH = h / imgsz;
 
 			boxes.push([relX, relY, relW, relH]);
-			scores.push(score);
-			classes.push(classId);
+			scores.push(bestScore);
+			classes.push(bestClass);
 		}
 	}
 
