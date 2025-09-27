@@ -244,7 +244,7 @@ async function make_item_anno(elem, widgets={}) {
 	})
 
 	if(!(await anno.getAnnotations().length)) {
-		await ai_file();
+		await predictImageWithModel();
 	}
 }
 
@@ -449,7 +449,7 @@ function get_element() {
 	return null;
 }
 
-async function ai_file() {
+async function predictImageWithModel() {
 	const elem = get_element();
 
 	if(!elem) {
@@ -520,7 +520,7 @@ function getShape(arr) {
 async function checkModelAvailable() {
 	if (!await has_model()) {
 		hide_ai_stuff();
-		console.info("No AI model found. Not allowing ai_file stuff");
+		info("No AI model found. Not allowing predictImageWithModel stuff");
 		return false;
 	}
 	return true;
@@ -999,7 +999,7 @@ document.onkeydown = function (e) {
 			load_next_random_image()
 			break;
 		case 75:
-			ai_file();
+			predictImageWithModel();
 			break;
 		default:
 			break;
