@@ -32,4 +32,3 @@ include_once("functions.php");
 		print "<br><a href='export_annotations.php?format=html&show_categories[]=".urlencode($_GET["searchtag"])."'>Export this category (HTML Overview)</a>";
 	}
 ?>
-</div>
