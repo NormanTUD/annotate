@@ -868,58 +868,67 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function create_selects_from_annotation(force=0) {
-	if($(":focus").is("select") && !force) {
+async function create_selects_from_annotation(force = 0) {
+	if ($(":focus").is("select") && !force) {
 		return;
 	}
-	if(typeof(anno) != "object") {
+	if (typeof anno !== "object") {
 		return;
 	}
 
-	var ki_names = get_names_from_ki_anno(await anno.getAnnotations());
+	// Hole KI-Annotationen
+	const ki_names = get_names_from_ki_anno(await anno.getAnnotations());
+	const joined_ki_names = JSON.stringify(ki_names);
 
-	var joined_ki_names = JSON.stringify(ki_names);
-
-	if(last_detected_names != joined_ki_names) {
+	if (last_detected_names !== joined_ki_names) {
 		last_detected_names = joined_ki_names;
 
-		if(Object.keys(ki_names).length) {
-			var html = "";
+		if (Object.keys(ki_names).length) {
+			let html = "";
+			const selects = [];
+			const ki_names_keys = Object.keys(ki_names);
 
-			var selects = [];
-
-			var ki_names_keys = Object.keys(ki_names);
-
-			for (var i = 0; i < ki_names_keys.length; i++) {
+			for (let i = 0; i < ki_names_keys.length; i++) {
 				previous[i] = ki_names_keys[i];
-				var this_select = "<select data-nr='" + i + "' class='ki_select_box'>";
-				for (var j = 0; j < tags.length; j++) {
-					this_select += '<option ' + ((ki_names_keys[i] == tags[j]) ? 'selected' : '') + ' value="' + tags[j] + '">' + tags[j] + '</option>'
+
+				let this_select = `<select data-nr='${i}' class='ki_select_box'>`;
+				let found = false;
+
+				for (let j = 0; j < tags.length; j++) {
+					if (ki_names_keys[i] === tags[j]) found = true;
+					this_select += `<option ${ki_names_keys[i] === tags[j] ? "selected" : ""} value="${tags[j]}">${tags[j]}</option>`;
 				}
 
-				this_select += "<select> (" + ki_names[ki_names_keys[i]] + ")";
+				// Falls der aktuelle Name nicht in tags ist, füge ihn als eigene Option hinzu
+				if (!found) {
+					this_select += `<option selected value="${ki_names_keys[i]}">${ki_names_keys[i]}</option>`;
+				}
 
+				this_select += `</select> (${ki_names[ki_names_keys[i]]})`;
 				selects.push(this_select);
 			}
 
 			html += selects.join(", ");
 
-			if($("#ki_detected_names").html() != html) {
+			if ($("#ki_detected_names").html() !== html) {
 				$("#ki_detected_names").html(html);
 			}
 
-			$(".ki_select_box").change(async function (x, y, z) {
-				var old_value = previous[$(this).data("nr")];
-				var new_value = x.currentTarget.value
+			$(".ki_select_box").off("change").on("change", async function (e) {
+				const nr = $(this).data("nr");
+				const old_value = previous[nr];
+				const new_value = e.currentTarget.value;
 
 				await set_all_current_annotations_from_to(old_value, new_value);
 				await create_selects_from_annotation(1);
 
-				previous[$(this).data("nr")] = new_value;
+				previous[nr] = new_value;
 			});
+
 		} else {
-			if(!running_ki) {
-				if($("#ki_detected_names").html() != "") {
+			// Wenn keine KI-Namen vorhanden und KI gerade nicht läuft
+			if (!running_ki) {
+				if ($("#ki_detected_names").html() !== "") {
 					$("#ki_detected_names").html("");
 				}
 			}
