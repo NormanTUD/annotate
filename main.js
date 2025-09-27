@@ -150,6 +150,8 @@ function success (title, msg) {
 
 function warn(title, msg) {
 	$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>");
+
+	console.warn(msg);
 }
 
 function error (title, msg) {
@@ -242,7 +244,7 @@ async function make_item_anno(elem, widgets={}) {
 	})
 
 	if(!(await anno.getAnnotations().length)) {
-		await ai_file($('#image')[0]);
+		await ai_file();
 	}
 }
 
@@ -437,8 +439,26 @@ function hide_spinner() {
 	}
 }
 
-async function ai_file(elem) {
+function get_element() {
+	const $image = $('#image');
+
+	if($image.length) {
+		return $image[0]
+	}
+
+	return null;
+}
+
+async function ai_file() {
+	const elem = get_element();
+
+	if(!elem) {
+		warn("#image not found");
+		return;
+	}
+
 	if (!await checkModelAvailable()) {
+		warn("model not available");
 		return;
 	}
 
@@ -458,7 +478,7 @@ async function ai_file(elem) {
 		show_spinner("Prediction...");
 		res = await predict(modelWidth, modelHeight);
 	} catch (e) {
-		console.warn(e);
+		warn(e);
 		$("body").css("cursor", "default");
 		hide_spinner();
 		running_ki = false;
@@ -979,7 +999,7 @@ document.onkeydown = function (e) {
 			load_next_random_image()
 			break;
 		case 75:
-			ai_file($('#image')[0]);
+			ai_file();
 			break;
 		default:
 			break;
@@ -1053,7 +1073,7 @@ async function has_model () {
 		return hasModelValue;
 	} catch (error) {
 		// Handle errors, log, and return 0.
-		console.warn('Error:', error.message);
+		warn('Error:', error.message);
 		return 0;
 	}
 }
