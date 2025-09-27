@@ -1,5 +1,7 @@
 "use strict";
 
+const log = console.log;
+
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
 
@@ -103,12 +105,6 @@ function memory_debugger () {
 var anno;
 var previous = [];
 
-function log (...msg) {
-	for (var i = 0; i < msg.length; i++) {
-		console.log(msg[i]);
-	}
-}
-
 function refresh(){
 	window.location.reload("Refresh")
 }
@@ -168,7 +164,7 @@ async function make_item_anno(elem, widgets={}) {
 
 	await anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*?filename=/, ""));
 
-	// Add event handlers using .on  
+	// Add event handlers using .on
 	anno.on('createAnnotation', function(annotation) {
 		// Do something
 		var data = {
@@ -473,7 +469,7 @@ async function ai_file(elem) {
 	var shape = getShape(res);
 
 	if (enable_debug) {
-		console.log(`res (shape: ${shape}):`, res);
+		log(`res (shape: ${shape}):`, res);
 	}
 
 	var { boxes, scores, classes } = await processModelOutput(res);
@@ -529,7 +525,6 @@ async function predict(modelWidth, modelHeight) {
 
 	try {
 		res = await model.execute(image_tensor);
-
 
 		try {
 			res = res.arraySync();
@@ -702,24 +697,24 @@ function get_annotate_element(this_label, x_start, y_start, w, h) {
 	}
 
 	return {
-		"type": "Annotation", 
-		"body": [ 
+		"type": "Annotation",
+		"body": [
 			{
-				"type": "TextualBody", 
+				"type": "TextualBody",
 				"value": this_label,
 				"purpose": "tagging"
-			} 
-		], 
+			}
+		],
 		"source": $("#image")[0].src,
-		"target": { 
+		"target": {
 			"source": $("#image")[0].src,
-			"selector": { 
-				"type": "FragmentSelector", 
-				"conformsTo": "http://www.w3.org/TR/media-frags/", 
+			"selector": {
+				"type": "FragmentSelector",
+				"conformsTo": "http://www.w3.org/TR/media-frags/",
 				"value": `xywh=pixel:${x_start},${y_start},${w},${h}`
-			} 
-		}, 
-		"@context": "http://www.w3.org/ns/anno.jsonld", 
+			}
+		},
+		"@context": "http://www.w3.org/ns/anno.jsonld",
 		"id": "#" + uuidv4()
 	}
 }
