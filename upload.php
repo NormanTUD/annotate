@@ -25,7 +25,6 @@
 	#progressInfo {
 		margin-top: 5px;
 		font-size: 0.9em;
-		color: #333;
 	}
 </style>
 

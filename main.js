@@ -141,11 +141,11 @@ function move_file (to) {
 }
 
 function info(title, msg) {
-	$("#status_bar").html("<span style='color: black'>" + title + ": " + msg + "</span>");
+	$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>");
 }
 
 function success (title, msg) {
-	$("#status_bar").html("<span style='color: black'>" + title + ": " + msg + "</span>");
+	$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>");
 }
 
 function warn(title, msg) {
