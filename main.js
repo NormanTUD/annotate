@@ -616,35 +616,20 @@ async function predict(modelWidth, modelHeight) {
 
 function processModelOutput(res) {
 	log("processModelOutput: Starting...");
-	log("Raw res shape:", res.shape || `${res.length} x ${res[0].length} x ${res[0][0].length}`);
 
 	const boxes = [];
 	const scores = [];
 	const classes = [];
 
 	const data = res[0];
-	log("data shape:", data.length, data[0]?.length);
-
-	// Check first few entries
-	for (let i = 0; i < Math.min(5, data[0].length); i++) {
-		const row = data.map(arr => arr[i]);
-		log(`Index ${i}:`, row);
-	}
-
 	const numPredictions = data[0].length;
 	const numFeatures = data.length;
-	log(`numPredictions: ${numPredictions}, numFeatures: ${numFeatures}`);
+
+	log(`Raw data shape: ${numFeatures} features x ${numPredictions} predictions`);
 
 	for (let i = 0; i < numPredictions; i++) {
 		const features = data.map(arr => arr[i]);
 		const [x, y, w, h, ...classScores] = features;
-
-		// Debug: show top 3 class scores
-		const topScores = classScores
-			.map((s, idx) => ({ score: s, classId: idx }))
-			.sort((a, b) => b.score - a.score)
-			.slice(0, 3);
-		log(`Prediction ${i}: x=${x}, y=${y}, w=${w}, h=${h}, topScores=`, topScores);
 
 		// Find best class
 		let bestScore = -Infinity;
@@ -665,10 +650,18 @@ function processModelOutput(res) {
 			boxes.push([relX, relY, relW, relH]);
 			scores.push(bestScore);
 			classes.push(bestClass);
+
+			// menschenlesbare Ausgabe
+			const x1 = relX - relW / 2;
+			const y1 = relY - relH / 2;
+			const x2 = relX + relW / 2;
+			const y2 = relY + relH / 2;
+
+			log(`Box ${boxes.length}: class=${bestClass}, score=${bestScore.toFixed(3)}, xywh=[${relX.toFixed(3)}, ${relY.toFixed(3)}, ${relW.toFixed(3)}, ${relH.toFixed(3)}], x1y1x2y2=[${x1.toFixed(3)}, ${y1.toFixed(3)}, ${x2.toFixed(3)}, ${y2.toFixed(3)}]`);
 		}
 	}
 
-	log(`Processed ${boxes.length} boxes`);
+	log(`Processed ${boxes.length} boxes total (conf>${conf})`);
 	return { boxes, scores, classes };
 }
 
