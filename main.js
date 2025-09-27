@@ -614,24 +614,25 @@ async function predict(modelWidth, modelHeight) {
 	return res;
 }
 
-function processModelOutput(res) {
+function processModelOutput(res, confThreshold = 0.3, iouThreshold = 0.5) {
 	log("processModelOutput: Starting...");
 
-	const boxes = [];
+	const rawBoxes = [];
 	const scores = [];
 	const classes = [];
 
-	const data = res[0];
+	const data = res[0];  // YOLOv11 Tensor: [features x predictions]
 	const numPredictions = data[0].length;
 	const numFeatures = data.length;
 
 	log(`Raw data shape: ${numFeatures} features x ${numPredictions} predictions`);
 
+	// Iteriere über alle Predictions
 	for (let i = 0; i < numPredictions; i++) {
 		const features = data.map(arr => arr[i]);
 		const [x, y, w, h, ...classScores] = features;
 
-		// Find best class
+		// Top Score und Klasse
 		let bestScore = -Infinity;
 		let bestClass = -1;
 		for (let c = 0; c < classScores.length; c++) {
@@ -641,28 +642,75 @@ function processModelOutput(res) {
 			}
 		}
 
-		if (bestScore > conf) {
+		if (bestScore > confThreshold) {
+			// Relative Koordinaten
 			const relX = x / imgsz;
 			const relY = y / imgsz;
 			const relW = w / imgsz;
 			const relH = h / imgsz;
-
-			boxes.push([relX, relY, relW, relH]);
-			scores.push(bestScore);
-			classes.push(bestClass);
-
-			// menschenlesbare Ausgabe
 			const x1 = relX - relW / 2;
 			const y1 = relY - relH / 2;
 			const x2 = relX + relW / 2;
 			const y2 = relY + relH / 2;
 
-			log(`Box ${boxes.length}: class=${bestClass}, score=${bestScore.toFixed(3)}, xywh=[${relX.toFixed(3)}, ${relY.toFixed(3)}, ${relW.toFixed(3)}, ${relH.toFixed(3)}], x1y1x2y2=[${x1.toFixed(3)}, ${y1.toFixed(3)}, ${x2.toFixed(3)}, ${y2.toFixed(3)}]`);
+			rawBoxes.push([x1, y1, x2, y2]);
+			scores.push(bestScore);
+			classes.push(bestClass);
 		}
 	}
 
-	log(`Processed ${boxes.length} boxes total (conf>${conf})`);
-	return { boxes, scores, classes };
+	// --- Non-Maximum Suppression ---
+	const keepBoxes = [];
+	const keepScores = [];
+	const keepClasses = [];
+
+	const indices = scores.map((s, i) => i).sort((a, b) => scores[b] - scores[a]);
+
+	while (indices.length > 0) {
+		const i = indices.shift();
+		keepBoxes.push(rawBoxes[i]);
+		keepScores.push(scores[i]);
+		keepClasses.push(classes[i]);
+
+		for (let j = indices.length - 1; j >= 0; j--) {
+			if (iou(rawBoxes[i], rawBoxes[indices[j]]) > iouThreshold) {
+				indices.splice(j, 1);
+			}
+		}
+	}
+
+	log(`Processed ${keepBoxes.length} boxes after NMS`);
+
+	// --- Umwandlung zurück zu [cx, cy, bw, bh] ---
+	const finalBoxes = keepBoxes.map(b => {
+		const cx = (b[0] + b[2]) / 2;
+		const cy = (b[1] + b[3]) / 2;
+		const bw = b[2] - b[0];
+		const bh = b[3] - b[1];
+		return [cx, cy, bw, bh];
+	});
+
+	finalBoxes.forEach((b, i) => {
+		log(`Box ${i + 1}: class=${keepClasses[i]}, score=${keepScores[i].toFixed(3)}, cx,cy,bw,bh=[${b.map(v => v.toFixed(3)).join(', ')}]`);
+	});
+
+	return { boxes: finalBoxes, scores: keepScores, classes: keepClasses };
+}
+
+function iou(boxA, boxB) {
+	const [x1a, y1a, x2a, y2a] = boxA;
+	const [x1b, y1b, x2b, y2b] = boxB;
+
+	const interX1 = Math.max(x1a, x1b);
+	const interY1 = Math.max(y1a, y1b);
+	const interX2 = Math.min(x2a, x2b);
+	const interY2 = Math.min(y2a, y2b);
+
+	const interArea = Math.max(0, interX2 - interX1) * Math.max(0, interY2 - interY1);
+	const boxAArea = (x2a - x1a) * (y2a - y1a);
+	const boxBArea = (x2b - x1b) * (y2b - y1b);
+
+	return interArea / (boxAArea + boxBArea - interArea);
 }
 
 async function handleAnnotations(boxes, scores, classes) {
