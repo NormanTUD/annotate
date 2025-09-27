@@ -5,7 +5,7 @@ const log = console.log;
 const startQueryString = window.location.search;
 const startUrlParams = new URLSearchParams(startQueryString);
 
-var conf = 0.5;
+var conf = 0.3;
 var enable_debug = false;
 
 var autonext_param = startUrlParams.get('autonext');
@@ -615,42 +615,27 @@ async function predict(modelWidth, modelHeight) {
 }
 
 function processModelOutput(res) {
-	const C = res[0].length;
-	const numPredictions = res[0][0].length;
-	const numClasses = C - 4;
-
 	const boxes = [];
 	const scores = [];
 	const classes = [];
 
-	for (let i = 0; i < numPredictions; i++) {
-		const x = res[0][0][i];
-		const y = res[0][1][i];
-		const w = res[0][2][i];
-		const h = res[0][3][i];
+	const data = res[0]; // evtl. direkt res, je nach TFJS Model
 
-		let bestScore = -Infinity;
-		let bestClass = -1;
-		for (let c = 0; c < numClasses; c++) {
-			const score = res[0][4 + c][i];
-			if (score > bestScore) {
-				bestScore = score;
-				bestClass = c;
-			}
-		}
-
-		if (bestScore > conf) {
-			const relX = x / imgsz;
-			const relY = y / imgsz;
-			const relW = w / imgsz;
-			const relH = h / imgsz;
+	for (let i = 0; i < data.length; i++) {
+		const [x1, y1, x2, y2, score, classId] = data[i];
+		if (score > conf) {
+			const relX = x1 / imgsz;
+			const relY = y1 / imgsz;
+			const relW = (x2 - x1) / imgsz;
+			const relH = (y2 - y1) / imgsz;
 
 			boxes.push([relX, relY, relW, relH]);
-			scores.push(bestScore);
-			classes.push(bestClass);
+			scores.push(score);
+			classes.push(classId);
 		}
 	}
 
+	log(`Processed ${boxes.length} boxes`);
 	return { boxes, scores, classes };
 }
 
