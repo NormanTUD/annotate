@@ -66,3 +66,69 @@ form { display: inline; }
 #defective_files {
 	display: none;
 }
+
+#annotation_area, #list {
+	border: 1px solid #ddd;
+	padding: 15px;
+	border-radius: 8px;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+	background-color: #fff;
+	margin-bottom: 20px;
+}
+
+button {
+	background-color: #4CAF50;
+	color: white;
+	padding: 8px 14px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+	transition: 0.2s;
+}
+
+button:hover {
+	background-color: #45a049;
+	transform: translateY(-1px);
+}
+
+button:active {
+	transform: translateY(1px);
+}
+
+.ai_stuff {
+	display: inline-block;
+	background-color: #ff9800;
+	color: white;
+}
+
+input, select {
+	padding: 6px 10px;
+	border-radius: 5px;
+	border: 1px solid #ccc;
+	margin-right: 5px;
+	transition: 0.2s;
+}
+
+input:focus, select:focus {
+	outline: none;
+	border-color: #4CAF50;
+	box-shadow: 0 0 5px rgba(76,175,80,0.5);
+}
+
+#status_bar {
+	background-color: rgba(240,240,240,0.95);
+	border: none;
+	box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+	padding: 4px 10px;
+	font-size: 0.9em;
+}
+
+a {
+	color: #2196F3;
+	text-decoration: none;
+	transition: 0.2s;
+}
+
+a:hover {
+	text-decoration: underline;
+}
