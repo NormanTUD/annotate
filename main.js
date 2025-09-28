@@ -157,13 +157,13 @@ function success (title, msg) {
 }
 
 function warn(title, msg) {
+	console.warn(title);
 	if(msg) {
 		$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>");
 	} else {
 		$("#status_bar").html("<span style='color: orange'>" + title + "</span>");
+		console.warn(msg);
 	}
-
-	console.warn(msg);
 }
 
 function error (title, msg) {
