@@ -127,7 +127,7 @@
 		</tr>
 	</table>
 
-	<button><a id="link" style="display: none" href="">Download</a></button>
+	<button><a id="link" style="color: white; display: none" href="">Download</a></button>
 
 	<script>
 		change_url();
