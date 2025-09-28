@@ -13,7 +13,7 @@
 
 				var explanation = $(children[0]).html();
 				var name = $(children[1]).html();
-				var value_item = $(children[2]).find("input,checkbox");
+				var value_item = $(children[2]).find("select,input,checkbox");
 
 				var value = "";
 				if(value_item.attr("type") == "checkbox") {
@@ -35,14 +35,14 @@
 		<tr>
 			<th>Explanation</th>
 			<th style="display: none">Option</th>
-			<th>Wert</th>
+			<th>Value</th>
 		</tr>
 
 		<tr>
 			<td>Model</td>
 			<td style="display: none">model</td>
 			<td>
-				<select onchange="change_url()">
+				<select id="model" onchange="change_url()">
 					<option>yolo11n.yaml</option>
 					<option>yolo11n-cls.yaml</option>
 					<option>yolo11n-obb.yaml</option>
@@ -73,7 +73,7 @@
 		</tr>
 
 		<tr>
-			<td>Maximale Anzahl an Dateien (0 = kein Limit)</td>
+			<td>Max number of files  (0 = no limit)</td>
 			<td style="display: none">max_files</td>
 			<td><input onchange="change_url()" type="number" value="0" /></td>
 		</tr>
@@ -127,7 +127,7 @@
 		</tr>
 	</table>
 
-	<a id="link" style="display: none" href="">Download</a>
+	<button><a id="link" style="display: none" href="">Download</a></button>
 
 	<script>
 		change_url();
