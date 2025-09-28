@@ -489,7 +489,6 @@ async function predictImageWithModel() {
 	log("Prediction workflow finished.");
 }
 
-// --- Hilfsfunktionen ---
 async function getValidImageElement() {
 	const elem = get_element();
 	if (!elem) {
