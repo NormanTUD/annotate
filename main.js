@@ -383,10 +383,10 @@ function get_names_from_ki_anno (anno) {
 	return uniq;
 }
 
-function getUrlParam(name, defaultValue) {
+function getUrlParam(name, default_value) {
 	var params = new URLSearchParams(window.location.search);
 	var val = parseFloat(params.get(name));
-	return isNaN(val) ? defaultValue : val;
+	return isNaN(val) ? default_value : val;
 }
 
 function show_spinner(msg) {
