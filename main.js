@@ -141,15 +141,27 @@ function move_file (to) {
 }
 
 function info(title, msg) {
-	$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>");
+	if(msg) {
+		$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>");
+	} else {
+		$("#status_bar").html("<span style='color: white'>" + title + "</span>");
+	}
 }
 
 function success (title, msg) {
-	$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>");
+	if(msg) {
+		$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>");
+	} else {
+		$("#status_bar").html("<span style='color: white'>" + title + "</span>");
+	}
 }
 
 function warn(title, msg) {
-	$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>");
+	if(msg) {
+		$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>");
+	} else {
+		$("#status_bar").html("<span style='color: orange'>" + title + "</span>");
+	}
 
 	console.warn(msg);
 }
