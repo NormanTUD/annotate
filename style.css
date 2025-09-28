@@ -150,3 +150,24 @@ a {
 a:hover {
 	text-decoration: underline;
 }
+
+.main-nav {
+	display: flex;
+	gap: 15px;
+	font-family: sans-serif;
+}
+
+.main-nav a {
+	color: #ddd;
+	text-decoration: none;
+	font-weight: bold;
+	transition: color 0.2s;
+	border: 1px solid black;
+	background: #222;
+	border-radius: 10px;
+	padding: 4px;
+}
+
+.main-nav a:hover {
+	color: #4cafef;
+}

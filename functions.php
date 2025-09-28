@@ -296,12 +296,17 @@
 			}
 		}
 
-		$str .= "<br><a href='index.php'>Home</a>, ";
-		$str .= "<a target='_blank' href='stat.php'>Statistics</a>, ";
-		$str .= "<a target='_blank' href='models.php'>Models</a>, ";
-		$str .= "<a target='_blank' href='upload.php'>Upload Images</a>, ";
-		$str .= "<a target='_blank' href='overview.php'>Overview</a>, ";
-		$str .= "<a target='_blank' href='export_annotations_gui.php'>Export annotations</a>";
+
+		$str .= '
+<nav class="main-nav">
+  <a href="index.php">Home</a>
+  <a target="_blank" href="stat.php">Statistics</a>
+  <a target="_blank" href="models.php">Models</a>
+  <a target="_blank" href="upload.php">Upload Images</a>
+  <a target="_blank" href="overview.php">Overview</a>
+  <a target="_blank" href="export_annotations_gui.php">Export annotations</a>
+</nav>
+';
 
 		return $str;
 	}
