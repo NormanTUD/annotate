@@ -981,7 +981,8 @@ async function load_page() {
 
 	await make_item_anno($("#image")[0], [
 		{
-			widget: 'TAG', vocabulary: tags
+			widget: 'TAG',
+			vocabulary: tags
 		}
 	]);
 
