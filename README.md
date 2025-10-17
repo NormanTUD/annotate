@@ -18,9 +18,9 @@ It should then run at port 3431.
 
 # What it does
 
-You can upload a bunch of images and annotate them for usage with YoloV5.
+You can upload a bunch of images and annotate them for usage with YoloV11.
 
-You can export them to the YoloV5-format as well.
+You can export them to the YoloV11-format as well.
 
 It is made for large datasets and groups that voluntarily label data. It has a (yet incomplete) curation system.
 
