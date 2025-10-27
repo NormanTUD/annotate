@@ -194,8 +194,9 @@ git pull
 set -euo pipefail
 
 if ! command -v docker compose >/dev/null 2>&1 || ! command -v docker-compose >/dev/null 2>&1; then
-	sudo apt-get update -qq
-	sudo apt-get install -y docker-compose-plugin
+	sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+		-o /usr/local/bin/docker-compose
+	sudo chmod +x /usr/local/bin/docker-compose
 fi
 
 SYNTAX_ERRORS=0
