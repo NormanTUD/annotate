@@ -45,7 +45,13 @@ source ~/.annotate_test_env/bin/activate
 
 echo "====== linkchecker ======"
 
-linkchecker localhost:9912
+linkchecker http://localhost:9912
+exit_code=$?
+
+if [[ $exit_code -ne 0 ]]; then
+	echo "linkchecker failed"
+	exit 5
+fi
 
 echo "====== pip install playwright ======"
 if ! pip install playwright; then
