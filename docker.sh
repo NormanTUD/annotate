@@ -156,7 +156,7 @@ echo "services:
     networks:
       - ${INSTANCE_NAME}_network
 
-  annotate:
+  ${INSTANCE_NAME}_annotate:
     build:
       context: .
       args:
