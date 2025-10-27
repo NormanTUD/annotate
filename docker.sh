@@ -166,9 +166,7 @@ volumes:
 
 networks:
   annotate_network:
-    driver: bridge
-
-" > docker-compose.yml
+    driver: bridge" > docker-compose.yml
 
 echo "=== Current git hash before auto-pulling ==="
 git rev-parse HEAD
