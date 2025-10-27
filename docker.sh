@@ -35,7 +35,7 @@ fi
 
 # Default values
 DB_HOST=""
-INSTANCE_NAME=annotate1
+INSTANCE_NAME=annotate
 DB_USER=root
 DB_PASSWORD=""
 local_db_dir=/var/lib/mysql
