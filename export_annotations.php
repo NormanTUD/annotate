@@ -74,7 +74,13 @@
 			$str = "";
 			$str_arr = array();
 			foreach ($img as $single_anno) {
-				$str_arr[] = $category_numbers[$single_anno["category"]]." ".$single_anno["x_center"]." ".$single_anno["y_center"]." ".$single_anno["w_rel"]." ".$single_anno["h_rel"];
+				$category_number = $category_numbers[$single_anno["category"]];
+				$x_center = $single_anno["x_center"];
+				$y_center = $single_anno["y_center"];
+				$width_relative = $single_anno["w_rel"];
+				$height_relative= $single_anno["h_rel"];
+
+				$str_arr[] = "$category_number $x_center $y_center $width_relative $height_relative";
 			}
 
 			$str = join("\n", array_unique($str_arr));
