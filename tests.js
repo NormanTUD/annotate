@@ -59,4 +59,6 @@ async function run_tests() {
     assert(elapsed >= 100, "sleep waits for at least the given time");
 
     console.log(`=== TESTS DONE: ${passed} passed, ${failed} failed ===`);
+
+    return failed;
 }
