@@ -10,7 +10,6 @@ on:
 
 jobs:
   playwright:
-    needs: smoke-tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
