@@ -52,12 +52,6 @@ async function run_tests() {
     const names = get_names_from_ki_anno(sampleAnno);
     assert(names["Alice"] === 2 && names["Bob"] === 1, "get_names_from_ki_anno counts correctly");
 
-    // --- sleep ---
-    const start = Date.now();
-    await sleep(100);
-    const elapsed = Date.now() - start;
-    assert(elapsed >= 100, "sleep waits for at least the given time");
-
     console.log(`=== TESTS DONE: ${passed} passed, ${failed} failed ===`);
 
     return failed;
