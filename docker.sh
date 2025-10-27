@@ -35,6 +35,7 @@ fi
 
 # Default values
 DB_HOST=""
+INSTANCE_NAME=annotate1
 DB_USER=root
 DB_PASSWORD=""
 local_db_dir=/var/lib/mysql
@@ -46,12 +47,18 @@ help_message() {
 	echo "Options:"
 	echo "  --local-db-dir     Path to local db dir (i.e. on NFS for large images)"
 	echo "  --local-port       Local port to bind for the GUI"
+	echo "  --instance-name    Name of the instance (if you run several ones)"
 	echo "  --help             Show this help message"
 }
 
 # Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
+		--instance-name*)
+			INSTANCE_NAME="$2"
+			shift
+			;;
+
 		--local-db-dir*)
 			local_db_dir="$(realpath "$2")"
 			shift
@@ -118,7 +125,7 @@ fi
 export DB_HOST
 export LOCAL_PORT
 
-echo "DB_HOST=annotate_mariadb
+echo "DB_HOST=${INSTANCE_NAME}_mariadb
 DB_PORT=3306
 LOCAL_PORT=$LOCAL_PORT
 DB_PASSWORD=root
@@ -130,9 +137,9 @@ if [[ ! -d $local_db_dir ]]; then
 fi
 
 echo "services:
-  annotate_mariadb:
+  ${INSTANCE_NAME}_mariadb:
     image: mariadb:latest
-    container_name: annotate_mariadb
+    container_name: ${INSTANCE_NAME}_mariadb
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=root
@@ -140,22 +147,24 @@ echo "services:
       - $local_db_dir:/var/lib/mysql
       - ./my.cnf:/etc/mysql/conf.d/disable_locks.cnf:ro
     networks:
-      - annotate_network
+      - ${INSTANCE_NAME}_network
 
   annotate:
     build:
       context: .
+      args:
+        - INSTANCE_NAME=${INSTANCE_NAME}
     container_name: annotate
     restart: unless-stopped
     depends_on:
-      - annotate_mariadb
+      - ${INSTANCE_NAME}_mariadb
     environment:
-      - DB_HOST=annotate_mariadb
+      - DB_HOST=${INSTANCE_NAME}_mariadb
       - DB_PORT=3306
       - DB_USER=root
       - DB_PASSWORD=root
     networks:
-      - annotate_network
+      - ${INSTANCE_NAME}_network
     ports:
       - $LOCAL_PORT:80
     tmpfs:
@@ -165,7 +174,7 @@ volumes:
   mariadb_data:
 
 networks:
-  annotate_network:
+  ${INSTANCE_NAME}_network:
     driver: bridge" > docker-compose.yml
 
 echo "=== Current git hash before auto-pulling ==="

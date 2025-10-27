@@ -38,5 +38,8 @@ RUN rm .env
 
 COPY . $APACHE_DOCUMENT_ROOT/
 
+ARG INSTANCE_NAME
+RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost
+
 # Start Apache server
 CMD ["apache2-foreground"]
