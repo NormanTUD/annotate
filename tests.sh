@@ -13,6 +13,14 @@ else
 	echo "PHP not installed. Cannot run php tests"
 fi
 
+bash -n *.sh
+exit_code=$?
+
+if [[ $exit_code -ne 0 ]]; then
+	echo "Some bash scripts had syntax errors"
+	exit 1
+fi
+
 bash docker.sh --local-port 9912 --instance-name annotate_test
 exit_code=$?
 
