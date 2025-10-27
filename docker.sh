@@ -38,8 +38,9 @@ DB_HOST=""
 INSTANCE_NAME=annotate
 DB_USER=root
 DB_PASSWORD=""
-local_db_dir=/var/lib/mysql
 LOCAL_PORT=""
+
+custom_local_db_dir=0
 
 # Help message
 help_message() {
@@ -61,6 +62,7 @@ while [[ "$#" -gt 0 ]]; do
 
 		--local-db-dir*)
 			local_db_dir="$(realpath "$2")"
+			custom_local_db_dir=1
 			shift
 			;;
 
@@ -83,6 +85,10 @@ while [[ "$#" -gt 0 ]]; do
 
 	shift
 done
+
+if [[ $custom_local_db_dir -eq 0 ]]; then
+	local_db_dir="$HOME/${INSTANCE_NAME}_db"
+fi
 
 # Check for required parameters
 
@@ -143,6 +149,7 @@ echo "services:
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_HOST=%
     volumes:
       - $local_db_dir:/var/lib/mysql
       - ./my.cnf:/etc/mysql/conf.d/disable_locks.cnf:ro
