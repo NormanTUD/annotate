@@ -1358,8 +1358,8 @@ function create_zoom_slider() {
 	input.type = 'range';
 	input.min = -5;
 	input.max = 5;
-	input.step = 1;
-	input.value = 0;
+	input.step = 0.1;
+	input.value = 0;  // <— ensures 100 % default
 	input.id = 'zoom_slider';
 	input.style.cursor = 'pointer';
 	input.style.width = '200px';
@@ -1383,7 +1383,14 @@ function create_zoom_slider() {
 
 	// map slider steps to zoom_factor: zoom_factor = 1.1 ** slider_value
 	function slider_to_zoom(v) {
-		return Math.pow(1.1, v);
+		// map -5..5 exponentially so 0 = 1.0, ends are 0.1..5.0
+		const min_zoom = 0.1;
+		const max_zoom = 5.0;
+		if (v === 0) return 1.0;
+		const ratio = max_zoom / min_zoom;
+		// normalize to 0..1
+		const normalized = (parseFloat(v) + 5) / 10;
+		return min_zoom * Math.pow(ratio, normalized);
 	}
 
 	function update_from_slider(v) {
