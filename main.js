@@ -985,6 +985,7 @@ async function load_page() {
 		}
 	]);
 
+	create_zoom_slider();
 }
 
 async function load_dynamic_content () {
