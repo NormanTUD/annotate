@@ -1248,194 +1248,181 @@ $(document).ready(() => {
 let zoom_factor = 1.0;
 
 function update_overlay_and_image_size() {
-  const img = document.getElementById("image");
-  if (!img || !img.naturalWidth) return;
+	const img = document.getElementById("image");
+	if (!img || !img.naturalWidth) return;
 
-  // set displayed image size (this changes layout, so event coords stay correct)
-  const newWidth = Math.round(img.naturalWidth * zoom_factor);
-  img.style.width = newWidth + "px";
-  img.style.height = "auto";
+	// set displayed image size (this changes layout, so event coords stay correct)
+	const newWidth = Math.round(img.naturalWidth * zoom_factor);
+	img.style.width = newWidth + "px";
+	img.style.height = "auto";
 
-  // sync Annotorious SVG overlay if present
-  const svg = document.querySelector(".a9s-annotationlayer");
-  if (svg) {
-    const newHeight = Math.round(img.naturalHeight * zoom_factor);
-    svg.setAttribute("width", newWidth);
-    svg.setAttribute("height", newHeight);
-    svg.setAttribute("viewBox", `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
-    svg.style.width = newWidth + "px";
-    svg.style.height = newHeight + "px";
-    svg.style.transform = "none";
-    svg.style.transformOrigin = "top left";
-  }
+	// sync Annotorious SVG overlay if present
+	const svg = document.querySelector(".a9s-annotationlayer");
+	if (svg) {
+		const newHeight = Math.round(img.naturalHeight * zoom_factor);
+		svg.setAttribute("width", newWidth);
+		svg.setAttribute("height", newHeight);
+		svg.setAttribute("viewBox", `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
+		svg.style.width = newWidth + "px";
+		svg.style.height = newHeight + "px";
+		svg.style.transform = "none";
+		svg.style.transformOrigin = "top left";
+	}
 
-  // make sure annotorious editor popups are not inversely scaled:
-  document.querySelectorAll(".r6o-editor, .r6o-editor *").forEach(el => {
-    el.style.transform = "none";
-    el.style.transformOrigin = "top left";
-    el.style.zoom = ""; // reset any previous hacks; keep native size
-  });
+	// make sure annotorious editor popups are not inversely scaled:
+	document.querySelectorAll(".r6o-editor, .r6o-editor *").forEach(el => {
+		el.style.transform = "none";
+		el.style.transformOrigin = "top left";
+		el.style.zoom = ""; // reset any previous hacks; keep native size
+	});
 }
 
 function zoom_image(delta, anchor_x = null, anchor_y = null) {
-  const container = document.getElementById("image_container");
-  const img = document.getElementById("image");
-  if (!img || !img.naturalWidth) return;
+	const container = document.getElementById("image_container");
+	const img = document.getElementById("image");
+	if (!img || !img.naturalWidth) return;
 
-  // current displayed size BEFORE zoom
-  const prevRect = img.getBoundingClientRect();
-  const prevWidth = prevRect.width;
-  const prevHeight = prevRect.height;
+	// current displayed size BEFORE zoom
+	const prevRect = img.getBoundingClientRect();
+	const prevWidth = prevRect.width;
+	const prevHeight = prevRect.height;
 
-  const oldZoom = zoom_factor;
-  zoom_factor *= delta > 0 ? 1.1 : 0.9;
-  zoom_factor = Math.min(Math.max(zoom_factor, 0.25), 6);
+	const oldZoom = zoom_factor;
+	zoom_factor *= delta > 0 ? 1.1 : 0.9;
+	zoom_factor = Math.min(Math.max(zoom_factor, 0.25), 6);
 
-  // compute cursor position relative to image (in page coordinates -> convert to image local)
-  const imgRect = img.getBoundingClientRect();
-  const cx = anchor_x !== null ? (anchor_x - imgRect.left) : (imgRect.width / 2);
-  const cy = anchor_y !== null ? (anchor_y - imgRect.top) : (imgRect.height / 2);
+	// compute cursor position relative to image (in page coordinates -> convert to image local)
+	const imgRect = img.getBoundingClientRect();
+	const cx = anchor_x !== null ? (anchor_x - imgRect.left) : (imgRect.width / 2);
+	const cy = anchor_y !== null ? (anchor_y - imgRect.top) : (imgRect.height / 2);
 
-  // store previous scroll
-  const prevScrollLeft = container ? container.scrollLeft : 0;
-  const prevScrollTop  = container ? container.scrollTop  : 0;
+	// store previous scroll
+	const prevScrollLeft = container ? container.scrollLeft : 0;
+	const prevScrollTop  = container ? container.scrollTop  : 0;
 
-  // resize image + overlay (this updates layout)
-  update_overlay_and_image_size();
+	// resize image + overlay (this updates layout)
+	update_overlay_and_image_size();
 
-  // new displayed size AFTER zoom
-  const newRect = img.getBoundingClientRect();
-  const newWidth = newRect.width;
-  const newHeight = newRect.height;
+	// new displayed size AFTER zoom
+	const newRect = img.getBoundingClientRect();
+	const newWidth = newRect.width;
+	const newHeight = newRect.height;
 
-  // compute new scroll so that the point under cursor stays under cursor
-  if (container) {
-    const ratioW = (prevWidth === 0) ? 1 : newWidth / prevWidth;
-    const ratioH = (prevHeight === 0) ? 1 : newHeight / prevHeight;
+	// compute new scroll so that the point under cursor stays under cursor
+	if (container) {
+		const ratioW = (prevWidth === 0) ? 1 : newWidth / prevWidth;
+		const ratioH = (prevHeight === 0) ? 1 : newHeight / prevHeight;
 
-    const newScrollLeft = (prevScrollLeft + cx) * ratioW - cx;
-    const newScrollTop  = (prevScrollTop  + cy) * ratioH - cy;
+		const newScrollLeft = (prevScrollLeft + cx) * ratioW - cx;
+		const newScrollTop  = (prevScrollTop  + cy) * ratioH - cy;
 
-    container.scrollLeft = Math.max(0, Math.round(newScrollLeft));
-    container.scrollTop  = Math.max(0, Math.round(newScrollTop));
-  }
+		container.scrollLeft = Math.max(0, Math.round(newScrollLeft));
+		container.scrollTop  = Math.max(0, Math.round(newScrollTop));
+	}
 }
-
-$(document).on("wheel", function (e) {
-  // Alt + wheel does zoom centered at cursor
-  if (e.altKey) {
-    e.preventDefault();
-    const dir = e.originalEvent.deltaY < 0 ? 1 : -1;
-    zoom_image(dir, e.clientX, e.clientY);
-  }
-});
 
 // call after image loads (or when you set src) so overlay starts correct
 function init_image_and_overlay_on_load() {
-  const img = document.getElementById("image");
-  if (!img) return;
-  if (img.complete) update_overlay_and_image_size();
-  img.onload = () => {
-    update_overlay_and_image_size();
-    // small timeout to let Annotorious position elements
-    setTimeout(() => update_overlay_and_image_size(), 50);
-  }
+	const img = document.getElementById("image");
+	if (!img) return;
+	if (img.complete) update_overlay_and_image_size();
+	img.onload = () => {
+		update_overlay_and_image_size();
+		// small timeout to let Annotorious position elements
+		setTimeout(() => update_overlay_and_image_size(), 50);
+	}
 }
 
 // creates a slider toolbar before #image_container
 function create_zoom_slider() {
-  // avoid double insertion
-  if (document.getElementById('zoom_toolbar')) return;
+	// avoid double insertion
+	if (document.getElementById('zoom_toolbar')) return;
 
-  const container = document.getElementById('image_container');
-  if (!container) return;
+	const container = document.getElementById('image_container');
+	if (!container) return;
 
-  const toolbar = document.createElement('div');
-  toolbar.id = 'zoom_toolbar';
-  toolbar.style.display = 'flex';
-  toolbar.style.alignItems = 'center';
-  toolbar.style.gap = '8px';
-  toolbar.style.marginBottom = '6px';
-  toolbar.style.userSelect = 'none';
+	const toolbar = document.createElement('div');
+	toolbar.id = 'zoom_toolbar';
+	toolbar.style.display = 'flex';
+	toolbar.style.alignItems = 'center';
+	toolbar.style.gap = '8px';
+	toolbar.style.marginBottom = '6px';
+	toolbar.style.userSelect = 'none';
 
-  const label = document.createElement('span');
-  label.textContent = 'Zoom:';
-  label.style.fontSize = '0.9em';
-  toolbar.appendChild(label);
+	const label = document.createElement('span');
+	label.textContent = 'Zoom:';
+	label.style.fontSize = '0.9em';
+	toolbar.appendChild(label);
 
-  const input = document.createElement('input');
-  input.type = 'range';
-  input.min = -5;
-  input.max = 5;
-  input.step = 1;
-  input.value = 0;
-  input.id = 'zoom_slider';
-  input.style.cursor = 'pointer';
-  input.style.width = '200px';
-  toolbar.appendChild(input);
+	const input = document.createElement('input');
+	input.type = 'range';
+	input.min = -5;
+	input.max = 5;
+	input.step = 1;
+	input.value = 0;
+	input.id = 'zoom_slider';
+	input.style.cursor = 'pointer';
+	input.style.width = '200px';
+	toolbar.appendChild(input);
 
-  const val = document.createElement('span');
-  val.id = 'zoom_value';
-  val.textContent = '100%';
-  val.style.minWidth = '60px';
-  val.style.fontFamily = 'monospace';
-  toolbar.appendChild(val);
+	const val = document.createElement('span');
+	val.id = 'zoom_value';
+	val.textContent = '100%';
+	val.style.minWidth = '60px';
+	val.style.fontFamily = 'monospace';
+	toolbar.appendChild(val);
 
-  const resetBtn = document.createElement('button');
-  resetBtn.type = 'button';
-  resetBtn.textContent = 'Reset';
-  resetBtn.style.marginLeft = '6px';
-  toolbar.appendChild(resetBtn);
+	const resetBtn = document.createElement('button');
+	resetBtn.type = 'button';
+	resetBtn.textContent = 'Reset';
+	resetBtn.style.marginLeft = '6px';
+	toolbar.appendChild(resetBtn);
 
-  // insert toolbar before the image container
-  container.parentNode.insertBefore(toolbar, container);
+	// insert toolbar before the image container
+	container.parentNode.insertBefore(toolbar, container);
 
-  // map slider steps to zoom_factor: zoom_factor = 1.1 ** slider_value
-  function slider_to_zoom(v) {
-    return Math.pow(1.1, v);
-  }
+	// map slider steps to zoom_factor: zoom_factor = 1.1 ** slider_value
+	function slider_to_zoom(v) {
+		return Math.pow(1.1, v);
+	}
 
-  function update_from_slider(v) {
-    zoom_factor = slider_to_zoom(parseInt(v, 10));
-    update_overlay_and_image_size();
-    const pct = Math.round(zoom_factor * 100);
-    document.getElementById('zoom_value').textContent = pct + '%';
-  }
+	function update_from_slider(v) {
+		zoom_factor = slider_to_zoom(parseInt(v, 10));
+		update_overlay_and_image_size();
+		const pct = Math.round(zoom_factor * 100);
+		document.getElementById('zoom_value').textContent = pct + '%';
+	}
 
-  // live update while dragging
-  input.addEventListener('input', (ev) => {
-    update_from_slider(ev.target.value);
-  });
+	// live update while dragging
+	input.addEventListener('input', (ev) => {
+		update_from_slider(ev.target.value);
+	});
 
-  // on release (desktop browsers fire 'change' on release), call the init re-sync
-  input.addEventListener('change', (ev) => {
-    update_from_slider(ev.target.value);
-    // give layout a tiny moment then re-init annotorious sync
-    setTimeout(() => init_image_and_overlay_on_load(), 50);
-  });
+	// on release (desktop browsers fire 'change' on release), call the init re-sync
+	input.addEventListener('change', (ev) => {
+		update_from_slider(ev.target.value);
+		// give layout a tiny moment then re-init annotorious sync
+		setTimeout(() => init_image_and_overlay_on_load(), 50);
+	});
 
-  // also handle pointer/touch end cases: if user holds and releases outside the slider
-  let pointerDown = false;
-  input.addEventListener('pointerdown', () => { pointerDown = true; });
-  window.addEventListener('pointerup', () => {
-    if (pointerDown) {
-      pointerDown = false;
-      // call re-init once
-      setTimeout(() => init_image_and_overlay_on_load(), 50);
-    }
-  });
+	// also handle pointer/touch end cases: if user holds and releases outside the slider
+	let pointerDown = false;
+	input.addEventListener('pointerdown', () => { pointerDown = true; });
+	window.addEventListener('pointerup', () => {
+		if (pointerDown) {
+			pointerDown = false;
+			// call re-init once
+			setTimeout(() => init_image_and_overlay_on_load(), 50);
+		}
+	});
 
-  // reset button behaviour
-  resetBtn.addEventListener('click', () => {
-    input.value = 0;
-    update_from_slider(0);
-    setTimeout(() => init_image_and_overlay_on_load(), 50);
-  });
+	// reset button behaviour
+	resetBtn.addEventListener('click', () => {
+		input.value = 0;
+		update_from_slider(0);
+		setTimeout(() => init_image_and_overlay_on_load(), 50);
+	});
 
-  // initialize displayed value
-  update_from_slider(input.value);
+	// initialize displayed value
+	update_from_slider(input.value);
 }
-
-// call it once when document ready or when you create the image_container
-// safe to call multiple times — it guards against duplicate toolbar creation
-create_zoom_slider();
