@@ -23,7 +23,12 @@ if command -v yolo &> /dev/null; then
     echo '======'
     echo "yolo export model=\"$model_file\" format=tfjs"
     yolo export model="$model_file" format=tfjs
-    cp -r "${model_file%.pt}_web_model" "$output_dir_host/"
+    web_model_path="tests/${model_file%.pt}_web_model"
+    if [[ -d $web_model_path ]]; then
+	    cp -r "$web_model_path" "$output_dir_host/"
+    else
+	    echo "Cannot find files under >$web_model_path<"
+    fi
 else
     echo "Local YOLO not found, using Docker..."
     tmp_dir=$(mktemp -d /tmp/convert_tfjs_XXXX)
