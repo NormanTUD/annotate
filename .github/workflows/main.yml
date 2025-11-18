@@ -30,8 +30,24 @@ jobs:
           export DISPLAY=:99
           bash tests.sh
 
+  tfjs:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run TFJS Conversion Test
+        run: bash test_convert_to_tfjs.sh
+
+  tag:
+    needs: [playwright, tfjs]
+    runs-on: ubuntu-22.04
+    if: ${{ success() }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Create a new version
-        if: ${{ success() }}
         run: |
           echo "Creating new version"
           git tag ${{ github.run_number }} || true
