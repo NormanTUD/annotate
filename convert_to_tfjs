@@ -21,6 +21,7 @@ if command -v yolo &> /dev/null; then
     echo '======'
     echo 'Exporting YOLO model to TFJS format...'
     echo '======'
+    echo "yolo export model=\"$model_file\" format=tfjs"
     yolo export model="$model_file" format=tfjs
     cp -r "${model_file%.pt}_web_model" "$output_dir_host/"
 else
