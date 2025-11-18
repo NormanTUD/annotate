@@ -4,21 +4,46 @@
 model_file=$1
 
 if [[ -z "$model_file" ]]; then
-    echo "Usage: $0 <model_file>"
-    exit 1
+	echo "Usage: $0 <model_file>"
+	exit 1
 fi
 
-# Prüfen, ob Docker installiert ist
-if ! command -v docker &> /dev/null; then
-    echo "Docker is not installed. Aborting."
-    exit 1
-fi
+# Funktion zum Prüfen und ggf. Installieren von Docker
+function ensure_docker {
+	if ! command -v docker &> /dev/null; then
+		echo "Docker not found. Attempting to install..."
+
+		# Prüfen ob apt vorhanden ist
+		if ! command -v apt-get &> /dev/null; then
+			echo "apt-get not found. Cannot install Docker automatically."
+			exit 1
+		fi
+
+		# Installieren von Abhängigkeiten
+		sudo apt-get update || { echo "apt-get update failed"; exit 1; }
+		sudo apt-get install -y curl gnupg lsb-release || { echo "Failed to install prerequisites"; exit 1; }
+
+		# Docker installieren über offiziellen Installer
+		curl -fsSL https://get.docker.com | sudo bash || { echo "Docker installation failed"; exit 1; }
+
+		# Prüfen ob Installation erfolgreich war
+		if ! command -v docker &> /dev/null; then
+			echo "Docker installation failed or not in PATH."
+			exit 1
+		fi
+
+		echo "Docker successfully installed."
+	fi
+}
+
+# Docker sicherstellen
+ensure_docker
 
 # Absoluter Pfad des Modells
 model_file=$(realpath "$model_file")
 if [[ ! -f "$model_file" ]]; then
-    echo "Model file $model_file does not exist."
-    exit 1
+	echo "Model file $model_file does not exist."
+	exit 1
 fi
 
 # Temporäres Verzeichnis
@@ -54,9 +79,9 @@ docker build -t "$image_tag" -f "$dockerfile_path" "$tmp_dir" || { echo "Docker 
 
 # Container ausführen und YOLO exportieren
 docker run --rm -v "$output_dir":/app/output -v "$(dirname "$model_file")":/app/models "$image_tag" /bin/bash -c "
-    set -e
-    cd /app
-    yolo export model=/app/models/$(basename "$model_file") format=tfjs output=/app/output
+set -e
+cd /app
+yolo export model=/app/models/$(basename "$model_file") format=tfjs output=/app/output
 " || { echo "YOLO export failed"; exit 1; }
 
 # Ergebnis ausgeben
