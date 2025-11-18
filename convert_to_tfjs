@@ -63,6 +63,10 @@ RUN python -m pip install --no-cache-dir --progress-bar=off jax[cpu]==0.4.13
 RUN python -m pip install --no-cache-dir --progress-bar=off tensorflowjs==4.7.0
 RUN python -m pip install --no-cache-dir --progress-bar=off ultralytics==8
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 EOF
 
