@@ -96,8 +96,11 @@ docker build -t "$image_tag" -f "$dockerfile_path" "$tmp_dir" || { echo "Docker 
 docker run --rm -v "$output_dir":/app/output -v "$(dirname "$model_file")":/app/models "$image_tag" /bin/bash -c "
 set -e
 cd /app
-ls models
-yolo export model=models/$(basename "$model_file") format=tfjs
+model_file_path="$(pwd)/models/$(basename "$model_file")"
+echo "======"
+echo "yolo export model=$model_file_path format=tfjs"
+echo "======"
+yolo export model=$model_file_path format=tfjs
 " || { echo "YOLO export failed"; exit 1; }
 
 # Ergebnis ausgeben
