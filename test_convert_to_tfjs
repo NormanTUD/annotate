@@ -5,6 +5,10 @@ if [[ ! -e tests/last.pt ]]; then
 	exit 1
 fi
 
+if [[ -d /tmp/UFO_TEST/last_web_model ]]; then
+	rm -rf /tmp/UFO_TEST/last_web_model
+fi
+
 bash convert_to_tfjs tests/last.pt /tmp/UFO_TEST
 
 if [[ $exit_code != 0 ]]; then
