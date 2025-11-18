@@ -24,8 +24,16 @@
 	$GLOBALS["get_current_tags_cache"] = array();
 	$GLOBALS["queries"] = array();
 	$GLOBALS["db_name"] = "annotate";
-	$GLOBALS["db_port"] = 3306;
 	$GLOBALS['db_host'] = 'localhost';
+
+	if (file_exists("/etc/dbhost")) {
+		$line = trim(explode("\n", file_get_contents("/etc/dbhost"), 2)[0]);
+		if ($line !== "") {
+			$GLOBALS["db_host"] = $line;
+		}
+	}
+
+	$GLOBALS["db_port"] = 3306;
 	$GLOBALS['db_username'] = "root";
 
 	if(file_exists("/etc/dbuser")) {
