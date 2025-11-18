@@ -57,5 +57,21 @@ RUN usermod -aG docker www-data
 ARG INSTANCE_NAME
 RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential curl libgl1 libglib2.0-0 git && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install --no-cache-dir --progress-bar=off tensorflowjs==4.7.0
+RUN python -m pip install --no-cache-dir --progress-bar=off ultralytics
+RUN python -m pip install --no-cache-dir 'sng4onnx>=1.0.1' 'onnx_graphsurgeon>=0.3.26' 'ai-edge-litert>=1.2.0' 'onnx>=1.12.0,<=1.19.1' 'onnx2tf>=1.26.3' 'onnxslim>=0.1.71' 'onnxruntime'
+RUN python -m pip install --upgrade --progress-bar=off jax
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends vim && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/jax_conversion.py
+
 # Start Apache
 CMD ["apache2-foreground"]
