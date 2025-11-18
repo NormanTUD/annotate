@@ -91,7 +91,6 @@ docker run --rm \
       echo '======'
       echo \"-> -> yolo export model=/app/models/\$model_filename format=tfjs\"
       yolo export model=/app/models/\$model_filename format=tfjs
-      # nach dem Export das Ergebnis nach /app/output kopieren
       cp -r \"/app/models/\${model_filename%.pt}_web_model\" /app/output/
   else
       echo 'Model file /app/models/\$model_filename not found'
