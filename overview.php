@@ -36,9 +36,9 @@
 			if ($actions) {
 				echo "<td>";
 				foreach ($actions as $action) {
-					echo "<form method='post' action='" . h($action['target']) . "' data-ajax='true' data-confirm='" . h($action['confirm']) . "' style='display:inline'>
+					echo "<form class='ajax-delete' method='post' action='" . h($action['target']) . "' data-confirm='" . h($action['confirm']) . "' style='display:inline'>
 						<input type='hidden' name='id' value='" . h($row['id']) . "'>
-						<input type='submit' class='btn' value='" . h($action['label']) . "'>
+						<button type='submit' class='btn'>" . h($action['label']) . "</button>
 						</form> ";
 				}
 				echo "</td>";
@@ -118,37 +118,99 @@
 
 	include_once("footer.php");
 ?>
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <p id="confirmMessage"></p>
+    <button id="confirmYes">Yes</button>
+    <button id="confirmNo">No</button>
+  </div>
+</div>
+
+<!-- Info Modal -->
+<div id="infoModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <p id="infoMessage"></p>
+    <button id="infoOk">OK</button>
+  </div>
+</div>
+
+<style>
+.modal {
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.5);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999;
+}
+.modal-content {
+  background: black;
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+.modal-content button {
+  margin: 5px;
+  padding: 5px 15px;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const deleteForms = document.querySelectorAll('form[data-ajax="true"]');
+    const deleteForms = document.querySelectorAll('form.ajax-delete');
+
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmYes = document.getElementById('confirmYes');
+    const confirmNo = document.getElementById('confirmNo');
+
+    const infoModal = document.getElementById('infoModal');
+    const infoMessage = document.getElementById('infoMessage');
+    const infoOk = document.getElementById('infoOk');
+
+    let currentForm = null;
 
     deleteForms.forEach(form => {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        form.addEventListener('submit', (e) => {
+            e.preventDefault(); // **Abfangen!**
+            currentForm = form;
 
-            if (!confirm(form.dataset.confirm)) return;
-
-            const formData = new FormData(form);
-
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    alert(result.message);
-                    window.location.reload();
-                } else {
-                    // Fehler ausgeben
-                    alert("Error: " + result.message);
-                }
-            } catch (err) {
-                console.error(err);
-                alert("AJAX request failed.");
-            }
+            confirmMessage.textContent = form.dataset.confirm;
+            confirmModal.style.display = 'flex';
         });
+    });
+
+    confirmYes.addEventListener('click', async () => {
+        if (!currentForm) return;
+        confirmModal.style.display = 'none';
+
+        const formData = new FormData(currentForm);
+
+        try {
+            const response = await fetch(currentForm.action, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            infoMessage.textContent = result.message;
+            infoModal.style.display = 'flex';
+
+            infoOk.onclick = () => {
+                infoModal.style.display = 'none';
+                if(result.success) window.location.reload();
+            };
+        } catch (err) {
+            console.error(err);
+            infoMessage.textContent = "AJAX request failed.";
+            infoModal.style.display = 'flex';
+            infoOk.onclick = () => infoModal.style.display = 'none';
+        }
+    });
+
+    confirmNo.addEventListener('click', () => {
+        confirmModal.style.display = 'none';
     });
 });
 </script>
