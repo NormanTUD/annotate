@@ -11,7 +11,7 @@ fi
 
 # Prüft, ob der aktuelle User Mitglied der docker-Gruppe ist
 if id -nG "$CURRENT_USER" | grep -qw docker; then
-	#echo "Check erfolgreich: $CURRENT_USER ist Mitglied der docker-Gruppe."
+	true
 else
 	echo "Fehler: $CURRENT_USER ist kein Mitglied der docker-Gruppe."
 	echo "Füge den User hinzu mit folgendem Befehl:"
