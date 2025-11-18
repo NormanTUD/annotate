@@ -1,0 +1,15 @@
+#!/bin/bash
+
+bash convert_to_tfjs tests/last.pt /tmp/UFO_TEST
+
+if [[ $exit_code != 0 ]]; then
+	echo "bash convert_to_tfjs tests/last.pt /tmp/UFO_TEST failed with: $exit_code"
+	exit $exit_code
+fi
+
+if [[ ! -d /tmp/UFO_TEST/last_web_model ]]; then
+	echo "/tmp/UFO_TEST/last_web_model not found"
+	exit 1
+fi
+
+exit 0
