@@ -1,8 +1,8 @@
 # annotate
-A simple image annotation tool in PHP/JS
+
+A simple No-Code image annotation tool that allows to train AIs locally and import created models to use them for further data annotation and model training.
 
 ![Screenshot](screens/screen1.png "No AI")
-![Screenshot](screens/screen2.png "AI")
 
 # Run
 
@@ -26,6 +26,4 @@ It is made for large datasets and groups that voluntarily label data. It has a (
 
 It also allows you to upload TFJS-models and use the models in the browser to annotate further data.
 
-# Database
-
-The database is a permanent storage, so you can recompile or restart the container without losing imported images.
+Imports the trained model, converts it to TensorFlow.js and assists you in further data labelling tasks.
