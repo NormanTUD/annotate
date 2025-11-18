@@ -198,5 +198,5 @@ fi
 $CMD -p "${INSTANCE_NAME}" down --remove-orphans
 
 # Build and start fresh
-$CMD -p "${INSTANCE_NAME}" build --no-cache
+$CMD -p "${INSTANCE_NAME}" build
 $CMD -p "${INSTANCE_NAME}" up -d
