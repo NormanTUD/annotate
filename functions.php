@@ -889,7 +889,7 @@
 		);
 	}
 
-	function convertToTfjs(string $modelPath): string {
+	function convert_to_tfjs(string $modelPath): string {
 		$model_uuid = generate_uuid_v4();
 
 		$base_path = "/tmp/$model_uuid";
@@ -1146,7 +1146,7 @@
 
 			// Loop through the files array
 			foreach ($files_array as $path) {
-				$path = convertToTfjs($path));
+				$path = convert_to_tfjs($path));
 
 				$file = $path;
 				$file = preg_replace("/.*\//", "", $file);
