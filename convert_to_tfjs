@@ -52,10 +52,10 @@ dockerfile_path="$tmp_dir/Dockerfile"
 
 # Dockerfile schreiben
 cat > "$dockerfile_path" <<EOF
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential curl libgl1 libglib2.0-0 && \
+    apt-get install -y --no-install-recommends build-essential curl libgl1 libglib2.0-0 git && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install --upgrade pip
@@ -65,10 +65,6 @@ RUN python -m pip install --no-cache-dir --progress-bar=off ultralytics==8
 RUN python -m pip install --upgrade ultralytics
 RUN python -m pip install 'sng4onnx>=1.0.1' 'onnx_graphsurgeon>=0.3.26' 'ai-edge-litert>=1.2.0' 'onnx>=1.12.0,<=1.19.1' 'onnx2tf>=1.26.3' 'onnxslim>=0.1.71' 'onnxruntime'
 RUN python -m pip install --upgrade --progress-bar=off jax
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
-    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 EOF
