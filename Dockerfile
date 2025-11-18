@@ -58,7 +58,7 @@ ARG INSTANCE_NAME
 RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential curl libgl1 libglib2.0-0 git && \
+    apt-get install -y --no-install-recommends build-essential curl libgl1 libglib2.0-0 git python3 python3-pip python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install --upgrade pip
