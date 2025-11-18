@@ -14,6 +14,13 @@ fi
 
 bash check_docker_group_current_user
 
+exit_code=$?
+
+if [[ $exit_code -ne 0 ]]; then
+	echo "check_docker_group_current_user failed"
+	exit $?
+fi
+
 function ensure_docker {
     if ! command -v docker &> /dev/null; then
         echo "Docker not found. Attempting to install..."
