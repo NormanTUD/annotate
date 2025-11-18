@@ -161,7 +161,6 @@ function warn(title, msg) {
 		$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>");
 	} else {
 		$("#status_bar").html("<span style='color: orange'>" + title + "</span>");
-		console.warn(msg);
 	}
 }
 
@@ -501,8 +500,6 @@ async function getValidImageElement() {
 
 async function isModelReady() {
 	if (!await checkModelAvailable()) {
-		warn("model not available");
-		log("Model not available, aborting.");
 		return false;
 	}
 	log("Model is available.");
