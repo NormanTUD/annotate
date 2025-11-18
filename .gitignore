@@ -24,3 +24,7 @@ gartenki
 docker-compose.yml
 db
 db_old
+tests/last.onnx
+tests/last.pb
+tests/last_saved_model/
+tests/last_web_model/
