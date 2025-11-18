@@ -3,7 +3,11 @@
 	include_once("functions.php");
 
 	function h($str) {
-		return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+		if($str) {
+			return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+		}
+
+		return $str;
 	}
 
 	function fetchAll($query) {
