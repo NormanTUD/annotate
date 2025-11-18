@@ -157,6 +157,9 @@ echo "services:
       - $LOCAL_PORT:80
     tmpfs:
       - /tmp:rw
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
 
 volumes:
   mariadb_data:
