@@ -957,7 +957,7 @@
 			throw new RuntimeException("Fehler: Modelldatei '$modelFile' existiert nicht.");
 		}
 
-		return $modelFile;
+		return $final_path;
 	}
 
 
@@ -1146,8 +1146,8 @@
 
 			// Loop through the files array
 			foreach ($files_array as $path) {
-				dier(convertToTfjs($path));
-				// Generate a unique filename to avoid conflicts
+				$path = convertToTfjs($path));
+
 				$file = $path;
 				$file = preg_replace("/.*\//", "", $file);
 				$file_contents = file_get_contents($path);
