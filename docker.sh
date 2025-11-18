@@ -165,11 +165,6 @@ networks:
   ${INSTANCE_NAME}_network:
     driver: bridge" > docker-compose.yml
 
-echo "=== Current git hash before auto-pulling ==="
-git rev-parse HEAD
-echo "=== Current git hash before auto-pulling ==="
-git pull
-
 #!/usr/bin/env bash
 set -euo pipefail
 
