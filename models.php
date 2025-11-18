@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Funktion zum Anhängen von Text und automatischem Scrollen
     function appendOutput(text) {
-        container.textContent += text;
+        container.innerHTML  += text;
         container.scrollTop = container.scrollHeight;
     }
 
