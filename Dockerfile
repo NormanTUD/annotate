@@ -51,6 +51,9 @@ RUN rm .env
 # Copy PHP files
 COPY . $APACHE_DOCUMENT_ROOT/
 
+RUN groupadd -f docker
+RUN usermod -aG docker www-data
+
 ARG INSTANCE_NAME
 RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost
 
