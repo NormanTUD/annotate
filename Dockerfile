@@ -13,7 +13,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	build-essential curl libgl1 libglib2.0-0 git python3 python3-pip python3-dev \
 	python3 python3-pip zip libjpeg-dev libpng-dev libfreetype6-dev \
 	mariadb-client sudo curl gnupg lsb-release && \
-	rm -rf /var/lib/apt/lists/* &&
+	rm -rf /var/lib/apt/lists/* && \
 	apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CLI
