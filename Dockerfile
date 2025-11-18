@@ -9,10 +9,11 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html
 
 # Install dependencies including sudo and Docker prerequisites
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
-    apt-get install -y apt-utils libssl-dev iproute2 iputils-ping \
-    python3 python3-pip zip libjpeg-dev libpng-dev libfreetype6-dev \
-    mariadb-client sudo curl gnupg lsb-release && \
-    rm -rf /var/lib/apt/lists/*
+	apt-get install -y apt-utils libssl-dev iproute2 iputils-ping \
+	build-essential curl libgl1 libglib2.0-0 git python3 python3-pip python3-dev \
+	python3 python3-pip zip libjpeg-dev libpng-dev libfreetype6-dev \
+	mariadb-client sudo curl gnupg lsb-release && \
+	rm -rf /var/lib/apt/lists/*
 
 # Install Docker CLI
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
@@ -56,10 +57,6 @@ RUN usermod -aG docker www-data
 
 ARG INSTANCE_NAME
 RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential curl libgl1 libglib2.0-0 git python3 python3-pip python3-dev && \
-    rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install --upgrade --break-system-packages pip
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages tensorflowjs ultralytics jax
