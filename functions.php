@@ -861,13 +861,13 @@
 		}
 
 		try {
-			$is_in_image_data_table = is_null(get_image_data_id($filename)) ? 1 : 0;
+			$existing_id = get_image_data_id($filename);
+			$existing_hash = get_perception_hash_from_db($filename);
+			$new_hash = get_perception_hash($file_tmp);
 
-			$existing_perception_hash = get_perception_hash_from_db($filename);
-			$new_perception_hash = get_perception_hash($file_tmp);
-
-			if ($existing_perception_hash === $new_perception_hash && !$is_in_image_data_table) {
-				return get_image_id($filename);
+			// Prüfen, ob schon ein identisches Bild existiert
+			if (!is_null($existing_id) && $existing_hash === $new_hash) {
+				return $existing_id; // "hat geklappt", Bild schon vorhanden
 			}
 
 			$db_host = $GLOBALS["db_host"] ?? null;
@@ -883,32 +883,56 @@
 			$pdo = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
 			$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-			$unique_filename = generate_unique_filename($pdo, $filename);
-			if (!$unique_filename) {
-				error_log("Failed to generate unique filename for: $filename");
-				dier("Error: Could not generate unique filename.");
-			}
-
+			$unique_filename = $filename;
 			$file_contents = file_get_contents($file_tmp);
 			if ($file_contents === false) {
 				error_log("Failed to read contents of temporary file: $file_tmp");
 				dier("Error: Could not read image data.");
 			}
 
-			$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content)");
-			$stmt->bindParam(':filename', $filename);
-			$stmt->bindParam(':image_content', $file_contents, PDO::PARAM_LOB);
-			$stmt->execute();
+			$counter = 1;
+			while (true) {
+				try {
+					$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content)");
+					$stmt->bindParam(':filename', $unique_filename);
+					$stmt->bindParam(':image_content', $file_contents, PDO::PARAM_LOB);
+					$stmt->execute();
+					break; // Einfügen erfolgreich
+				} catch (PDOException $e) {
+					// Duplicate Key Error
+					if ($e->getCode() == 23000) {
+						// Prüfen, ob Daten identisch sind
+						$check_stmt = $pdo->prepare("SELECT image_content FROM image_data WHERE filename = :filename LIMIT 1");
+						$check_stmt->bindParam(':filename', $unique_filename);
+						$check_stmt->execute();
+						$existing_contents = $check_stmt->fetchColumn();
+
+						if ($existing_contents === $file_contents) {
+							// Bild schon vorhanden, ID zurückgeben
+							return get_image_id($unique_filename);
+						}
+
+						// Sonst neuen Dateinamen generieren
+						$path_info = pathinfo($filename);
+						$unique_filename = $path_info['filename'] . "_$counter." . $path_info['extension'];
+						$counter++;
+						continue;
+					} else {
+						throw $e;
+					}
+				}
+			}
 
 			$pdo = null;
 
-			$image_id = get_or_create_image_id($file_tmp, $filename);
+			$image_id = get_or_create_image_id($file_tmp, $unique_filename);
 			if (!$image_id) {
-				error_log("get_or_create_image_id() returned null for: $filename");
+				error_log("get_or_create_image_id() returned null for: $unique_filename");
 				dier("Error: Could not create or retrieve image ID.");
 			}
 
 			return $image_id;
+
 		} catch (PDOException $e) {
 			dier("Database error: Failed to insert image: " . $e->getMessage());
 		} catch (Throwable $e) {
