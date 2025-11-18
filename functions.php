@@ -97,7 +97,10 @@
 
 				$error_msg = $e->getMessage();
 
+				$stack = $e->getTraceAsString();
+
 				print("Error:<br><pre>".$error_msg."</pre>");
+				print("Stack:<br><pre>".$stack."</pre>");
 
 				if(preg_match("/php_network_getaddresses: getaddrinfo for annotate_mariadb failed: Name or service not known/", $error_msg)) {
 					print("Have you stopped the docker process for <tt>annotate_mariadb</tt>? Try <pre>docker start annotate_mariadb</pre>.<br>");
