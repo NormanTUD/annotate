@@ -844,6 +844,59 @@
 		}
 	}
 
+	function convertToTfjs(string $modelPath): string {
+		$command = "bash convert_to_tfjs " . escapeshellarg($modelPath);
+
+		echo "<pre>";
+		ob_implicit_flush(true);
+		while (ob_get_level() > 0) ob_end_flush(); // alle Buffers beenden
+
+		$descriptorspec = [
+			1 => ["pipe", "w"], // stdout
+			2 => ["pipe", "w"]  // stderr
+		];
+
+		$process = proc_open($command, $descriptorspec, $pipes);
+
+		if (!is_resource($process)) {
+			throw new RuntimeException("Fehler: Konnte den Prozess nicht starten.");
+		}
+
+		$webModelDir = null;
+
+		// Live stdout ausgeben und WEB_MODEL parsen
+		while ($line = fgets($pipes[1])) {
+			echo htmlspecialchars($line);
+			flush();
+
+			if (preg_match('/WEB_MODEL:\s*(.+)/', $line, $matches)) {
+				$webModelDir = trim($matches[1]);
+			}
+		}
+
+		// stderr ausgeben
+		while ($err = fgets($pipes[2])) {
+			echo "ERROR: " . htmlspecialchars($err);
+			flush();
+		}
+
+		$returnValue = proc_close($process);
+		if ($returnValue !== 0) {
+			throw new RuntimeException("Fehler: Das Skript wurde mit Code $returnValue beendet.");
+		}
+
+		if (!$webModelDir) {
+			throw new RuntimeException("Fehler: WEB_MODEL Pfad konnte nicht extrahiert werden.");
+		}
+
+		$modelFile = $webModelDir . "/model.json";
+		if (!file_exists($modelFile)) {
+			throw new RuntimeException("Fehler: Modelldatei '$modelFile' existiert nicht.");
+		}
+
+		return $modelFile;
+	}
+
 	function insert_image_into_db($file_tmp, $filename) {
 		if (!file_exists($file_tmp)) {
 			error_log("Temporary file does not exist: $file_tmp");
@@ -1029,6 +1082,7 @@
 
 			// Loop through the files array
 			foreach ($files_array as $path) {
+				dier(convertToTfjs($path));
 				// Generate a unique filename to avoid conflicts
 				$file = $path;
 				$file = preg_replace("/.*\//", "", $file);

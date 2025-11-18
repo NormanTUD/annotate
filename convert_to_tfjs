@@ -100,5 +100,5 @@ yolo export model=models/$(basename "$model_file") format=tfjs
 " || { echo "YOLO export failed"; exit 1; }
 
 # Ergebnis ausgeben
-echo "TFJS model saved at: $output_dir"
+echo "WEB_MODEL: $output_dir"
 exit 0
