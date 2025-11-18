@@ -37,7 +37,7 @@ if(count($available_models)) {
 
 <p>Select a local .pt file and provide a model name. The server will convert it to TFJS automatically.</p>
 
-<form enctype="multipart/form-data" method="POST" action="upload_tfjs_model.php">
+<form enctype="multipart/form-data" method="POST" action="upload_model.php">
     <input type="file" name="pt_model_file" accept=".pt" required>
     <input type="text" name="model_name" placeholder="Model Name" required>
     <input type="submit" value="Convert and Upload Model">
