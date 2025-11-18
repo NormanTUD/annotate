@@ -1,40 +1,33 @@
 #!/bin/bash
 
-# Name des YOLO-Modells als Parameter
+# Name des YOLO-Modells und Ausgabepfad als Parameter
 model_file=$1
+output_dir_host=$2
+
+# Prüfen ob beide Parameter angegeben wurden
+if [[ -z "$model_file" || -z "$output_dir_host" ]]; then
+    echo "Usage: $0 <model_file> <output_dir>"
+    exit 1
+fi
 
 bash check_docker_group_current_user
 
-if [[ -z "$model_file" ]]; then
-	echo "Usage: $0 <model_file>"
-	exit 1
-fi
-
 function ensure_docker {
-	if ! command -v docker &> /dev/null; then
-		echo "Docker not found. Attempting to install..."
-
-		# Prüfen ob apt vorhanden ist
-		if ! command -v apt-get &> /dev/null; then
-			echo "apt-get not found. Cannot install Docker automatically."
-			exit 1
-		fi
-
-		# Installieren von Abhängigkeiten
-		sudo apt-get update || { echo "apt-get update failed"; exit 1; }
-		sudo apt-get install -y curl gnupg lsb-release || { echo "Failed to install prerequisites"; exit 1; }
-
-		# Docker installieren über offiziellen Installer
-		curl -fsSL https://get.docker.com | sudo bash || { echo "Docker installation failed"; exit 1; }
-
-		# Prüfen ob Installation erfolgreich war
-		if ! command -v docker &> /dev/null; then
-			echo "Docker installation failed or not in PATH."
-			exit 1
-		fi
-
-		echo "Docker successfully installed."
-	fi
+    if ! command -v docker &> /dev/null; then
+        echo "Docker not found. Attempting to install..."
+        if ! command -v apt-get &> /dev/null; then
+            echo "apt-get not found. Cannot install Docker automatically."
+            exit 1
+        fi
+        sudo apt-get update || { echo "apt-get update failed"; exit 1; }
+        sudo apt-get install -y curl gnupg lsb-release || { echo "Failed to install prerequisites"; exit 1; }
+        curl -fsSL https://get.docker.com | sudo bash || { echo "Docker installation failed"; exit 1; }
+        if ! command -v docker &> /dev/null; then
+            echo "Docker installation failed or not in PATH."
+            exit 1
+        fi
+        echo "Docker successfully installed."
+    fi
 }
 
 # Docker sicherstellen
@@ -43,48 +36,29 @@ ensure_docker
 # Absoluter Pfad des Modells
 model_file=$(realpath "$model_file")
 if [[ ! -f "$model_file" ]]; then
-	echo "Model file $model_file does not exist."
-	exit 1
+    echo "Model file $model_file does not exist."
+    exit 1
 fi
 
-# Temporäres Verzeichnis
+# Absoluter Pfad des Ausgabeverzeichnisses
+output_dir_host=$(realpath "$output_dir_host")
+mkdir -p "$output_dir_host" || { echo "Cannot create output directory $output_dir_host"; exit 1; }
+
+# Temporäres Verzeichnis für Dockerfile
 tmp_dir=$(mktemp -d /tmp/convert_tfjs_XXXX)
 dockerfile_path="$tmp_dir/Dockerfile"
-output_dir="$tmp_dir/output"
 
-mkdir -p "$output_dir"
-
-# Temporäre Dockerfile schreiben
+# Dockerfile schreiben
 cat > "$dockerfile_path" <<EOF
 FROM python:3.10-slim
 
-# Basis-Tools
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        curl \
-        libgl1 \
-        libglib2.0-0 && \
+    apt-get install -y --no-install-recommends build-essential curl libgl1 libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
-# Pip aktualisieren
 RUN python -m pip install --upgrade pip
+RUN python -m pip install ultralytics==8 jax[cpu]==0.4.13 tensorflow-cpu==2.12.0 tensorflowjs==4.7.0
 
-RUN python -m pip install \
-    ultralytics==8
-
-# CPU-only Versionen installieren
-
-RUN python -m pip install \
-    jax[cpu]==0.4.13
-
-RUN python -m pip install \
-    tensorflow-cpu==2.12.0
-
-RUN python -m pip install \
-    tensorflowjs==4.7.0
-
-# Arbeitsverzeichnis
 WORKDIR /app
 EOF
 
@@ -93,21 +67,23 @@ image_tag="yolo_tfjs_temp:latest"
 docker build -t "$image_tag" -f "$dockerfile_path" "$tmp_dir" || { echo "Docker build failed"; exit 1; }
 
 # Container ausführen und YOLO exportieren
-docker run --rm -v "$output_dir":/app/output -v "$(dirname "$model_file")":/app/models "$image_tag" /bin/bash -c "
+docker run --rm \
+    -v "$output_dir_host":/app/output \
+    -v "$(dirname "$model_file")":/app/models \
+    "$image_tag" /bin/bash -c "
 set -e
 cd /app
-ls
-model_file_path=\"$model_file\"
-if [[ -e \$model_file_path ]]; then
-	echo \"======\"
-	echo \"yolo export model=\$model_file_path format=tfjs\"
-	echo \"======\"
-	yolo export model=\$model_file_path format=tfjs
+model_filename=\"$(basename "$model_file")\"
+if [[ -f /app/models/\$model_filename ]]; then
+    echo '======'
+    echo 'Exporting YOLO model to TFJS format...'
+    echo '======'
+    yolo export model=/app/models/\$model_filename format=tfjs output=/app/output
 else
-	echo \"\$model_file_path not found\"
+    echo 'Model file /app/models/\$model_filename not found'
+    exit 1
 fi
-" || { echo "YOLO export failed"; exit 1; }
+"
 
-# Ergebnis ausgeben
-echo "WEB_MODEL: $output_dir"
+echo "WEB_MODEL: $output_dir_host"
 exit 0

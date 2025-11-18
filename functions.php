@@ -845,7 +845,7 @@
 	}
 
 	function convertToTfjs(string $modelPath): string {
-		$command = "bash convert_to_tfjs " . escapeshellarg($modelPath);
+		$command = "bash convert_to_tfjs " . escapeshellarg($modelPath) . " /tmp/";
 
 		echo "<pre>";
 		ob_implicit_flush(true);
