@@ -513,89 +513,19 @@
 		return $new_perception_hash;
 	}
 
-// --- SETUP: Fügen Sie diese Zeile außerhalb der Funktion am Anfang Ihres Skripts ein ---
-// Definiert einen stabilen Ort für die Venv (z.B. im Projekt-Cache)
-// Verwenden Sie z.B. den System-Temp-Ordner oder einen Projekt-Cache-Ordner.
-// Beispiel: Ein Unterordner im aktuellen Verzeichnis
-// define('PERCEPTION_HASH_VENV_PATH', __DIR__ . '/.venv_phash'); 
-// Oder ein Temp-Pfad (ACHTUNG: kann gelöscht werden!)
-define('PERCEPTION_HASH_VENV_PATH', sys_get_temp_dir() . '/php_phash_venv');
-// -----------------------------------------------------------------------------------
-
-
 	function get_perception_hash ($path) {
-		$venv_dir = PERCEPTION_HASH_VENV_PATH;
-		$is_windows = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
+		$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" '.$path;
 
-		// 1. Definiere den Pfad zum Venv-Interpreter
-		$python_executable = $is_windows
-			? $venv_dir . '/Scripts/python.exe'
-			: $venv_dir . '/bin/python';
-
-		// --- SETUP-LOGIK: Venv erstellen und Module installieren (Nur einmal) ---
-
-		// Prüfe, ob der Venv-Interpreter existiert
-		if (!file_exists($python_executable)) {
-			error_log("Venv nicht gefunden. Starte automatische Erstellung und Installation.");
-
-			// Erstelle den Venv-Ordner (mit rekursivem und schreibbarem Modus)
-			if (!is_dir($venv_dir) && !mkdir($venv_dir, 0777, true)) {
-				error_log("FEHLER: Konnte Venv-Verzeichnis nicht erstellen: " . $venv_dir);
-				return false;
-			}
-
-			// Befehl zur Erstellung der Venv
-			// Wir gehen davon aus, dass 'python3' global verfügbar ist.
-			$create_venv_command = 'python3 -m venv ' . escapeshellarg($venv_dir);
-
-			// Befehl zur Installation der Module in der NEUEN Venv
-			$install_modules_command = escapeshellarg($python_executable) . ' -m pip install imagehash Pillow 2>&1';
-
-			// Führe die Befehle aus und leite die Ausgabe ins Log um, um Blockaden zu vermeiden
-			$result_create = shell_exec($create_venv_command . ' 2>&1');
-			if (strpos($result_create, 'Error') !== false || !file_exists($python_executable)) {
-				error_log("VENV ERSTELLUNGSFEHLER: " . $result_create);
-				return false;
-			}
-
-			$result_install = shell_exec($install_modules_command . ' 2>&1');
-			if (strpos($result_install, 'Error') !== false) {
-				error_log("MODUL INSTALLATIONSFEHLER: " . $result_install);
-				return false;
-			}
-
-			error_log("Venv erfolgreich erstellt und Module installiert in: " . $venv_dir);
-		}
-
-		// --- AUSFÜHRUNGS-LOGIK (Verwendet immer die Venv) ---
-
-		// Der Befehl verwendet den absoluten Pfad zum Venv-Interpreter
-		$python_script = 'import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)';
-
-		// Verwenden von escapeshellarg() für alle Variablen für Sicherheit
-		$command = escapeshellarg($python_executable) . ' -c ' . escapeshellarg($python_script) . ' ' . escapeshellarg($path);
-
-		// PHP-Output-Buffering-Logik zur Erfassung des Hashs
 		ob_start();
-		// Verwenden Sie 'exec' anstelle von 'system', um den Rückgabewert zu prüfen und stderr zu ignorieren, 
-		// aber 'system' funktioniert, wenn die Ausgabe erfasst wird. Wir bleiben bei 'system' wie in Ihrem Original.
 		system($command);
 		$hash = ob_get_clean();
-
 		try {
-			// ob_flush() aufräumen
-			ob_end_clean(); // ob_get_clean() macht dies bereits, aber zur Sicherheit
+			ob_flush();
 		} catch (\Throwable $e) {
-			// Fehler ignorieren
+			
 		}
 
 		$hash = trim($hash);
-
-		// Grundlegende Fehlerprüfung der Ausgabe
-		if (strlen($hash) < 10) {
-			error_log("Fehler bei der Hash-Berechnung. Ausgabe: " . $hash);
-			return false; 
-		}
 
 		return $hash;
 	}
