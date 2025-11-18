@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# last working python-version: 3.11
+
 model_file=$1
 output_dir_host=$2
 
