@@ -77,6 +77,8 @@ RUN apt-get update && \
 
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/jax_conversion.py
 
+sudo usermod -aG docker www-data
+
 WORKDIR /app
 EOF
 
