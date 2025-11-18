@@ -847,16 +847,9 @@
 	function convertToTfjs(string $modelPath): string {
 		$command = "bash convert_to_tfjs " . escapeshellarg($modelPath) . " /tmp/";
 
-		$tmpPath = trim(shell_exec("bash -c 'echo /tmp'"));
-		$pid = getmypid(); // PID des aktuellen PHP/Apache-Prozesses
-		$exePath = "/proc/$pid/root"; // Root des Prozesses
-
-		// Das tmp-Verzeichnis unter systemd PrivateTmp liegt relativ zu root
-		$privateTmp = realpath("$exePath/tmp");
-
-		echo "Privates tmp-Verzeichnis für Apache: $privateTmp\n";
+		// Buffers ausschalten
 		ob_implicit_flush(true);
-		while (ob_get_level() > 0) ob_end_flush(); // alle Buffers beenden
+		while (ob_get_level() > 0) ob_end_flush();
 
 		$descriptorspec = [
 			1 => ["pipe", "w"], // stdout
@@ -871,21 +864,44 @@
 
 		$webModelDir = null;
 
-		// Live stdout ausgeben und WEB_MODEL parsen
-		while ($line = fgets($pipes[1])) {
-			echo htmlspecialchars($line);
-			flush();
+		// stdout + stderr parallel lesen
+		$stdout = $pipes[1];
+		$stderr = $pipes[2];
 
-			if (preg_match('/WEB_MODEL:\s*(.+)/', $line, $matches)) {
-				$webModelDir = trim($matches[1]);
+		stream_set_blocking($stdout, false);
+		stream_set_blocking($stderr, false);
+
+		while (true) {
+			$read = [$stdout, $stderr];
+			$write = null;
+			$except = null;
+			$num_changed_streams = stream_select($read, $write, $except, 0, 200000); // 0,2s
+
+			if ($num_changed_streams === false) break;
+
+			foreach ($read as $r) {
+				$line = fgets($r);
+				if ($line === false) continue;
+
+				if ($r === $stdout) {
+					echo htmlspecialchars($line) . "<br>";
+					flush();
+
+					if (preg_match('/WEB_MODEL:\s*(.+)/', $line, $matches)) {
+						$webModelDir = trim($matches[1]);
+					}
+				} else {
+					echo "<b>ERROR:</b> " . htmlspecialchars($line) . "<br>";
+					flush();
+				}
 			}
+
+			$status = proc_get_status($process);
+			if (!$status['running']) break;
 		}
 
-		// stderr ausgeben
-		while ($err = fgets($pipes[2])) {
-			echo "ERROR: " . htmlspecialchars($err);
-			flush();
-		}
+		fclose($stdout);
+		fclose($stderr);
 
 		$returnValue = proc_close($process);
 		if ($returnValue !== 0) {
@@ -903,6 +919,7 @@
 
 		return $modelFile;
 	}
+
 
 	function insert_image_into_db($file_tmp, $filename) {
 		if (!file_exists($file_tmp)) {
