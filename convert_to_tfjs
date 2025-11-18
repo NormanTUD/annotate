@@ -57,21 +57,7 @@ mkdir -p "$output_dir"
 cat > "$dockerfile_path" <<EOF
 FROM python:3.10-slim
 
-RUN apt-get update && \\
-    apt-get install -y --no-install-recommends build-essential curl && \\
-    rm -rf /var/lib/apt/lists/*
-
-RUN python -m pip install --upgrade pip
-
-RUN python -m pip install \\
-    tensorflow==2.12.0 \\
-    tensorflowjs==4.7.0 \\
-    jax==0.4.13 \\
-    jaxlib==0.4.13
-
-RUN python -m pip install \\
-    ultralytics==8
-
+# Basis-Tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
@@ -80,6 +66,24 @@ RUN apt-get update && \
         libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
+# Pip aktualisieren
+RUN python -m pip install --upgrade pip
+
+RUN python -m pip install \
+    ultralytics==8
+
+# CPU-only Versionen installieren
+
+RUN python -m pip install \
+    jax[cpu]==0.4.13
+
+RUN python -m pip install \
+    tensorflow-cpu==2.12.0
+
+RUN python -m pip install \
+    tensorflowjs==4.7.0
+
+# Arbeitsverzeichnis
 WORKDIR /app
 EOF
 
