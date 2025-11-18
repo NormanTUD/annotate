@@ -61,11 +61,11 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential curl libgl1 libglib2.0-0 git python3 python3-pip python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --upgrade pip
-RUN python3 -m pip install --no-cache-dir --progress-bar=off tensorflowjs==4.7.0
-RUN python3 -m pip install --no-cache-dir --progress-bar=off ultralytics
-RUN python3 -m pip install --no-cache-dir 'sng4onnx>=1.0.1' 'onnx_graphsurgeon>=0.3.26' 'ai-edge-litert>=1.2.0' 'onnx>=1.12.0,<=1.19.1' 'onnx2tf>=1.26.3' 'onnxslim>=0.1.71' 'onnxruntime'
-RUN python3 -m pip install --upgrade --progress-bar=off jax
+RUN python3 -m pip install --upgrade --break-system-packages pip
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages tensorflowjs==4.7.0
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages ultralytics
+RUN python3 -m pip install --no-cache-dir --break-system-packages 'sng4onnx>=1.0.1' 'onnx_graphsurgeon>=0.3.26' 'ai-edge-litert>=1.2.0' 'onnx>=1.12.0,<=1.19.1' 'onnx2tf>=1.26.3' 'onnxslim>=0.1.71' 'onnxruntime'
+RUN python3 -m pip install --upgrade --progress-bar=off --break-system-packages jax
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends vim && \
