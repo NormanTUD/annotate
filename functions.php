@@ -514,7 +514,7 @@
 	}
 
 	function get_perception_hash ($path) {
-		$command = 'python3 -c "import sys; import imagehash; from PIL import Image; file_path = sys.argv[1]; hash = str(imagehash.phash(Image.open(file_path).resize((512, 512)))); print(hash)" '.$path;
+		$command = 'bash get_hash '.$path;
 
 		ob_start();
 		system($command);
