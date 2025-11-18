@@ -9,6 +9,7 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html
 
 # Install dependencies including sudo and Docker prerequisites
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+	apt-get remove --purge man-db &&
 	apt-get install -y apt-utils libssl-dev iproute2 iputils-ping \
 	build-essential curl libgl1 libglib2.0-0 git python3 python3-pip python3-dev \
 	python3 python3-pip zip libjpeg-dev libpng-dev libfreetype6-dev \
