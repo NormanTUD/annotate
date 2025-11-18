@@ -47,63 +47,68 @@ if(count($available_models)) {
     <input type="submit" value="Convert and Upload Model">
 </form>
 
+<div id="live-output-wrapper" style="display:none;">
 <h2>Live Output</h2>
 <div id="model-output-container" style="border:1px solid #ccc; padding:10px; height:300px; overflow:auto; background:#f9f9f9; white-space:pre-wrap; font-family:monospace;background-color: black; color: green"></div>
 <button id="reload-page-btn" style="display:none;">Reload Page</button>
+</div>
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-	const container = document.getElementById("model-output-container");
-	const reloadBtn = document.getElementById("reload-page-btn");
+    const wrapper = document.getElementById("live-output-wrapper");
+    const container = document.getElementById("model-output-container");
+    const reloadBtn = document.getElementById("reload-page-btn");
 
-	// Funktion zum Anhängen von Text und automatischem Scrollen
-	function appendOutput(text) {
-		container.textContent += text;
-		container.scrollTop = container.scrollHeight;
-	}
+    // Funktion zum Anhängen von Text und automatischem Scrollen
+    function appendOutput(text) {
+        container.textContent += text;
+        container.scrollTop = container.scrollHeight;
+    }
 
-	const form = document.getElementById("model-upload-form");
-	form.addEventListener("submit", function(e) {
-		e.preventDefault(); // Normales Submit verhindern
-		container.textContent = ""; // alte Ausgabe löschen
-		reloadBtn.style.display = "none";
+    const form = document.getElementById("model-upload-form");
+    form.addEventListener("submit", function(e) {
+        e.preventDefault(); // Normales Submit verhindern
+        container.textContent = ""; // alte Ausgabe löschen
+        wrapper.style.display = "block"; // erst jetzt alles anzeigen
+        reloadBtn.style.display = "none";
 
-		const formData = new FormData(form);
+        const formData = new FormData(form);
 
-		fetch(form.action, {
-		method: "POST",
-			body: formData
-		}).then(response => {
-		if(!response.body) throw new Error("Streams not supported!");
+        fetch(form.action, {
+            method: "POST",
+            body: formData
+        }).then(response => {
+            if (!response.body) throw new Error("Streams not supported!");
 
-		const reader = response.body.getReader();
-		const decoder = new TextDecoder("utf-8");
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
 
-		function read() {
-			reader.read().then(({done, value}) => {
-			if(done) {
-				appendOutput("\n--- Done ---\n");
-				reloadBtn.style.display = "inline-block";
-				return;
-			}
-			appendOutput(decoder.decode(value));
-			read(); // rekursiv weiter lesen
-		}).catch(err => {
-		appendOutput("\n--- ERROR: " + err.message + " ---\n");
-		reloadBtn.style.display = "inline-block";
-			});
-		}
+            function read() {
+                reader.read().then(({done, value}) => {
+                    if (done) {
+                        appendOutput("\n--- Done ---\n");
+                        reloadBtn.style.display = "inline-block";
+                        return;
+                    }
+                    appendOutput(decoder.decode(value));
+                    read();
+                }).catch(err => {
+                    appendOutput("\n--- ERROR: " + err.message + " ---\n");
+                    reloadBtn.style.display = "inline-block";
+                });
+            }
 
-		read();
-		}).catch(err => {
-		appendOutput("\n--- ERROR: " + err.message + " ---\n");
-		reloadBtn.style.display = "inline-block";
-		});
-	});
+            read();
+        }).catch(err => {
+            appendOutput("\n--- ERROR: " + err.message + " ---\n");
+            reloadBtn.style.display = "inline-block";
+        });
+    });
 
-	reloadBtn.addEventListener("click", function() {
-		location.reload();
-	});
+    reloadBtn.addEventListener("click", function() {
+        location.reload();
+    });
 });
 </script>
 
