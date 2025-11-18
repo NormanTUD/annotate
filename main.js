@@ -41,14 +41,13 @@ async function load_model () {
 	}
 
 	var model_uid = $("#chosen_model").val();
-	var model_json_url = "models/" + model_uid + "/model.json";
+	var model_json_url = "api/get_model.php?uid=" + encodeURIComponent(model_uid);
 
 	model = await tf.loadGraphModel(
 		model_json_url,
 		{
-			onProgress: function (p) {
-				var percent = p * 100;
-				percent = percent.toFixed(0);
+			onProgress: function(p) {
+				var percent = (p*100).toFixed(0);
 				success("Loading Model", percent + "%<br>\n");
 			}
 		}
