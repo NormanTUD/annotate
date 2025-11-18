@@ -3,6 +3,8 @@
 # Name des YOLO-Modells als Parameter
 model_file=$1
 
+bash check_docker_group_current_user
+
 if [[ -z "$model_file" ]]; then
 	echo "Usage: $0 <model_file>"
 	exit 1

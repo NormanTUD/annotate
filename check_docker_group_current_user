@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Ermittelt den aktuellen User
+CURRENT_USER=$(whoami)
+
+# Prüft, ob die Gruppe 'docker' existiert
+	if ! getent group docker >/dev/null; then
+	echo "Fehler: Die Gruppe 'docker' existiert nicht. Bitte Docker installieren."
+	exit 1
+	fi
+
+# Prüft, ob der aktuelle User Mitglied der docker-Gruppe ist
+	if id -nG "$CURRENT_USER" | grep -qw docker; then
+	echo "Check erfolgreich: $CURRENT_USER ist Mitglied der docker-Gruppe."
+	else
+	echo "Fehler: $CURRENT_USER ist kein Mitglied der docker-Gruppe."
+	echo "Füge den User hinzu mit folgendem Befehl:"
+	echo "    sudo usermod -aG docker $CURRENT_USER"
+	echo "Danach musst du dich ab- und wieder anmelden oder den Webserver neu starten."
+	exit 1
+	fi
+
+# Optional: Testen, ob Docker-Kommandos funktionieren
+	if ! docker info >/dev/null 2>&1; then
+	echo "Fehler: Docker kann vom User $CURRENT_USER nicht benutzt werden."
+	exit 1
+	fi
+
+	echo "Docker-Zugriff für $CURRENT_USER ist korrekt."
+	exit 0
