@@ -910,11 +910,10 @@
 
 			return $image_id;
 		} catch (PDOException $e) {
-			error_log("PDO error during insert_image_into_db: " . $e->getMessage());
-			dier("Database error: Failed to insert image.");
+			dier("Database error: Failed to insert image: " . $e->getMessage());
 		} catch (Throwable $e) {
-			error_log("General error in insert_image_into_db: " . $e->getMessage());
-			dier("Unexpected error: Could not insert image.");
+			error_log("General error in insert_image_into_db: ");
+			dier("Unexpected error: Could not insert image: " . $e->getMessage());
 		}
 	}
 
