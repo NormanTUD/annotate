@@ -1,13 +1,14 @@
 #!/bin/bash
 
 file=$1
-venv_dir="$HOME/.get_hash_venv"
+# Temporäres Verzeichnis unter /tmp, pro Apache-User
+venv_dir="/tmp/get_hash_venv"
 
 # Erstelle venv, falls sie nicht existiert
 if [[ ! -d "$venv_dir" ]]; then
-    python3 -m venv "$venv_dir"
-    "$venv_dir/bin/pip" install --upgrade pip
-    "$venv_dir/bin/pip" install pillow imagehash
+    python3 -m venv "$venv_dir" || { echo "Failed to create venv"; exit 1; }
+    "$venv_dir/bin/pip" install --upgrade pip || { echo "Failed to upgrade pip"; exit 1; }
+    "$venv_dir/bin/pip" install pillow imagehash || { echo "Failed to install packages"; exit 1; }
 fi
 
 # Python-Befehl innerhalb der venv ausführen
