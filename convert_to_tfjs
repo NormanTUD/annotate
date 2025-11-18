@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO: user github docker registry for downloading this model, create only if param defined
+
 # Name des YOLO-Modells und Ausgabepfad als Parameter
 model_file=$1
 output_dir_host=$2
