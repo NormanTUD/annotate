@@ -36,13 +36,14 @@
 			if ($actions) {
 				echo "<td>";
 				foreach ($actions as $action) {
-					echo "<form method='post' action='" . h($action['target']) . "' onsubmit='return confirm(\"" . h($action['confirm']) . "\")' style='display:inline'>
+					echo "<form method='post' action='" . h($action['target']) . "' data-ajax='true' data-confirm='" . h($action['confirm']) . "' style='display:inline'>
 						<input type='hidden' name='id' value='" . h($row['id']) . "'>
 						<input type='submit' class='btn' value='" . h($action['label']) . "'>
 						</form> ";
 				}
 				echo "</td>";
 			}
+
 			echo "</tr>";
 		}
 		echo "</table>";
@@ -117,3 +118,37 @@
 
 	include_once("footer.php");
 ?>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const deleteForms = document.querySelectorAll('form[data-ajax="true"]');
+
+    deleteForms.forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!confirm(form.dataset.confirm)) return;
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    window.location.reload();
+                } else {
+                    // Fehler ausgeben
+                    alert("Error: " + result.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("AJAX request failed.");
+            }
+        });
+    });
+});
+</script>
