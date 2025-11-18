@@ -1146,6 +1146,7 @@
 
 				$file = $path;
 				$file = preg_replace("/.*\//", "", $file);
+				echo "Working on path $path<br>";
 				$file_contents = file_get_contents($path);
 
 				// Insert the model into the database
