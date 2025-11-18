@@ -384,17 +384,40 @@
 		return $default;
 	}
 
-	function rquery($query){
-		$query_start_time = microtime(true);
-		$result = mysqli_query($GLOBALS['dbh'], $query) or dier(array("query" => $query, "error" => mysqli_error($GLOBALS['dbh'])));
-		$query_end_time = microtime(true);
+	function rquery($query) {
+		$start = start_query_timer();
+		$result = execute_query($query);
+		$duration = end_query_timer($start);
+		log_query_execution($query, $duration);
+		return $result;
+	}
 
+	function start_query_timer() {
+		return microtime(true);
+	}
+
+	function end_query_timer($start) {
+		return microtime(true) - $start;
+	}
+
+	function execute_query($query) {
+		$res = mysqli_query($GLOBALS['dbh'], $query);
+		if (!$res) handle_query_error($query);
+		return $res;
+	}
+
+	function handle_query_error($query) {
+		dier(array(
+			"query" => $query,
+			"error" => mysqli_error($GLOBALS['dbh'])
+		));
+	}
+
+	function log_query_execution($query, $duration) {
 		$GLOBALS["queries"][] = array(
 			"query" => $query,
-			"time" => ($query_end_time - $query_start_time)
+			"time"  => $duration
 		);
-
-		return $result;
 	}
 
 	function my_mysqli_real_escape_string ($arg) {
