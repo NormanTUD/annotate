@@ -1,36 +1,29 @@
 #!/bin/bash
+set -euo pipefail
 
-if ! command -v apt 2>&1 >/dev/null; then
-	echo "apt not installed. This script is only for debian and debianlike systems."
-	exit 5
-fi
+# Prüfen, ob grundlegende Tools vorhanden sind
+for cmd in apt dpkg-query sudo; do
+    if ! command -v "$cmd" &>/dev/null; then
+        echo "$cmd not found. This script is only for Debian-like systems."
+        exit 5
+    fi
+done
 
-if ! command -v dpkg-query 2>&1 >/dev/null; then
-	echo "dpkg-query not found"
-	exit 6
-fi
-
-if ! command -v sudo 2>&1 >/dev/null; then
-	echo "sudo not installed. This script is only for debian and debianlike systems."
-	exit 7
-fi
-
+# Docker installieren falls nötig
 if ! command -v docker &>/dev/null; then
-	echo "docker not found. Installing docker..."
-	sed -i 's/main$/main contrib non-free/g' /etc/apt/sources.list
-	sudo apt update
-	sudo apt install -y docker.io
+    echo "docker not found. Installing docker..."
+    sed -i 's/main$/main contrib non-free/g' /etc/apt/sources.list
+    sudo apt update
+    sudo apt install -y docker.io
 fi
 
-if ! command -v whiptail &>/dev/null; then
-	echo "whiptail not found. Installing whiptail..."
-	sudo apt install -y whiptail
-fi
-
-if ! command -v git &>/dev/null; then
-	echo "git not found. Installing git..."
-	sudo apt install -y git
-fi
+# Whiptail & git installieren falls nötig
+for cmd in whiptail git; do
+    if ! command -v "$cmd" &>/dev/null; then
+        echo "$cmd not found. Installing $cmd..."
+        sudo apt install -y "$cmd"
+    fi
+done
 
 # Default values
 DB_HOST=""
@@ -38,80 +31,76 @@ INSTANCE_NAME=annotate
 DB_USER=root
 DB_PASSWORD=""
 LOCAL_PORT=""
-
 custom_local_db_dir=0
 
 help_message() {
-	echo "Usage: bash docker.sh [OPTIONS]"
-	echo "Options:"
-	echo "  --local-db-dir     Path to local db dir (i.e. on NFS for large images)"
-	echo "  --local-port       Local port to bind for the GUI"
-	echo "  --instance-name    Name of the instance (if you run several ones)"
-	echo "  --help             Show this help message"
+    echo "Usage: bash docker.sh [OPTIONS]"
+    echo "Options:"
+    echo "  --local-db-dir     Path to local db dir (i.e. on NFS for large images)"
+    echo "  --local-port       Local port to bind for the GUI"
+    echo "  --instance-name    Name of the instance (if you run several ones)"
+    echo "  --help             Show this help message"
 }
 
+# CLI argument parsing
 while [[ "$#" -gt 0 ]]; do
-	case $1 in
-		--instance-name*)
-			INSTANCE_NAME="$2"
-			shift
-			;;
-		--local-db-dir*)
-			local_db_dir="$(realpath "$2")"
-			custom_local_db_dir=1
-			shift
-			;;
-		--local-port*)
-			LOCAL_PORT="$2"
-			shift
-			;;
-		--help)
-			help_message
-			exit 0
-			;;
-		*)
-			echo "Error: Unknown option '$1'. Use --help for usage."
-			echo ""
-			help_message
-			exit 1
-			;;
-	esac
-	shift
+    case $1 in
+        --instance-name*)
+            INSTANCE_NAME="$2"
+            shift
+            ;;
+        --local-db-dir*)
+            local_db_dir="$(realpath "$2")"
+            custom_local_db_dir=1
+            shift
+            ;;
+        --local-port*)
+            LOCAL_PORT="$2"
+            shift
+            ;;
+        --help)
+            help_message
+            exit 0
+            ;;
+        *)
+            echo "Error: Unknown option '$1'. Use --help for usage."
+            help_message
+            exit 1
+            ;;
+    esac
+    shift
 done
 
+# Set defaults
 if [[ $custom_local_db_dir -eq 0 ]]; then
-	local_db_dir="$HOME/${INSTANCE_NAME}_db"
+    local_db_dir="$HOME/${INSTANCE_NAME}_db"
 fi
-
 if [[ -z $LOCAL_PORT ]]; then
-	echo "Error: Missing required parameter --local-port. Use --help for usage."
-	exit 2
+    echo "Error: Missing required parameter --local-port. Use --help for usage."
+    exit 2
 fi
 
-is_package_installed() {
-	dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -c "ok installed"
-}
-
+# IP Auswahl für localhost
 ips=$(ip addr | grep inet | grep -v : | sed -e 's#.*inet\s*##' | sed -e 's#/.*##' | grep -v "^127.")
 if [[ $DB_HOST == "localhost" || $DB_HOST == "127.0.0.1" ]]; then
-	ip_array=()
-	while read -r ip; do
-		ip_array+=("$ip" "")
-	done <<< "$ips"
-	selected_ip=$(whiptail --title "Local IPs" --menu "Choose a local IP:" 15 60 6 "${ip_array[@]}" 3>&1 1>&2 2>&3)
-	if [[ -n $selected_ip ]]; then
-		echo "Selected IP: $selected_ip"
-		DB_HOST="$selected_ip"
-		echo "DB_HOST set to: $DB_HOST"
-	else
-		echo "No IP selected. Exiting..."
-		exit 3
-	fi
+    ip_array=()
+    while read -r ip; do
+        ip_array+=("$ip" "")
+    done <<< "$ips"
+    selected_ip=$(whiptail --title "Local IPs" --menu "Choose a local IP:" 15 60 6 "${ip_array[@]}" 3>&1 1>&2 2>&3)
+    if [[ -n $selected_ip ]]; then
+        DB_HOST="$selected_ip"
+        echo "DB_HOST set to: $DB_HOST"
+    else
+        echo "No IP selected. Exiting..."
+        exit 3
+    fi
 fi
 
 export DB_HOST
 export LOCAL_PORT
 
+# .env erstellen
 echo "DB_HOST=${INSTANCE_NAME}_mariadb
 DB_PORT=3306
 LOCAL_PORT=$LOCAL_PORT
@@ -119,11 +108,11 @@ DB_PASSWORD=root
 DB_USER=root
 " > .env
 
-if [[ ! -d $local_db_dir ]]; then
-	mkdir -p $local_db_dir
-fi
+mkdir -p "$local_db_dir"
 
-echo "services:
+# docker-compose.yml schreiben
+cat > docker-compose.yml <<EOL
+services:
   ${INSTANCE_NAME}_mariadb:
     image: mariadb:latest
     container_name: ${INSTANCE_NAME}_mariadb
@@ -166,33 +155,46 @@ volumes:
 
 networks:
   ${INSTANCE_NAME}_network:
-    driver: bridge" > docker-compose.yml
+    driver: bridge
+EOL
 
-#!/usr/bin/env bash
-set -euo pipefail
-
-if ! command -v docker compose >/dev/null 2>&1 || ! command -v docker-compose >/dev/null 2>&1; then
-	sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
-		-o /usr/local/bin/docker-compose
-	sudo chmod +x /usr/local/bin/docker-compose
+# Docker Compose installieren falls nötig
+if ! command -v docker compose >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+        -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
 fi
 
+# Syntax-Check (optional)
 SYNTAX_ERRORS=0
-#{ for i in $(ls *.php); do if ! php -l $i 2>&1; then SYNTAX_ERRORS=1; fi ; done } | 2>&1 grep -v mongodb
-
+# { for i in $(ls *.php); do if ! php -l $i 2>&1; then SYNTAX_ERRORS=1; fi ; done } | grep -v mongodb
 if [[ "$SYNTAX_ERRORS" -ne "0" ]]; then
-	echo "Tests failed"
-	exit 4
+    echo "Tests failed"
+    exit 4
 fi
 
+# Compose Command setzen
 if [ "$(id -u)" -eq 0 ] || groups "$USER" | grep -q '\bdocker\b'; then
-	CMD="docker compose"
+    CMD="docker compose"
 else
-	echo "Building container. This may need sudo-permissions"
-	CMD="sudo docker compose"
+    echo "Building container. This may need sudo-permissions"
+    CMD="sudo docker compose"
 fi
 
-# Stop and remove existing containers for this project
+if [[ -S /var/run/docker.sock ]]; then
+    SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
+    # Prüfen, ob Gruppe mit dieser GID existiert
+    EXISTING_GROUP=$(getent group "$SOCKET_GID" | cut -d: -f1 || true)
+    if [[ -z "$EXISTING_GROUP" ]]; then
+        sudo groupadd -g "$SOCKET_GID" docker_host || true
+    fi
+    # Prüfen, ob Gruppe existiert, bevor usermod
+    if getent group docker_host >/dev/null 2>&1; then
+        sudo usermod -aG docker_host www-data || true
+    fi
+fi
+
+# Stop and remove existing containers
 $CMD -p "${INSTANCE_NAME}" down --remove-orphans
 
 # Build and start fresh
