@@ -21,8 +21,16 @@ if command -v yolo &> /dev/null; then
     echo '======'
     echo 'Exporting YOLO model to TFJS format...'
     echo '======'
-    echo "yolo export model=\"$model_file\" format=tfjs"
-    yolo export model="$model_file" format=tfjs
+    uuid=$(uuidgen)
+    copied_model_file="/tmp/$uuid.pt"
+
+    if [[ -e $model_file ]]; then
+	echo "Copying $model_file to $copied_model_file"
+	cp "$model_file" "$copied_model_file"
+    fi
+
+    echo "yolo export model=\"$copied_model_file\" format=tfjs"
+    yolo export model="$copied_model_file" format=tfjs
     web_model_path="tests/${model_file%.pt}_web_model"
     if [[ -d $web_model_path ]]; then
 	    cp -r "$web_model_path" "$output_dir_host/"
