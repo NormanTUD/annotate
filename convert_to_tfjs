@@ -97,9 +97,9 @@ docker run --rm -v "$output_dir":/app/output -v "$(dirname "$model_file")":/app/
 set -e
 cd /app
 model_file_path="$(pwd)/models/$(basename "$model_file")"
-echo "======"
-echo "yolo export model=$model_file_path format=tfjs"
-echo "======"
+echo \"======\"
+echo \"yolo export model=$model_file_path format=tfjs\"
+echo \"======\"
 yolo export model=$model_file_path format=tfjs
 " || { echo "YOLO export failed"; exit 1; }
 
