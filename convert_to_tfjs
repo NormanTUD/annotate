@@ -74,23 +74,26 @@ EOF
 image_tag="yolo_tfjs_temp:latest"
 docker build -t "$image_tag" -f "$dockerfile_path" "$tmp_dir" || { echo "Docker build failed"; exit 1; }
 
-# Container ausführen und YOLO exportieren
+# Container ausführen und YOLO exportieren (Hydra-kompatible Syntax)
 docker run --rm \
-    -v "$output_dir_host":/app/output \
-    -v "$(dirname "$model_file")":/app/models \
-    "$image_tag" /bin/bash -c "
-set -e
-cd /app
-model_filename=\"$(basename "$model_file")\"
-if [[ -f /app/models/\$model_filename ]]; then
-    echo '======'
-    echo 'Exporting YOLO model to TFJS format...'
-    echo '======'
-    yolo export model=/app/models/\$model_filename format=tfjs output=/app/output
-else
-    echo 'Model file /app/models/\$model_filename not found'
-    exit 1
-fi
+  -v "$output_dir_host":/app/output \
+  -v "$(dirname "$model_file")":/app/models \
+  "$image_tag" /bin/bash -c "
+  set -e
+  cd /app
+  model_filename=\"$(basename "$model_file")\"
+  if [[ -f /app/models/\$model_filename ]]; then
+      echo '======'
+      echo 'Exporting YOLO model to TFJS format...'
+      echo '======'
+      echo \"-> -> yolo export model=/app/models/\$model_filename format=tfjs\"
+      yolo export model=/app/models/\$model_filename format=tfjs
+      # nach dem Export das Ergebnis nach /app/output kopieren
+      cp -r \"/app/models/\${model_filename%.pt}_web_model\" /app/output/
+  else
+      echo 'Model file /app/models/\$model_filename not found'
+      exit 1
+  fi
 "
 
 echo "WEB_MODEL: $output_dir_host"
