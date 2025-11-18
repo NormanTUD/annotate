@@ -878,8 +878,24 @@
 		}
 	}
 
+	function generate_uuid_v4() {
+		return sprintf(
+			'%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+			mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+			mt_rand(0, 0xffff),
+			mt_rand(0, 0x0fff) | 0x4000,
+			mt_rand(0, 0x3fff) | 0x8000,
+			mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+		);
+	}
+
 	function convertToTfjs(string $modelPath): string {
-		$command = "bash convert_to_tfjs " . escapeshellarg($modelPath) . " /tmp/";
+		$model_uuid = generate_uuid_v4();
+
+		$base_path = "/tmp/$model_uuid";
+		$final_path = "$base_path/last_web_model";
+
+		$command = "bash convert_to_tfjs " . escapeshellarg($modelPath) . " $base_path";
 
 		// Buffers ausschalten
 		ob_implicit_flush(true);
@@ -895,8 +911,6 @@
 		if (!is_resource($process)) {
 			throw new RuntimeException("Fehler: Konnte den Prozess nicht starten.");
 		}
-
-		$webModelDir = null;
 
 		// stdout + stderr parallel lesen
 		$stdout = $pipes[1];
@@ -920,10 +934,6 @@
 				if ($r === $stdout) {
 					echo htmlspecialchars($line) . "<br>";
 					flush();
-
-					if (preg_match('/WEB_MODEL:\s*(.+)/', $line, $matches)) {
-						$webModelDir = trim($matches[1]);
-					}
 				} else {
 					echo "<b>ERROR:</b> " . htmlspecialchars($line) . "<br>";
 					flush();
@@ -942,11 +952,7 @@
 			throw new RuntimeException("Fehler: Das Skript wurde mit Code $returnValue beendet.");
 		}
 
-		if (!$webModelDir) {
-			throw new RuntimeException("Fehler: WEB_MODEL Pfad konnte nicht extrahiert werden.");
-		}
-
-		$modelFile = $webModelDir . "/model.json";
+		$modelFile = $final_path . "/model.json";
 		if (!file_exists($modelFile)) {
 			throw new RuntimeException("Fehler: Modelldatei '$modelFile' existiert nicht.");
 		}
