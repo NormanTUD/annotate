@@ -21,7 +21,7 @@ else
 fi
 
 # Optional: Testen, ob Docker-Kommandos funktionieren
-if ! docker info >/dev/null 2>&1; then
+if ! docker info; then
 	echo "Fehler: Docker kann vom User $CURRENT_USER nicht benutzt werden."
 	exit 1
 fi
