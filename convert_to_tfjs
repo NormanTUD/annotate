@@ -10,9 +10,6 @@ if [[ -z "$model_file" || -z "$output_dir_host" ]]; then
     exit 1
 fi
 
-bash check_docker_group_current_user
-[[ $? -ne 0 ]] && { echo "check_docker_group_current_user failed"; exit 1; }
-
 model_file=$(realpath "$model_file")
 [[ ! -f "$model_file" ]] && { echo "Model file $model_file does not exist."; exit 1; }
 
@@ -30,6 +27,9 @@ else
     echo "Local YOLO not found, using Docker..."
     tmp_dir=$(mktemp -d /tmp/convert_tfjs_XXXX)
     dockerfile_path="$tmp_dir/Dockerfile"
+
+	bash check_docker_group_current_user
+	[[ $? -ne 0 ]] && { echo "check_docker_group_current_user failed"; exit 1; }
 
     cat > "$dockerfile_path" <<EOF
 FROM python:3.11-slim
