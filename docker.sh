@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 if ! command -v apt 2>&1 >/dev/null; then
 	echo "apt not installed. This script is only for debian and debianlike systems."
 	exit 5
@@ -42,7 +41,6 @@ LOCAL_PORT=""
 
 custom_local_db_dir=0
 
-# Help message
 help_message() {
 	echo "Usage: bash docker.sh [OPTIONS]"
 	echo "Options:"
@@ -52,20 +50,17 @@ help_message() {
 	echo "  --help             Show this help message"
 }
 
-# Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
 		--instance-name*)
 			INSTANCE_NAME="$2"
 			shift
 			;;
-
 		--local-db-dir*)
 			local_db_dir="$(realpath "$2")"
 			custom_local_db_dir=1
 			shift
 			;;
-
 		--local-port*)
 			LOCAL_PORT="$2"
 			shift
@@ -78,11 +73,9 @@ while [[ "$#" -gt 0 ]]; do
 			echo "Error: Unknown option '$1'. Use --help for usage."
 			echo ""
 			help_message
-
 			exit 1
 			;;
 	esac
-
 	shift
 done
 
@@ -90,38 +83,26 @@ if [[ $custom_local_db_dir -eq 0 ]]; then
 	local_db_dir="$HOME/${INSTANCE_NAME}_db"
 fi
 
-# Check for required parameters
-
 if [[ -z $LOCAL_PORT ]]; then
 	echo "Error: Missing required parameter --local-port. Use --help for usage."
 	exit 2
 fi
 
-
 is_package_installed() {
 	dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -c "ok installed"
 }
 
-
 ips=$(ip addr | grep inet | grep -v : | sed -e 's#.*inet\s*##' | sed -e 's#/.*##' | grep -v "^127.")
-# Check if DB_HOST is localhost or 127.0.0.1
 if [[ $DB_HOST == "localhost" || $DB_HOST == "127.0.0.1" ]]; then
-	# Create an array of IPs
 	ip_array=()
 	while read -r ip; do
 		ip_array+=("$ip" "")
 	done <<< "$ips"
-
-	# Show Whiptail menu
 	selected_ip=$(whiptail --title "Local IPs" --menu "Choose a local IP:" 15 60 6 "${ip_array[@]}" 3>&1 1>&2 2>&3)
-
-	# Check if a selection was made
 	if [[ -n $selected_ip ]]; then
 		echo "Selected IP: $selected_ip"
-		# Use the selected IP for DB_HOST
 		DB_HOST="$selected_ip"
 		echo "DB_HOST set to: $DB_HOST"
-		# Add your logic here using the updated DB_HOST variable
 	else
 		echo "No IP selected. Exiting..."
 		exit 3
@@ -187,7 +168,6 @@ networks:
 echo "=== Current git hash before auto-pulling ==="
 git rev-parse HEAD
 echo "=== Current git hash before auto-pulling ==="
-
 git pull
 
 #!/usr/bin/env bash
@@ -203,7 +183,7 @@ SYNTAX_ERRORS=0
 #{ for i in $(ls *.php); do if ! php -l $i 2>&1; then SYNTAX_ERRORS=1; fi ; done } | 2>&1 grep -v mongodb
 
 if [[ "$SYNTAX_ERRORS" -ne "0" ]]; then
-	echo "Tests failed";
+	echo "Tests failed"
 	exit 4
 fi
 
@@ -214,4 +194,9 @@ else
 	CMD="sudo docker compose"
 fi
 
-$CMD build && $CMD up -d || echo "Failed to build container"
+# Stop and remove existing containers for this project
+$CMD -p "${INSTANCE_NAME}" down --remove-orphans
+
+# Build and start fresh
+$CMD -p "${INSTANCE_NAME}" build --no-cache
+$CMD -p "${INSTANCE_NAME}" up -d
