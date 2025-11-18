@@ -49,6 +49,7 @@ if(count($available_models)) {
 
 <div id="live-output-wrapper" style="display:none;">
 <h2>Live Output</h2>
+<p>The conversion process will take a while. If you run this locally, your computer may freeze for a brief period of time.</p>
 <div id="model-output-container" style="border:1px solid #ccc; padding:10px; height:300px; overflow:auto; background:#f9f9f9; white-space:pre-wrap; font-family:monospace;background-color: black; color: green"></div>
 <button id="reload-page-btn" style="display:none;">Reload Page</button>
 </div>
