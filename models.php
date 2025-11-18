@@ -4,7 +4,7 @@ include_once("functions.php");
 
 // Löschen eines Modells
 if(get_get("delete_model")) {
-    delete_model(get_get("delete_model"));
+	delete_model(get_get("delete_model"));
 }
 
 $available_models = get_list_of_models();
@@ -16,24 +16,24 @@ $available_models = get_list_of_models();
 if(count($available_models)) {
 ?>
     <table border=1>
-        <tr>
-            <th>Name</th>
-            <th>UID</th>
-            <th>Delete?</th>
-        </tr>
+	<tr>
+	    <th>Name</th>
+	    <th>UID</th>
+	    <th>Delete?</th>
+	</tr>
 <?php
-    for ($i = 0; $i < count($available_models); $i++) {
-        print "<tr>\n";
-        print " <td>".$available_models[$i][0]."</td>\n";
-        print " <td>".$available_models[$i][1]."</td>\n";
-        print " <td><a href='models.php?delete_model=".$available_models[$i][1]."'>Delete!</a></td>\n";
-        print "</tr>\n";
-    }
+	for ($i = 0; $i < count($available_models); $i++) {
+		print "<tr>\n";
+		print " <td>".$available_models[$i][0]."</td>\n";
+		print " <td>".$available_models[$i][1]."</td>\n";
+		print " <td><a href='models.php?delete_model=".$available_models[$i][1]."'>Delete!</a></td>\n";
+		print "</tr>\n";
+	}
 ?>
     </table>
 <?php
 } else {
-    echo "<p>No models available.</p>";
+	echo "<p>No models available.</p>";
 }
 ?>
 
@@ -48,62 +48,62 @@ if(count($available_models)) {
 </form>
 
 <h2>Live Output</h2>
-<div id="model-output-container" style="border:1px solid #ccc; padding:10px; height:300px; overflow:auto; background:#f9f9f9; white-space:pre-wrap; font-family:monospace;"></div>
+<div id="model-output-container" style="border:1px solid #ccc; padding:10px; height:300px; overflow:auto; background:#f9f9f9; white-space:pre-wrap; font-family:monospace;background-color: black; color: green"></div>
 <button id="reload-page-btn" style="display:none;">Reload Page</button>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const container = document.getElementById("model-output-container");
-    const reloadBtn = document.getElementById("reload-page-btn");
+	const container = document.getElementById("model-output-container");
+	const reloadBtn = document.getElementById("reload-page-btn");
 
-    // Funktion zum Anhängen von Text und automatischem Scrollen
-    function appendOutput(text) {
-        container.textContent += text;
-        container.scrollTop = container.scrollHeight;
-    }
+	// Funktion zum Anhängen von Text und automatischem Scrollen
+	function appendOutput(text) {
+		container.textContent += text;
+		container.scrollTop = container.scrollHeight;
+	}
 
-    const form = document.getElementById("model-upload-form");
-    form.addEventListener("submit", function(e) {
-        e.preventDefault(); // Normales Submit verhindern
-        container.textContent = ""; // alte Ausgabe löschen
-        reloadBtn.style.display = "none";
+	const form = document.getElementById("model-upload-form");
+	form.addEventListener("submit", function(e) {
+		e.preventDefault(); // Normales Submit verhindern
+		container.textContent = ""; // alte Ausgabe löschen
+		reloadBtn.style.display = "none";
 
-        const formData = new FormData(form);
+		const formData = new FormData(form);
 
-        fetch(form.action, {
-            method: "POST",
-            body: formData
-        }).then(response => {
-            if(!response.body) throw new Error("Streams not supported!");
+		fetch(form.action, {
+		method: "POST",
+			body: formData
+		}).then(response => {
+		if(!response.body) throw new Error("Streams not supported!");
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder("utf-8");
+		const reader = response.body.getReader();
+		const decoder = new TextDecoder("utf-8");
 
-            function read() {
-                reader.read().then(({done, value}) => {
-                    if(done) {
-                        appendOutput("\n--- Done ---\n");
-                        reloadBtn.style.display = "inline-block";
-                        return;
-                    }
-                    appendOutput(decoder.decode(value));
-                    read(); // rekursiv weiter lesen
-                }).catch(err => {
-                    appendOutput("\n--- ERROR: " + err.message + " ---\n");
-                    reloadBtn.style.display = "inline-block";
-                });
-            }
+		function read() {
+			reader.read().then(({done, value}) => {
+			if(done) {
+				appendOutput("\n--- Done ---\n");
+				reloadBtn.style.display = "inline-block";
+				return;
+			}
+			appendOutput(decoder.decode(value));
+			read(); // rekursiv weiter lesen
+		}).catch(err => {
+		appendOutput("\n--- ERROR: " + err.message + " ---\n");
+		reloadBtn.style.display = "inline-block";
+			});
+		}
 
-            read();
-        }).catch(err => {
-            appendOutput("\n--- ERROR: " + err.message + " ---\n");
-            reloadBtn.style.display = "inline-block";
-        });
-    });
+		read();
+		}).catch(err => {
+		appendOutput("\n--- ERROR: " + err.message + " ---\n");
+		reloadBtn.style.display = "inline-block";
+		});
+	});
 
-    reloadBtn.addEventListener("click", function() {
-        location.reload();
-    });
+	reloadBtn.addEventListener("click", function() {
+		location.reload();
+	});
 });
 </script>
 
