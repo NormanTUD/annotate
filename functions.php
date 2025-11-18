@@ -76,6 +76,9 @@
 
 	try {
 		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS["db_port"]);
+
+
+		$GLOBALS['pdo'] = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
 	} catch (\Throwable $e) {
 		try {
 			try {
@@ -997,8 +1000,7 @@
 				dier("Error: Database configuration missing.");
 			}
 
-			$pdo = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
-			$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$GLOBALS["pdo"]->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 			$unique_filename = $filename;
 			$file_contents = file_get_contents($file_tmp);
@@ -1010,7 +1012,7 @@
 			$counter = 1;
 			while (true) {
 				try {
-					$stmt = $pdo->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content)");
+					$stmt = $GLOBALS["pdo"]->prepare("INSERT INTO image_data (filename, image_content) VALUES (:filename, :image_content)");
 					$stmt->bindParam(':filename', $unique_filename);
 					$stmt->bindParam(':image_content', $file_contents, PDO::PARAM_LOB);
 					$stmt->execute();
@@ -1019,7 +1021,7 @@
 					// Duplicate Key Error
 					if ($e->getCode() == 23000) {
 						// Prüfen, ob Daten identisch sind
-						$check_stmt = $pdo->prepare("SELECT image_content FROM image_data WHERE filename = :filename LIMIT 1");
+						$check_stmt = $GLOBALS["pdo"]->prepare("SELECT image_content FROM image_data WHERE filename = :filename LIMIT 1");
 						$check_stmt->bindParam(':filename', $unique_filename);
 						$check_stmt->execute();
 						$existing_contents = $check_stmt->fetchColumn();
@@ -1040,7 +1042,6 @@
 				}
 			}
 
-			$pdo = null;
 
 			$image_id = get_or_create_image_id($file_tmp, $unique_filename);
 			if (!$image_id) {
@@ -1058,19 +1059,19 @@
 		}
 	}
 
-	function generate_unique_filename($pdo, $filename) {
+	function generate_unique_filename($filename) {
 		$base_name = pathinfo($filename, PATHINFO_FILENAME);
 		$extension = pathinfo($filename, PATHINFO_EXTENSION);
 		$unique_filename = $base_name . '_' . uniqid() . '.' . $extension;
 
 		// Check if the generated filename already exists in the database
-		$stmt = $pdo->prepare("SELECT filename FROM image_data WHERE filename = :filename");
+		$stmt = $GLOBALS["pdo"]->prepare("SELECT filename FROM image_data WHERE filename = :filename");
 		$stmt->bindParam(':filename', $unique_filename);
 		$stmt->execute();
 
 		if ($stmt->rowCount() > 0) {
 			// If it exists, recursively generate a new unique filename
-			return generate_unique_filename($pdo, $filename);
+			return generate_unique_filename($filename);
 		}
 
 		return $unique_filename;
@@ -1135,16 +1136,11 @@
 
 	function insert_model_into_db ($model_name, $files_array) {
 		try {
-			// Establish a database connection (replace with your actual database details)
-			$pdo = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
-
-			// Initialize an array to store the IDs of inserted models
 			$inserted_model_ids = [];
 
 			$prefix = "model_";
 			$uid = uniqid($prefix);
 
-			// Loop through the files array
 			foreach ($files_array as $path) {
 				$path = convert_to_tfjs($path));
 
@@ -1153,7 +1149,7 @@
 				$file_contents = file_get_contents($path);
 
 				// Insert the model into the database
-				$stmt = $pdo->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents, uid) VALUES (:model_name, now(), :filename, :file_contents, :uid)");
+				$stmt = $GLOBALS["pdo"]->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents, uid) VALUES (:model_name, now(), :filename, :file_contents, :uid)");
 				$stmt->bindParam(':model_name', $model_name);
 				$stmt->bindParam(':filename', $file);
 				$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
@@ -1161,7 +1157,7 @@
 				$stmt->execute();
 
 				// Retrieve the ID of the inserted model
-				$model_id = $pdo->lastInsertId();
+				$model_id = $GLOBALS["pdo"]->lastInsertId();
 
 				echo "ID for file $file: $model_id<br>";
 
@@ -1170,7 +1166,6 @@
 			}
 
 			// Close the database connection
-			$pdo = null;
 
 			return $inserted_model_ids;
 		} catch (\Throwable $e) {
