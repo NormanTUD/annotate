@@ -847,7 +847,14 @@
 	function convertToTfjs(string $modelPath): string {
 		$command = "bash convert_to_tfjs " . escapeshellarg($modelPath) . " /tmp/";
 
-		echo "<pre>";
+		$tmpPath = trim(shell_exec("bash -c 'echo /tmp'"));
+		$pid = getmypid(); // PID des aktuellen PHP/Apache-Prozesses
+		$exePath = "/proc/$pid/root"; // Root des Prozesses
+
+		// Das tmp-Verzeichnis unter systemd PrivateTmp liegt relativ zu root
+		$privateTmp = realpath("$exePath/tmp");
+
+		echo "Privates tmp-Verzeichnis für Apache: $privateTmp\n";
 		ob_implicit_flush(true);
 		while (ob_get_level() > 0) ob_end_flush(); // alle Buffers beenden
 
