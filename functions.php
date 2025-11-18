@@ -1142,7 +1142,7 @@
 			$uid = uniqid($prefix);
 
 			foreach ($files_array as $path) {
-				$path = convert_to_tfjs($path));
+				$path = convert_to_tfjs($path);
 
 				$file = $path;
 				$file = preg_replace("/.*\//", "", $file);
