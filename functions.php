@@ -77,7 +77,6 @@
 	try {
 		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS["db_port"]);
 
-
 		$GLOBALS['pdo'] = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
 	} catch (\Throwable $e) {
 		try {
@@ -94,8 +93,6 @@
 
 					fclose($handle);
 				}
-
-				import_files();
 			} catch (\Throwable $e) {
 				$pingable = ping($GLOBALS["db_host"], $GLOBALS["db_port"], 5);
 
@@ -754,64 +751,6 @@
 		}
 
 		return null;
-	}
-
-	function import_files () {
-		$base_dir = "images";
-
-		if(!is_dir($base_dir)) {
-			return;
-		}
-
-		ini_set('memory_limit', '4096M');
-		ini_set('max_execution_time', '300');
-		set_time_limit(300);
-
-		function shutdown() {
-			mywarn("Exiting, rolling back changes\n");
-			rquery("ROLLBACK;");
-			rquery("SET autocommit=1;");
-		}
-
-		register_shutdown_function('shutdown');
-
-		print "Importing images...<br>";
-
-		$files = scandir($base_dir);
-
-		shuffle($files);
-
-		$i = 0;
-		foreach($files as $file) {
-			if(preg_match("/\.(?:jpe?|pn)g$/i", $file)) {
-				$is_in_images_table = is_null(get_image_id($file)) ? 1 : 0;
-				$is_in_image_data_table = is_null(get_image_data_id($file)) ? 1 : 0;
-				if(!$is_in_images_table || !$is_in_image_data_table) {
-					rquery("SET autocommit=0;");
-					rquery("START TRANSACTION;");
-					$path = "$base_dir/$file";
-					$image_id = insert_image_into_db($path, $file);
-
-					if(!$image_id) {
-						rquery("ROLLBACK;");
-						rquery("SET autocommit=1;");
-
-						dier("Could not get image id for $path / $file");
-					}
-
-					rquery("COMMIT;");
-					rquery("SET autocommit=1;");
-
-					print "Id for $file: ".$image_id."<br>\n";
-					flush();
-				}
-			}
-
-		}
-
-		print "Done importing";
-
-		exit(0);
 	}
 
 	function move_to_offtopic ($fn) {
