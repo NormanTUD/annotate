@@ -84,7 +84,7 @@
 				</div>
 
 				<div id="no_imgs_left" style="display: <?php print $no_imgs_left_display; ?>">
-					Currently, all available images are annotated. <a href="upload.php">Upload images</a> or check again later.
+					All available images are annotated. <a href="upload.php">Upload images</a> or check again later.
 				</div>
 			</td>
 			<td>
