@@ -20,7 +20,6 @@ tmp_dir=$(mktemp -d /tmp/convert_tfjs_XXXX)
 
 if command -v yolo &> /dev/null; then
     uuid=$(uuidgen)
-    echo "Using local YOLO installation (uuid: $uuid)..."
 
     cd $tmp_dir
 
