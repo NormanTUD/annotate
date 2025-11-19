@@ -38,7 +38,7 @@ if command -v yolo &> /dev/null; then
     fi
 else
     echo "Local YOLO not found, using Docker..."
-    dockerfile_path="$tmp_dir/Dockerfile"
+    dockerfile_path="$output_dir_host/Dockerfile"
 
 	bash check_docker_group_current_user
 	[[ $? -ne 0 ]] && { echo "check_docker_group_current_user failed"; exit 1; }
@@ -53,7 +53,7 @@ WORKDIR /app
 EOF
 
     image_tag="yolo_tfjs_temp:latest"
-    docker build -t "$image_tag" -f "$dockerfile_path" "$tmp_dir" || { echo "Docker build failed"; exit 1; }
+    docker build -t "$image_tag" -f "$dockerfile_path" "$output_dir_host" || { echo "Docker build failed"; exit 1; }
 
     docker run --rm \
       -v "$output_dir_host":/app/output \
