@@ -5,8 +5,6 @@ $uid = get_get("uid");
 $filename = get_get("filename");
 
 if ($filename === "model.json") {
-    header('Content-Type: application/json');
-
     // Output buffer starten
     ob_start();
     print_model_file($uid, $filename);
@@ -32,6 +30,7 @@ if ($filename === "model.json") {
         }
     }
 
+    header('Content-Type: application/json');
     echo json_encode($data);
 } else {
     print_model_file($uid, $filename);
