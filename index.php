@@ -78,8 +78,8 @@
 							<img id="image" />
 						</div>
 						<br>
-						<div id="ki_detected_names"></div>
 						<div id="filename"></div>
+						<div id="ki_detected_names"></div>
 					</div>
 				</div>
 
