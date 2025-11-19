@@ -36,7 +36,6 @@ async function load_labels() {
 		const data = await response.json();
 		if (!Array.isArray(data)) throw new Error("Response is not an array");
 		labels = data;
-		console.log("Labels loaded:", labels);
 	} catch (err) {
 		console.error("Failed to load labels:", err);
 	}
