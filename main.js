@@ -170,29 +170,6 @@ function print_home () {
 	});
 }
 
-function memory_debugger () {
-	if($("#tab_home_top").html() == "") {
-		print_home();
-	}
-
-	try {
-		var mem = tf.memory();
-		var num_tensors = mem.numTensors;
-		var num_bytes = mem.numBytes;
-		var num_mb = num_bytes / (1024 ** 2);
-		num_mb = num_mb.toFixed(2);
-
-		var str = "";
-		if(num_tensors) {
-			str = `<br>Memory: ${num_mb}MB (${num_tensors} tensors)`;
-		}
-
-		$("#memory_debugger").html(str);
-	} catch (e) {
-		$("#memory_debugger").html("");
-	}
-}
-
 var anno;
 var previous = [];
 
@@ -1419,7 +1396,6 @@ function start_like () {
 	load_next_random_image()
 }
 
-setInterval(memory_debugger, 1000);
 setInterval(create_selects_from_annotation, 1000);
 
 $(document).ready(() => {
