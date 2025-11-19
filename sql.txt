@@ -1,9 +1,9 @@
 create database annotate;
 use annotate;
-create table image (id int unsigned primary key auto_increment, filename varchar(200) unique, width int unsigned, height int unsigned, deleted int unsigned default 0, offtopic int unsigned default 0);
-create table category (id int unsigned primary key auto_increment, name varchar(200) unique);
-create table user (id int unsigned primary key auto_increment, name varchar(200) unique);
-create table annotation (id int unsigned primary key auto_increment, image_id int unsigned, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, w int unsigned, h int unsigned, json varchar(5000), annotarius_id varchar(200) unique, modified timestamp default CURRENT_TIMESTAMP, deleted int unsigned default 0, foreign key (category_id) references category(id) on delete cascade, foreign key (user_id) references user(id) on delete cascade, foreign key (image_id) references image(id) on delete cascade);
+create table if not exists image (id int unsigned primary key auto_increment, filename varchar(200) unique, width int unsigned, height int unsigned, deleted int unsigned default 0, offtopic int unsigned default 0);
+create table if not exists category (id int unsigned primary key auto_increment, name varchar(200) unique);
+create table if not exists user (id int unsigned primary key auto_increment, name varchar(200) unique);
+create table if not exists annotation (id int unsigned primary key auto_increment, image_id int unsigned, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, w int unsigned, h int unsigned, json varchar(5000), annotarius_id varchar(200) unique, modified timestamp default CURRENT_TIMESTAMP, deleted int unsigned default 0, foreign key (category_id) references category(id) on delete cascade, foreign key (user_id) references user(id) on delete cascade, foreign key (image_id) references image(id) on delete cascade);
 create index image_filename on image(filename);
 create index annotation_image_id on annotation(image_id);
 alter table annotation add column curated int unsigned default null;
@@ -16,8 +16,8 @@ ALTER TABLE `image` ADD INDEX `idx_image_deleted_offtopic_perception_hash_id` (`
 
 alter table image add column unidentifiable int default 0;
 
-CREATE TABLE image_data (id INT UNSIGNED NOT NULL AUTO_INCREMENT, filename VARCHAR(255) NOT NULL UNIQUE, image_content LONGBLOB, PRIMARY KEY (id));
+create table if not exists image_data (id INT UNSIGNED NOT NULL AUTO_INCREMENT, filename VARCHAR(255) NOT NULL UNIQUE, image_content LONGBLOB, PRIMARY KEY (id));
 
-CREATE TABLE models (id INT AUTO_INCREMENT PRIMARY KEY, model_name VARCHAR(100) NOT NULL, upload_time TIMESTAMP, filename VARCHAR(100), file_contents LONGBLOB, uid varchar(100));
+create table if not exists models (id INT AUTO_INCREMENT PRIMARY KEY, model_name VARCHAR(100) NOT NULL, upload_time TIMESTAMP, filename VARCHAR(100), file_contents LONGBLOB, uid varchar(100));
 
-CREATE TABLE model_labels (id INT UNSIGNED NOT NULL AUTO_INCREMENT, uid VARCHAR(100) NOT NULL, label_index INT UNSIGNED NOT NULL, label_name VARCHAR(255) NOT NULL, PRIMARY KEY (id), UNIQUE KEY unique_model_label (uid, label_index), FOREIGN KEY (uid) REFERENCES models(uid) ON DELETE CASCADE);
+create table if not exists model_labels (id INT UNSIGNED NOT NULL AUTO_INCREMENT, uid VARCHAR(100) NOT NULL, label_index INT UNSIGNED NOT NULL, label_name VARCHAR(255) NOT NULL, PRIMARY KEY (id), UNIQUE KEY unique_model_label (uid, label_index), FOREIGN KEY (uid) REFERENCES models(uid) ON DELETE CASCADE);

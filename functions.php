@@ -89,17 +89,16 @@
 		return $conn;
 	}
 
-	function safe_fsockopen($host, $port, $timeout = 5) {
-		set_error_handler(function($errno, $errstr) {
-			throw new Exception($errstr, $errno);
-		});
-		try {
-			$fp = fsockopen($host, $port, $errno, $errstr, $timeout);
-			if ($fp) fclose($fp);
-			return (bool)$fp;
-		} finally {
-			restore_error_handler();
+	function safe_fsockopen($host, $port, $timeout = 5, $retries = 5, $delay_sec = 1) {
+		for ($i = 0; $i < $retries; $i++) {
+			$fp = @fsockopen($host, $port, $errno, $errstr, $timeout); // @ unterdrückt Warnungen
+			if ($fp) {
+				fclose($fp);
+				return true;
+			}
+			sleep($delay_sec);
 		}
+		return false;
 	}
 
 	function try_connect($retries = 3, $delay_sec = 2) {
