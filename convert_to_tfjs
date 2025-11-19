@@ -35,7 +35,7 @@ if command -v yolo &> /dev/null; then
     yolo export model="$copied_model_file" format=tfjs
 
     model_without_pt="$(basename "$model_file" .pt)"
-    web_model_dir="$tmp_dir/${model_without_pt}_web_model"
+    web_model_dir="$tmp_dir/${model_without_pt}_web_model/"
 
     echo "ls tmp_dir:"
     ls $tmp_dir
