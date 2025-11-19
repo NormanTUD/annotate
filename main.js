@@ -39,7 +39,7 @@ async function load_model() {
 	}
 
 	const model_uid = $("#chosen_model").val();
-	const model_json_url = "api/get_model.php";
+	const model_json_url = "api/get_model.php?uid=" + encodeURIComponent(model_uid);
 	
 	console.log(`Loading model_json_url: ${model_json_url}`);
 
