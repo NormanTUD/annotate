@@ -1151,26 +1151,52 @@
 			foreach ($files_array as $path) {
 				$path = convert_to_tfjs($path);
 
-				$file = $path;
-				$file = preg_replace("/.*\//", "", $file);
-				echo "Working on path $path<br>";
-				$file_contents = file_get_contents($path);
+				$inserted_model_ids = [];
 
-				// Insert the model into the database
-				$stmt = $GLOBALS["pdo"]->prepare("INSERT INTO models (model_name, upload_time, filename, file_contents, uid) VALUES (:model_name, now(), :filename, :file_contents, :uid)");
-				$stmt->bindParam(':model_name', $model_name);
-				$stmt->bindParam(':filename', $file);
-				$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
-				$stmt->bindParam(':uid', $uid);
-				$stmt->execute();
+				// Prüfe, ob $path ein Verzeichnis ist
+				if (is_dir($path)) {
+					$files = scandir($path);
 
-				// Retrieve the ID of the inserted model
-				$model_id = $GLOBALS["pdo"]->lastInsertId();
+					foreach ($files as $file) {
+						if ($file === '.' || $file === '..') continue;
 
-				echo "ID for file $file: $model_id<br>";
+						$full_path = $path . DIRECTORY_SEPARATOR . $file;
 
-				// Store the ID in the array
-				$inserted_model_ids[] = $model_id;
+						if (is_file($full_path)) {
+							$file_contents = file_get_contents($full_path);
+							$stmt = $GLOBALS["pdo"]->prepare("
+								INSERT INTO models (model_name, upload_time, filename, file_contents, uid)
+								VALUES (:model_name, now(), :filename, :file_contents, :uid)
+								");
+							$stmt->bindParam(':model_name', $model_name);
+							$stmt->bindParam(':filename', $file);
+							$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
+							$stmt->bindParam(':uid', $uid);
+							$stmt->execute();
+
+							$model_id = $GLOBALS["pdo"]->lastInsertId();
+							echo "ID for file $file: $model_id<br>";
+							$inserted_model_ids[] = $model_id;
+						}
+					}
+				} elseif (is_file($path)) {
+					$file = preg_replace("/.*\//", "", $path);
+					$file_contents = file_get_contents($path);
+
+					$stmt = $GLOBALS["pdo"]->prepare("
+						INSERT INTO models (model_name, upload_time, filename, file_contents, uid)
+						VALUES (:model_name, now(), :filename, :file_contents, :uid)
+						");
+					$stmt->bindParam(':model_name', $model_name);
+					$stmt->bindParam(':filename', $file);
+					$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
+					$stmt->bindParam(':uid', $uid);
+					$stmt->execute();
+
+					$model_id = $GLOBALS["pdo"]->lastInsertId();
+					echo "ID for file $file: $model_id<br>";
+					$inserted_model_ids[] = $model_id;
+				}
 			}
 
 			// Close the database connection

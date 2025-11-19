@@ -33,9 +33,6 @@ if command -v yolo &> /dev/null; then
 
     web_model_dir="$output_dir_host/${uuid}_web_model/"
 
-    echo "ls $web_model_dir"
-    ls $web_model_dir
-
     if [[ ! -d $web_model_dir ]]; then
 	    echo "Cannot find files under >$web_model_dir< (web_model_dir: $web_model_dir, output_dir_host: $output_dir_host, output_dir_host: $output_dir_host)"
     fi
