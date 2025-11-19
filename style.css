@@ -234,8 +234,8 @@ a:hover {
 }
 
 #list ul {
-	list-style-position: inside; /* Marker wandern ins Element */
 	text-align: right;           /* Text + Marker rechts */
+	list-style: none;
 }
 
 #list li::before {
