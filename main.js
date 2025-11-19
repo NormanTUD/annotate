@@ -1137,6 +1137,8 @@ async function set_img_from_filename (fn) {
 		$("#annotation_area").hide();
 		$("#no_imgs_left").show();
 	}
+
+	watch_svg_auto()
 }
 
 async function load_next_random_image(fn = false) {
