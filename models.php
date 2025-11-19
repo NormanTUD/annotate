@@ -75,7 +75,8 @@ document.addEventListener("DOMContentLoaded", function() {
     function filter_forbidden_lines(t) {
         var forbidden = [
             "Please check linkage and avoid linking the same target more than once",
-            "MessageFactory' object has no attribute 'GetPrototype'"
+            "MessageFactory' object has no attribute 'GetPrototype'",
+            "/var/www/.config/matplotlib"
         ];
         var lines = t.split(/\r?\n/);
         var filtered = [];
