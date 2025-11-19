@@ -1486,6 +1486,8 @@ function init_image_and_overlay_on_load() {
 		// small timeout to let Annotorious position elements
 		setTimeout(() => update_overlay_and_image_size(), 50);
 	}
+
+	watch_svg_auto();
 }
 
 function create_ai_threshold_sliders() {
