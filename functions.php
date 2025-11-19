@@ -338,11 +338,11 @@
 		$str .= '
 <nav class="main-nav">
   <a href="index.php">Home</a>
-  <a target="_blank" href="stat.php">Statistics</a>
-  <a target="_blank" href="models.php">Models</a>
-  <a target="_blank" href="upload.php">Upload Images</a>
-  <a target="_blank" href="overview.php">Overview</a>
-  <a target="_blank" href="export_annotations_gui.php">Export annotations</a>
+  <a href="stat.php">Statistics</a>
+  <a href="models.php">Models</a>
+  <a href="upload.php">Upload Images</a>
+  <a href="overview.php">Overview</a>
+  <a href="export_annotations_gui.php">Export annotations</a>
 </nav>
 ';
 
