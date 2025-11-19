@@ -22,6 +22,19 @@ function uuidv4() {
 	);
 }
 
+async function load_labels() {
+	try {
+		const response = await fetch('labels.php');
+		if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+		const data = await response.json();
+		if (!Array.isArray(data)) throw new Error("Response is not an array");
+		labels = data;
+		console.log("Labels loaded:", labels);
+	} catch (err) {
+		console.error("Failed to load labels:", err);
+	}
+}
+
 async function load_model() {
 	if (!has_model()) {
 		console.info("Model doesn't exist. Not loading.");
@@ -1263,6 +1276,7 @@ setInterval(memory_debugger, 1000);
 setInterval(create_selects_from_annotation, 1000);
 
 $(document).ready(() => {
+	load_labels();
 	show_or_hide_ai_stuff();
 })
 
