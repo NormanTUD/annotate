@@ -762,6 +762,7 @@ async function handleAnnotations(boxes, scores, classes) {
 	delete_all_anno_current_image();
 
 	const anno_boxes = [];
+	const this_labels = get_labels();
 
 	for (let i = 0; i < boxes.length; i++) {
 		const img_width = $("#image").width();
@@ -786,9 +787,7 @@ async function handleAnnotations(boxes, scores, classes) {
 			continue;
 		}
 
-		var this_labels = get_labels();
-
-		if (Object.keys(get_labels()).length === 0) {
+		if (Object.keys(this_labels).length === 0) {
 			error("ERROR", "has no labels");
 			return;
 		}
