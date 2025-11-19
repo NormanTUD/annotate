@@ -956,8 +956,13 @@
 		}
 
 		$modelFile = $final_path . "/model.json";
+
 		if (!file_exists($modelFile)) {
-			throw new RuntimeException("Fehler: Modelldatei '$modelFile' existiert nicht.");
+			$available = array_diff(scandir($final_path), ['.', '..']);
+			$availableList = implode(", ", $available);
+			throw new RuntimeException(
+				"Fehler: Modelldatei '$modelFile' existiert nicht. Verfügbar im Verzeichnis: $availableList"
+			);
 		}
 
 		return $final_path;
