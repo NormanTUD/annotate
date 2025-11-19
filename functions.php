@@ -127,11 +127,13 @@
 				]);
 				return true;
 			} catch (\Throwable $e) {
-				$pingable = safe_fsockopen($GLOBALS['db_host'], $GLOBALS['db_port']) ? "Yes" : "No";
-				echo "Could not connect to database on {$GLOBALS['db_host']}:{$GLOBALS['db_port']}. Host pingable? <tt>$pingable</tt><br>";
-				echo "Error:<pre>".$e->getMessage()."</pre>";
-				echo "Stack:<pre>".$e->getTraceAsString()."</pre>";
-				sleep($delay_sec);
+				if($i > 1 || $retries == 0) {
+					$pingable = safe_fsockopen($GLOBALS['db_host'], $GLOBALS['db_port']) ? "Yes" : "No";
+					echo "Could not connect to database on {$GLOBALS['db_host']}:{$GLOBALS['db_port']}. Host pingable? <tt>$pingable</tt><br>";
+					echo "Error:<pre>".$e->getMessage()."</pre>";
+					echo "Stack:<pre>".$e->getTraceAsString()."</pre>";
+					sleep($delay_sec);
+				}
 			}
 		}
 
@@ -1200,61 +1202,69 @@
 		return $res["running"];
 	}
 
-	function insert_model_into_db ($model_name, $files_array) {
-		try {
-			$inserted_model_ids = [];
+	function insert_file_into_db($model_name, $file_path, $uid) {
+		if (!is_file($file_path)) return null;
 
-			$prefix = "model_";
-			$uid = uniqid($prefix);
+		$file_contents = file_get_contents($file_path);
+		$filename = basename($file_path);
+
+		$stmt = $GLOBALS["pdo"]->prepare("
+			INSERT INTO models (model_name, upload_time, filename, file_contents, uid)
+			VALUES (:model_name, now(), :filename, :file_contents, :uid)
+			");
+		$stmt->bindParam(':model_name', $model_name);
+		$stmt->bindParam(':filename', $filename);
+		$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
+		$stmt->bindParam(':uid', $uid);
+		$stmt->execute();
+
+		if ($filename === "metadata.yaml") {
+			insert_model_labels_from_yaml($file_path, $uid);
+		}
+
+		return $GLOBALS["pdo"]->lastInsertId();
+	}
+
+	function insert_directory_into_db($model_name, $dir_path, $uid) {
+		$inserted_ids = [];
+		if (!is_dir($dir_path)) {
+			echo "Path is not a folder: $dir_path<br>";
+			exit(1);
+		}
+
+		foreach (scandir($dir_path) as $file) {
+			if ($file === '.' || $file === '..') continue;
+			$full_path = $dir_path . DIRECTORY_SEPARATOR . $file;
+			if (is_file($full_path)) {
+				$inserted_id = insert_file_into_db($model_name, $full_path, $uid);
+				if ($inserted_id) $inserted_ids[] = $inserted_id;
+			}
+		}
+
+		return $inserted_ids;
+	}
+
+	function insert_model_into_db($model_name, $files_array, $pt_file) {
+		try {
+			$uid = uniqid("model_");
+			$all_inserted_ids = [];
 
 			foreach ($files_array as $path) {
 				$path = convert_to_tfjs($path);
-
-				$inserted_model_ids = [];
-
-				// Prüfe, ob $path ein Verzeichnis ist
-				if (is_dir($path)) {
-					$files = scandir($path);
-
-					foreach ($files as $file) {
-						if ($file === '.' || $file === '..') continue;
-
-						$full_path = $path . DIRECTORY_SEPARATOR . $file;
-
-						if (is_file($full_path)) {
-							$file_contents = file_get_contents($full_path);
-							$stmt = $GLOBALS["pdo"]->prepare("
-								INSERT INTO models (model_name, upload_time, filename, file_contents, uid)
-								VALUES (:model_name, now(), :filename, :file_contents, :uid)
-								");
-							$stmt->bindParam(':model_name', $model_name);
-							$stmt->bindParam(':filename', $file);
-							$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
-							$stmt->bindParam(':uid', $uid);
-							$stmt->execute();
-
-							$model_id = $GLOBALS["pdo"]->lastInsertId();
-							$inserted_model_ids[] = $model_id;
-
-							if($file == "metadata.yaml") {
-								insert_model_labels_from_yaml($path . DIRECTORY_SEPARATOR . $file, $uid);
-							}
-						}
-					}
-				} else {
-					echo "Path is not a folder: $path<br>";
-					exit(1);
-
-				}
+				$all_inserted_ids = array_merge($all_inserted_ids, insert_directory_into_db($model_name, $path, $uid));
 			}
 
-			// Close the database connection
+			// insert pt_file as well
+			if ($pt_file && is_file($pt_file)) {
+				$pt_inserted_id = insert_file_into_db($model_name, $pt_file, $uid);
+				if ($pt_inserted_id) $all_inserted_ids[] = $pt_inserted_id;
+			}
 
-			return $inserted_model_ids;
+			return $all_inserted_ids;
+
 		} catch (\Throwable $e) {
-			// Log and handle the database error
 			error_log("Database error: " . $e->getMessage());
-			die("Error: Unable to insert models into the database.<br>\nError:<br>".$e->getMessage()."<br>Error End<br>\n");
+			die("Error: Unable to insert models into the database.<br>\nError:<br>" . $e->getMessage() . "<br>Error End<br>\n");
 		}
 	}
 

@@ -15,25 +15,45 @@ $available_models = get_list_of_models();
 <?php
 if(count($available_models)) {
 ?>
-    <table border=1>
-	<tr>
-	    <th>Name</th>
-	    <th>UID</th>
-	    <th>Delete?</th>
-	</tr>
+<table border=1>
+<tr>
+    <th>Name</th>
+    <th>UID</th>
+    <th>Files</th>
+    <th>Delete?</th>
+</tr>
 <?php
-	for ($i = 0; $i < count($available_models); $i++) {
-		print "<tr>\n";
-		print " <td>".$available_models[$i][0]."</td>\n";
-		print " <td>".$available_models[$i][1]."</td>\n";
-		print " <td><a href='models.php?delete_model=".$available_models[$i][1]."'>Delete!</a></td>\n";
-		print "</tr>\n";
-	}
+for ($i = 0; $i < count($available_models); $i++) {
+    $model_name = $available_models[$i][0];
+    $uid = $available_models[$i][1];
+
+    // Dateien aus DB holen
+    $stmt = $GLOBALS["pdo"]->prepare("SELECT id, filename FROM models WHERE uid = :uid");
+    $stmt->bindParam(':uid', $uid);
+    $stmt->execute();
+    $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    print "<tr>\n";
+    print " <td>$model_name</td>\n";
+    print " <td>$uid</td>\n";
+
+    // Dateien als Links
+    print " <td>";
+    foreach ($files as $file) {
+        $file_id = $file['id'];
+        $filename = htmlspecialchars($file['filename']);
+        print "<a href='download_file.php?file_id=$file_id'>$filename</a><br>";
+    }
+    print "</td>\n";
+
+    print " <td><a href='models.php?delete_model=$uid'>Delete!</a></td>\n";
+    print "</tr>\n";
+}
 ?>
-    </table>
+</table>
 <?php
 } else {
-	echo "<p>No models available.</p>";
+    echo "<p>No models available.</p>";
 }
 ?>
 

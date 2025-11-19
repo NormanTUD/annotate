@@ -101,7 +101,8 @@ if (!$has_model_uploaded) {
 }
 
 try {
-	insert_model_into_db($modelName, $files);
+	$pt_file = isset($_FILES['pt_model_file']) ? $_FILES['pt_model_file'] : '';
+	insert_model_into_db($modelName, $files, $pt_file);
 	echo "✅ Success: Model '$modelName' saved into DB<br>";
 	flush();
 } catch (\Throwable $e) {
