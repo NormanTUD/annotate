@@ -653,6 +653,8 @@ function processModelOutput(res) {
 
 	log(`Raw data shape: ${numFeatures} features x ${numPredictions} predictions`);
 
+	const conf_threshold = getConfThreshold();
+
 	// Iteriere über alle Predictions
 	for (let i = 0; i < numPredictions; i++) {
 		const features = data.map(arr => arr[i]);
@@ -668,7 +670,7 @@ function processModelOutput(res) {
 			}
 		}
 
-		if (bestScore > getConfThreshold()) {
+		if (bestScore > conf_threshold) {
 			// Relative Koordinaten
 			const relX = x / imgsz;
 			const relY = y / imgsz;
