@@ -919,6 +919,8 @@ async function handleAnnotations(boxes, scores, classes) {
 
 	await anno.setAnnotations(anno_boxes);
 
+	watch_svg_auto();
+
 	const new_annos = await anno.getAnnotations();
 	for (const ann of new_annos) {
 		await save_anno(ann);
