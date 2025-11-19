@@ -75,6 +75,13 @@ document.addEventListener("DOMContentLoaded", function() {
     function filter_forbidden_lines(t) {
         var forbidden = [
             "Please check linkage and avoid linking the same target more than once",
+	    "Unable to register",
+	    "Number of eligible GPUs",
+	    "Starting new session",
+	    "Ignored output_format",
+	    "Ignored drop_control_dependency",
+	    "of TensorFlow Decision Forests with",
+	    "pkg_resources is deprecated as an API",
             "GetPrototype",
             "and dtype int64 was auto converted to the type int32",
             "All log messages before",
