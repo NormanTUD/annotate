@@ -1582,7 +1582,12 @@ function getIouThreshold() {
 	return el ? parseFloat(el.value) : 0.5;
 }
 
-// creates a slider toolbar before #image_container
+function reset_zoom () {
+	input.value = 0;
+	update_from_slider(0);
+	setTimeout(() => init_image_and_overlay_on_load(), 50);
+}
+
 function create_zoom_slider() {
 	// avoid double insertion
 	if (document.getElementById('zoom_toolbar')) return;
@@ -1673,11 +1678,7 @@ function create_zoom_slider() {
 	});
 
 	// reset button behaviour
-	resetBtn.addEventListener('click', () => {
-		input.value = 0;
-		update_from_slider(0);
-		setTimeout(() => init_image_and_overlay_on_load(), 50);
-	});
+	resetBtn.addEventListener('click', () => reset_zoom);
 
 	// initialize displayed value
 	update_from_slider(input.value);
