@@ -997,9 +997,9 @@ async function autonext () {
 		autonext_param = true;
 		load_next_random_image()
 
-		watch_svg_auto();
+		annotate_svg_now();
 
-		await sleep(1500);
+		await sleep(3000);
 
 		$("#autonext_img_button").text("Stop AutoNext");
 		$(".disable_in_autonext").prop("disabled", true);
