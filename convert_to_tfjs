@@ -33,10 +33,10 @@ if command -v yolo &> /dev/null; then
     echo "yolo export model=\"$copied_model_file\" format=tfjs"
     yolo export model="$copied_model_file" format=tfjs
 
-    echo "ls $tmp_dir"
-    ls $tmp_dir
-
     web_model_dir="$tmp_dir/${uuid}_web_model/"
+
+    echo "ls $web_model_dir"
+    ls $web_model_dir
 
     if [[ -d $web_model_dir ]]; then
 	    cp -r "$web_model_dir" "$output_dir_host/"
