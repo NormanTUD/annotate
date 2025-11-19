@@ -35,13 +35,19 @@ async function load_labels() {
 	}
 }
 
+function get_chosen_model() {
+	return $("#chosen_model").val();
+}
+
 async function load_model() {
 	if (!has_model()) {
 		console.info("Model doesn't exist. Not loading.");
 		return;
 	}
 
-	const new_model_md5 = $("#chosen_model").val();
+	const model_name = get_chosen_model();
+
+	const new_model_md5 = model_name;
 	if (model && new_model_md5 === last_model_md5) return;
 	last_model_md5 = new_model_md5;
 
@@ -51,7 +57,7 @@ async function load_model() {
 		model = null;
 	}
 
-	const model_uid = $("#chosen_model").val();
+	const model_uid = model_name;
 	const model_json_url = "get_model_file.php?&uid=" + encodeURIComponent(model_uid) + "&filename=model.json";
 	
 	console.log(`Loading model_json_url: ${model_json_url}`);
