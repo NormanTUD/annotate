@@ -1,5 +1,7 @@
 "use strict";
 
+var zoom_input;
+
 (function () {
 	var style = document.createElement('style');
 	style.textContent =
@@ -1583,7 +1585,7 @@ function getIouThreshold() {
 }
 
 function reset_zoom () {
-	input.value = 0;
+	zoom_input.value = 0;
 	update_from_slider(0);
 	setTimeout(() => init_image_and_overlay_on_load(), 50);
 }
@@ -1608,16 +1610,16 @@ function create_zoom_slider() {
 	label.style.fontSize = '0.9em';
 	toolbar.appendChild(label);
 
-	const input = document.createElement('input');
-	input.type = 'range';
-	input.min = -5;
-	input.max = 5;
-	input.step = 0.1;
-	input.value = 0;  // <— ensures 100 % default
-	input.id = 'zoom_slider';
-	input.style.cursor = 'pointer';
-	input.style.width = '200px';
-	toolbar.appendChild(input);
+	zoom_input = document.createElement('input');
+	zoom_input.type = 'range';
+	zoom_input.min = -5;
+	zoom_input.max = 5;
+	zoom_input.step = 0.1;
+	zoom_input.value = 0;  // <— ensures 100 % default
+	zoom_input.id = 'zoom_slider';
+	zoom_input.style.cursor = 'pointer';
+	zoom_input.style.width = '200px';
+	toolbar.appendChild(zoom_input);
 
 	const val = document.createElement('span');
 	val.id = 'zoom_value';
@@ -1655,12 +1657,12 @@ function create_zoom_slider() {
 	}
 
 	// live update while dragging
-	input.addEventListener('input', (ev) => {
+	zoom_input.addEventListener('input', (ev) => {
 		update_from_slider(ev.target.value);
 	});
 
 	// on release (desktop browsers fire 'change' on release), call the init re-sync
-	input.addEventListener('change', (ev) => {
+	zoom_input.addEventListener('change', (ev) => {
 		update_from_slider(ev.target.value);
 		// give layout a tiny moment then re-init annotorious sync
 		setTimeout(() => init_image_and_overlay_on_load(), 50);
@@ -1668,7 +1670,7 @@ function create_zoom_slider() {
 
 	// also handle pointer/touch end cases: if user holds and releases outside the slider
 	let pointerDown = false;
-	input.addEventListener('pointerdown', () => { pointerDown = true; });
+	zoominput.addEventListener('pointerdown', () => { pointerDown = true; });
 	window.addEventListener('pointerup', () => {
 		if (pointerDown) {
 			pointerDown = false;
@@ -1681,7 +1683,7 @@ function create_zoom_slider() {
 	resetBtn.addEventListener('click', () => reset_zoom);
 
 	// initialize displayed value
-	update_from_slider(input.value);
+	update_from_slider(zoom_input.value);
 }
 
 function start_annotation_watch() {
