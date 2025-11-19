@@ -40,6 +40,8 @@ async function load_model() {
 
 	const model_uid = $("#chosen_model").val();
 	const model_json_url = "api/get_model.php";
+	
+	console.log(`Loading model_json_url: ${model_json_url}`);
 
 	try {
 		await tf.ready();
@@ -49,16 +51,6 @@ async function load_model() {
 		// Versuch, das Manifest zuerst zu holen, für Debug
 		const resp = await fetch(model_json_url);
 		const model_json = await resp.json();
-		console.log("Model JSON keys:", Object.keys(model_json));
-		if (model_json.weightsManifest) {
-			console.log("Weights manifest:");
-			model_json.weightsManifest.forEach((group, i) => {
-				console.log(`Group ${i}: paths=${group.paths}, weights count=${group.weights.length}`);
-				group.weights.forEach(w => {
-					console.log(`  ${w.name}: shape=${w.shape}, dtype=${w.dtype}`);
-				});
-			});
-		}
 
 		model = await tf.loadGraphModel(model_json_url, {
 			onProgress: (p) => {
