@@ -43,8 +43,6 @@
 		var w = get_wrapper();
 		if (!w) return;
 		w.classList.remove('ai-analyzing');
-
-		watch_svg_auto();
 	};
 })();
 
