@@ -1225,6 +1225,8 @@ async function set_img_from_filename(fn) {
 		$("#filename").html(fn);
 	}
 
+	document.title = "annotate - " + fn;
+
 	// Warten bis Bildwechsel komplett+FadeIn fertig ist
 	await fade_image_transition(fn);
 
