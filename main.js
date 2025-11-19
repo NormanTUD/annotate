@@ -1593,6 +1593,6 @@ function create_zoom_slider() {
 	update_from_slider(input.value);
 }
 
-function label_annos() {
-	annotate_svg('svg.a9s-annotationlayer', '#image');
+function start_annotation_watch() {
+	watch_svg('svg.a9s-annotationlayer', '#image');
 }
