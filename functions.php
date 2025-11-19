@@ -530,7 +530,6 @@
 				WHERE uid=" . esc($model_uid) . " 
 				AND label_index=" . intval($index);
 
-			echo "Running query: $check_query\n";
 			$res = rquery($check_query);
 
 			if (!$res) {
