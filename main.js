@@ -1,18 +1,49 @@
 "use strict";
 
-(function() {
-  var style = document.createElement('style');
-  style.textContent =
-    '@keyframes hacker_glow{0%{box-shadow:0 0 5px #0f0}50%{box-shadow:0 0 20px #0f0}100%{box-shadow:0 0 5px #0f0}}' +
-    '.blinking-border{animation:hacker_glow 1s infinite}';
-  document.head.appendChild(style);
+(function () {
+	var style = document.createElement('style');
+	style.textContent =
+		'@keyframes glow{0%{box-shadow:0 0 4px #00ff88}50%{box-shadow:0 0 14px #00ff88}100%{box-shadow:0 0 4px #00ff88}}' +
+		'@keyframes sweep{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(200%) rotate(45deg)}}' +
+		'@keyframes noise{0%{opacity:0.1}50%{opacity:0.25}100%{opacity:0.1}}' +
 
-  function get_wrapper() {
-    return document.querySelector('div[style*="position: relative"]');
-  }
+		'.ai-analyzing{position:relative}' +
+		'.ai-analyzing::before{' +
+		'content:"";' +
+		'position:absolute; inset:0;' +
+		'background:repeating-linear-gradient(0deg,rgba(255,255,255,0.05) 0,rgba(255,255,255,0.05) 2px,rgba(0,0,0,0) 4px);' +
+		'pointer-events:none;' +
+		'animation:noise 1.2s infinite;' +
+		'}' +
+		'.ai-analyzing::after{' +
+		'content:"";' +
+		'position:absolute; inset:-20%;' +
+		'background:linear-gradient(90deg,rgba(0,255,150,0) 0%,rgba(0,255,150,0.3) 50%,rgba(0,255,150,0) 100%);' +
+		'pointer-events:none;' +
+		'transform:rotate(45deg);' +
+		'animation:sweep 1.5s linear infinite;' +
+		'}' +
+		'.ai-glow{animation:glow 1s infinite}';
 
-  window.start_ai_animation = function() { get_wrapper().classList.add('blinking-border'); };
-  window.stop_ai_animation  = function() { get_wrapper().classList.remove('blinking-border'); };
+	document.head.appendChild(style);
+
+	function get_wrapper() {
+		return document.querySelector('div[style*="position: relative"]');
+	}
+
+	window.start_ai_animation = function () {
+		var w = get_wrapper();
+		if (!w) return;
+		w.classList.add('ai-analyzing');
+		w.classList.add('ai-glow');
+	};
+
+	window.stop_ai_animation = function () {
+		var w = get_wrapper();
+		if (!w) return;
+		w.classList.remove('ai-analyzing');
+		w.classList.remove('ai-glow');
+	};
 })();
 
 const log = console.log;
