@@ -65,14 +65,37 @@ document.addEventListener("DOMContentLoaded", function() {
     function appendOutput(text) {
         text = ansi_to_html(text);
 
-        // HTML-safe breaks
-        text = text.replace(/\n/g, "<br>");
-
-        // leere Zeilen killen
-        text = text.replace(/^\s*<br>\s*$/gm, "");
+        text = filter_forbidden_lines(text);
+        text = normalize_linebreaks(text);
 
         container.innerHTML += text;
         container.scrollTop = container.scrollHeight;
+    }
+
+    function filter_forbidden_lines(t) {
+        var forbidden = [
+            "Please check linkage and avoid linking the same target more than once",
+            "MessageFactory' object has no attribute 'GetPrototype'"
+        ];
+        var lines = t.split(/\r?\n/);
+        var filtered = [];
+
+        for (var i = 0; i < lines.length; i++) {
+            var bad = false;
+            for (var j = 0; j < forbidden.length; j++) {
+                if (lines[i].indexOf(forbidden[j]) !== -1) bad = true;
+            }
+            if (!bad) filtered.push(lines[i]);
+        }
+        return filtered.join("\n");
+    }
+
+    function normalize_linebreaks(t) {
+        t = t.replace(/\n/g, "<br>");
+        t = t.replace(/(<br>\s*)+/g, "<br>");
+        t = t.replace(/^<br>$/gm, "");
+        t = t.replace(/(<br>\s*){2,}/g, "<br>");
+        return t.trim();
     }
 
     function ansi_to_html(text) {
