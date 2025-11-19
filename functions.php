@@ -467,27 +467,55 @@
 	}
 
 	function insert_model_labels_from_yaml($yaml_path, $model_uid) {
+		echo "Loading YAML: $yaml_path\n";
 		$yaml_content = file_get_contents($yaml_path);
+
+		if ($yaml_content === false) {
+			echo "ERROR: Could not read YAML file.\n";
+			throw new Exception("File read error");
+		}
+
+		echo "Parsing YAML...\n";
 		$data = Yaml::parse($yaml_content);
 
 		if (!isset($data['names']) || !is_array($data['names'])) {
-			throw new Exception("No 'names' block found in YAML");
+			echo "ERROR: No 'names' array found in YAML.\n";
+			throw new Exception("No 'names' block");
 		}
+
+		echo "Found ".count($data['names'])." labels in YAML.\n";
 
 		foreach ($data['names'] as $index => $label_name) {
 			$label_name = trim($label_name);
+			echo "Checking label index $index ('$label_name')...\n";
 
-			$check_query = "SELECT id FROM model_labels WHERE uid=".esc($model_uid)." AND label_index=".intval($index);
+			$check_query = "SELECT id FROM model_labels 
+				WHERE uid=" . esc($model_uid) . " 
+				AND label_index=" . intval($index);
+
+			echo "Running query: $check_query\n";
 			$res = rquery($check_query);
 
+			if (!$res) {
+				echo "ERROR: Query failed.\n";
+			}
+
 			if (mysqli_num_rows($res) === 0) {
-				$insert_query = "INSERT INTO model_labels (uid, label_index, label_name) VALUES ("
-					.esc($model_uid).", "
-					.intval($index).", "
-					.esc($label_name).")";
+				echo " → Not found. Inserting...\n";
+
+				$insert_query = "INSERT INTO model_labels (uid, label_index, label_name) VALUES (" .
+					esc($model_uid) . ", " .
+					intval($index) . ", " .
+					esc($label_name) . ")";
+
+				echo "Running INSERT: $insert_query\n";
 				rquery($insert_query);
+			} else {
+				echo " → Already exists. Skipping.\n";
 			}
 		}
+
+		echo "Done.\n";
 	}
 
 	function get_or_create_user_id ($user) {
