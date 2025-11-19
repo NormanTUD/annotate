@@ -86,6 +86,8 @@ document.addEventListener("DOMContentLoaded", function() {
 	    "View Ultralytics Settings with",
 	    "yolo settings key=value",
 	    "ProTip:",
+	    "Output Type:",
+	    "Captures:",
 	    "Unable to register",
 	    "Number of eligible GPUs",
 	    "Starting new session",
