@@ -4,25 +4,29 @@
 	var style = document.createElement('style');
 	style.textContent =
 		'@keyframes glow{0%{box-shadow:0 0 4px #00ff88}50%{box-shadow:0 0 14px #00ff88}100%{box-shadow:0 0 4px #00ff88}}' +
-		'@keyframes sweep{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(200%) rotate(45deg)}}' +
-		'@keyframes noise{0%{opacity:0.1}50%{opacity:0.25}100%{opacity:0.1}}' +
+		'@keyframes sweep{0%{transform:translateX(-100%) translateY(-100%) rotate(45deg)}100%{transform:translateX(150%) translateY(150%) rotate(45deg)}}' +
+		'@keyframes noise{0%{opacity:0.10}50%{opacity:0.22}100%{opacity:0.10}}' +
 
-		'.ai-analyzing{position:relative}' +
+		'.ai-analyzing{position:relative; overflow:hidden}' +
+
 		'.ai-analyzing::before{' +
 		'content:"";' +
 		'position:absolute; inset:0;' +
-		'background:repeating-linear-gradient(0deg,rgba(255,255,255,0.05) 0,rgba(255,255,255,0.05) 2px,rgba(0,0,0,0) 4px);' +
+		'background:repeating-linear-gradient(0deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 2px,rgba(0,0,0,0) 4px);' +
 		'pointer-events:none;' +
 		'animation:noise 1.2s infinite;' +
 		'}' +
+
 		'.ai-analyzing::after{' +
 		'content:"";' +
-		'position:absolute; inset:-20%;' +
-		'background:linear-gradient(90deg,rgba(0,255,150,0) 0%,rgba(0,255,150,0.3) 50%,rgba(0,255,150,0) 100%);' +
+		'position:absolute;' +
+		'top:0; left:0; width:150%; height:150%;' +
+		'background:linear-gradient(90deg,rgba(0,255,150,0) 0%,rgba(0,255,150,0.35) 50%,rgba(0,255,150,0) 100%);' +
 		'pointer-events:none;' +
-		'transform:rotate(45deg);' +
-		'animation:sweep 1.5s linear infinite;' +
+		'transform-origin:center;' +
+		'animation:sweep 1.6s linear infinite;' +
 		'}' +
+
 		'.ai-glow{animation:glow 1s infinite}';
 
 	document.head.appendChild(style);
