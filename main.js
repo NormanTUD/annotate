@@ -1199,6 +1199,8 @@ function fade_image_transition(fn) {
 }
 
 async function set_img_from_filename(fn) {
+	reset_zoom();
+
 	set_image_url(fn);
 
 	if (!fn) {
