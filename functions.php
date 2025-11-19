@@ -955,7 +955,7 @@
 			throw new RuntimeException("Fehler: Das Skript wurde mit Code $returnValue beendet.");
 		}
 
-		$web_model = current(array_filter(glob($final_path . '/*_web_model'), 'is_dir'));
+		$final_path = current(array_filter(glob($final_path . '/*_web_model'), 'is_dir'));
 
 		$modelFile = $final_path . "/model.json";
 
