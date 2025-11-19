@@ -461,6 +461,30 @@
 		}
 	}
 
+	function insert_model_labels_from_yaml($yaml_path, $model_uid) {
+		$yaml_content = file_get_contents($yaml_path);
+		$data = Yaml::parse($yaml_content);
+
+		if (!isset($data['names']) || !is_array($data['names'])) {
+			throw new Exception("No 'names' block found in YAML");
+		}
+
+		foreach ($data['names'] as $index => $label_name) {
+			$label_name = trim($label_name);
+
+			$check_query = "SELECT id FROM model_labels WHERE uid=".esc($model_uid)." AND label_index=".intval($index);
+			$res = rquery($check_query);
+
+			if (mysqli_num_rows($res) === 0) {
+				$insert_query = "INSERT INTO model_labels (uid, label_index, label_name) VALUES ("
+					.esc($model_uid).", "
+					.intval($index).", "
+					.esc($label_name).")";
+				rquery($insert_query);
+			}
+		}
+	}
+
 	function get_or_create_user_id ($user) {
 		$select_query = "select id from user where name = ".esc($user);		
 		$select_res = rquery($select_query);
