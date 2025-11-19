@@ -1592,3 +1592,7 @@ function create_zoom_slider() {
 	// initialize displayed value
 	update_from_slider(input.value);
 }
+
+function label_annos() {
+	annotate_svg('svg.a9s-annotationlayer', '#image');
+}
