@@ -166,6 +166,7 @@ function warn(title, msg) {
 }
 
 function error(title, msg) {
+	console.error(msg);
 	render_status("red", title, msg);
 }
 
