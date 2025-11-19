@@ -141,31 +141,31 @@ function move_file (to) {
 
 function info(title, msg) {
 	if(msg) {
-		$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>");
+		$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>").show();;
 	} else {
-		$("#status_bar").html("<span style='color: white'>" + title + "</span>");
+		$("#status_bar").html("<span style='color: white'>" + title + "</span>").show();;
 	}
 }
 
 function success (title, msg) {
 	if(msg) {
-		$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>");
+		$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>").show();;
 	} else {
-		$("#status_bar").html("<span style='color: white'>" + title + "</span>");
+		$("#status_bar").html("<span style='color: white'>" + title + "</span>").show();;
 	}
 }
 
 function warn(title, msg) {
 	console.warn(title);
 	if(msg) {
-		$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>");
+		$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>").show();;
 	} else {
-		$("#status_bar").html("<span style='color: orange'>" + title + "</span>");
+		$("#status_bar").html("<span style='color: orange'>" + title + "</span>").show();;
 	}
 }
 
 function error (title, msg) {
-	$("#status_bar").html("<span style='color: red'>" + title + ": " + msg + "</span>");
+	$("#status_bar").html("<span style='color: red'>" + title + ": " + msg + "</span>").show();;
 }
 
 async function make_item_anno(elem, widgets={}) {

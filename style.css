@@ -73,6 +73,7 @@ form {
 }
 
 #status_bar {
+	display: none;
 	user-select: none;
 	height: 1.5em;
 	width: 100%;
