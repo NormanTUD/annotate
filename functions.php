@@ -538,14 +538,13 @@
 			}
 
 			if (mysqli_num_rows($res) === 0) {
-				echo " → Not found. Inserting...\n";
+				echo " → Label '$label_name' not found. Inserting...\n";
 
 				$insert_query = "INSERT INTO model_labels (uid, label_index, label_name) VALUES (" .
 					esc($model_uid) . ", " .
 					intval($index) . ", " .
 					esc($label_name) . ")";
 
-				echo "Running INSERT: $insert_query\n";
 				rquery($insert_query);
 			} else {
 				echo " → Already exists. Skipping.\n";
