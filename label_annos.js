@@ -26,38 +26,90 @@ function color_from_string(str) {
 	return `hsl(${hue},70%,50%)`;
 }
 
-function image_pixels_to_svg_box(px, py, pw, ph, img, svg) {
-	try {
-		if (!img || !svg) return null;
-		let imgRect = img.getBoundingClientRect();
-		let scale_x = img.naturalWidth ? imgRect.width / img.naturalWidth : imgRect.width / img.width;
-		let scale_y = img.naturalHeight ? imgRect.height / img.naturalHeight : imgRect.height / img.height;
-		let c1x = imgRect.left + px * scale_x;
-		let c1y = imgRect.top  + py * scale_y;
-		let c2x = imgRect.left + (px + pw) * scale_x;
-		let c2y = imgRect.top  + (py + ph) * scale_y;
-		let inv = svg.getScreenCTM().inverse();
-		let p = svg.createSVGPoint();
-		p.x = c1x; p.y = c1y;
-		let a = p.matrixTransform(inv);
-		p.x = c2x; p.y = c2y;
-		let b = p.matrixTransform(inv);
-		return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) };
-	} catch (e) {
-		return null;
-	}
+function precompute_svg_image_transform(img, svg) {
+	if (!img || !svg) return null;
+
+	let imgRect = img.getBoundingClientRect();
+	let svgRect = svg.getBoundingClientRect();
+	let scaleX = img.naturalWidth ? imgRect.width / img.naturalWidth : imgRect.width / img.width;
+	let scaleY = img.naturalHeight ? imgRect.height / img.naturalHeight : imgRect.height / img.height;
+
+	let invCTM = svg.getScreenCTM().inverse();
+	return { imgRect, scaleX, scaleY, invCTM };
+}
+
+function fast_image_pixels_to_svg_box(px, py, pw, ph, transform) {
+	if (!transform) return null;
+
+	let { imgRect, scaleX, scaleY, invCTM } = transform;
+
+	let c1x = imgRect.left + px * scaleX;
+	let c1y = imgRect.top  + py * scaleY;
+	let c2x = imgRect.left + (px + pw) * scaleX;
+	let c2y = imgRect.top  + (py + ph) * scaleY;
+
+	let p = { x: c1x, y: c1y };
+	let a = svg_point_matrix_transform(p, invCTM);
+	p = { x: c2x, y: c2y };
+	let b = svg_point_matrix_transform(p, invCTM);
+
+	return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) };
+}
+
+function svg_point_matrix_transform(p, matrix) {
+	return {
+		x: matrix.a * p.x + matrix.c * p.y + matrix.e,
+		y: matrix.b * p.x + matrix.d * p.y + matrix.f
+	};
+}
+
+function precompute_svg_image_transform(img, svg) {
+	if (!img || !svg) return null;
+
+	let imgRect = img.getBoundingClientRect();
+	let svgRect = svg.getBoundingClientRect();
+	let scaleX = img.naturalWidth ? imgRect.width / img.naturalWidth : imgRect.width / img.width;
+	let scaleY = img.naturalHeight ? imgRect.height / img.naturalHeight : imgRect.height / img.height;
+
+	let invCTM = svg.getScreenCTM().inverse();
+	return { imgRect, scaleX, scaleY, invCTM };
+}
+
+function fast_image_pixels_to_svg_box(px, py, pw, ph, transform) {
+	if (!transform) return null;
+
+	let { imgRect, scaleX, scaleY, invCTM } = transform;
+
+	let c1x = imgRect.left + px * scaleX;
+	let c1y = imgRect.top  + py * scaleY;
+	let c2x = imgRect.left + (px + pw) * scaleX;
+	let c2y = imgRect.top  + (py + ph) * scaleY;
+
+	let p = { x: c1x, y: c1y };
+	let a = svg_point_matrix_transform(p, invCTM);
+	p = { x: c2x, y: c2y };
+	let b = svg_point_matrix_transform(p, invCTM);
+
+	return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) };
+}
+
+function svg_point_matrix_transform(p, matrix) {
+	return {
+		x: matrix.a * p.x + matrix.c * p.y + matrix.e,
+		y: matrix.b * p.x + matrix.d * p.y + matrix.f
+	};
 }
 
 function parse_annos_from_anno(anno_input, img, svg) {
 	let list = Array.isArray(anno_input) ? anno_input : (typeof anno_input === 'string' ? JSON.parse(anno_input) : []);
 	let out = [];
+	let transform = precompute_svg_image_transform(img, svg); // nur einmal
+
 	for (let a of list) {
 		try {
 			let label = 'unknown';
 			if (a.body && Array.isArray(a.body)) {
-				for (let b of a.body) {
-					if (b.type === 'TextualBody' && b.value) { label = b.value; break; }
-				}
+				for (let b of a.body) if (b.type === 'TextualBody' && b.value) { label = b.value; break; }
 			}
 			let selector = a.target && a.target.selector;
 			if (!selector) selector = (a.target && a.target.selector) || null;
@@ -69,7 +121,8 @@ function parse_annos_from_anno(anno_input, img, svg) {
 			let m = value.match(/xywh=pixel:(\d+),(\d+),(\d+),(\d+)/);
 			if (!m) continue;
 			let px = parseInt(m[1],10), py = parseInt(m[2],10), pw = parseInt(m[3],10), ph = parseInt(m[4],10);
-			let box = image_pixels_to_svg_box(px, py, pw, ph, img, svg);
+
+			let box = fast_image_pixels_to_svg_box(px, py, pw, ph, transform);
 			if (box) out.push({ label, box });
 		} catch (e) {}
 	}
