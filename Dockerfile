@@ -17,14 +17,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
-# Install Docker CLI
-#RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-#    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list && \
-#    apt-get update && \
-#    apt-get install -y docker-ce-cli && \
-#    rm -rf /var/lib/apt/lists/*
-
-# Allow www-data to run sudo without password
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 
 # PHP extensions
@@ -64,7 +56,6 @@ RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-pack
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx2tf sng4onnx
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnxslim onnxruntime ai-edge-litert
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx_graphsurgeon
-#RUN python3 -m pip install --no-cache-dir --break-system-packages --ignore-installed 'sng4onnx>=1.0.1' 'onnx_graphsurgeon>=0.3.26' 'ai-edge-litert>=1.2.0' 'onnx>=1.12.0,<=1.19.1' 'onnx2tf>=1.26.3' 'onnxslim>=0.1.71' 'onnxruntime'
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	apt-get install -y uuid-runtime && \
