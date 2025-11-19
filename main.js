@@ -1605,9 +1605,11 @@ function update_from_slider(v) {
 }
 
 function reset_zoom () {
-	zoom_input.value = 0;
-	update_from_slider(0);
-	setTimeout(() => init_image_and_overlay_on_load(), 50);
+	if(zoom_input) {
+		zoom_input.value = 0;
+		update_from_slider(0);
+		setTimeout(() => init_image_and_overlay_on_load(), 50);
+	}
 }
 
 function create_zoom_slider() {
