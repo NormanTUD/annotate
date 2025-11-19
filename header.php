@@ -7,7 +7,7 @@ include_once("functions.php");
 	<title>annotate</title>
 	<link rel="stylesheet" href="libs/annotorious.min.css">
 	<link rel="stylesheet" href="style.css">
-	<link rel="stylesheet" href="auto_animation.css">
+	<link rel="stylesheet" href="auto_animations.css">
 	<script src="libs/plotly-latest.min.js"></script>
 	<script src="libs/annotorious.min.js"></script>
 	<script src="libs/jquery.min.js"></script>
