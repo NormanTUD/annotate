@@ -7,8 +7,9 @@
 	$loaded_from_db = 0;
 
 	if ($model_uuid) {
-		// 1. Labels aus der neuen Tabelle holen
-		$query = "SELECT label_name FROM model_labels WHERE uid = '" . mysqli_real_escape_string($GLOBALS['mysqli'], $model_uuid) . "' ORDER BY label_index ASC";
+		// Labels aus der neuen Tabelle holen
+		$safe_uuid = addslashes($model_uuid);
+		$query = "SELECT label_name FROM model_labels WHERE uid = '$safe_uuid' ORDER BY label_index ASC";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_assoc($res)) {
@@ -22,8 +23,8 @@
 
 	$labels = [];
 
-	// 2. Alte Methode als Fallback
 	if (!$loaded_from_db) {
+		// Fallback auf alte labels.json
 		$query = "SELECT file_contents FROM models WHERE filename = 'labels.json' ORDER BY upload_time DESC LIMIT 1";
 		$res = rquery($query);
 
@@ -36,7 +37,7 @@
 			}
 		}
 
-		// Falls keine labels.json vorhanden, altes category-System
+		// Alte Kategorie-Tabelle
 		include("export_helper.php");
 
 		$categories = [];
@@ -47,11 +48,11 @@
 			}
 		}
 
-		foreach ($categories as $i => $cat) {
+		foreach ($categories as $cat) {
 			$labels[] = $cat;
 		}
 	} else {
-		// 3. Alte Labels ergänzen, falls sie nicht schon in model_labels sind
+		// Alte Kategorien ergänzen, falls nicht schon in model_labels
 		include("export_helper.php");
 
 		$categories = [];
@@ -69,6 +70,5 @@
 		$labels = $labels_from_db;
 	}
 
-	// 4. JSON ausgeben
 	print json_encode($labels);
 ?>
