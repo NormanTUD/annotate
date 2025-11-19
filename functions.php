@@ -958,7 +958,7 @@
 		$process = proc_open($command, $descriptorspec, $pipes);
 
 		if (!is_resource($process)) {
-			throw new RuntimeException("Fehler: Konnte den Prozess nicht starten.");
+			throw new RuntimeException("Error: could not start process.");
 		}
 
 		// stdout + stderr parallel lesen
@@ -998,7 +998,7 @@
 
 		$returnValue = proc_close($process);
 		if ($returnValue !== 0) {
-			throw new RuntimeException("Fehler: Das Skript wurde mit Code $returnValue beendet.");
+			throw new RuntimeException("Error: the script exited with $returnValue.");
 		}
 
 		$final_path = current(array_filter(glob($final_path . '/*_web_model'), 'is_dir'));
@@ -1006,11 +1006,13 @@
 		$modelFile = $final_path . "/model.json";
 
 		if (!file_exists($modelFile)) {
-			$available = array_diff(scandir($final_path), ['.', '..']);
-			$availableList = implode(", ", $available);
-			throw new RuntimeException(
-				"Fehler: Modelldatei '$modelFile' existiert nicht. Verfügbar im Verzeichnis: $availableList"
-			);
+			if($final_path) {
+				$available = array_diff(scandir($final_path), ['.', '..']);
+				$availableList = implode(", ", $available);
+				throw new RuntimeException(
+					"Error: Model File '$modelFile' does not exist. Available in dir: $availableList"
+				);
+			}
 		}
 
 		return $final_path;
