@@ -11,8 +11,8 @@
     return document.querySelector('div[style*="position: relative"]');
   }
 
-  window.start_blink = function() { get_wrapper().classList.add('blinking-border'); };
-  window.stop_blink  = function() { get_wrapper().classList.remove('blinking-border'); };
+  window.start_ai_animation = function() { get_wrapper().classList.add('blinking-border'); };
+  window.stop_ai_animation  = function() { get_wrapper().classList.remove('blinking-border'); };
 })();
 
 const log = console.log;
@@ -512,13 +512,13 @@ function get_element() {
 }
 
 async function predictImageWithModel() {
-	start_blink();
+	start_ai_animation();
 
 	log("Starting prediction workflow...");
 
 	const imageElement = await getValidImageElement();
 	if (!imageElement) {
-		stop_blink();
+		stop_ai_animation();
 		return;
 	}
 
@@ -537,7 +537,7 @@ async function predictImageWithModel() {
 
 		const predictionResult = await runPrediction(modelWidth, modelHeight);
 		if (!predictionResult) {
-			stop_blink();
+			stop_ai_animation();
 			return;
 		}
 
@@ -555,7 +555,7 @@ async function predictImageWithModel() {
 		error("Not able to determine model shapes");
 	}
 
-	stop_blink();
+	stop_ai_animation();
 }
 
 async function getValidImageElement() {
