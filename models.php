@@ -179,7 +179,6 @@ document.addEventListener("DOMContentLoaded", function() {
             function read() {
                 reader.read().then(({done, value}) => {
                     if (done) {
-                        appendOutput("\n--- Done ---\n");
                         reloadBtn.style.display = "inline-block";
                         return;
                     }
