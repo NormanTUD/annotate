@@ -1176,6 +1176,12 @@ function set_image_url (img) {
 	update_url_param("edit", img);
 }
 
+window.addEventListener("popstate", function () {
+	var params = new URLSearchParams(window.location.search);
+	var img = params.get("edit");
+	if (img) set_img_from_filename(img);
+});
+
 function fade_image_transition(fn) {
     return new Promise(function(resolve) {
         var img = $("#image");
