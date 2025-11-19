@@ -91,13 +91,28 @@
 
 	function safe_fsockopen($host, $port, $timeout = 5, $retries = 5, $delay_sec = 1) {
 		for ($i = 0; $i < $retries; $i++) {
-			$fp = @fsockopen($host, $port, $errno, $errstr, $timeout); // @ unterdrückt Warnungen
+			$prev_handler = set_error_handler(function($errno, $errstr, $errfile, $errline) {
+				// swallow warnings while we probe the socket
+				return true;
+			});
+
+			$fp = @fsockopen($host, $port, $errno, $errstr, $timeout);
+
+			restore_error_handler(); // stellt den vorherigen Handler wieder her
+
 			if ($fp) {
 				fclose($fp);
 				return true;
 			}
+
+			error_log(sprintf(
+				"Connection attempt %d to %s:%s failed: %s (%s)",
+				$i + 1, $host, $port, $errstr ?? 'n/a', $errno ?? 'n/a'
+			));
 			sleep($delay_sec);
 		}
+
+		error_log("Could not connect to $host:$port after $retries attempts");
 		return false;
 	}
 
