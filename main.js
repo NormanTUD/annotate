@@ -24,7 +24,14 @@ function uuidv4() {
 
 async function load_labels() {
 	try {
-		const response = await fetch('labels.php');
+		var labels_url = 'labels.php';
+		const model_uuid = get_chosen_model_uuid();
+
+		if(model_uuid) {
+			labels_url = `${labels_url}?model_uuid=${model_uuid}`;
+		}
+
+		const response = await fetch(labels_url);
 		if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 		const data = await response.json();
 		if (!Array.isArray(data)) throw new Error("Response is not an array");
@@ -35,7 +42,7 @@ async function load_labels() {
 	}
 }
 
-function get_chosen_model() {
+function get_chosen_model_uuid() {
 	return $("#chosen_model").val();
 }
 
@@ -45,9 +52,9 @@ async function load_model() {
 		return;
 	}
 
-	const model_name = get_chosen_model();
+	const model_uuid = get_chosen_model_uuid();
 
-	const new_model_md5 = model_name;
+	const new_model_md5 = model_uuid;
 	if (model && new_model_md5 === last_model_md5) return;
 	last_model_md5 = new_model_md5;
 
@@ -57,8 +64,7 @@ async function load_model() {
 		model = null;
 	}
 
-	const model_uid = model_name;
-	const model_json_url = "get_model_file.php?&uid=" + encodeURIComponent(model_uid) + "&filename=model.json";
+	const model_json_url = "get_model_file.php?&uid=" + encodeURIComponent(model_uuid) + "&filename=model.json";
 	
 	console.log(`Loading model_json_url: ${model_json_url}`);
 
