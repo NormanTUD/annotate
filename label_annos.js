@@ -26,42 +26,100 @@ function color_from_string(str) {
 	return `hsl(${hue},70%,50%)`;
 }
 
+function image_pixels_to_svg_box(px, py, pw, ph, img, svg) {
+	try {
+		if (!img || !svg) return null;
+		let imgRect = img.getBoundingClientRect();
+		let scale_x = img.naturalWidth ? imgRect.width / img.naturalWidth : imgRect.width / img.width;
+		let scale_y = img.naturalHeight ? imgRect.height / img.naturalHeight : imgRect.height / img.height;
+		let c1x = imgRect.left + px * scale_x;
+		let c1y = imgRect.top  + py * scale_y;
+		let c2x = imgRect.left + (px + pw) * scale_x;
+		let c2y = imgRect.top  + (py + ph) * scale_y;
+		let inv = svg.getScreenCTM().inverse();
+		let p = svg.createSVGPoint();
+		p.x = c1x; p.y = c1y;
+		let a = p.matrixTransform(inv);
+		p.x = c2x; p.y = c2y;
+		let b = p.matrixTransform(inv);
+		return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) };
+	} catch (e) {
+		return null;
+	}
+}
+
+function parse_annos_from_anno(anno_input, img, svg) {
+	let list = Array.isArray(anno_input) ? anno_input : (typeof anno_input === 'string' ? JSON.parse(anno_input) : []);
+	let out = [];
+	for (let a of list) {
+		try {
+			let label = 'unknown';
+			if (a.body && Array.isArray(a.body)) {
+				for (let b of a.body) {
+					if (b.type === 'TextualBody' && b.value) { label = b.value; break; }
+				}
+			}
+			let selector = a.target && a.target.selector;
+			if (!selector) selector = (a.target && a.target.selector) || null;
+			let value = selector && selector.value;
+			if (!value && a.target && a.target.selector && Array.isArray(a.target.selector)) {
+				for (let s of a.target.selector) if (s.value) { value = s.value; break; }
+			}
+			if (!value) continue;
+			let m = value.match(/xywh=pixel:(\d+),(\d+),(\d+),(\d+)/);
+			if (!m) continue;
+			let px = parseInt(m[1],10), py = parseInt(m[2],10), pw = parseInt(m[3],10), ph = parseInt(m[4],10);
+			let box = image_pixels_to_svg_box(px, py, pw, ph, img, svg);
+			if (box) out.push({ label, box });
+		} catch (e) {}
+	}
+	return out;
+}
+
 function get_category_for_annotation(rect, svg, img) {
 	if (!rect || !svg) return 'unknown';
 	let annot_box = rect_bbox_from_element(rect);
 
-	// 1) search svg <text> elements that overlap the annotation rect
+	try {
+		let raw_annos = null;
+		if (typeof anno !== 'undefined' && typeof anno.getAnnotations === 'function') raw_annos = anno.getAnnotations();
+		if (!raw_annos && window && window.__anno_json__) raw_annos = window.__anno_json__;
+		if (raw_annos) {
+			let parsed = parse_annos_from_anno(raw_annos, img, svg);
+			for (let p of parsed) {
+				if (boxes_intersect(annot_box, p.box)) {
+					let txt = (p.label || '').trim();
+					if (txt) return txt;
+				}
+			}
+		}
+	} catch (e) {}
+
 	let texts = svg.querySelectorAll('text');
 	for (let t of texts) {
 		try {
-			// use getBBox to get true rendered size/position
 			let tb = t.getBBox();
 			let text_box = { x: tb.x, y: tb.y, width: tb.width, height: tb.height };
 			if (boxes_intersect(annot_box, text_box)) {
 				let txt = (t.textContent || '').trim();
 				if (txt) return txt;
 			}
-		} catch (e) {
-			// some browsers may throw on getBBox if SVG not rendered yet; ignore
-		}
+		} catch (e) {}
 	}
 
-	// 2) if no intersecting text found, try "nearest above" heuristic:
 	let candidates = [];
 	for (let t of texts) {
 		let txt = (t.textContent || '').trim();
 		if (!txt) continue;
 		try {
 			let tb = t.getBBox();
-			// prefer texts whose x is close and y is above rect.y
 			let dx = Math.abs((tb.x + tb.width/2) - (annot_box.x + annot_box.width/2));
-			let dy = (tb.y + tb.height) - annot_box.y; // negative if above
+			let dy = (tb.y + tb.height) - annot_box.y;
 			candidates.push({ node: t, dx, dy, txt });
 		} catch (e) {}
 	}
 	if (candidates.length) {
 		candidates.sort((a,b) => {
-			// prefer small absolute dx and text above (dy < 10) or small positive dy
 			let sa = Math.abs(a.dx) + Math.max(0, a.dy);
 			let sb = Math.abs(b.dx) + Math.max(0, b.dy);
 			return sa - sb;
@@ -69,13 +127,11 @@ function get_category_for_annotation(rect, svg, img) {
 		return candidates[0].txt;
 	}
 
-	// 3) fallback: if caller provided an image and there are overlay .r6o-editor divs, use them
 	if (img) {
 		let divs = document.querySelectorAll('.r6o-editor');
 		if (divs.length) {
 			let imgRect = img.getBoundingClientRect();
 			let svgRect = svg.getBoundingClientRect();
-			// derive scale from svg viewBox if possible
 			let scaleX = 1, scaleY = 1;
 			try {
 				let vb = svg.viewBox.baseVal;
@@ -171,4 +227,4 @@ function watch_svg_auto() {
 	annotate_svg(svg, img);
 }
 
-//watch_svg_auto();
+watch_svg_auto();
