@@ -148,7 +148,10 @@ function compute_overlap_score(annot_box, p_box, opts) {
 	let proximity = 1 - Math.min(1, d / max_d);
 
 	let w_area = opts.w_area, w_pos = opts.w_pos;
-	let score = w_area * area_ratio + w_pos * proximity;
+
+	// Dynamische Score-Anpassung für kleine Boxen
+	let area_weighted = aw*ah < 2000 ? Math.min(1, area_ratio*3) : area_ratio;
+	let score = w_area * area_weighted + w_pos * proximity;
 
 	return { score, area_overlap, area_ratio, proximity, distance: d };
 }
@@ -157,7 +160,10 @@ let cached_parsed_annos = null;
 function get_category_for_annotation(rect, svg, img, parsed_annos=null) {
     if (!rect || !svg) return 'unknown';
     let annot_box = rect_bbox_from_element(rect);
-    let opts = { w_area: 0.75, w_pos: 0.25, min_score: 0.03 };
+
+    // Dynamische min_score für kleine Boxen
+    let min_score = Math.min(0.03, annot_box.width*annot_box.height/1500);
+    let opts = { w_area: 0.75, w_pos: 0.25, min_score };
 
     // Text boxes einmal pro SVG
     if (!get_category_for_annotation.text_boxes) {
@@ -207,7 +213,6 @@ function get_category_for_annotation(rect, svg, img, parsed_annos=null) {
                             ? anno.getAnnotations()
                             : window.__anno_json__;
             if (raw_annos) {
-                const img_transform = precompute_svg_image_transform(img, svg);
                 cached_parsed_annos = get_parsed_annos(img, svg);
             }
         } catch(e){
