@@ -234,11 +234,15 @@ a:hover {
 }
 
 #list ul {
-	text-align: right;       /* Text in der Liste rechtsbündig */
-	list-style-position: inside; /* optional, falls du die Marker anpassen willst */
+	list-style-position: inside; /* Marker wandern ins Element */
+	text-align: right;           /* Text + Marker rechts */
 }
 
-#list li a {
-	display: block;          /* damit text-align auf <a> wirkt */
-	text-align: right;
+#list li::before {
+	content: counter(li) " "; /* Nummerierung */
+	counter-increment: li;
+}
+
+#list ul {
+	counter-reset: li;
 }
