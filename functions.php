@@ -666,10 +666,6 @@
 		return $GLOBALS["dbh"]->insert_id;
 	}
 
-	#die(get_or_create_category_id("raketenspiraleaasd"));
-	#die(get_or_create_category_id("\n\nDAS HIER SOLLTE KEINE NEWLINES raketenspiraleaasd\n\n"));
-	#die(get_or_create_user_id("raketenspiraleasdadasdfff"));
-
 	function mark_as_curated ($image_id) {
 		$query = "update annotation set curated = 1 where image_id = ".esc($image_id);
 
