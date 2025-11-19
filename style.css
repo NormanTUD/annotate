@@ -222,3 +222,8 @@ a:hover {
 .blinking-border {
 	animation: hacker_glow 1s infinite;
 }
+
+#image {
+	transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+	display: inline-block;
+}

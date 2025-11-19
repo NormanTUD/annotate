@@ -1176,23 +1176,26 @@ function set_image_url (img) {
 }
 
 function fade_image_transition(fn) {
-	return new Promise(resolve => {
-		const img = $("#image");
+    return new Promise(function(resolve) {
+        var img = $("#image");
 
-		img.stop(true, true).fadeOut(300, function() {
-			img
-				.prop("src", "print_image.php?filename=" + encodeURIComponent(fn))
-				.off("load")
-				.on("load", function() {
-					this.style.width  = this.naturalWidth + "px";
-					this.style.height = this.naturalHeight + "px";
+        img.stop(true, true).css("opacity", 0);
 
-					img.fadeIn(150, function() {
-						resolve(); // Jetzt ist wirklich alles fertig
-					});
-				});
-		});
-	});
+        img.off("load").on("load", function() {
+            var w = this.naturalWidth + "px";
+            var h = this.naturalHeight + "px";
+
+            $(this).css({
+                width: w,
+                height: h,
+                opacity: 1
+            });
+
+            setTimeout(resolve, 200);
+        });
+
+        img.prop("src", "print_image.php?filename=" + encodeURIComponent(fn));
+    });
 }
 
 async function set_img_from_filename(fn) {
