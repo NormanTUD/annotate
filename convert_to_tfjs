@@ -72,5 +72,4 @@ EOF
     "
 fi
 
-echo "WEB_MODEL: $output_dir_host"
 exit 0
