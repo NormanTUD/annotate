@@ -214,14 +214,15 @@ function annotate_svg(svg, img) {
 		let box = rect_bbox_from_element(rect);
 		let color = color_from_string(category);
 
-		// Label-Position oben links der Box, aber innerhalb der Box
 		let label_height = 20;
 		let label_width = Math.max(30, Math.min(box.width, category.length * 8));
+
+		// Standardposition: links oben, leicht über der Box
 		let label_x = box.x;
 		let label_y = box.y - label_height;
 
-		// Falls y < 0, innerhalb der Box oben links
-		if (label_y < box.y) label_y = box.y;
+		// Wenn Label über den SVG-Rand hinausgehen würde, innerhalb der Box platzieren
+		if (label_y < 0) label_y = box.y;
 
 		let bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 		bg.setAttribute("x", label_x);
