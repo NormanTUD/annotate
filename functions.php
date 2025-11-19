@@ -1221,7 +1221,6 @@
 							$stmt->execute();
 
 							$model_id = $GLOBALS["pdo"]->lastInsertId();
-							echo "ID for file $file: $model_id<br>";
 							$inserted_model_ids[] = $model_id;
 
 							if($file == "metadata.yaml") {
