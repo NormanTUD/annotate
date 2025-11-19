@@ -16,13 +16,18 @@ model_file=$(realpath "$model_file")
 output_dir_host=$(realpath "$output_dir_host")
 mkdir -p "$output_dir_host" || { echo "Cannot create output directory $output_dir_host"; exit 1; }
 
+tmp_dir=$(mktemp -d /tmp/convert_tfjs_XXXX)
+
 if command -v yolo &> /dev/null; then
     echo "Using local YOLO installation..."
     echo '======'
     echo 'Exporting YOLO model to TFJS format...'
     echo '======'
     uuid=$(uuidgen)
-    copied_model_file="/tmp/$uuid.pt"
+
+    cd $tmp_dir
+
+    copied_model_file="$tmp_dir/$uuid.pt"
 
     if [[ -e $model_file ]]; then
 	echo "Copying $model_file to $copied_model_file"
@@ -40,7 +45,6 @@ if command -v yolo &> /dev/null; then
     fi
 else
     echo "Local YOLO not found, using Docker..."
-    tmp_dir=$(mktemp -d /tmp/convert_tfjs_XXXX)
     dockerfile_path="$tmp_dir/Dockerfile"
 
 	bash check_docker_group_current_user
