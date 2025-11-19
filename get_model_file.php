@@ -10,7 +10,6 @@ if ($filename === "model.json") {
     print_model_file($uid, $filename);
     $json = ob_get_clean();
 
-    // JSON dekodieren – manchmal gibt TensorFlow.js extra whitespace oder BOMs
     $json = trim($json);
     $data = json_decode($json, true);
 
