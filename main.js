@@ -1223,6 +1223,7 @@ async function set_img_from_filename(fn) {
 	await fade_image_transition(fn);
 
 	await load_page();
+
 	watch_svg_auto();
 }
 
