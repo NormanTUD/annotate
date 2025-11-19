@@ -1200,18 +1200,23 @@
 		return $res["running"];
 	}
 
-	function insert_file_into_db($model_name, $file_path, $uid) {
+	function insert_file_into_db($model_name, $file_path, $uid, $overwrite_filename = null) {
 		if (!is_file($file_path)) return null;
 
 		$file_contents = file_get_contents($file_path);
 		$filename = basename($file_path);
+
+		$fn = $filename;
+		if($overwrite_filename != null) {
+			$fn = $overwrite_filename;
+		}
 
 		$stmt = $GLOBALS["pdo"]->prepare("
 			INSERT INTO models (model_name, upload_time, filename, file_contents, uid)
 			VALUES (:model_name, now(), :filename, :file_contents, :uid)
 			");
 		$stmt->bindParam(':model_name', $model_name);
-		$stmt->bindParam(':filename', $filename);
+		$stmt->bindParam(':filename', $fn);
 		$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
 		$stmt->bindParam(':uid', $uid);
 		$stmt->execute();
@@ -1245,7 +1250,7 @@
 		return $inserted_ids;
 	}
 
-	function insert_model_into_db($model_name, $files_array, $pt_file) {
+	function insert_model_into_db($model_name, $files_array, $pt_file_path, $pt_file) {
 		try {
 			$uid = uniqid("model_");
 			$all_inserted_ids = [];
@@ -1256,8 +1261,8 @@
 			}
 
 			// insert pt_file as well
-			if ($pt_file && is_file($pt_file)) {
-				$pt_inserted_id = insert_file_into_db($model_name, $pt_file, $uid);
+			if ($pt_file && $pt_file_path && is_file($pt_file_path)) {
+				$pt_inserted_id = insert_file_into_db($model_name, $pt_file_path, $uid, $pt_file);
 				if ($pt_inserted_id) $all_inserted_ids[] = $pt_inserted_id;
 			}
 
