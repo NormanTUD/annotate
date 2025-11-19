@@ -74,11 +74,11 @@
 							<button class="disable_in_autonext" onclick="move_to_offtopic()">Offtopic</button>
 							<input class="disable_in_autonext" placeholder="Filename contains..." id="like" onchange="start_like()" />
 						</p>
-						<div id="ki_detected_names"></div>
 						<div id="image_container" style="position: relative; display: inline-block; transform-origin: top left;">
 							<img id="image" />
 						</div>
 						<br>
+						<div id="ki_detected_names"></div>
 						<div id="filename"></div>
 					</div>
 				</div>
