@@ -774,12 +774,27 @@ function iou(boxA, boxB) {
 	return interArea / (boxAArea + boxBArea - interArea);
 }
 
+function showIconNotification() {
+	const icon = document.createElement('div');
+	icon.className = 'notification-icon';
+	icon.innerHTML = '❌'; // deutlich "nichts gefunden"
+	document.body.appendChild(icon);
+
+	requestAnimationFrame(() => icon.style.opacity = 1);
+
+	setTimeout(() => {
+		icon.style.opacity = 0;
+		icon.addEventListener('transitionend', () => icon.remove());
+	}, 1000);
+}
+
 async function handleAnnotations(boxes, scores, classes) {
 	if(enable_debug) {
 		log("handleAnnotations:", "boxes:", boxes, "scores:", scores, "classes:", classes);
 	}
 
 	if (boxes.length === 0) {
+		showIconNotification();
 		info("Nothing found", "Annotate manually");
 		return;
 	}

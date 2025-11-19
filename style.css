@@ -172,3 +172,16 @@ a:hover {
 .main-nav a:hover {
 	color: #4cafef;
 }
+
+.notification-icon {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 80px; /* groß */
+	color: rgba(255, 0, 0, 0.9); /* rot als Hinweis */
+	z-index: 9999;
+	opacity: 0;
+	transition: opacity 0.2s;
+	pointer-events: none; /* klickbar darunter */
+}
