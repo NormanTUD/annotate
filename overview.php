@@ -50,9 +50,10 @@
 	}
 ?>
 
-	<h1>Annotation Dashboard</h1>
+	<h1>Annotations</h1>
 
 <?php
+	/*
 	$models = fetchAll("SELECT * FROM models ORDER BY upload_time DESC");
 	renderTable("Models", ['id', 'model_name', 'upload_time', 'filename', 'uid'], $models);
 
@@ -61,7 +62,9 @@
 		$img['size'] = $img['width'] . "×" . $img['height'];
 	}
 	renderTable("Images", ['id', 'filename', 'size', 'deleted', 'offtopic', 'unidentifiable', 'perception_hash'], $images);
+	 */
 
+	/*
 	$annots = fetchAll("
 	    SELECT a.id, i.filename, u.name as user, c.name as category,
 		   CONCAT('(', a.x_start, ',', a.y_start, ') ', a.w, '×', a.h) AS box,
@@ -73,7 +76,9 @@
 	    ORDER BY a.modified DESC LIMIT 100
 	");
 	renderTable("Annotations", ['id', 'filename', 'user', 'category', 'box', 'modified', 'deleted'], $annots);
+	 */
 
+	/*
 	$annots_bare = fetchAll("
 		select
 			id,
@@ -105,6 +110,7 @@
 		"modified",
 		"deleted"
 	], $annots_bare);
+	 */
 
 	$cats = fetchAll("SELECT * FROM category ORDER BY id");
 	renderTable("Categories", ['id', 'name'], $cats, [
