@@ -35,15 +35,15 @@ if command -v yolo &> /dev/null; then
     yolo export model="$copied_model_file" format=tfjs
 
     model_without_pt="$(basename "$model_file" .pt)"
-    web_model_path="$tmp_dir/${model_without_pt}_web_model"
+    web_model_dir="$tmp_dir/${model_without_pt}_web_model"
 
     echo "ls tmp_dir:"
     ls $tmp_dir
 
-    if [[ -d $web_model_path ]]; then
-	    cp -r "$web_model_path" "$output_dir_host/"
+    if [[ -d $web_model_dir ]]; then
+	    cp -r "$web_model_dir" "$output_dir_host/"
     else
-	    echo "Cannot find files under >$web_model_path< (model_without_pt: $model_without_pt, web_model_path: $web_model_path, tmp_dir: $tmp_dir, output_dir_host: $output_dir_host)"
+	    echo "Cannot find files under >$web_model_dir< (model_without_pt: $model_without_pt, web_model_dir: $web_model_dir, tmp_dir: $tmp_dir, output_dir_host: $output_dir_host)"
     fi
 else
     echo "Local YOLO not found, using Docker..."
