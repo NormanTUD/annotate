@@ -41,6 +41,12 @@ if command -v yolo &> /dev/null; then
     #web_model_path="$output_dir_host/${model_without_pt}_web_model"
     web_model_path="$tmp_dir/${model_without_pt}_web_model"
 
+    echo "ls tmp_dir:"
+    ls $tmp_dir
+
+    echo "ls $output_dir_host"
+    ls $output_dir_host
+
     if [[ -d $web_model_path ]]; then
 	    cp -r "$web_model_path" "$output_dir_host/"
     else
