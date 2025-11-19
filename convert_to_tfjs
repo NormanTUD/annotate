@@ -19,11 +19,8 @@ mkdir -p "$output_dir_host" || { echo "Cannot create output directory $output_di
 tmp_dir=$(mktemp -d /tmp/convert_tfjs_XXXX)
 
 if command -v yolo &> /dev/null; then
-    echo "Using local YOLO installation..."
-    echo '======'
-    echo 'Exporting YOLO model to TFJS format...'
-    echo '======'
     uuid=$(uuidgen)
+    echo "Using local YOLO installation (uuid: $uuid)..."
 
     cd $tmp_dir
 
@@ -74,9 +71,6 @@ EOF
       set -e
       cd /app
       model_filename=\"$(basename "$model_file")\"
-      echo '======'
-      echo 'Exporting YOLO model to TFJS format...'
-      echo '======'
       yolo export model=/app/models/\$model_filename format=tfjs
       cp -r \"/app/models/\${model_filename%.pt}_web_model\" /app/output/
     "
