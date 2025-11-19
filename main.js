@@ -640,14 +640,6 @@ async function predict(modelWidth, modelHeight) {
 	return res;
 }
 
-function getConfThreshold () {
-	return 0.3;
-}
-
-function getIouThreshold() {
-	return 0.5;
-}
-
 function processModelOutput(res) {
 	log("processModelOutput: Starting...");
 
@@ -1354,6 +1346,98 @@ function init_image_and_overlay_on_load() {
 		// small timeout to let Annotorious position elements
 		setTimeout(() => update_overlay_and_image_size(), 50);
 	}
+}
+
+function create_ai_threshold_sliders() {
+	if (document.getElementById('ai_threshold_toolbar')) return;
+
+	const container = document.getElementById('image_container');
+	if (!container) return;
+
+	const toolbar = document.createElement('div');
+	toolbar.id = 'ai_threshold_toolbar';
+	toolbar.style.display = 'flex';
+	toolbar.style.alignItems = 'center';
+	toolbar.style.gap = '14px';
+	toolbar.style.marginBottom = '6px';
+	toolbar.style.userSelect = 'none';
+
+	function make_block(label_text, id, default_val) {
+		const block = document.createElement('div');
+		block.style.display = 'flex';
+		block.style.alignItems = 'center';
+		block.style.gap = '6px';
+
+		const label = document.createElement('span');
+		label.textContent = label_text;
+		label.style.fontSize = '0.9em';
+
+		const input = document.createElement('input');
+		input.type = 'range';
+		input.className = 'ai_stuff';
+		input.min = 0;
+		input.max = 1;
+		input.step = 0.01;
+		input.value = default_val;
+		input.id = id;
+		input.style.cursor = 'pointer';
+		input.style.width = '160px';
+
+		const val = document.createElement('span');
+		val.id = id + '_value';
+		val.style.minWidth = '48px';
+		val.style.fontFamily = 'monospace';
+		val.textContent = Number(default_val).toFixed(2);
+
+		block.appendChild(label);
+		block.appendChild(input);
+		block.appendChild(val);
+
+		return block;
+	}
+
+	const conf_block = make_block('Conf:', 'conf_slider', 0.3);
+	const iou_block  = make_block('IoU:',  'iou_slider',  0.5);
+
+	toolbar.appendChild(conf_block);
+	toolbar.appendChild(iou_block);
+
+	container.parentNode.insertBefore(toolbar, container);
+
+	function update_display(id) {
+		const slider = document.getElementById(id);
+		const span   = document.getElementById(id + '_value');
+		span.textContent = Number(slider.value).toFixed(2);
+	}
+
+	function attach_events(id) {
+		const slider = document.getElementById(id);
+
+		slider.addEventListener('input', () => update_display(id));
+		slider.addEventListener('change', () => update_display(id));
+
+		let down = false;
+		slider.addEventListener('pointerdown', () => down = true);
+		window.addEventListener('pointerup', () => {
+			if (down) down = false;
+		});
+	}
+
+	attach_events('conf_slider');
+	attach_events('iou_slider');
+
+	update_display('conf_slider');
+	update_display('iou_slider');
+}
+
+function getConfThreshold() {
+	const el = document.getElementById('conf_slider');
+	return el ? parseFloat(el.value) : 0.3;
+}
+
+function getIouThreshold() {
+	const el = document.getElementById('iou_slider');
+	return el ? parseFloat(el.value) : 0.5;
 }
 
 // creates a slider toolbar before #image_container
