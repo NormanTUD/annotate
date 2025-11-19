@@ -1584,6 +1584,24 @@ function getIouThreshold() {
 	return el ? parseFloat(el.value) : 0.5;
 }
 
+function slider_to_zoom(v) {
+	// map -5..5 exponentially so 0 = 1.0, ends are 0.1..5.0
+	const min_zoom = 0.1;
+	const max_zoom = 5.0;
+	if (v === 0) return 1.0;
+	const ratio = max_zoom / min_zoom;
+	// normalize to 0..1
+	const normalized = (parseFloat(v) + 5) / 10;
+	return min_zoom * Math.pow(ratio, normalized);
+}
+
+function update_from_slider(v) {
+	zoom_factor = slider_to_zoom(parseInt(v, 10));
+	update_overlay_and_image_size();
+	const pct = Math.round(zoom_factor * 100);
+	document.getElementById('zoom_value').textContent = pct + '%';
+}
+
 function reset_zoom () {
 	zoom_input.value = 0;
 	update_from_slider(0);
@@ -1638,24 +1656,6 @@ function create_zoom_slider() {
 	container.parentNode.insertBefore(toolbar, container);
 
 	// map slider steps to zoom_factor: zoom_factor = 1.1 ** slider_value
-	function slider_to_zoom(v) {
-		// map -5..5 exponentially so 0 = 1.0, ends are 0.1..5.0
-		const min_zoom = 0.1;
-		const max_zoom = 5.0;
-		if (v === 0) return 1.0;
-		const ratio = max_zoom / min_zoom;
-		// normalize to 0..1
-		const normalized = (parseFloat(v) + 5) / 10;
-		return min_zoom * Math.pow(ratio, normalized);
-	}
-
-	function update_from_slider(v) {
-		zoom_factor = slider_to_zoom(parseInt(v, 10));
-		update_overlay_and_image_size();
-		const pct = Math.round(zoom_factor * 100);
-		document.getElementById('zoom_value').textContent = pct + '%';
-	}
-
 	// live update while dragging
 	zoom_input.addEventListener('input', (ev) => {
 		update_from_slider(ev.target.value);
