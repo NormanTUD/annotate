@@ -10,7 +10,7 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html
 # Install dependencies including sudo and Docker prerequisites
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	apt-get remove --purge man-db && \
-	apt-get install -y apt-utils libssl-dev iproute2 iputils-ping \
+	apt-get install -y apt-utils libssl-dev iproute2 iputils-ping uuid-runtime \
 	build-essential curl libgl1 libglib2.0-0 git python3 python3-pip python3-dev \
 	python3 python3-pip zip libjpeg-dev libpng-dev libfreetype6-dev \
 	mariadb-client sudo curl gnupg lsb-release && \
@@ -56,11 +56,6 @@ RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-pack
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx2tf sng4onnx
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnxslim onnxruntime ai-edge-litert || true
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx_graphsurgeon
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
-	apt-get install -y uuid-runtime && \
-	rm -rf /var/lib/apt/lists/* && \
-	apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/jax_conversion.py || true
 
