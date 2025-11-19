@@ -1428,6 +1428,8 @@ function update_overlay_and_image_size() {
 		el.style.transformOrigin = "top left";
 		el.style.zoom = ""; // reset any previous hacks; keep native size
 	});
+
+	watch_svg_auto();
 }
 
 function zoom_image(delta, anchor_x = null, anchor_y = null) {
