@@ -712,7 +712,7 @@ function processModelOutput(res) {
 			scores.push(bestScore);
 			classes.push(bestClass);
 
-			console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
+			console.info(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
 		} else {
 			console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore} was not enough (min: ${conf_threshold})`);
 		}
