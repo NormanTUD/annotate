@@ -1179,23 +1179,10 @@
 							$inserted_model_ids[] = $model_id;
 						}
 					}
-				} elseif (is_file($path)) {
-					$file = preg_replace("/.*\//", "", $path);
-					$file_contents = file_get_contents($path);
+				} else {
+					echo "Path is not a folder: $path<br>";
+					exit(1);
 
-					$stmt = $GLOBALS["pdo"]->prepare("
-						INSERT INTO models (model_name, upload_time, filename, file_contents, uid)
-						VALUES (:model_name, now(), :filename, :file_contents, :uid)
-						");
-					$stmt->bindParam(':model_name', $model_name);
-					$stmt->bindParam(':filename', $file);
-					$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
-					$stmt->bindParam(':uid', $uid);
-					$stmt->execute();
-
-					$model_id = $GLOBALS["pdo"]->lastInsertId();
-					echo "ID for file $file: $model_id<br>";
-					$inserted_model_ids[] = $model_id;
 				}
 			}
 
