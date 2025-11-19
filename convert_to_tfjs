@@ -16,14 +16,12 @@ model_file=$(realpath "$model_file")
 output_dir_host=$(realpath "$output_dir_host")
 mkdir -p "$output_dir_host" || { echo "Cannot create output directory $output_dir_host"; exit 1; }
 
-tmp_dir=$(mktemp -d /tmp/convert_tfjs_XXXX)
-
 if command -v yolo &> /dev/null; then
     uuid=$(uuidgen)
 
-    cd $tmp_dir
+    cd $output_dir_host
 
-    copied_model_file="$tmp_dir/$uuid.pt"
+    copied_model_file="$output_dir_host/$uuid.pt"
 
     if [[ -e $model_file ]]; then
 	echo "Copying $model_file to $copied_model_file"
@@ -33,7 +31,7 @@ if command -v yolo &> /dev/null; then
     echo "yolo export model=\"$copied_model_file\" format=tfjs"
     yolo export model="$copied_model_file" format=tfjs
 
-    web_model_dir="$tmp_dir/${uuid}_web_model/"
+    web_model_dir="$output_dir_host/${uuid}_web_model/"
 
     echo "ls $web_model_dir"
     ls $web_model_dir
@@ -41,7 +39,7 @@ if command -v yolo &> /dev/null; then
     if [[ -d $web_model_dir ]]; then
 	    cp -r "$web_model_dir" "$output_dir_host/"
     else
-	    echo "Cannot find files under >$web_model_dir< (web_model_dir: $web_model_dir, tmp_dir: $tmp_dir, output_dir_host: $output_dir_host)"
+	    echo "Cannot find files under >$web_model_dir< (web_model_dir: $web_model_dir, output_dir_host: $output_dir_host, output_dir_host: $output_dir_host)"
     fi
 else
     echo "Local YOLO not found, using Docker..."
