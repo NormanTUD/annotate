@@ -74,6 +74,19 @@
 		die("db_host could not be determined");
 	}
 
+	function create_tables() {
+		$handle = fopen("sql.txt", "r");
+		if ($handle) {
+			while (($line = fgets($handle)) !== false) {
+				if(!preg_match("/^\s*$/", $line)) {
+					rquery($line);
+				}
+			}
+
+			fclose($handle);
+		}
+	}
+
 	try {
 		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS["db_port"]);
 
@@ -83,16 +96,7 @@
 			try {
 				$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS["db_port"]);
 
-				$handle = fopen("sql.txt", "r");
-				if ($handle) {
-					while (($line = fgets($handle)) !== false) {
-						if(!preg_match("/^\s*$/", $line)) {
-							rquery($line);
-						}
-					}
-
-					fclose($handle);
-				}
+				create_tables();
 			} catch (\Throwable $e) {
 				$pingable = ping($GLOBALS["db_host"], $GLOBALS["db_port"], 5);
 
