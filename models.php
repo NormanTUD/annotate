@@ -63,9 +63,40 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Funktion zum Anhängen von Text und automatischem Scrollen
     function appendOutput(text) {
-        const cleaned = text.replace(/^\s*<br>\s*$/gmi, "");
-        container.innerHTML += cleaned;
+        text = ansi_to_html(text);
+
+        // HTML-safe breaks
+        text = text.replace(/\n/g, "<br>");
+
+        // leere Zeilen killen
+        text = text.replace(/^\s*<br>\s*$/gm, "");
+
+        container.innerHTML += text;
         container.scrollTop = container.scrollHeight;
+    }
+
+    function ansi_to_html(text) {
+        const ANSI_REGEX = /\x1b\[(\d+(;\d+)*)m/g;
+        const ANSI_STYLES = {
+            "0":  "</span>",
+            "1":  "<span style='font-weight:bold'>",
+            "30": "<span style='color:black'>",
+            "31": "<span style='color:red'>",
+            "32": "<span style='color:green'>",
+            "33": "<span style='color:yellow'>",
+            "34": "<span style='color:blue'>",
+            "35": "<span style='color:magenta'>",
+            "36": "<span style='color:cyan'>",
+            "37": "<span style='color:white'>",
+            "90": "<span style='color:gray'>"
+        };
+
+        return text.replace(ANSI_REGEX, (_, codes) => {
+            const parts = codes.split(";");
+            // wir nehmen nur den letzten relevanten Code
+            const last = parts[parts.length - 1];
+            return ANSI_STYLES[last] || "";
+        });
     }
 
     const form = document.getElementById("model-upload-form");
