@@ -24,11 +24,11 @@ if command -v yolo &> /dev/null; then
     copied_model_file="$output_dir_host/$uuid.pt"
 
     if [[ -e $model_file ]]; then
-	echo "Copying $model_file to $copied_model_file"
+	#echo "Copying $model_file to $copied_model_file"
 	cp "$model_file" "$copied_model_file"
     fi
 
-    echo "yolo export model=\"$copied_model_file\" format=tfjs"
+    #echo "yolo export model=\"$copied_model_file\" format=tfjs"
     yolo export model="$copied_model_file" format=tfjs
 
     web_model_dir="$output_dir_host/${uuid}_web_model/"
