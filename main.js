@@ -640,7 +640,15 @@ async function predict(modelWidth, modelHeight) {
 	return res;
 }
 
-function processModelOutput(res, confThreshold = 0.3, iouThreshold = 0.5) {
+function getConfThreshold () {
+	return 0.3;
+}
+
+function getIouThreshold() {
+	return 0.5;
+}
+
+function processModelOutput(res) {
 	log("processModelOutput: Starting...");
 
 	const rawBoxes = [];
@@ -668,7 +676,7 @@ function processModelOutput(res, confThreshold = 0.3, iouThreshold = 0.5) {
 			}
 		}
 
-		if (bestScore > confThreshold) {
+		if (bestScore > getConfThreshold()) {
 			// Relative Koordinaten
 			const relX = x / imgsz;
 			const relY = y / imgsz;
@@ -691,6 +699,8 @@ function processModelOutput(res, confThreshold = 0.3, iouThreshold = 0.5) {
 	const keepClasses = [];
 
 	const indices = scores.map((s, i) => i).sort((a, b) => scores[b] - scores[a]);
+
+	const iouThreshold = getIouThreshold();
 
 	while (indices.length > 0) {
 		const i = indices.shift();
