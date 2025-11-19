@@ -2,7 +2,12 @@
 include_once("functions.php");
 
 $uid = get_get("uid");
+$filename_higher_prio = get_get("filename_higher_prio");
 $filename = get_get("filename");
+
+if($filename_higher_prio) {
+	$filename = $filename_higher_prio;
+}
 
 if ($filename === "model.json") {
 	ob_start();
@@ -21,7 +26,7 @@ if ($filename === "model.json") {
 		foreach ($data['weightsManifest'] as &$manifest) {
 			if (isset($manifest['paths']) && is_array($manifest['paths'])) {
 				foreach ($manifest['paths'] as $i => $path) {
-					$manifest['paths'][$i] = "get_model_file.php?uid=" . urlencode($uid) . "&filename=" . urlencode($path);
+					$manifest['paths'][$i] = "get_model_file.php?filename_higher_prio=" . urlencode($path);
 				}
 			}
 		}
