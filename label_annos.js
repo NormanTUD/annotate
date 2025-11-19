@@ -208,7 +208,7 @@ function get_category_for_annotation(rect, svg, img, parsed_annos=null) {
                             : window.__anno_json__;
             if (raw_annos) {
                 const img_transform = precompute_svg_image_transform(img, svg);
-                cached_parsed_annos = parse_annos_from_anno(raw_annos, img, svg);
+                cached_parsed_annos = get_parsed_annos(img, svg);
             }
         } catch(e){
             cached_parsed_annos = [];
@@ -250,6 +250,23 @@ function get_category_for_annotation(rect, svg, img, parsed_annos=null) {
     }
 
     return 'unknown';
+}
+
+let cached_raw_annos = null;
+
+function get_parsed_annos(img, svg) {
+    if (!cached_raw_annos) {
+        try {
+            let raw_annos = (typeof anno !== 'undefined' && typeof anno.getAnnotations === 'function')
+                            ? anno.getAnnotations()
+                            : window.__anno_json__;
+            cached_raw_annos = raw_annos || [];
+        } catch(e) {
+            cached_raw_annos = [];
+        }
+    }
+    const transform = precompute_svg_image_transform(img, svg);
+    return parse_annos_from_anno(cached_raw_annos, img, svg); // transformiert hier passend zum aktuellen SVG
 }
 
 function clear_previous_labels(svg) {
