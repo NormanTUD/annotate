@@ -312,6 +312,8 @@ function annotate_svg(svg, img) {
 			category_counts[category]++;
 		}
 	});
+
+	stop_ai_animation();
 }
 
 function throttle(func, limit) {
