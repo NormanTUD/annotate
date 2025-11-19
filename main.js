@@ -63,7 +63,7 @@ async function load_model () {
 		$("#loader").hide();
 		$("#upload_button").show();
 	} catch (e) {
-		err(`Error loading model: ${e}`);
+		error(`Error loading model: ${e}`);
 		hide_spinner();
 	}
 }
