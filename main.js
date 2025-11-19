@@ -1168,7 +1168,8 @@ function getNewURL(url, param, paramVal){
 }
 
 function update_url_param(param, val) {
-	window.history.replaceState('', '', getNewURL(window.location.href, param, val));
+    var url = getNewURL(window.location.href, param, val);
+    window.history.pushState({}, "", url);
 }
 
 function set_image_url (img) {
