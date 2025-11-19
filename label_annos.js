@@ -107,5 +107,4 @@ function watch_svg_auto() {
     annotate_svg(svg, img);
 }
 
-// automatisch starten
 watch_svg_auto();
