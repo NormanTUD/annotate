@@ -22,47 +22,67 @@ function uuidv4() {
 	);
 }
 
-async function load_model () {
-	if(!has_model()) {
-		console.info("Model doesnt exist. Not loading.");
+async function load_model() {
+	if (!has_model()) {
+		console.info("Model doesn't exist. Not loading.");
 		return;
 	}
 
-	var new_model_md5 = $("#chosen_model").val();
-
-	if(model && new_model_md5 == last_model_md5) {
-		return;
-	}
-
+	const new_model_md5 = $("#chosen_model").val();
+	if (model && new_model_md5 === last_model_md5) return;
 	last_model_md5 = new_model_md5;
 
-	if(model) {
-		await tf.dispose(model);
+	if (model) {
+		tf.disposeVariables();
+		await tf.ready();
+		model = null;
 	}
 
-	var model_uid = $("#chosen_model").val();
-	var model_json_url = "api/get_model.php?uid=" + encodeURIComponent(model_uid);
+	const model_uid = $("#chosen_model").val();
+	const model_json_url = "api/get_model.php?uid=" + encodeURIComponent(model_uid);
 
 	try {
-		model = await tf.loadGraphModel(
-			model_json_url,
-			{
-				onProgress: function(p) {
-					var percent = (p*100).toFixed(0);
-					success("Loading Model", percent + "%<br>\n");
-				}
-			}
-		);
-
-		log("load_model done");
 		await tf.setBackend('wasm');
-		log("set wasm");
-
 		await tf.ready();
 
+		console.log("Loading TFJS model from:", model_json_url);
+
+		// Versuch, das Manifest zuerst zu holen, für Debug
+		const resp = await fetch(model_json_url);
+		const model_json = await resp.json();
+		console.log("Model JSON keys:", Object.keys(model_json));
+		if (model_json.weightsManifest) {
+			console.log("Weights manifest:");
+			model_json.weightsManifest.forEach((group, i) => {
+				console.log(`Group ${i}: paths=${group.paths}, weights count=${group.weights.length}`);
+				group.weights.forEach(w => {
+					console.log(`  ${w.name}: shape=${w.shape}, dtype=${w.dtype}`);
+				});
+			});
+		}
+
+		model = await tf.loadGraphModel(model_json_url, {
+			onProgress: (p) => {
+				const percent = (p * 100).toFixed(0);
+				success("Loading Model", percent + "%<br>\n");
+			}
+		});
+
+		log("load_model done");
 		$("#loader").hide();
 		$("#upload_button").show();
 	} catch (e) {
+		console.error("Model load failed:", e);
+		if (e.stack) console.error(e.stack);
+
+		// TFJS Fehler auswerten
+		if (e.message.includes("tensor should have")) {
+			const match = e.message.match(/shape, \[([^\]]+)\], .* has (\d+)/);
+			if (match) {
+				console.error("Expected shape:", match[1], "but got values:", match[2]);
+			}
+		}
+
 		error(`Error loading model: ${e}`);
 		hide_spinner();
 	}
