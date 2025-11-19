@@ -172,12 +172,12 @@ function success(title, msg) {
 }
 
 function warn(title, msg) {
-	console.warn(title);
+	console.warn(msg ? msg : title);
 	render_status("orange", title, msg);
 }
 
 function error(title, msg) {
-	console.error(title);
+	console.error(msg ? msg : title);
 	render_status("red", title, msg);
 }
 
