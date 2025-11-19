@@ -1,14 +1,56 @@
 "use strict";
 
 var overlay;
+let styleEl;
 
 function start_ai_scan() {
-	const wrapper = document.getElementById('image-wrapper');
-	if (!overlay) {
-		overlay = document.createElement('div');
-		overlay.className = 'ai-scanning-overlay';
-		wrapper.appendChild(overlay);
+	if (overlay) return; // schon aktiv
+
+	const wrapper = document.getElementById('image');
+	if (!wrapper) return;
+
+	// Container um das Bild, falls noch nicht vorhanden
+	let container = wrapper.parentElement;
+	if (!container.classList.contains('ai-scan-wrapper')) {
+		container = document.createElement('div');
+		container.className = 'ai-scan-wrapper';
+		wrapper.parentNode.insertBefore(container, wrapper);
+		container.appendChild(wrapper);
+		container.style.position = 'relative';
+		container.style.display = 'inline-block';
 	}
+
+	// CSS einfügen
+	if (!document.getElementById('ai-scan-style')) {
+		styleEl = document.createElement('style');
+		styleEl.id = 'ai-scan-style';
+		styleEl.textContent = `
+      .ai-scanning-overlay {
+	position: absolute;
+	pointer-events: none;
+	top: 0; left: 0;
+	width: 100%; height: 100%;
+	background: linear-gradient(
+	  120deg,
+	  rgba(255,255,255,0) 0%,
+	  rgba(255,255,255,0.15) 50%,
+	  rgba(255,255,255,0) 100%
+	);
+	transform: translateX(-100%);
+	animation: ai-scan 2s linear infinite;
+      }
+      @keyframes ai-scan {
+	0% { transform: translateX(-100%); }
+	100% { transform: translateX(100%); }
+      }
+    `;
+		document.head.appendChild(styleEl);
+	}
+
+	// Overlay erstellen
+	overlay = document.createElement('div');
+	overlay.className = 'ai-scanning-overlay';
+	container.appendChild(overlay);
 }
 
 function stop_ai_scan() {
@@ -16,7 +58,18 @@ function stop_ai_scan() {
 		overlay.remove();
 		overlay = null;
 	}
+	if (styleEl) {
+		styleEl.remove();
+		styleEl = null;
+	}
+	const container = document.querySelector('.ai-scan-wrapper');
+	const img = document.getElementById('image');
+	if (container && img) {
+		container.parentNode.insertBefore(img, container);
+		container.remove();
+	}
 }
+
 const log = console.log;
 
 const startQueryString = window.location.search;
