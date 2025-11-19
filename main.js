@@ -512,12 +512,20 @@ function get_element() {
 }
 
 async function predictImageWithModel() {
+	start_blink();
+
 	log("Starting prediction workflow...");
 
 	const imageElement = await getValidImageElement();
-	if (!imageElement) return;
+	if (!imageElement) {
+		stop_blink();
+		return;
+	}
 
-	if (!await isModelReady()) return;
+	if (!await isModelReady()) {
+		stop_blink();
+		return;
+	}
 
 	await prepareUIForPrediction();
 
@@ -528,7 +536,10 @@ async function predictImageWithModel() {
 		log(`Model input shape: width=${modelWidth}, height=${modelHeight}`);
 
 		const predictionResult = await runPrediction(modelWidth, modelHeight);
-		if (!predictionResult) return;
+		if (!predictionResult) {
+			stop_blink();
+			return;
+		}
 
 		const { boxes, scores, classes } = await extractDetectionData(predictionResult);
 		log(`Detection data extracted: ${boxes.length} boxes`);
@@ -543,6 +554,8 @@ async function predictImageWithModel() {
 	} else {
 		error("Not able to determine model shapes");
 	}
+
+	stop_blink();
 }
 
 async function getValidImageElement() {
