@@ -34,31 +34,6 @@
 	}
 
 	$available_models = get_list_of_models();
-
-	if(count($available_models)) {
-		if(count($available_models) == 1) {
-			print "<span style='visibility: none'>";
-		}
-		print "AI-Model: <select class='disable_in_autonext' id='chosen_model'>";
-		$i = 0;
-		foreach ($available_models as $_model) {
-			$model_name = $_model[0];
-			$model_uid = $_model[1];
-
-			$selected = "";
-			if($i == 0) {
-				$selected = " selected ";
-			}
-			print "<option $selected value='$model_uid'>$model_name</option>";
-			$i++;
-		}
-		print "</select>";
-		if(count($available_models) == 1) {
-			print "</span>";
-		}
-
-		print "<br>";
-	}
 ?>
 
 	<div id="loader"></div>
@@ -73,6 +48,33 @@
 							<button class='disable_in_autonext ai_stuff' onclick="predictImageWithModel()">AI-Labelling</button>
 							<button class="disable_in_autonext" onclick="move_to_offtopic()">Offtopic</button>
 							<input class="disable_in_autonext" placeholder="Filename contains..." id="like" onchange="start_like()" />
+<?php
+							if(count($available_models)) {
+								if(count($available_models) == 1) {
+									print "<span style='visibility: none'>";
+								}
+								print "AI-Model: <select class='disable_in_autonext' id='chosen_model'>";
+								$i = 0;
+								foreach ($available_models as $_model) {
+									$model_name = $_model[0];
+									$model_uid = $_model[1];
+
+									$selected = "";
+									if($i == 0) {
+										$selected = " selected ";
+									}
+									print "<option $selected value='$model_uid'>$model_name</option>";
+									$i++;
+								}
+								print "</select>";
+								if(count($available_models) == 1) {
+									print "</span>";
+								}
+
+								print "<br>";
+							}
+?>
+
 						</p>
 						<div id="image_container" style="position: relative; display: inline-block; transform-origin: top left;">
 							<img id="image" />
