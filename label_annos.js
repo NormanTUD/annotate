@@ -318,13 +318,6 @@ function throttle(func, limit) {
 	};
 }
 
-function annotate_svg_now() {
-	const img = Array.from(document.images).find(i => i.src.includes('print_image.php?filename='));
-	const svg = document.querySelector('svg.a9s-annotationlayer');
-
-	annotate_svg(svg, img);
-}
-
 function watch_svg_auto() {
 	// Bild und SVG automatisch suchen
 	const img = Array.from(document.images).find(i => i.src.includes('print_image.php?filename='));
