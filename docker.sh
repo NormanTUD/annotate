@@ -136,13 +136,20 @@ CMD="docker compose"
 
 # 🔧 Fix: www-data Zugriff auf Docker-Socket
 if [[ -S /var/run/docker.sock ]]; then
-    SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
-    EXISTING_GROUP=$(getent group "$SOCKET_GID" | cut -d: -f1 || true)
-    if [[ -z "$EXISTING_GROUP" ]]; then
-        sudo groupadd -g "$SOCKET_GID" docker_host || true
-        EXISTING_GROUP=docker_host
-    fi
-    sudo usermod -aG "$EXISTING_GROUP" www-data || true
+	SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
+	EXISTING_GROUP=$(getent group "$SOCKET_GID" | cut -d: -f1 || true)
+	if [[ -z "$EXISTING_GROUP" ]]; then
+		sudo groupadd -g "$SOCKET_GID" docker_host || true
+		EXISTING_GROUP=docker_host
+	fi
+
+	if ! id -nG www-data | grep -qw "$EXISTING_GROUP"; then
+		if [[ $EUID -ne 0 ]]; then
+			sudo usermod -aG "$EXISTING_GROUP" www-data || true
+		else
+			usermod -aG "$EXISTING_GROUP" www-data || true
+		fi
+	fi
 fi
 
 # Stop & remove existing
