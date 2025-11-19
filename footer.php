@@ -1,5 +1,7 @@
 	<div id="status_bar">
-		<span id="msg"></span>
+		<span id="status_bar_msg"></span>
+
+		<span id="memory_debugger"></span>
 	</div>
 
 	<script>

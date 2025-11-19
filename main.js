@@ -234,9 +234,9 @@ function move_file (to) {
 function render_status(color, title, msg) {
 	var text = msg ? (title + ": " + msg) : title;
 
-	$("#status_bar")
+	$("#status_bar_msg")
 		.html("<span style='color:" + color + "'>" + text + "</span>")
-		.css("display", "block");
+		.parent().css("display", "block");
 }
 
 function info(title, msg) {
