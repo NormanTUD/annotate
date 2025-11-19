@@ -153,29 +153,26 @@ function compute_overlap_score(annot_box, p_box, opts) {
 	return { score, area_overlap, area_ratio, proximity, distance: d };
 }
 
-let cached_parsed_annos = null;
-function get_category_for_annotation(rect, svg, img, parsed_annos=null) {
+function get_category_for_annotation(rect, svg, img) {
     if (!rect || !svg) return 'unknown';
     let annot_box = rect_bbox_from_element(rect);
+
     let opts = { w_area: 0.75, w_pos: 0.25, min_score: 0.03 };
 
-    // Text boxes einmal pro SVG
-    if (!get_category_for_annotation.text_boxes) {
-        get_category_for_annotation.text_boxes = [];
-        let texts = svg.querySelectorAll('text');
-        for (let t of texts) {
-            try {
-                let tb = t.getBBox();
-                let txt = (t.textContent || '').trim();
-                if (txt) get_category_for_annotation.text_boxes.push({ node: t, box: { x: tb.x, y: tb.y, width: tb.width, height: tb.height }, txt });
-            } catch(e) {}
-        }
+    // --- precompute text boxes once ---
+    let text_boxes = [];
+    let texts = svg.querySelectorAll('text');
+    for (let t of texts) {
+        try {
+            let tb = t.getBBox();
+            let txt = (t.textContent || '').trim();
+            if (txt) text_boxes.push({ node: t, box: { x: tb.x, y: tb.y, width: tb.width, height: tb.height }, txt });
+        } catch (e) {}
     }
-    let text_boxes = get_category_for_annotation.text_boxes;
 
-    // R6O editor boxes einmal
-    if (!get_category_for_annotation.div_boxes && img) {
-        get_category_for_annotation.div_boxes = [];
+    // --- precompute r6o-editor boxes if img is provided ---
+    let div_boxes = [];
+    if (img) {
         let divs = document.querySelectorAll('.r6o-editor');
         if (divs.length) {
             let imgRect = img.getBoundingClientRect();
@@ -185,7 +182,7 @@ function get_category_for_annotation(rect, svg, img, parsed_annos=null) {
                 let vb = svg.viewBox.baseVal;
                 scaleX = vb.width / svgRect.width;
                 scaleY = vb.height / svgRect.height;
-            } catch(e){}
+            } catch (e) {}
             for (let div of divs) {
                 try {
                     let d = div.getBoundingClientRect();
@@ -193,80 +190,70 @@ function get_category_for_annotation(rect, svg, img, parsed_annos=null) {
                     let relY = (d.top - imgRect.top) * scaleY;
                     let relW = d.width * scaleX;
                     let relH = d.height * scaleY;
-                    get_category_for_annotation.div_boxes.push({ node: div, box: { x: relX, y: relY, width: relW, height: relH } });
-                } catch(e){}
+                    div_boxes.push({ node: div, box: { x: relX, y: relY, width: relW, height: relH } });
+                } catch (e) {}
             }
         }
     }
-    let div_boxes = get_category_for_annotation.div_boxes;
 
-    // --- Annotations einmal parsen ---
-    if (!cached_parsed_annos) {
-        try {
-            let raw_annos = (typeof anno !== 'undefined' && typeof anno.getAnnotations === 'function')
-                            ? anno.getAnnotations()
-                            : window.__anno_json__;
-            if (raw_annos) {
-                const img_transform = precompute_svg_image_transform(img, svg);
-                cached_parsed_annos = get_parsed_annos(img, svg);
+    // --- 1) try annotations if available ---
+    try {
+        let raw_annos = (typeof anno !== 'undefined' && typeof anno.getAnnotations === 'function')
+                        ? anno.getAnnotations()
+                        : window.__anno_json__;
+        if (raw_annos) {
+            let parsed = parse_annos_from_anno(raw_annos, img, svg);
+            let best = { score: 0, label: 'unknown', debug: null };
+            for (let p of parsed) {
+                let res = compute_overlap_score(annot_box, p.box, opts);
+                if (res.score > best.score) {
+                    best.score = res.score;
+                    best.label = (p.label || 'unknown').trim();
+                    best.debug = { box: p.box, res };
+                }
             }
-        } catch(e){
-            cached_parsed_annos = [];
-            if (window.__anno_debug) console.error('anno-parse-error', e);
+            if (best.score >= opts.min_score) {
+                if (window.__anno_debug) console.log('anno-match', best);
+                return best.label;
+            }
+            if (window.__anno_debug) console.log('no anno passed threshold', parsed.map(p => ({label:p.label, box:p.box})));
         }
+    } catch (e) {
+        if (window.__anno_debug) console.error('anno-parse-error', e);
     }
 
-    let best_score = 0, best_label = 'unknown';
-    for (let p of cached_parsed_annos) {
-        let res = compute_overlap_score(annot_box, p.box, opts);
-        if (res.score > best_score) {
-            best_score = res.score;
-            best_label = (p.label || 'unknown').trim();
-        }
+    // --- 2) exact text overlap ---
+    for (let t of text_boxes) {
+        if (boxes_intersect(annot_box, t.box)) return t.txt;
     }
-    if (best_score >= opts.min_score) return best_label;
 
-    // --- exact text overlap ---
-    for (let t of text_boxes) if (boxes_intersect(annot_box, t.box)) return t.txt;
-
-    // --- nearest-above ---
+    // --- 3) nearest-above heuristic ---
     if (text_boxes.length) {
-        let best_txt = 'unknown', best_s = Infinity;
+        let best_txt = 'unknown';
+        let best_score = Infinity;
         for (let t of text_boxes) {
-            let dx = Math.abs((t.box.x + t.box.width/2) - (annot_box.x + annot_box.width/2));
+            let dx = Math.abs((t.box.x + t.box.width / 2) - (annot_box.x + annot_box.width / 2));
             let dy = (t.box.y + t.box.height) - annot_box.y;
             let score = dx + Math.max(0, dy);
-            if (score < best_s) { best_s = score; best_txt = t.txt; }
+            if (score < best_score) {
+                best_score = score;
+                best_txt = t.txt;
+            }
         }
         if (best_txt !== 'unknown') return best_txt;
     }
 
-    // --- r6o editor fallback ---
-    for (let d of div_boxes) {
-        if (boxes_intersect(annot_box, d.box)) {
-            let labelSpan = d.node.querySelector('.r6o-label');
-            if (labelSpan) return labelSpan.textContent.trim();
+    // --- 4) r6o-editor fallback ---
+    if (div_boxes.length) {
+        for (let d of div_boxes) {
+            if (boxes_intersect(annot_box, d.box)) {
+                let labelSpan = d.node.querySelector('.r6o-label');
+                if (labelSpan) return labelSpan.textContent.trim();
+            }
         }
     }
 
     return 'unknown';
-}
-
-let cached_raw_annos = null;
-
-function get_parsed_annos(img, svg) {
-    if (!cached_raw_annos) {
-        try {
-            let raw_annos = (typeof anno !== 'undefined' && typeof anno.getAnnotations === 'function')
-                            ? anno.getAnnotations()
-                            : window.__anno_json__;
-            cached_raw_annos = raw_annos || [];
-        } catch(e) {
-            cached_raw_annos = [];
-        }
-    }
-    const transform = precompute_svg_image_transform(img, svg);
-    return parse_annos_from_anno(cached_raw_annos, img, svg); // transformiert hier passend zum aktuellen SVG
 }
 
 function clear_previous_labels(svg) {
@@ -325,8 +312,6 @@ function annotate_svg(svg, img) {
 			category_counts[category]++;
 		}
 	});
-
-	stop_ai_animation();
 }
 
 function throttle(func, limit) {
