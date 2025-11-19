@@ -232,3 +232,13 @@ a:hover {
 	background-color: red;
 	color: white;
 }
+
+#list ul {
+	text-align: right;       /* Text in der Liste rechtsbündig */
+	list-style-position: inside; /* optional, falls du die Marker anpassen willst */
+}
+
+#list li a {
+	display: block;          /* damit text-align auf <a> wirkt */
+	text-align: right;
+}
