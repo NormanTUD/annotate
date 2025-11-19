@@ -988,7 +988,7 @@ function get_annotate_element(this_label, x_start, y_start, w, h) {
 	}
 }
 
-function autonext () {
+async function autonext () {
 	if(autonext_param) {
 		autonext_param = false;
 		$("#autonext_img_button").text("AutoNext");
