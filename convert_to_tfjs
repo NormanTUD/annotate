@@ -32,6 +32,7 @@ if command -v yolo &> /dev/null; then
     echo "yolo export model=\"$copied_model_file\" format=tfjs"
     yolo export model="$copied_model_file" format=tfjs
     web_model_path="tests/${model_file%.pt}_web_model"
+
     if [[ -d $web_model_path ]]; then
 	    cp -r "$web_model_path" "$output_dir_host/"
     else
