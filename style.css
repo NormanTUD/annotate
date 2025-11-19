@@ -212,3 +212,13 @@ a:hover {
 	position: relative;
 	display: inline-block;
 }
+
+@keyframes hacker_glow {
+	0% { box-shadow: 0 0 5px #0f0; }
+	50% { box-shadow: 0 0 20px #0f0; }
+	100% { box-shadow: 0 0 5px #0f0; }
+}
+
+.blinking-border {
+	animation: hacker_glow 1s infinite;
+}

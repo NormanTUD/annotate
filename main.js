@@ -1,42 +1,19 @@
 "use strict";
 
-var overlay;
-var styleEl;
-var rafId;
+(function() {
+  var style = document.createElement('style');
+  style.textContent =
+    '@keyframes hacker_glow{0%{box-shadow:0 0 5px #0f0}50%{box-shadow:0 0 20px #0f0}100%{box-shadow:0 0 5px #0f0}}' +
+    '.blinking-border{animation:hacker_glow 1s infinite}';
+  document.head.appendChild(style);
 
-function start_ai_scan() {
-  const img = document.getElementById('image');
-  if (!img || styleEl) return;
-
-  styleEl = document.createElement('style');
-  styleEl.id = 'ai-scan-style';
-  styleEl.textContent = `
-    #image {
-      position: relative;
-      animation: ai-pulse 1.5s infinite alternate;
-      box-shadow: 0 0 0px rgba(255, 255, 255, 0);
-    }
-    @keyframes ai-pulse {
-      0% {
-        box-shadow: inset 0 0 0 rgba(255,255,255,0);
-      }
-      50% {
-        box-shadow: inset 0 0 15px rgba(255,255,255,0.2);
-      }
-      100% {
-        box-shadow: inset 0 0 25px rgba(255,255,255,0.4);
-      }
-    }
-  `;
-  document.head.appendChild(styleEl);
-}
-
-function stop_ai_scan() {
-  if (styleEl) {
-    styleEl.remove();
-    styleEl = null;
+  function get_wrapper() {
+    return document.querySelector('div[style*="position: relative"]');
   }
-}
+
+  window.start_blink = function() { get_wrapper().classList.add('blinking-border'); };
+  window.stop_blink  = function() { get_wrapper().classList.remove('blinking-border'); };
+})();
 
 const log = console.log;
 
