@@ -1189,7 +1189,7 @@
 							$inserted_model_ids[] = $model_id;
 
 							if($file == "metadata.yaml") {
-								insert_model_labels_from_yaml($file, $uid);
+								insert_model_labels_from_yaml($path . DIRECTORY_SEPARATOR . $file, $uid);
 							}
 						}
 					}
