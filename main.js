@@ -1670,7 +1670,7 @@ function create_zoom_slider() {
 
 	// also handle pointer/touch end cases: if user holds and releases outside the slider
 	let pointerDown = false;
-	zoominput.addEventListener('pointerdown', () => { pointerDown = true; });
+	zoom_input.addEventListener('pointerdown', () => { pointerDown = true; });
 	window.addEventListener('pointerup', () => {
 		if (pointerDown) {
 			pointerDown = false;
