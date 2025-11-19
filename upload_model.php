@@ -16,11 +16,6 @@ header('Content-Type: text/html; charset=utf-8');
 echo str_repeat(' ', 1024); // Sendet 1KB, Browser beginnt zu rendern
 flush();
 
-// --- Deine Funktion für TFJS Upload ---
-function handle_tfjs_folder_upload($folder_path, $modelName) {
-	// ... unverändert ...
-}
-
 // --- Request Handling ---
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 	die("❌Error: REQUEST_METHOD is not POST, but " . $_SERVER['REQUEST_METHOD']);
