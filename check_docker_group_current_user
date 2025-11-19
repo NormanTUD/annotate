@@ -1,15 +1,12 @@
 #!/bin/bash
 
-# Ermittelt den aktuellen User
 CURRENT_USER=$(whoami)
 
-# Prüft, ob die Gruppe 'docker' existiert
 if ! getent group docker >/dev/null; then
 	echo "Fehler: Die Gruppe 'docker' existiert nicht. Bitte Docker installieren."
 	exit 1
 fi
 
-# Prüft, ob der aktuelle User Mitglied der docker-Gruppe ist
 if id -nG "$CURRENT_USER" | grep -qw docker; then
 	true
 else
@@ -20,11 +17,9 @@ else
 	exit 1
 fi
 
-# Optional: Testen, ob Docker-Kommandos funktionieren
 if ! docker info 2>/dev/null >/dev/null; then
 	echo "Fehler: Docker kann vom User $CURRENT_USER nicht benutzt werden."
 	exit 1
 fi
 
-#echo "Docker-Zugriff für $CURRENT_USER ist korrekt."
 exit 0
