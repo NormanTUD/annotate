@@ -42,7 +42,6 @@ async function load_model() {
 	const model_json_url = "api/get_model.php?uid=" + encodeURIComponent(model_uid);
 
 	try {
-		await tf.setBackend('wasm');
 		await tf.ready();
 
 		console.log("Loading TFJS model from:", model_json_url);
