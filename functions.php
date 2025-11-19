@@ -466,6 +466,41 @@
 		}
 	}
 
+	function parse_simple_yaml_names($yaml_content) {
+		$lines = preg_split('/\R/', $yaml_content);
+		$inside_names = false;
+		$names = [];
+
+		foreach ($lines as $line) {
+			$trim = ltrim($line);
+
+			if ($trim === '' || str_starts_with($trim, '#')) {
+				continue;
+			}
+
+			if (!$inside_names) {
+				if (preg_match('/^names\s*:/', $trim)) {
+					$inside_names = true;
+				}
+				continue;
+			}
+
+			if (!preg_match('/^\s+(\d+)\s*:\s*(.+)$/u', $line, $m)) {
+				// names-block endet, falls neue Section
+				if (preg_match('/^\S/', $line)) {
+					break;
+				}
+				continue;
+			}
+
+			$index = intval($m[1]);
+			$label = trim($m[2]);
+			$names[$index] = $label;
+		}
+
+		return ['names' => $names];
+	}
+
 	function insert_model_labels_from_yaml($yaml_path, $model_uid) {
 		echo "Loading YAML: $yaml_path\n";
 		$yaml_content = file_get_contents($yaml_path);
@@ -476,7 +511,7 @@
 		}
 
 		echo "Parsing YAML...\n";
-		$data = Yaml::parse($yaml_content);
+		$data = parse_simple_yaml_names($yaml_content);
 
 		if (!isset($data['names']) || !is_array($data['names'])) {
 			echo "ERROR: No 'names' array found in YAML.\n";
