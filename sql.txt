@@ -1,4 +1,4 @@
-create database annotate;
+CREATE DATABASE IF NOT EXISTS annotate;
 use annotate;
 create table if not exists image (id int unsigned primary key auto_increment, filename varchar(200) unique, width int unsigned, height int unsigned, deleted int unsigned default 0, offtopic int unsigned default 0, perception_hash varchar(50) default null, unidentifiable int default 0, index idx_image (id, filename, width, height, perception_hash, deleted), index idx_image_deleted_offtopic_perception_hash_id (deleted, offtopic, perception_hash, id), index image_filename (filename));
 create table if not exists category (id int unsigned primary key auto_increment, name varchar(200) unique, index idx_category (id, name));
