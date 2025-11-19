@@ -470,22 +470,28 @@ async function predictImageWithModel() {
 
 	await prepareUIForPrediction();
 
-	const [modelWidth, modelHeight] = getModelInputShape();
-	log(`Model input shape: width=${modelWidth}, height=${modelHeight}`);
+	const shape = getModelInputShape();
 
-	const predictionResult = await runPrediction(modelWidth, modelHeight);
-	if (!predictionResult) return;
+	if(shape) {
+		const [modelWidth, modelHeight] = shape;
+		log(`Model input shape: width=${modelWidth}, height=${modelHeight}`);
 
-	const { boxes, scores, classes } = await extractDetectionData(predictionResult);
-	log(`Detection data extracted: ${boxes.length} boxes`);
+		const predictionResult = await runPrediction(modelWidth, modelHeight);
+		if (!predictionResult) return;
 
-	await displayPredictionResults(boxes, scores, classes);
+		const { boxes, scores, classes } = await extractDetectionData(predictionResult);
+		log(`Detection data extracted: ${boxes.length} boxes`);
 
-	await cleanupAfterPrediction();
+		await displayPredictionResults(boxes, scores, classes);
 
-	if (autonext_param) await loadNextRandomImageWithDelay();
+		await cleanupAfterPrediction();
 
-	log("Prediction workflow finished.");
+		if (autonext_param) await loadNextRandomImageWithDelay();
+
+		log("Prediction workflow finished.");
+	} else {
+		error("Not able to determine model shapes");
+	}
 }
 
 async function getValidImageElement() {
