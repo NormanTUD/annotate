@@ -7,16 +7,20 @@ $filename = get_get("filename");
 if ($filename === "model.json") {
     header('Content-Type: application/json');
 
-    // Datei direkt laden
-    $file_path = __DIR__ . "/models/$uid/$filename"; // anpassen je nach Ablage
-    if (!file_exists($file_path)) {
-        http_response_code(404);
-        echo json_encode(["error" => "File not found"]);
+    // Output buffer starten
+    ob_start();
+    print_model_file($uid, $filename);
+    $json = ob_get_clean();
+
+    // JSON dekodieren – manchmal gibt TensorFlow.js extra whitespace oder BOMs
+    $json = trim($json);
+    $data = json_decode($json, true);
+
+    if ($data === null) {
+        // falls JSON nicht dekodierbar ist
+        echo $json; // einfach original rausgeben, damit TF.js wenigstens was bekommt
         exit;
     }
-
-    $json = file_get_contents($file_path);
-    $data = json_decode($json, true);
 
     if (isset($data['weightsManifest']) && is_array($data['weightsManifest'])) {
         foreach ($data['weightsManifest'] as &$manifest) {
@@ -30,7 +34,6 @@ if ($filename === "model.json") {
 
     echo json_encode($data);
 } else {
-    // normale Shard-Dateien ausgeben
     print_model_file($uid, $filename);
 }
 ?>
