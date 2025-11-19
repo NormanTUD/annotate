@@ -1,48 +1,74 @@
 <?php
 	include_once("functions.php");
 
-	$labelsJsonFromDB = null;
+	$model_uuid = $_GET['model_uuid'] ?? null;
 
-	// Hole die neueste "labels.json"-Datei aus der DB
-	$query = "SELECT file_contents FROM models WHERE filename = 'labels.json' ORDER BY upload_time DESC LIMIT 1";
-	$res = rquery($query);
-
+	$labels_from_db = [];
 	$loaded_from_db = 0;
 
-	if ($row = mysqli_fetch_assoc($res)) {
-		$contents = $row['file_contents'];
-		$json = json_decode($contents, true);
-		if (is_array($json)) {
-			// Direkt JSON aus der DB ausgeben
-			print json_encode($json);
+	if ($model_uuid) {
+		// 1. Labels aus der neuen Tabelle holen
+		$query = "SELECT label_name FROM model_labels WHERE uid = '" . mysqli_real_escape_string($GLOBALS['mysqli'], $model_uuid) . "' ORDER BY label_index ASC";
+		$res = rquery($query);
+
+		while ($row = mysqli_fetch_assoc($res)) {
+			$labels_from_db[] = $row['label_name'];
+		}
+
+		if (!empty($labels_from_db)) {
 			$loaded_from_db = 1;
 		}
 	}
 
-	if(!$loaded_from_db) {
-		include("export_helper.php");
+	$labels = [];
 
-		$labels = [];
-		$categories = [];
+	// 2. Alte Methode als Fallback
+	if (!$loaded_from_db) {
+		$query = "SELECT file_contents FROM models WHERE filename = 'labels.json' ORDER BY upload_time DESC LIMIT 1";
+		$res = rquery($query);
 
-		$annotated_image_ids_query = 'SELECT name FROM category ORDER BY id';
-		$res = rquery($annotated_image_ids_query);
-
-		while ($row = mysqli_fetch_row($res)) {
-			$category = $row[0];
-			if (!in_array($category, $categories)) {
-				$categories[] = $category;
+		if ($row = mysqli_fetch_assoc($res)) {
+			$contents = $row['file_contents'];
+			$json = json_decode($contents, true);
+			if (is_array($json)) {
+				print json_encode($json);
+				exit;
 			}
 		}
 
-		$category_numbers = array();
-		$j = 0;
-		foreach ($categories as $i => $cat) {
-			$category_numbers[$cat] = $j;
-			$labels[] = $cat;
-			$j++;
+		// Falls keine labels.json vorhanden, altes category-System
+		include("export_helper.php");
+
+		$categories = [];
+		$res = rquery('SELECT name FROM category ORDER BY id');
+		while ($row = mysqli_fetch_row($res)) {
+			if (!in_array($row[0], $categories)) {
+				$categories[] = $row[0];
+			}
 		}
 
-		print json_encode($labels);
+		foreach ($categories as $i => $cat) {
+			$labels[] = $cat;
+		}
+	} else {
+		// 3. Alte Labels ergänzen, falls sie nicht schon in model_labels sind
+		include("export_helper.php");
+
+		$categories = [];
+		$res = rquery('SELECT name FROM category ORDER BY id');
+		while ($row = mysqli_fetch_row($res)) {
+			$categories[] = $row[0];
+		}
+
+		foreach ($categories as $cat) {
+			if (!in_array($cat, $labels_from_db)) {
+				$labels_from_db[] = $cat;
+			}
+		}
+
+		$labels = $labels_from_db;
 	}
+
+	// 4. JSON ausgeben
+	print json_encode($labels);
 ?>
