@@ -131,6 +131,8 @@
 			}
 		}
 
+		sleep(5);
+
 		try {
 			$dbh = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS['db_port']);
 			create_tables();
