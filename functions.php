@@ -127,13 +127,7 @@
 				]);
 				return true;
 			} catch (\Throwable $e) {
-				if($i > 2 || $retries == 0) {
-					$pingable = safe_fsockopen($GLOBALS['db_host'], $GLOBALS['db_port']) ? "Yes" : "No";
-					echo "Could not connect to database on {$GLOBALS['db_host']}:{$GLOBALS['db_port']}. Host pingable? <tt>$pingable</tt><br>";
-					echo "Error:<pre>".$e->getMessage()."</pre>";
-					echo "Stack:<pre>".$e->getTraceAsString()."</pre>";
-					sleep($delay_sec);
-				}
+				// Ignore
 			}
 		}
 
