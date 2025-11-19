@@ -139,33 +139,29 @@ function move_file (to) {
 	})
 }
 
-function info(title, msg) {
-	if(msg) {
-		$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>").show();;
-	} else {
-		$("#status_bar").html("<span style='color: white'>" + title + "</span>").show();;
-	}
+function render_status(color, title, msg) {
+	var text = msg ? (title + ": " + msg) : title;
+
+	$("#status_bar")
+		.html("<span style='color:" + color + "'>" + text + "</span>")
+		.css("display", "block");
 }
 
-function success (title, msg) {
-	if(msg) {
-		$("#status_bar").html("<span style='color: white'>" + title + ": " + msg + "</span>").show();;
-	} else {
-		$("#status_bar").html("<span style='color: white'>" + title + "</span>").show();;
-	}
+function info(title, msg) {
+	render_status("white", title, msg);
+}
+
+function success(title, msg) {
+	render_status("white", title, msg);
 }
 
 function warn(title, msg) {
 	console.warn(title);
-	if(msg) {
-		$("#status_bar").html("<span style='color: orange'>" + title + ": " + msg + "</span>").show();;
-	} else {
-		$("#status_bar").html("<span style='color: orange'>" + title + "</span>").show();;
-	}
+	render_status("orange", title, msg);
 }
 
-function error (title, msg) {
-	$("#status_bar").html("<span style='color: red'>" + title + ": " + msg + "</span>").show();;
+function error(title, msg) {
+	render_status("red", title, msg);
 }
 
 async function make_item_anno(elem, widgets={}) {
