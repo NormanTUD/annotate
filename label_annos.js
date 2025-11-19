@@ -214,18 +214,27 @@ function annotate_svg(svg, img) {
 		let box = rect_bbox_from_element(rect);
 		let color = color_from_string(category);
 
+		// Label-Position oben links der Box, aber innerhalb der Box
+		let label_height = 20;
+		let label_width = Math.max(30, Math.min(box.width, category.length * 8));
+		let label_x = box.x;
+		let label_y = box.y - label_height;
+
+		// Falls y < 0, innerhalb der Box oben links
+		if (label_y < box.y) label_y = box.y;
+
 		let bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		bg.setAttribute("x", box.x);
-		bg.setAttribute("y", box.y - 20);
-		bg.setAttribute("width", Math.max(30, Math.min(box.width, category.length * 8)));
-		bg.setAttribute("height", 20);
+		bg.setAttribute("x", label_x);
+		bg.setAttribute("y", label_y);
+		bg.setAttribute("width", label_width);
+		bg.setAttribute("height", label_height);
 		bg.setAttribute("fill", color);
 		bg.setAttribute("opacity", 0.7);
 		bg.setAttribute("data-annotated", "1");
 
 		let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-		text.setAttribute("x", box.x + 4);
-		text.setAttribute("y", box.y - 6);
+		text.setAttribute("x", label_x + 4);
+		text.setAttribute("y", label_y + 14); // innerhalb des bg-Rects
 		text.setAttribute("fill", "#fff");
 		text.setAttribute("font-size", "14");
 		text.setAttribute("font-family", "Arial, sans-serif");
