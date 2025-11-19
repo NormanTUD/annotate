@@ -1111,7 +1111,12 @@ async function set_img_from_filename (fn) {
 		if($("#filename").html() != fn) {
 			$("#filename").html(fn);
 		}
-		$("#image").prop("src", "print_image.php?filename=" + encodeURIComponent(fn));
+
+		$("#image").prop("src", "print_image.php?filename=" + encodeURIComponent(fn))
+				.on("load", function() {
+					this.style.width  = this.naturalWidth + "px";
+					this.style.height = this.naturalHeight + "px";
+				});
 
 		await load_page();
 	} else {
