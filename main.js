@@ -670,20 +670,26 @@ function processModelOutput(res) {
 			}
 		}
 
-		if (bestScore > conf_threshold) {
-			// Relative Koordinaten
-			const relX = x / imgsz;
-			const relY = y / imgsz;
-			const relW = w / imgsz;
-			const relH = h / imgsz;
-			const x1 = relX - relW / 2;
-			const y1 = relY - relH / 2;
-			const x2 = relX + relW / 2;
-			const y2 = relY + relH / 2;
+		// Relative Koordinaten
+		const relX = x / imgsz;
+		const relY = y / imgsz;
+		const relW = w / imgsz;
+		const relH = h / imgsz;
+		const x1 = relX - relW / 2;
+		const y1 = relY - relH / 2;
+		const x2 = relX + relW / 2;
+		const y2 = relY + relH / 2;
 
-			rawBoxes.push([x1, y1, x2, y2]);
+		const bbox = [x1, y1, x2, y2];
+
+		if (bestScore > conf_threshold) {
+			rawBoxes.push(bbox);
 			scores.push(bestScore);
 			classes.push(bestClass);
+
+			console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
+		} else {
+			console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore} was not enough (min: ${conf_threshold})`);
 		}
 	}
 
