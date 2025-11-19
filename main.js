@@ -1057,8 +1057,18 @@ async function create_selects_from_annotation(force = 0) {
 
 			html += selects.join(", ");
 
-			if ($("#ki_detected_names").html() !== html) {
-				$("#ki_detected_names").html(html);
+			var box = $("#ki_detected_names");
+
+			if (box.html() !== html) {
+				box.stop(true, true);
+
+				if (!$.trim(box.html())) {
+					box.css({ width: 0 });
+					box.html(html);
+					box.animate({ width: "100%" }, 200);
+				} else {
+					box.html(html);
+				}
 			}
 
 			$(".ki_select_box").off("change").on("change", async function (e) {
