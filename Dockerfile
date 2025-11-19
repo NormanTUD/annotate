@@ -54,7 +54,7 @@ RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-pack
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed ultralytics
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx2tf sng4onnx
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnxslim onnxruntime ai-edge-litert
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnxslim onnxruntime ai-edge-litert || true
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx_graphsurgeon
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
