@@ -8,19 +8,6 @@
 	set_error_handler("exception_error_handler");
 	ini_set('display_errors', '1');
 
-	function ping($host, $port=80, $timeout=6) {
-		try {
-			$fsock = fsockopen($host,$port,$errno,$errstr,$timeout);
-			if(!$fsock) {
-				return false;
-			} else {
-				return true;
-			}
-		} catch (\Throwable $e) {
-			return false;
-		}
-	}
-
 	$GLOBALS["get_current_tags_cache"] = array();
 	$GLOBALS["queries"] = array();
 	$GLOBALS["db_name"] = "annotate";
@@ -87,49 +74,31 @@
 		}
 	}
 
-	function connect_mysqli($host, $user, $pass, $db = null, $port = 3306) {
-		mysqli_report(MYSQLI_REPORT_OFF); // Keine automatische Fehlerausgabe
-		$conn = @mysqli_connect($host, $user, $pass, $db, $port);
-		if (!$conn) {
-			throw new Exception(mysqli_connect_error(), mysqli_connect_errno());
+	function safe_mysqli_connect($host, $user, $pass, $db = null, $port = 3306) {
+		set_error_handler(function($errno, $errstr) {
+			throw new Exception($errstr, $errno);
+		});
+		try {
+			$conn = mysqli_connect($host, $user, $pass, $db, $port);
+			if (!$conn) {
+				throw new Exception(mysqli_connect_error(), mysqli_connect_errno());
+			}
+		} finally {
+			restore_error_handler();
 		}
 		return $conn;
 	}
 
-	function connect_pdo($host, $user, $pass, $db) {
+	function safe_fsockopen($host, $port, $timeout = 5) {
+		set_error_handler(function($errno, $errstr) {
+			throw new Exception($errstr, $errno);
+		});
 		try {
-			return new PDO("mysql:host=$host;dbname=$db", $user, $pass, [
-				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-			]);
-		} catch (\Throwable $e) {
-			throw new Exception($e->getMessage(), (int)$e->getCode());
-		}
-	}
-
-	function ping_host($host, $port, $timeout = 5) {
-		try {
-			$fp = @fsockopen($host, $port, $errno, $errstr, $timeout);
-			if ($fp) {
-				fclose($fp);
-				return true;
-			}
-			return false;
-		} catch (\Throwable $e) {
-			return false;
-		}
-	}
-
-	function log_db_error($e, $host, $port) {
-		$pingable = ping_host($host, $port) ? "Yes" : "No";
-		echo "Could not connect to database on {$host}:{$port}. Host pingable? <tt>$pingable</tt><br>\n";
-		echo "Error:<br><pre>".$e->getMessage()."</pre>";
-		echo "Stack:<br><pre>".$e->getTraceAsString()."</pre>";
-
-		if (preg_match("/php_network_getaddresses/", $e->getMessage())) {
-			echo "Have you stopped the docker process for <tt>annotate_mariadb</tt>? Try <pre>docker start annotate_mariadb</pre>.<br>";
-		}
-		if (preg_match("/Connection refused/", $e->getMessage())) {
-			echo "Is the database docker process started and does its mounting point exist?<br>";
+			$fp = fsockopen($host, $port, $errno, $errstr, $timeout);
+			if ($fp) fclose($fp);
+			return (bool)$fp;
+		} finally {
+			restore_error_handler();
 		}
 	}
 
@@ -138,29 +107,34 @@
 
 		for ($i = 0; $i < $retries; $i++) {
 			try {
-				$dbh = connect_mysqli($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS["db_port"]);
-				$pdo = connect_pdo($GLOBALS["db_host"], $GLOBALS["db_username"], $GLOBALS["db_password"], $GLOBALS["db_name"]);
+				$dbh = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS['db_port']);
+				$pdo = new PDO("mysql:host={$GLOBALS['db_host']};dbname={$GLOBALS['db_name']}", $GLOBALS['db_username'], $GLOBALS['db_password'], [
+					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+				]);
 				return true;
 			} catch (\Throwable $e) {
-				log_db_error($e, $GLOBALS["db_host"], $GLOBALS["db_port"]);
+				$pingable = safe_fsockopen($GLOBALS['db_host'], $GLOBALS['db_port']) ? "Yes" : "No";
+				echo "Could not connect to database on {$GLOBALS['db_host']}:{$GLOBALS['db_port']}. Host pingable? <tt>$pingable</tt><br>";
+				echo "Error:<pre>".$e->getMessage()."</pre>";
+				echo "Stack:<pre>".$e->getTraceAsString()."</pre>";
 				sleep($delay_sec);
 			}
 		}
 
-		// Letzter Versuch ohne DB (nur Host) und ggf. Tabellen erstellen
 		try {
-			$dbh = connect_mysqli($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS["db_port"]);
+			$dbh = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS['db_port']);
 			create_tables();
 			return true;
 		} catch (\Throwable $e) {
-			log_db_error($e, $GLOBALS["db_host"], $GLOBALS["db_port"]);
+			echo "Final attempt failed.<br>";
+			$pingable = safe_fsockopen($GLOBALS['db_host'], $GLOBALS['db_port']) ? "Yes" : "No";
+			echo "Host pingable? <tt>$pingable</tt><br>";
+			echo "Error:<pre>".$e->getMessage()."</pre>";
 			return false;
 		}
 	}
 
-	if (!try_connect()) {
-		die("Failed to connect to MySQL after retries.");
-	}
+	if (!try_connect()) die("Failed to connect to MySQL after retries.");
 
 	function generateRandomString($length = 10) {
 		$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
