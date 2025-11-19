@@ -25,9 +25,7 @@
 		'pointer-events:none;' +
 		'transform-origin:center;' +
 		'animation:sweep 1.6s linear infinite;' +
-		'}' +
-
-		'.ai-glow{animation:glow 1s infinite}';
+		'}';
 
 	document.head.appendChild(style);
 
@@ -39,14 +37,12 @@
 		var w = get_wrapper();
 		if (!w) return;
 		w.classList.add('ai-analyzing');
-		w.classList.add('ai-glow');
 	};
 
 	window.stop_ai_animation = function () {
 		var w = get_wrapper();
 		if (!w) return;
 		w.classList.remove('ai-analyzing');
-		w.classList.remove('ai-glow');
 
 		watch_svg_auto();
 	};
