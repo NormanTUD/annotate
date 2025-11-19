@@ -87,48 +87,79 @@
 		}
 	}
 
-	try {
-		$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS["db_port"]);
+	function connect_mysqli($host, $user, $pass, $db = null, $port = 3306) {
+		mysqli_report(MYSQLI_REPORT_OFF); // Keine automatische Fehlerausgabe
+		$conn = @mysqli_connect($host, $user, $pass, $db, $port);
+		if (!$conn) {
+			throw new Exception(mysqli_connect_error(), mysqli_connect_errno());
+		}
+		return $conn;
+	}
 
-		$GLOBALS['pdo'] = new PDO("mysql:host=".$GLOBALS["db_host"].";dbname=".$GLOBALS["db_name"], $GLOBALS["db_username"], $GLOBALS["db_password"]);
-	} catch (\Throwable $e) {
+	function connect_pdo($host, $user, $pass, $db) {
 		try {
-			try {
-				$GLOBALS['dbh'] = mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS["db_port"]);
-
-				create_tables();
-			} catch (\Throwable $e) {
-				$pingable = ping($GLOBALS["db_host"], $GLOBALS["db_port"], 5);
-
-				$pingable_str = "Yes";
-				if(!$pingable) {
-					$pingable_str = "No";
-				}
-
-				print("Could not connect to database on ".$GLOBALS["db_username"]."@".$GLOBALS["db_host"].":".$GLOBALS["db_port"].". If running in docker, please make sure you bind your MariaDB/MySQL-database to 0.0.0.0 in <tt>/etc/mysql/</tt>\n<br>Host is pingable? <tt>".$pingable_str."</tt><br>\n");
-
-				$error_msg = $e->getMessage();
-
-				$stack = $e->getTraceAsString();
-
-				print("Error:<br><pre>".$error_msg."</pre>");
-				print("Stack:<br><pre>".$stack."</pre>");
-
-				if(preg_match("/php_network_getaddresses: getaddrinfo for annotate_mariadb failed: Name or service not known/", $error_msg)) {
-					print("Have you stopped the docker process for <tt>annotate_mariadb</tt>? Try <pre>docker start annotate_mariadb</pre>.<br>");
-				}
-
-				if(preg_match("/Connection refused/", $error_msg)) {
-					print("Is the database docker process started and does it's mounting point exist?");
-				}
-			}
+			return new PDO("mysql:host=$host;dbname=$db", $user, $pass, [
+				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+			]);
 		} catch (\Throwable $e) {
-			print("$e");
-			print("!!!!".mysqli_connect_errno()."!!!!");
-			if (mysqli_connect_errno()) {
-				die("Failed to connect to MySQL" . mysqli_connect_error());
+			throw new Exception($e->getMessage(), (int)$e->getCode());
+		}
+	}
+
+	function ping_host($host, $port, $timeout = 5) {
+		try {
+			$fp = @fsockopen($host, $port, $errno, $errstr, $timeout);
+			if ($fp) {
+				fclose($fp);
+				return true;
+			}
+			return false;
+		} catch (\Throwable $e) {
+			return false;
+		}
+	}
+
+	function log_db_error($e, $host, $port) {
+		$pingable = ping_host($host, $port) ? "Yes" : "No";
+		echo "Could not connect to database on {$host}:{$port}. Host pingable? <tt>$pingable</tt><br>\n";
+		echo "Error:<br><pre>".$e->getMessage()."</pre>";
+		echo "Stack:<br><pre>".$e->getTraceAsString()."</pre>";
+
+		if (preg_match("/php_network_getaddresses/", $e->getMessage())) {
+			echo "Have you stopped the docker process for <tt>annotate_mariadb</tt>? Try <pre>docker start annotate_mariadb</pre>.<br>";
+		}
+		if (preg_match("/Connection refused/", $e->getMessage())) {
+			echo "Is the database docker process started and does its mounting point exist?<br>";
+		}
+	}
+
+	function try_connect($retries = 3, $delay_sec = 2) {
+		global $dbh, $pdo;
+
+		for ($i = 0; $i < $retries; $i++) {
+			try {
+				$dbh = connect_mysqli($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS["db_port"]);
+				$pdo = connect_pdo($GLOBALS["db_host"], $GLOBALS["db_username"], $GLOBALS["db_password"], $GLOBALS["db_name"]);
+				return true;
+			} catch (\Throwable $e) {
+				log_db_error($e, $GLOBALS["db_host"], $GLOBALS["db_port"]);
+				sleep($delay_sec);
 			}
 		}
+
+		// Letzter Versuch ohne DB (nur Host) und ggf. Tabellen erstellen
+		try {
+			$dbh = connect_mysqli($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS["db_port"]);
+			create_tables();
+			return true;
+		} catch (\Throwable $e) {
+			log_db_error($e, $GLOBALS["db_host"], $GLOBALS["db_port"]);
+			return false;
+		}
+	}
+
+	if (!try_connect()) {
+		die("Failed to connect to MySQL after retries.");
 	}
 
 	function generateRandomString($length = 10) {
