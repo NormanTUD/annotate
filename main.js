@@ -47,6 +47,8 @@
 		if (!w) return;
 		w.classList.remove('ai-analyzing');
 		w.classList.remove('ai-glow');
+
+		watch_svg_auto();
 	};
 })();
 
@@ -1186,26 +1188,26 @@ window.addEventListener("popstate", function () {
 });
 
 function fade_image_transition(fn) {
-    return new Promise(function(resolve) {
-        var img = $("#image");
+	return new Promise(function(resolve) {
+		var img = $("#image");
 
-        img.stop(true, true).css("opacity", 0);
+		img.stop(true, true).css("opacity", 0);
 
-        img.off("load").on("load", function() {
-            var w = this.naturalWidth + "px";
-            var h = this.naturalHeight + "px";
+		img.off("load").on("load", function() {
+			var w = this.naturalWidth + "px";
+			var h = this.naturalHeight + "px";
 
-            $(this).css({
-                width: w,
-                height: h,
-                opacity: 1
-            });
+			$(this).css({
+				width: w,
+				height: h,
+				opacity: 1
+			});
 
-            setTimeout(resolve, 200);
-        });
+			setTimeout(resolve, 200);
+		});
 
-        img.prop("src", "print_image.php?filename=" + encodeURIComponent(fn));
-    });
+		img.prop("src", "print_image.php?filename=" + encodeURIComponent(fn));
+	});
 }
 
 async function set_img_from_filename(fn) {
