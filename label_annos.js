@@ -206,44 +206,51 @@ function annotate_svg(svg, img) {
 	if (!svg) return;
 	clear_previous_labels(svg);
 
+	const category_counts = {}; // Zähler für jedes Label
+
 	svg.querySelectorAll('g.a9s-annotation').forEach((g) => {
 		let rect = g.querySelector('rect.a9s-inner');
 		if (!rect) return;
+
 		let category = get_category_for_annotation(rect, svg, img);
+
+		if (!category_counts[category]) category_counts[category] = 0;
 
 		let box = rect_bbox_from_element(rect);
 		let color = color_from_string(category);
 
+		// Standardposition Label
 		let label_height = 20;
 		let label_width = Math.max(30, Math.min(box.width, category.length * 8));
-
-		// Standardposition: links oben, leicht über der Box
 		let label_x = box.x;
 		let label_y = box.y - label_height;
-
-		// Wenn Label über den SVG-Rand hinausgehen würde, innerhalb der Box platzieren
 		if (label_y < 0) label_y = box.y;
 
-		let bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		bg.setAttribute("x", label_x);
-		bg.setAttribute("y", label_y);
-		bg.setAttribute("width", label_width);
-		bg.setAttribute("height", label_height);
-		bg.setAttribute("fill", color);
-		bg.setAttribute("opacity", 0.7);
-		bg.setAttribute("data-annotated", "1");
+		// Zeichne nur max 30 Labels pro Kategorie
+		if (category_counts[category] < 30) {
+			let bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+			bg.setAttribute("x", label_x);
+			bg.setAttribute("y", label_y);
+			bg.setAttribute("width", label_width);
+			bg.setAttribute("height", label_height);
+			bg.setAttribute("fill", color);
+			bg.setAttribute("opacity", 0.7);
+			bg.setAttribute("data-annotated", "1");
 
-		let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-		text.setAttribute("x", label_x + 4);
-		text.setAttribute("y", label_y + 14); // innerhalb des bg-Rects
-		text.setAttribute("fill", "#fff");
-		text.setAttribute("font-size", "14");
-		text.setAttribute("font-family", "Arial, sans-serif");
-		text.textContent = category;
-		text.setAttribute("data-annotated", "1");
+			let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+			text.setAttribute("x", label_x + 4);
+			text.setAttribute("y", label_y + 14);
+			text.setAttribute("fill", "#fff");
+			text.setAttribute("font-size", "14");
+			text.setAttribute("font-family", "Arial, sans-serif");
+			text.textContent = category;
+			text.setAttribute("data-annotated", "1");
 
-		svg.appendChild(bg);
-		svg.appendChild(text);
+			svg.appendChild(bg);
+			svg.appendChild(text);
+
+			category_counts[category]++;
+		}
 	});
 }
 
