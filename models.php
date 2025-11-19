@@ -76,7 +76,12 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function ansi_to_html(text) {
+        // Entferne den [K]-Code komplett
+        text = text.replace(/\x1b\[K/g, "");
+
+        // Allgemeine ANSI-Sequenzen
         const ANSI_REGEX = /\x1b\[(\d+(;\d+)*)m/g;
+
         const ANSI_STYLES = {
             "0":  "</span>",
             "1":  "<span style='font-weight:bold'>",
@@ -93,9 +98,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return text.replace(ANSI_REGEX, (_, codes) => {
             const parts = codes.split(";");
-            // wir nehmen nur den letzten relevanten Code
-            const last = parts[parts.length - 1];
-            return ANSI_STYLES[last] || "";
+
+            // Wenn mehrere Codes kommen, z.B. 1;32 → Bold + Green
+            let html = "";
+            for (const code of parts) {
+                if (ANSI_STYLES[code]) {
+                    html += ANSI_STYLES[code];
+                }
+            }
+
+            return html;
         });
     }
 
