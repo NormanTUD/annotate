@@ -996,6 +996,9 @@ function autonext () {
 	} else {
 		autonext_param = true;
 		load_next_random_image()
+
+		await sleep(1500);
+
 		$("#autonext_img_button").text("Stop AutoNext");
 		$(".disable_in_autonext").prop("disabled", true);
 	}
