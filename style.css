@@ -227,3 +227,8 @@ a:hover {
 	transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
 	display: inline-block;
 }
+
+.autonext-stop {
+	background-color: red;
+	color: white;
+}

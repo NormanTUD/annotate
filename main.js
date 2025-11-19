@@ -993,19 +993,22 @@ function get_annotate_element(this_label, x_start, y_start, w, h) {
 }
 
 async function autonext () {
-	if(autonext_param) {
-		autonext_param = false;
-		$("#autonext_img_button").text("AutoNext");
-		$(".disable_in_autonext").prop("disabled", false);
-	} else {
-		autonext_param = true;
-		load_next_random_image()
+    const btn = $("#autonext_img_button");
 
-		await sleep(1000);
+    if (autonext_param) {
+        autonext_param = false;
+        btn.text("AutoNext");
+        btn.removeClass("autonext-stop");
+        $(".disable_in_autonext").prop("disabled", false);
+    } else {
+        autonext_param = true;
+        btn.text("Stop AutoNext");
+        btn.addClass("autonext-stop");
+        $(".disable_in_autonext").prop("disabled", true);
 
-		$("#autonext_img_button").text("Stop AutoNext");
-		$(".disable_in_autonext").prop("disabled", true);
-	}
+        load_next_random_image();
+        await sleep(1000);
+    }
 }
 
 function sleep(ms) {
