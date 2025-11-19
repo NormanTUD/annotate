@@ -5,10 +5,8 @@ $uid = get_get("uid");
 $filename = get_get("filename");
 
 if ($filename === "model.json") {
-    // Output buffer starten
     ob_start();
-    print_model_file($uid, $filename);
-    $json = ob_get_clean();
+    $json = get_model_file($uid, $filename);
 
     $json = trim($json);
     $data = json_decode($json, true);

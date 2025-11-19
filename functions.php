@@ -1120,6 +1120,19 @@
 		return $models;
 	}
 
+	function get_model_file ($uid, $filename) {
+		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)."";
+
+		$res = rquery($query);
+
+		$models = [];
+		while ($row = mysqli_fetch_row($res)) {
+			return $row[0];
+		}
+		
+		return "uid <b>>$uid<</b>, filename <b>>$filename<</b> not found.<br>";
+	}
+
 	function print_model_file ($uid, $filename) {
 		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)."";
 
