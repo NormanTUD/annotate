@@ -1,73 +1,41 @@
 "use strict";
 
 var overlay;
-let styleEl;
+var styleEl;
+var rafId;
 
 function start_ai_scan() {
-	if (overlay) return; // schon aktiv
+  const img = document.getElementById('image');
+  if (!img || styleEl) return;
 
-	const wrapper = document.getElementById('image');
-	if (!wrapper) return;
-
-	// Container um das Bild, falls noch nicht vorhanden
-	let container = wrapper.parentElement;
-	if (!container.classList.contains('ai-scan-wrapper')) {
-		container = document.createElement('div');
-		container.className = 'ai-scan-wrapper';
-		wrapper.parentNode.insertBefore(container, wrapper);
-		container.appendChild(wrapper);
-		container.style.position = 'relative';
-		container.style.display = 'inline-block';
-	}
-
-	// CSS einfügen
-	if (!document.getElementById('ai-scan-style')) {
-		styleEl = document.createElement('style');
-		styleEl.id = 'ai-scan-style';
-		styleEl.textContent = `
-      .ai-scanning-overlay {
-	position: absolute;
-	pointer-events: none;
-	top: 0; left: 0;
-	width: 100%; height: 100%;
-	background: linear-gradient(
-	  120deg,
-	  rgba(255,255,255,0) 0%,
-	  rgba(255,255,255,0.15) 50%,
-	  rgba(255,255,255,0) 100%
-	);
-	transform: translateX(-100%);
-	animation: ai-scan 2s linear infinite;
+  styleEl = document.createElement('style');
+  styleEl.id = 'ai-scan-style';
+  styleEl.textContent = `
+    #image {
+      position: relative;
+      animation: ai-pulse 1.5s infinite alternate;
+      box-shadow: 0 0 0px rgba(255, 255, 255, 0);
+    }
+    @keyframes ai-pulse {
+      0% {
+        box-shadow: inset 0 0 0 rgba(255,255,255,0);
       }
-      @keyframes ai-scan {
-	0% { transform: translateX(-100%); }
-	100% { transform: translateX(100%); }
+      50% {
+        box-shadow: inset 0 0 15px rgba(255,255,255,0.2);
       }
-    `;
-		document.head.appendChild(styleEl);
-	}
-
-	// Overlay erstellen
-	overlay = document.createElement('div');
-	overlay.className = 'ai-scanning-overlay';
-	container.appendChild(overlay);
+      100% {
+        box-shadow: inset 0 0 25px rgba(255,255,255,0.4);
+      }
+    }
+  `;
+  document.head.appendChild(styleEl);
 }
 
 function stop_ai_scan() {
-	if (overlay) {
-		overlay.remove();
-		overlay = null;
-	}
-	if (styleEl) {
-		styleEl.remove();
-		styleEl = null;
-	}
-	const container = document.querySelector('.ai-scan-wrapper');
-	const img = document.getElementById('image');
-	if (container && img) {
-		container.parentNode.insertBefore(img, container);
-		container.remove();
-	}
+  if (styleEl) {
+    styleEl.remove();
+    styleEl = null;
+  }
 }
 
 const log = console.log;
