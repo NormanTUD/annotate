@@ -26,6 +26,22 @@ RUN docker-php-ext-configure exif && docker-php-ext-install exif
 
 RUN pip3 install --break-system-packages --ignore-installed imagehash
 
+RUN groupadd -f docker
+RUN usermod -aG docker www-data
+
+ARG INSTANCE_NAME
+RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost
+
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed jax
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed tensorflowjs
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed ultralytics
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx2tf sng4onnx
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnxslim onnxruntime ai-edge-litert || true
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx_graphsurgeon
+
+RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/jax_conversion.py || true
+
 EXPOSE $APACHE_PORT
 
 RUN chmod 777 -R /tmp && chmod o+t -R /tmp
@@ -42,22 +58,6 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
     grep "DB_PORT" .env | sed -e 's#.*=##' >> /etc/dbport
 
 RUN rm .env
-
-RUN groupadd -f docker
-RUN usermod -aG docker www-data
-
-ARG INSTANCE_NAME
-RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost
-
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed jax
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed tensorflowjs
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed ultralytics
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx2tf sng4onnx
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnxslim onnxruntime ai-edge-litert || true
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx_graphsurgeon
-
-RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/jax_conversion.py || true
 
 COPY . $APACHE_DOCUMENT_ROOT/
 
