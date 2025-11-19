@@ -524,7 +524,6 @@
 
 		foreach ($data['names'] as $index => $label_name) {
 			$label_name = trim($label_name);
-			echo "Checking label index $index ('$label_name')...\n";
 
 			$check_query = "SELECT id FROM model_labels 
 				WHERE uid=" . esc($model_uid) . " 
