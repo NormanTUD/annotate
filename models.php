@@ -73,8 +73,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function filter_forbidden_lines(t) {
-        var forbidden = [];
-	/*
+        var forbidden = [
             "Please check linkage and avoid linking the same target more than once",
 	    "from pkg_resources import parse_version",
 	    "calibration_image_sample_data_20x128x128x3_float32",
@@ -102,7 +101,6 @@ document.addEventListener("DOMContentLoaded", function() {
             "TensorSpec",
             "/var/www/.config/matplotlib"
         ];
-	 */
         var lines = t.split(/\r?\n/);
         var filtered = [];
 
