@@ -28,7 +28,7 @@ for ($i = 0; $i < count($available_models); $i++) {
     $uid = $available_models[$i][1];
 
     // Dateien aus DB holen
-    $stmt = $GLOBALS["pdo"]->prepare("SELECT id, filename FROM models WHERE uid = :uid");
+    $stmt = $GLOBALS["pdo"]->prepare("SELECT filename FROM models WHERE uid = :uid");
     $stmt->bindParam(':uid', $uid);
     $stmt->execute();
     $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -37,12 +37,12 @@ for ($i = 0; $i < count($available_models); $i++) {
     print " <td>$model_name</td>\n";
     print " <td>$uid</td>\n";
 
-    // Dateien als Links
+    // Dateien als Download-Links
     print " <td>";
     foreach ($files as $file) {
-        $file_id = $file['id'];
         $filename = htmlspecialchars($file['filename']);
-        print "<a href='download_file.php?file_id=$file_id'>$filename</a><br>";
+        $link = "get_model_file.php?uid=$uid&filename=" . urlencode($filename);
+        print "<a href='$link'>$filename</a><br>";
     }
     print "</td>\n";
 
@@ -56,6 +56,7 @@ for ($i = 0; $i < count($available_models); $i++) {
     echo "<p>No models available.</p>";
 }
 ?>
+
 
 <h2>Convert existing PyTorch model to TFJS</h2>
 
