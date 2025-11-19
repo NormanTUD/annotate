@@ -76,9 +76,36 @@ function parse_annos_from_anno(anno_input, img, svg) {
 	return out;
 }
 
+function compute_overlap_score(annot_box, p_box, opts) {
+	let ax = annot_box.x, ay = annot_box.y, aw = annot_box.width, ah = annot_box.height;
+	let bx = p_box.x, by = p_box.y, bw = p_box.width, bh = p_box.height;
+
+	let x_overlap = Math.max(0, Math.min(ax + aw, bx + bw) - Math.max(ax, bx));
+	let y_overlap = Math.max(0, Math.min(ay + ah, by + bh) - Math.max(ay, by));
+	let area_overlap = x_overlap * y_overlap;
+
+	let annot_area = Math.max(1, aw * ah);
+	let area_ratio = area_overlap / annot_area;
+
+	let acx = ax + aw/2, acy = ay + ah/2;
+	let bcx = bx + bw/2, bcy = by + bh/2;
+	let d = Math.hypot(acx - bcx, acy - bcy);
+
+	let max_d = Math.hypot(aw/2 + bw/2, ah/2 + bh/2) || 1;
+	let proximity = 1 - Math.min(1, d / max_d);
+
+	let w_area = opts.w_area, w_pos = opts.w_pos;
+	let score = w_area * area_ratio + w_pos * proximity;
+
+	return { score, area_overlap, area_ratio, proximity, distance: d };
+}
+
 function get_category_for_annotation(rect, svg, img) {
 	if (!rect || !svg) return 'unknown';
 	let annot_box = rect_bbox_from_element(rect);
+
+	// config: just tweak weights/min_score if you want different behavior
+	let opts = { w_area: 0.75, w_pos: 0.25, min_score: 0.03 };
 
 	try {
 		let raw_annos = null;
@@ -86,15 +113,26 @@ function get_category_for_annotation(rect, svg, img) {
 		if (!raw_annos && window && window.__anno_json__) raw_annos = window.__anno_json__;
 		if (raw_annos) {
 			let parsed = parse_annos_from_anno(raw_annos, img, svg);
+			let best = { score: 0, label: 'unknown', debug: null };
 			for (let p of parsed) {
-				if (boxes_intersect(annot_box, p.box)) {
-					let txt = (p.label || '').trim();
-					if (txt) return txt;
+				let res = compute_overlap_score(annot_box, p.box, opts);
+				if (res.score > best.score) {
+					best.score = res.score;
+					best.label = (p.label || 'unknown').trim();
+					best.debug = { box: p.box, res };
 				}
 			}
+			if (best.score >= opts.min_score) {
+				if (window.__anno_debug) console.log('anno-match', best);
+				return best.label;
+			}
+			if (window.__anno_debug) console.log('no anno passed threshold', parsed.map(p => ({label:p.label, box:p.box})));
 		}
-	} catch (e) {}
+	} catch (e) {
+		if (window.__anno_debug) console.error('anno-parse-error', e);
+	}
 
+	// fallback: exact text overlap
 	let texts = svg.querySelectorAll('text');
 	for (let t of texts) {
 		try {
@@ -107,6 +145,7 @@ function get_category_for_annotation(rect, svg, img) {
 		} catch (e) {}
 	}
 
+	// fallback: nearest-above heuristic
 	let candidates = [];
 	for (let t of texts) {
 		let txt = (t.textContent || '').trim();
@@ -127,6 +166,7 @@ function get_category_for_annotation(rect, svg, img) {
 		return candidates[0].txt;
 	}
 
+	// fallback: r6o-editor divs
 	if (img) {
 		let divs = document.querySelectorAll('.r6o-editor');
 		if (divs.length) {
