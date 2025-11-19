@@ -96,7 +96,7 @@ else if (isset($_FILES['pt_model_file'])) {
     $file = $_FILES['pt_model_file'];
     if ($file['error'] !== UPLOAD_ERR_OK) die("Error: Upload failed for '" . $file['name'] . "' (code " . $file['error'] . ").");
     $files[] = $file['tmp_name'];
-    $modelName = pathinfo($file['name'], PATHINFO_FILENAME);
+    $modelName = $_POST['model_name'];
     $has_model_uploaded = true;
 }
 
