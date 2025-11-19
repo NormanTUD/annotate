@@ -72,7 +72,6 @@
 							<button class='ai_stuff' id="autonext_img_button" onClick="autonext()">AutoNext</button>
 							<button class='disable_in_autonext ai_stuff' onclick="predictImageWithModel()">AI-Labelling</button>
 							<button class="disable_in_autonext" onclick="move_to_offtopic()">Offtopic</button>
-							<button class="disable_in_autonext" onclick="move_to_unidentifiable()">Not identifiable</button>
 							<input class="disable_in_autonext" placeholder="Filename contains..." id="like" onchange="start_like()" />
 						</p>
 						<div id="ki_detected_names"></div>
