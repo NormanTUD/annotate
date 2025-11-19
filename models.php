@@ -76,6 +76,9 @@ document.addEventListener("DOMContentLoaded", function() {
         var forbidden = [
             "Please check linkage and avoid linking the same target more than once",
             "GetPrototype",
+            "and dtype int64 was auto converted to the type int32",
+            "All log messages before",
+            "TensorSpec",
             "/var/www/.config/matplotlib"
         ];
         var lines = t.split(/\r?\n/);
