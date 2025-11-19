@@ -1175,33 +1175,51 @@ function set_image_url (img) {
 	update_url_param("edit", img);
 }
 
-async function set_img_from_filename (fn) {
-	set_image_url(fn);
+function fade_image_transition(fn) {
+	return new Promise(resolve => {
+		const img = $("#image");
 
-	if(fn) {
-		$("#annotation_area").show();
-		$("#no_imgs_left").hide();
-
-		if($("#ki_detected_names").html != "") {
-			$("#ki_detected_names").html("");
-		}
-		if($("#filename").html() != fn) {
-			$("#filename").html(fn);
-		}
-
-		$("#image").prop("src", "print_image.php?filename=" + encodeURIComponent(fn))
+		img.stop(true, true).fadeOut(300, function() {
+			img
+				.prop("src", "print_image.php?filename=" + encodeURIComponent(fn))
+				.off("load")
 				.on("load", function() {
 					this.style.width  = this.naturalWidth + "px";
 					this.style.height = this.naturalHeight + "px";
-				});
 
-		await load_page();
-	} else {
+					img.fadeIn(150, function() {
+						resolve(); // Jetzt ist wirklich alles fertig
+					});
+				});
+		});
+	});
+}
+
+async function set_img_from_filename(fn) {
+	set_image_url(fn);
+
+	if (!fn) {
 		$("#annotation_area").hide();
 		$("#no_imgs_left").show();
+		watch_svg_auto();
+		return; // Nichts zu tun, also direkt raus
 	}
 
-	watch_svg_auto()
+	$("#annotation_area").show();
+	$("#no_imgs_left").hide();
+
+	if ($("#ki_detected_names").html() !== "") {
+		$("#ki_detected_names").html("");
+	}
+	if ($("#filename").html() !== fn) {
+		$("#filename").html(fn);
+	}
+
+	// Warten bis Bildwechsel komplett+FadeIn fertig ist
+	await fade_image_transition(fn);
+
+	await load_page();
+	watch_svg_auto();
 }
 
 async function load_next_random_image(fn = false) {
