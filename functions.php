@@ -1159,6 +1159,10 @@
 							$model_id = $GLOBALS["pdo"]->lastInsertId();
 							echo "ID for file $file: $model_id<br>";
 							$inserted_model_ids[] = $model_id;
+
+							if($file == "metadata.yaml") {
+								insert_model_labels_from_yaml($file, $uid);
+							}
 						}
 					}
 				} else {
