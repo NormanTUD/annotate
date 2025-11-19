@@ -1,5 +1,22 @@
 "use strict";
 
+var overlay;
+
+function start_ai_scan() {
+	const wrapper = document.getElementById('image-wrapper');
+	if (!overlay) {
+		overlay = document.createElement('div');
+		overlay.className = 'ai-scanning-overlay';
+		wrapper.appendChild(overlay);
+	}
+}
+
+function stop_ai_scan() {
+	if (overlay) {
+		overlay.remove();
+		overlay = null;
+	}
+}
 const log = console.log;
 
 const startQueryString = window.location.search;
