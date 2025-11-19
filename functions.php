@@ -1121,6 +1121,7 @@
 	}
 
 	function get_model_file ($uid, $filename) {
+		$filename = preg_replace("/\?$/", "", $filename);
 		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)."";
 
 		$res = rquery($query);
@@ -1134,6 +1135,7 @@
 	}
 
 	function print_model_file ($uid, $filename) {
+		$filename = preg_replace("/\?$/", "", $filename);
 		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)."";
 
 		$res = rquery($query);
