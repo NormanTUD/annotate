@@ -536,7 +536,7 @@
 			}
 
 			if (mysqli_num_rows($res) === 0) {
-				echo " → Label '$label_name' not found. Inserting...\n";
+				echo " → Inserting label '$label_name'\n";
 
 				$insert_query = "INSERT INTO model_labels (uid, label_index, label_name) VALUES (" .
 					esc($model_uid) . ", " .
