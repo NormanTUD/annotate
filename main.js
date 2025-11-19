@@ -537,7 +537,7 @@ async function predictImageWithModel() {
 	}
 
 	if (!await isModelReady()) {
-		stop_blink();
+		stop_ai_animation();
 		return;
 	}
 
