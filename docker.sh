@@ -132,7 +132,11 @@ fi
 
 # Compose Command
 CMD="docker compose"
-[[ "$(id -u)" -ne 0 && ! $(groups "$USER" | grep -q '\bdocker\b') ]] && CMD="sudo docker compose"
+if [[ "$(id -u)" -ne 0 ]] && ! groups "$USER" | grep -qw docker; then
+	CMD="sudo docker compose"
+else
+	CMD="docker compose"
+fi
 
 # 🔧 Fix: www-data Zugriff auf Docker-Socket
 if [[ -S /var/run/docker.sock ]]; then
