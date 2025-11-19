@@ -30,7 +30,7 @@ jobs:
           export DISPLAY=:99
           bash tests.sh
 
-  tfjs:
+  tfjsconverter:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
@@ -40,7 +40,7 @@ jobs:
         run: bash test_convert_to_tfjs
 
   tag:
-    needs: [playwright, tfjs]
+    needs: [playwright, tfjsconverter]
     runs-on: ubuntu-22.04
     if: ${{ success() }}
     steps:
