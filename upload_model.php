@@ -103,7 +103,7 @@ if (!$has_model_uploaded) {
 try {
 	$pt_file = isset($_FILES['pt_model_file']) ? $_FILES['pt_model_file']["full_path"] : '';
 	insert_model_into_db($modelName, $files, $pt_file);
-	echo "✅ Success: Model '$modelName' saved into DB<br>";
+	echo "✅ Success: Model '$modelName' saved into DB (pt-file: $pt_file)<br>";
 	flush();
 } catch (\Throwable $e) {
 	die("❌Error while inserting model into DB: " . $e->getMessage());
