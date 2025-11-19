@@ -589,7 +589,7 @@ async function checkModelAvailable() {
 
 // liefert Inputgröße des Models
 function getModelInputShape() {
-	return model.inputs[0].shape.slice(1, 3);
+	return model?.inputs[0]?.shape?.slice(1, 3);
 }
 
 // führt die Model-Ausführung mit Bild-Tensor aus
