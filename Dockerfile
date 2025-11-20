@@ -35,6 +35,9 @@ RUN sed -i "s/*:80/*:${APACHE_PORT}/" /etc/apache2/sites-available/000-default.c
 
 RUN rm /var/www/html/index.html
 
+RUN apt-get update && apt-get install -y php-mysql && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Berechtigungen für /tmp
 RUN chmod 777 -R /tmp && chmod o+t -R /tmp
 
