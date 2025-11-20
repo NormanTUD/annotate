@@ -116,7 +116,7 @@
 		return false;
 	}
 
-	function try_connect($retries = 5, $delay_sec = 2) {
+	function try_connect($retries = 5) {
 		for ($i = 0; $i < $retries; $i++) {
 			try {
 				$GLOBALS["dbh"] = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS['db_port']);
@@ -125,6 +125,7 @@
 				return true;
 			} catch (\Throwable $e) {
 				// Ignore
+				sleep(3);
 			}
 		}
 
