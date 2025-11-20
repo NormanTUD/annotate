@@ -119,6 +119,6 @@
 		ob_clean();
 		exit(0);
 	} else {
-		print "Der Ordner $tmp_name konnte nicht erstellt werden.";
+		print "The folder '$tmp_name' could not be created.";
 	}
 ?>
