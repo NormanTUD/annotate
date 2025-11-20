@@ -17,7 +17,6 @@ RUN a2enmod rewrite
 # Userrechte & sudo konfigurieren
 RUN mkdir -p /etc/sudoers.d
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
-RUN groupadd -f docker && usermod -aG docker www-data
 
 # PHP Extensions konfigurieren
 #RUN docker-php-ext-configure gd --with-jpeg && docker-php-ext-install gd mysqli pdo pdo_mysql exif
