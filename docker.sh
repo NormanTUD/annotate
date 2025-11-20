@@ -176,7 +176,7 @@ grep -q "container:" .github/workflows/*.yml && echo "Workflow uses job-level co
 [ -n "$GITHUB_ACTIONS" ] && echo "Running in GitHub Actions"
 
 
-CID=$(docker compose ps -q ${INSTANCE_NAME}_annotate)
+CID=$(docker compose ps -q annotate_test_annotate)
 echo "CID: $CID"
 IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $CID)
 echo "IP: $IP"
