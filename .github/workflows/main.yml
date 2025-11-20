@@ -24,7 +24,6 @@ jobs:
           df -h /
           apt-get remove -y --purge man-db popularity-contest bsdmainutils && \
           apt-get autoremove -y && apt-get clean && \
-          apt-get install -y php sudo
           rm -rf /var/lib/apt/lists/*
           df -h /
       - name: Checkout Code
@@ -32,8 +31,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          df -h /
           apt-get update
           apt-get purge -y man-db manpages
+          apt-get install -y php sudo
+          df -h /
 
       - name: Run Playwright Tests
         run: |
