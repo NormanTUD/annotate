@@ -44,7 +44,7 @@
 					<div id="content">
 						<p>
 							<button class="disable_in_autonext" id="next_img_button" onClick="load_next_random_image()">Next image</button>
-							<button class='ai_stuff' id="autonext_img_button" onClick="autonext()">AutoNext</button>
+							<!--<button class='ai_stuff' id="autonext_img_button" onClick="autonext()">AutoNext</button>-->
 							<button class='disable_in_autonext ai_stuff' onclick="predictImageWithModel()">AI-Labelling</button>
 							<button class="disable_in_autonext" onclick="move_to_offtopic()">Offtopic</button>
 							<input class="disable_in_autonext" placeholder="Filename contains..." id="like" onchange="start_like()" />
