@@ -42,12 +42,11 @@ RUN docker-php-ext-install mysqli pdo pdo_mysql
 RUN docker-php-ext-configure gd --with-jpeg && docker-php-ext-install gd
 RUN docker-php-ext-configure exif && docker-php-ext-install exif
 
-RUN pip3 install --break-system-packages --ignore-installed imagehash
 
 RUN groupadd -f docker
 RUN usermod -aG docker www-data
 
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed jax tensorflowjs onnx2tf sng4onnx onnx_graphsurgeon onnx onnxslim onnxruntime ai-edge-litert tf_keras ultralytics
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed jax tensorflowjs onnx2tf sng4onnx onnx_graphsurgeon onnx onnxslim onnxruntime ai-edge-litert tf_keras ultralytics imagehash
 
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/jax_conversion.py || true
 
