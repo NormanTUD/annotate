@@ -49,4 +49,6 @@ RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost && \
 
 EXPOSE $APACHE_PORT
 
+RUN apt install -y curl
+
 CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
