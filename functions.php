@@ -1257,18 +1257,34 @@
 
 	function insert_model_into_db($model_name, $files_array, $pt_file_path, $pt_file) {
 		try {
-			$uuid = uniqid("model_");
+			$uuid = uniqid("model_"); // eine UUID pro Model-Gruppe
 			$all_inserted_ids = [];
 
 			foreach ($files_array as $path) {
 				$path = convert_to_tfjs($path);
-				$all_inserted_ids = array_merge($all_inserted_ids, insert_directory_into_db($model_name, $path, $uuid));
+				$filenames_in_path = get_all_filenames($path); // Hilfsfunktion, die alle Dateien im Pfad zurückgibt
+
+				foreach ($filenames_in_path as $filename) {
+					// prüfen, ob filename+uuid schon existiert
+					$check = rquery("SELECT id FROM models WHERE filename=" . esc($filename) . " AND uuid=" . esc($uuid));
+					if (mysqli_num_rows($check) === 0) {
+						$all_inserted_ids[] = insert_file_into_db($model_name, $path . '/' . $filename, $uuid, $filename);
+					} else {
+						echo " → Skipping duplicate file '$filename' for model '$model_name'\n";
+					}
+				}
 			}
 
 			// insert pt_file as well
 			if ($pt_file && $pt_file_path && is_file($pt_file_path)) {
-				$pt_inserted_id = insert_file_into_db($model_name, $pt_file_path, $uuid, $pt_file);
-				if ($pt_inserted_id) $all_inserted_ids[] = $pt_inserted_id;
+				$pt_filename = basename($pt_file_path);
+				$check = rquery("SELECT id FROM models WHERE filename=" . esc($pt_filename) . " AND uuid=" . esc($uuid));
+				if (mysqli_num_rows($check) === 0) {
+					$pt_inserted_id = insert_file_into_db($model_name, $pt_file_path, $uuid, $pt_filename);
+					if ($pt_inserted_id) $all_inserted_ids[] = $pt_inserted_id;
+				} else {
+					echo " → Skipping duplicate PT file '$pt_filename'\n";
+				}
 			}
 
 			return $all_inserted_ids;
