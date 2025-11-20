@@ -102,6 +102,7 @@ services:
   ${INSTANCE_NAME}_annotate:
     build:
       context: .
+      network_mode: host
       args:
         - INSTANCE_NAME=${INSTANCE_NAME}
     container_name: ${INSTANCE_NAME}_annotate
