@@ -109,6 +109,4 @@ try {
 } catch (\Throwable $e) {
 	die("❌Error while inserting model into DB: " . $e->getMessage());
 }
-
-include_once("footer.php");
 ?>
