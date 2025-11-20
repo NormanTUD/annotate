@@ -2,15 +2,6 @@
 
 set -x
 
-nocache=""
-
-for arg in "$@"; do
-    if [[ "$arg" == "--no-cache" ]]; then
-        nocache="--no-cache"
-        break
-    fi
-done
-
 if command -v php 2>/dev/null >/dev/null; then
 	php -l *.php
 
@@ -32,7 +23,7 @@ if [[ $exit_code -ne 0 ]]; then
 	exit 1
 fi
 
-bash docker.sh --local-port 9912 --instance-name annotate_test $nocache
+bash docker.sh --local-port 9912 --instance-name annotate_test
 exit_code=$?
 
 if [[ $exit_code -ne 0 ]]; then
