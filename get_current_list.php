@@ -28,11 +28,17 @@
 
 	$tags = get_current_tags($only_uncurated ?? 0, $group_by_perception_hash ?? 0);
 	$tags_as_array = [];
-	$html = "<ul>";
-	foreach ($tags as $tag => $nr) {
-		$html .= "<li><a target='_blank' href='export_annotations.php?format=html&show_categories[]=".htmlentities(urlencode($tag))."$only_uncurated$delete_on_click$curate_on_click'>$tag ($nr)</li>";
+	$html = "";
+
+	if(count($tags)) {
+		$html .= "<ul>";
+		foreach ($tags as $tag => $nr) {
+			$html .= "<li><a target='_blank' href='export_annotations.php?format=html&show_categories[]=".htmlentities(urlencode($tag))."$only_uncurated$delete_on_click$curate_on_click'>$tag ($nr)</li>";
+		}
+		$html .= "</ul>";
+	} else {
+		$html .= "<i>No tags</i>";
 	}
-	$html .= "</ul>";
 
 	if(get_get("json")) {
 		$json_string = json_encode(array("html" => $html, "tags" => $tags));
