@@ -6,7 +6,7 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential libjpeg-dev libpng-dev libfreetype6-dev apache2 php libapache2-mod-php curl php-mysql libglib2.0-0 uuid-runtime libgl1 libglvnd0 php-mysql php-gd \
+        build-essential libjpeg-dev libpng-dev libfreetype6-dev apache2 php libapache2-mod-php curl php-mysql libglib2.0-0 uuid-runtime libgl1 libglvnd0 php-mysql php-gd zip unzip \
     && pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
     && python3 -m pip install --no-cache-dir --break-system-packages jax tensorflowjs onnx2tf sng4onnx onnx_graphsurgeon onnx onnxslim onnxruntime ai-edge-litert tf_keras ultralytics imagehash \
     && apt-get purge -y build-essential libjpeg-dev libpng-dev libfreetype6-dev \
@@ -51,8 +51,6 @@ RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost && \
     grep "DB_USER" $APACHE_DOCUMENT_ROOT/.env | sed -e 's#.*=##' >> /etc/dbuser && \
     grep "DB_PORT" $APACHE_DOCUMENT_ROOT/.env | sed -e 's#.*=##' >> /etc/dbport && \
     rm $APACHE_DOCUMENT_ROOT/.env
-
-RUN apt-get update && apt-get install -y zip unzip && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 EXPOSE $APACHE_PORT
 
