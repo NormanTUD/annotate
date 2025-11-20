@@ -35,6 +35,8 @@ RUN apt-get update && apt-get install -y wget build-essential \
     && python3.11 get-pip.py \
     && cd .. && rm -rf Python-3.11.8 Python-3.11.8.tgz get-pip.py
 
+RUN sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
+
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 
 # PHP extensions
