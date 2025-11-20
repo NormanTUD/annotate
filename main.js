@@ -1231,7 +1231,6 @@ async function set_img_from_filename(fn) {
 
 async function load_next_random_image(fn = false) {
 	if (fn) {
-		show_spinner("Loading image...");
 		await set_img_from_filename(fn);
 		hide_spinner();
 	} else {
