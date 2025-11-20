@@ -116,7 +116,7 @@ services:
     networks:
       - ${INSTANCE_NAME}_network
     ports:
-      - $LOCAL_PORT:80
+      - $LOCAL_PORT:8080
     tmpfs:
       - /tmp:rw
     volumes:
