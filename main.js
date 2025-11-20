@@ -665,7 +665,6 @@ function getShape(arr) {
 	return shape;
 }
 
-// prüft, ob Model vorhanden ist, zeigt UI entsprechend an, gibt bool zurück
 async function checkModelAvailable() {
 	if (!await has_model()) {
 		hide_ai_stuff();
@@ -675,12 +674,10 @@ async function checkModelAvailable() {
 	return true;
 }
 
-// liefert Inputgröße des Models
 function getModelInputShape() {
 	return model?.inputs[0]?.shape?.slice(1, 3);
 }
 
-// führt die Model-Ausführung mit Bild-Tensor aus
 async function predict(modelWidth, modelHeight) {
 	tf.engine().startScope();
 
@@ -911,7 +908,6 @@ function get_annotate_element(this_label, x_start, y_start, w, h) {
 		return null;
 	}
 
-	// Prüfen, ob alle Werte > 0 sind
 	if (x_start < 0) {
 		error("get_annotate_element", `x_start (${x_start}) must be >= 0`);
 		return null;
@@ -1006,7 +1002,6 @@ async function create_selects_from_annotation(force = 0) {
 					this_select += `<option ${ki_names_keys[i] === tags[j] ? "selected" : ""} value="${tags[j]}">${tags[j]}</option>`;
 				}
 
-				// Falls der aktuelle Name nicht in tags ist, füge ihn als eigene Option hinzu
 				if (!found) {
 					this_select += `<option selected value="${ki_names_keys[i]}">${ki_names_keys[i]}</option>`;
 				}
@@ -1193,7 +1188,7 @@ async function set_img_from_filename(fn) {
 		$("#annotation_area").hide();
 		$("#no_imgs_left").show();
 		watch_svg_auto();
-		return; // Nichts zu tun, also direkt raus
+		return;
 	}
 
 	$("#annotation_area").show();
@@ -1668,7 +1663,6 @@ function create_zoom_slider() {
 		}
 	});
 
-	// reset button behaviour
 	resetBtn.addEventListener('click', () => reset_zoom);
 
 	// initialize displayed value
