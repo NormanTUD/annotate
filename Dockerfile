@@ -21,12 +21,19 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 #ENV PATH="/root/.pyenv/shims:/root/.pyenv/bin:$PATH"
 #RUN pyenv install 3.11.10 && pyenv global 3.11.10
 
-RUN apt-get update && apt-get install -y software-properties-common \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update \
-    && apt-get install -y python3.11 python3.11-dev python3.11-distutils python3.11-venv \
-    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
-    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 -
+RUN apt-get update && apt-get install -y wget build-essential \
+    libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+    libffi-dev libncurses5-dev libgdbm-dev xz-utils tk-dev liblzma-dev \
+    && wget https://www.python.org/ftp/python/3.11.8/Python-3.11.8.tgz \
+    && tar xvf Python-3.11.8.tgz \
+    && cd Python-3.11.8 \
+    && ./configure --enable-optimizations \
+    && make -j$(nproc) \
+    && make altinstall \
+    && ln -sf /usr/local/bin/python3.11 /usr/bin/python3 \
+    && wget https://bootstrap.pypa.io/get-pip.py \
+    && python3.11 get-pip.py \
+    && cd .. && rm -rf Python-3.11.8 Python-3.11.8.tgz get-pip.py
 
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 
