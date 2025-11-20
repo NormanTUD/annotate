@@ -47,4 +47,4 @@ RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost && \
 
 EXPOSE $APACHE_PORT
 
-CMD ["apache2-foreground"]
+CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
