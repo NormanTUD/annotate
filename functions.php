@@ -561,7 +561,7 @@
 			}
 		}
 
-		echo "Done.\n";
+		echo "✅ Done importing model\n";
 	}
 
 	function get_or_create_user_id ($user) {
