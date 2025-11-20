@@ -833,7 +833,7 @@ async function handleAnnotations(boxes, scores, classes) {
 
 	if (boxes.length === 0) {
 		show_nothing_found_animation();
-		info("Nothing found", "Annotate manually");
+		warn("Nothing found", "Annotate manually");
 		return;
 	}
 
