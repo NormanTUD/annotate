@@ -1259,7 +1259,7 @@
 
 			foreach ($files_array as $path) {
 				$path = convert_to_tfjs($path);
-				$all_inserted_ids = array_merge($all_inserted_ids, insert_directory_into_db($model_name, $path, $Uuid));
+				$all_inserted_ids = array_merge($all_inserted_ids, insert_directory_into_db($model_name, $path, $uuid));
 			}
 
 			// insert pt_file as well
