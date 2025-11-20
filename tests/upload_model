@@ -41,6 +41,7 @@ curl -sS "http://$HOST:$PORT/upload_model.php" \
 	-H 'Cookie: language_cookie=de; PHPSESSID=eipc9q7sc1rg3ul754et4kfeet' \
 	-F "model_name=$model_name" \
 	-F "pt_model_file=@last.pt;filename=last.pt" 2>&1 | tee "$tmpfile"
+echo ""
 
 if ! grep -q "saved into DB" "$tmpfile"; then
 	echo "ERROR: $tmpfile does not contain 'saved into DB'"
