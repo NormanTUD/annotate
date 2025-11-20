@@ -97,31 +97,31 @@
 		system("cd $tmp_dir; zip -r yolo_export.zip .");
 		ob_clean();
 
-		if(file_exists($tmp_zip)) {
-			header("Content-type: application/zip");
-			header("Content-Disposition: attachment; filename=data.zip");
-			header("Content-Disposition: attachment; filename=\"yolo_export.zip\"");
-			header("Pragma: no-cache");
-			header("Expires: 0");
-			header("Content-Length: ".filesize($tmp_zip));
+		//if(file_exists($tmp_zip)) {
+		header("Content-type: application/zip");
+		header("Content-Disposition: attachment; filename=data.zip");
+		header("Content-Disposition: attachment; filename=\"yolo_export.zip\"");
+		header("Pragma: no-cache");
+		header("Expires: 0");
+		header("Content-Length: ".filesize($tmp_zip));
 
-			#readfile($tmp_zip);
-			$handle = @fopen($tmp_zip, "r");
-			if ($handle) {
-				while (($buffer = fgets($handle, 4096)) !== false) {
-					echo $buffer;
-				}
-
-				fclose($handle);
+		#readfile($tmp_zip);
+		$handle = @fopen($tmp_zip, "r");
+		if ($handle) {
+			while (($buffer = fgets($handle, 4096)) !== false) {
+				echo $buffer;
 			}
 
-			ob_start();
-			system("rm -rf $tmp_dir");
-			ob_clean();
-		} else {
-			print("Could not create zip-file");
-			exit(1);
+			fclose($handle);
 		}
+
+		ob_start();
+		system("rm -rf $tmp_dir");
+		ob_clean();
+		//} else {
+		//	print("Could not create zip-file\n");
+		//	exit(1);
+		//}
 		exit(0);
 	} else {
 		print "The folder '$tmp_name' could not be created.";
