@@ -592,7 +592,6 @@ async function prepareUIForPrediction() {
 	show_ai_stuff();
 	running_ki = true;
 	$("body").css("cursor", "progress");
-	show_spinner("AI is being loaded...");
 	await anno.clearAnnotations();
 	log("Annotations cleared.");
 	await load_model();
