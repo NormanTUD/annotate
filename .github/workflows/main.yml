@@ -13,8 +13,6 @@ on:
 jobs:
   playwright:
     runs-on: ${{ matrix.os }}
-    container:
-      image: debian:bookworm-slim
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
