@@ -131,14 +131,13 @@ networks:
     driver: bridge
 EOL
 
-if ! command -v docker-compose &>/dev/null && ! command -v docker-compose &>/dev/null; then
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+if ! docker compose &>/dev/null; then
+    sudo apt-get install -y docker-compose-plugin
 fi
 
-CMD="docker-compose"
+CMD="docker compose"
 if [[ "$(id -u)" -ne 0 ]] && ! groups "$USER" | grep -qw docker; then
-	CMD="sudo docker-compose"
+	CMD="sudo docker compose"
 fi
 
 # 🔧 Fix: www-data Zugriff auf Docker-Socket
