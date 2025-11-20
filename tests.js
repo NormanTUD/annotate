@@ -59,6 +59,66 @@ async function run_additional_tests() {
     }
 
     console.log(`\n=== ADDITIONAL TESTS DONE: ${passed} passed, ${failed} failed ===`);
+
+	async function run_edge_case_tests() {
+		console.log("\n=== RUNNING EDGE CASE TESTS ===");
+
+		let passed = 0;
+		let failed = 0;
+
+		function assert(condition, msg) {
+			if (condition) {
+				console.log("✓ PASS:", msg);
+				passed++;
+			} else {
+				console.error("✖ FAIL:", msg);
+				failed++;
+			}
+		}
+
+		// --- uuidv4 format stricter checks ---
+		console.log("\n--- uuidv4 stricter format ---");
+		const id = uuidv4();
+		assert(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id), "uuidv4 matches RFC4122 v4 format");
+
+		// --- getNewURL edge cases ---
+		console.log("\n--- getNewURL edge cases ---");
+		const urlHash = getNewURL("http://example.com#section", "param", "value");
+		assert(urlHash.includes("param=value") && urlHash.includes("#section"), "getNewURL preserves fragment (#) part");
+
+		// --- iou edge cases ---
+		console.log("\n--- iou edge cases ---");
+		assert(iou([0,0,10,10], [10,10,0,0]) === 0, "iou handles inverted box coords gracefully");
+		assert(iou([-5,-5,0,0], [0,0,5,5]) === 0, "iou handles negative coordinates without crash");
+		assert(iou([0,0,1,1], [0,0,1,1]) === 1, "iou identical minimal box = 1");
+
+		// --- get_names_from_ki_anno with weird values ---
+		console.log("\n--- get_names_from_ki_anno weird values ---");
+		const sampleAnnoWeird = [
+			{ body: [{ value: 0 }, { value: false }, { value: null }] },
+			{ body: [{ value: undefined }, { value: "" }] }
+		];
+		const namesWeird = get_names_from_ki_anno(sampleAnnoWeird);
+		assert(namesWeird[0] === 1, "numeric 0 counted");
+		assert(namesWeird[false] === 1, "boolean false counted");
+		assert(namesWeird[null] === 1, "null counted");
+		assert(namesWeird[undefined] === 1, "undefined counted");
+		assert(namesWeird[""] === 1, "empty string counted");
+
+		// --- get_annotate_element optional params ---
+		console.log("\n--- get_annotate_element optional params ---");
+		if ($("#image").length > 0) {
+			const a = get_annotate_element("test", 0, 0, 1, 1, "extra1", "extra2");
+			assert(a !== null && a.body[0].value === "test", "get_annotate_element accepts multiple extra params gracefully");
+		}
+
+		console.log(`\n=== EDGE CASE TESTS DONE: ${passed} passed, ${failed} failed ===`);
+		return failed;
+	}
+
+	// Run it at the end of your main test suite
+	assert(await run_edge_case_tests() === 0, "edge case tests failed");
+
     return failed;
 }
 
