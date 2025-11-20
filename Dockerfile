@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV APACHE_PORT=8080
