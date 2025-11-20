@@ -126,7 +126,7 @@ async function load_model() {
 		model = null;
 	}
 
-	const model_json_url = "get_model_file.php?&uid=" + encodeURIComponent(model_uuid) + "&filename=model.json";
+	const model_json_url = "get_model_file.php?&uuid=" + encodeURIComponent(model_uuid) + "&filename=model.json";
 	
 	console.log(`Loading model_json_url: ${model_json_url}`);
 

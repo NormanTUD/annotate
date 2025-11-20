@@ -192,7 +192,7 @@ load_dynamic_content();
 <?php
 	/*
 	$models = fetchAll("SELECT * FROM models ORDER BY upload_time DESC");
-	renderTable("Models", ['id', 'model_name', 'upload_time', 'filename', 'uid'], $models);
+	renderTable("Models", ['id', 'model_name', 'upload_time', 'filename', 'uuid'], $models);
 
 	$images = fetchAll("SELECT id, filename, width, height, deleted, offtopic, unidentifiable, perception_hash FROM image ORDER BY id DESC LIMIT 100");
 	foreach ($images as &$img) {

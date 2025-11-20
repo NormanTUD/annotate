@@ -1,7 +1,7 @@
 <?php
 include_once("functions.php");
 
-$uid = get_get("uid");
+$uuid = get_get("uuid");
 $filename_higher_prio = get_get("filename_higher_prio");
 $filename = get_get("filename");
 
@@ -11,7 +11,7 @@ if ($filename_higher_prio) {
 
 if ($filename === "model.json") {
     ob_start();
-    $json = get_model_file($uid, $filename);
+    $json = get_model_file($uuid, $filename);
 
     $json = trim($json);
     $data = json_decode($json, true);
@@ -34,7 +34,7 @@ if ($filename === "model.json") {
     header('Content-Type: application/json');
     echo json_encode($data);
 } else {
-    $file_content = get_model_file($uid, $filename);
+    $file_content = get_model_file($uuid, $filename);
 
     $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 

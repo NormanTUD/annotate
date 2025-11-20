@@ -9,7 +9,7 @@
 	if ($model_uuid) {
 		// Labels aus der neuen Tabelle holen
 		$safe_uuid = addslashes($model_uuid);
-		$query = "SELECT label_name FROM model_labels WHERE uid = '$safe_uuid' ORDER BY label_index ASC";
+		$query = "SELECT label_name FROM model_labels WHERE uuid = '$safe_uuid' ORDER BY label_index ASC";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_assoc($res)) {

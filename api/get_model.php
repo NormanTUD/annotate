@@ -3,12 +3,12 @@ include_once("../functions.php");
 // api/get_model.php
 
 try {
-    if (!isset($_GET['uid'])) {
+    if (!isset($_GET['uuid'])) {
         http_response_code(400);
-        die(json_encode(["error" => "Missing model UID"]));
+        die(json_encode(["error" => "Missing model UUID"]));
     }
 
-    $model_uid = $_GET['uid'];
+    $model_uid = $_GET['uuid'];
 
     // DB-Verbindung
     $pdo = new PDO(
@@ -18,8 +18,8 @@ try {
     );
 
     // Alle Dateien für dieses Modell abrufen
-    $stmt = $pdo->prepare("SELECT filename, file_contents FROM models WHERE uid = :uid");
-    $stmt->bindParam(":uid", $model_uid);
+    $stmt = $pdo->prepare("SELECT filename, file_contents FROM models WHERE uuid = :uuid");
+    $stmt->bindParam(":uuid", $model_uid);
     $stmt->execute();
 
     $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -60,7 +60,7 @@ try {
         foreach ($model_data['weightsManifest'] as &$manifest) {
             foreach ($manifest['paths'] as &$path) {
                 // Wir ersetzen den Pfad mit einem API-Call
-                $path = "get_model.php?uid=" . urlencode($model_uid) . "&weight=" . urlencode($path);
+                $path = "get_model.php?uuid=" . urlencode($model_uid) . "&weight=" . urlencode($path);
             }
         }
     }
@@ -77,7 +77,7 @@ try {
 // Zusätzliche Abfrage für Gewichte
 if (isset($_GET['weight'])) {
     try {
-        $model_uid = $_GET['uid'];
+        $model_uid = $_GET['uuid'];
         $weight_name = $_GET['weight'];
 
         $pdo = new PDO(
@@ -86,8 +86,8 @@ if (isset($_GET['weight'])) {
             $GLOBALS["db_password"]
         );
 
-        $stmt = $pdo->prepare("SELECT file_contents FROM models WHERE uid = :uid AND filename = :filename");
-        $stmt->bindParam(":uid", $model_uid);
+        $stmt = $pdo->prepare("SELECT file_contents FROM models WHERE uuid = :uuid AND filename = :filename");
+        $stmt->bindParam(":uuid", $model_uid);
         $stmt->bindParam(":filename", $weight_name);
         $stmt->execute();
 
