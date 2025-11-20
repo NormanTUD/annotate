@@ -7,7 +7,7 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential python3-dev libjpeg-dev libpng-dev libfreetype6-dev \
-    && python3 -m pip install --no-cache-dir jax tensorflowjs onnx2tf sng4onnx ... \
+    && python3 -m pip install --no-cache-dir jax tensorflowjs onnx2tf sng4onnx onnx_graphsurgeon onnx onnxslim onnxruntime ai-edge-litert tf_keras ultralytics imagehash \
     && apt-get purge -y build-essential python3-dev libjpeg-dev libpng-dev libfreetype6-dev \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -20,10 +20,6 @@ RUN groupadd -f docker && usermod -aG docker www-data
 
 # PHP Extensions konfigurieren
 #RUN docker-php-ext-configure gd --with-jpeg && docker-php-ext-install gd mysqli pdo pdo_mysql exif
-
-# Python Pakete installieren
-RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed \
-    jax tensorflowjs onnx2tf sng4onnx onnx_graphsurgeon onnx onnxslim onnxruntime ai-edge-litert tf_keras ultralytics imagehash
 
 # TensorflowJS Fix
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' \
