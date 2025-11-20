@@ -33,8 +33,11 @@ model_name="auto_test_model_$(tr -dc 'a-z' </dev/urandom | head -c 12)"
 
 base_url="http://$HOST:$PORT"
 models_url="$base_url/models.php"
+upload_model_url="$base_url/upload_model.php"
 
-curl -sS "$base_url/upload_model.php" \
+echo "Pushing example model $model_name to $upload_model_url"
+
+curl -sS "$upload_model_url" \
 	-X POST \
 	-H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0' \
 	-H 'Accept: */*' \
