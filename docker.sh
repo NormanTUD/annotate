@@ -97,7 +97,7 @@ services:
       context: .
       args:
         - INSTANCE_NAME=${INSTANCE_NAME}
-    container_name: annotate
+    container_name: ${INSTANCE_NAME}_annotate
     restart: unless-stopped
     depends_on:
       - ${INSTANCE_NAME}_mariadb
