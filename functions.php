@@ -348,11 +348,11 @@
 	function get_current_tags ($only_uncurated=0, $group_by_perception_hash=0) {
 		$annos = [];
 
-		$query = "select name, anzahl from (select c.name, count(*) as anzahl from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 ";
+		$query = "select name, cnt from (select c.name, count(*) as cnt from annotation a left join category c on c.id = a.category_id left join image i on a.image_id = i.id where i.deleted = 0 and a.deleted = 0 ";
 		if($only_uncurated) {
 			$query .= " and a.curated is null ";
 		}
-		$query .= " group by c.id order by anzahl desc, c.name asc) a";
+		$query .= " group by c.id order by cnt desc, c.name asc) a";
 		$res = rquery($query);
 
 		while ($row = mysqli_fetch_row($res)) {
@@ -1037,7 +1037,7 @@
 
 			// Prüfen, ob schon ein identisches Bild existiert
 			if (!is_null($existing_id) && $existing_hash === $new_hash) {
-				return $existing_id; // "hat geklappt", Bild schon vorhanden
+				return $existing_id;
 			}
 
 			$db_host = $GLOBALS["db_host"] ?? null;
