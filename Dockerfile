@@ -27,6 +27,10 @@ RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.expor
 
 RUN apt-get update && apt install -y curl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN PHP_INI=$(find /etc/php -name php.ini | grep apache2) && \
+    sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' "$PHP_INI" && \
+    sed -i 's/^post_max_size = .*/post_max_size = 100M/' "$PHP_INI"
+
 # Apache Konfiguration anpassen
 RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|" /etc/apache2/sites-available/000-default.conf
 RUN sed -i "s|<Directory /var/www/html>|<Directory ${APACHE_DOCUMENT_ROOT}>|" /etc/apache2/apache2.conf
