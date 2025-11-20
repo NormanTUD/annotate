@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument("--chromium", action="store_true", help="Run Chromium (if omitted and --firefox not given, both are run).")
     parser.add_argument("--chromium-executable", default=DEFAULT_CHROMIUM_PATH, help="Path to Chromium executable (default: %(default)s)")
     parser.add_argument("--firefox-executable", default=None, help="Path to Firefox executable (optional; Playwright's installed Firefox used if omitted)")
-    parser.add_argument("--url", default="http://localhost:9912", help="URL to open (default: %(default)s)")
+    parser.add_argument("--url", default="http://annotate_test_annotate:9912", help="URL to open (default: %(default)s)")
     parser.add_argument("--wait", type=int, default=10_000, help="Wait time in milliseconds before running tests (default: %(default)s)")
     parser.add_argument("--no-smoke-tests", action="store_true", help="Disable smoke tests")
     parser.add_argument("--no-docker", action="store_true", help="Disable docker")

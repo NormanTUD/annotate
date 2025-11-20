@@ -53,7 +53,7 @@ if [[ $exit_code -ne 0 ]]; then
 	exit $exit_code
 fi
 
-#bash tests/upload_model
+#bash tests/upload_model -h annotate_test_annotate
 #exit_code=$?
 #if [[ $exit_code -ne 0 ]]; then
 #	echo "bash tests/upload_model failed with exit_code $exit_code"
