@@ -169,15 +169,4 @@ $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
 
 $CMD -p "${INSTANCE_NAME}" up -d
 
-echo "docker ps:"
-docker ps
-
-host=localhost
-timeout=300
-end=$((SECONDS+timeout))
-while ! curl -s "http://$host:$LOCAL_PORT/" >/dev/null 2>&1; do
-	(( SECONDS >= end )) && echo "Timeout waiting for $host:$LOCAL_PORT" && exit 1
-	sleep 1
-done
-
 docker ps
