@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 nocache=""
 
 for arg in "$@"; do
