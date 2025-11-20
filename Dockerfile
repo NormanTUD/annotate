@@ -34,6 +34,7 @@ RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-pack
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed ultralytics
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnx2tf sng4onnx onnx_graphsurgeon onnx
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed onnxslim onnxruntime ai-edge-litert || true
+RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed tf_keras
 
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/jax_conversion.py || true
 
