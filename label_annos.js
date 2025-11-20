@@ -268,6 +268,8 @@ function annotate_svg(svg, img) {
 
 	const category_counts = {}; // Zähler für jedes Label
 
+	var cnt = 0;
+
 	svg.querySelectorAll('g.a9s-annotation').forEach((g) => {
 		let rect = g.querySelector('rect.a9s-inner');
 		if (!rect) return;
@@ -311,7 +313,13 @@ function annotate_svg(svg, img) {
 
 			category_counts[category]++;
 		}
+		
+		cnt++;
 	});
+
+	if(cnt) {
+		stop_ai_animation();
+	}
 }
 
 function throttle(func, limit) {
