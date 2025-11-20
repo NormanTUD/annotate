@@ -541,7 +541,7 @@
 			$label_name = trim($label_name);
 
 			$check_query = "SELECT id FROM model_labels 
-				WHERE uid=" . esc($model_uuid) . " 
+				WHERE uuid=" . esc($model_uuid) . " 
 				AND label_index=" . intval($index);
 
 			$res = rquery($check_query);
@@ -553,7 +553,7 @@
 			if (mysqli_num_rows($res) === 0) {
 				echo " → Inserting label '$label_name'\n";
 
-				$insert_query = "INSERT INTO model_labels (uid, label_index, label_name) VALUES (" .
+				$insert_query = "INSERT INTO model_labels (uuid, label_index, label_name) VALUES (" .
 					esc($model_uuid) . ", " .
 					intval($index) . ", " .
 					esc($label_name) . ")";
@@ -792,7 +792,7 @@
 	}
 
 	function delete_model ($model_uuid) {
-		$query = "delete from models where uid = ".esc($model_uuid).' or model_name = '.esc($model_uuid);
+		$query = "delete from models where uuid = ".esc($model_uuid).' or model_name = '.esc($model_uuid);
 
 		rquery($query);
 	}
@@ -1154,7 +1154,7 @@
 	}
 
 	function get_list_of_models () {
-		$query = 'select if(model_name is null or model_name = "", uid, model_name) as model_name, uid from models group by uid order by upload_time desc';
+		$query = 'select if(model_name is null or model_name = "", uuid, model_name) as model_name, uuid from models group by uuid order by upload_time desc';
 
 		$res = rquery($query);
 
@@ -1166,9 +1166,9 @@
 		return $models;
 	}
 
-	function get_model_file ($uid, $filename) {
+	function get_model_file ($uuid, $filename) {
 		$filename = preg_replace("/\?$/", "", $filename);
-		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)."";
+		$query = "select file_contents from models where uuid = ".esc($uuid)." and filename = ".esc($filename)."";
 
 		$res = rquery($query);
 
@@ -1177,12 +1177,12 @@
 			return $row[0];
 		}
 		
-		return "uid <b>>$uid<</b>, filename <b>>$filename<</b> not found.<br>";
+		return "uuid <b>>$uuid<</b>, filename <b>>$filename<</b> not found.<br>";
 	}
 
-	function print_model_file ($uid, $filename) {
+	function print_model_file ($uuid, $filename) {
 		$filename = preg_replace("/\?$/", "", $filename);
-		$query = "select file_contents from models where uid = ".esc($uid)." and filename = ".esc($filename)."";
+		$query = "select file_contents from models where uuid = ".esc($uuid)." and filename = ".esc($filename)."";
 
 		$res = rquery($query);
 
@@ -1192,7 +1192,7 @@
 			exit(0);
 		}
 		
-		print "uid <b>>$uid<</b>, filename <b>>$filename<</b> not found.<br>";
+		print "uuid <b>>$uuid<</b>, filename <b>>$filename<</b> not found.<br>";
 		exit(1);
 	}
 
@@ -1202,7 +1202,7 @@
 		return $res["running"];
 	}
 
-	function insert_file_into_db($model_name, $file_path, $uid, $overwrite_filename = null) {
+	function insert_file_into_db($model_name, $file_path, $uuid, $overwrite_filename = null) {
 		if (!is_file($file_path)) return null;
 
 		$file_contents = file_get_contents($file_path);
@@ -1214,23 +1214,23 @@
 		}
 
 		$stmt = $GLOBALS["pdo"]->prepare("
-			INSERT INTO models (model_name, upload_time, filename, file_contents, uid)
-			VALUES (:model_name, now(), :filename, :file_contents, :uid)
+			INSERT INTO models (model_name, upload_time, filename, file_contents, uuid)
+			VALUES (:model_name, now(), :filename, :file_contents, :uuid)
 			");
 		$stmt->bindParam(':model_name', $model_name);
 		$stmt->bindParam(':filename', $fn);
 		$stmt->bindParam(':file_contents', $file_contents, PDO::PARAM_LOB);
-		$stmt->bindParam(':uid', $uid);
+		$stmt->bindParam(':uuid', $uuid);
 		$stmt->execute();
 
 		if ($filename === "metadata.yaml") {
-			insert_model_labels_from_yaml($file_path, $uid);
+			insert_model_labels_from_yaml($file_path, $uuid);
 		}
 
 		return $GLOBALS["pdo"]->lastInsertId();
 	}
 
-	function insert_directory_into_db($model_name, $dir_path, $uid) {
+	function insert_directory_into_db($model_name, $dir_path, $uuid) {
 		$inserted_ids = [];
 		if (!is_dir($dir_path)) {
 			if($path) {
@@ -1244,7 +1244,7 @@
 			if ($file === '.' || $file === '..') continue;
 			$full_path = $dir_path . DIRECTORY_SEPARATOR . $file;
 			if (is_file($full_path)) {
-				$inserted_id = insert_file_into_db($model_name, $full_path, $uid);
+				$inserted_id = insert_file_into_db($model_name, $full_path, $uuid);
 				if ($inserted_id) $inserted_ids[] = $inserted_id;
 			}
 		}
@@ -1254,17 +1254,17 @@
 
 	function insert_model_into_db($model_name, $files_array, $pt_file_path, $pt_file) {
 		try {
-			$uid = uniqid("model_");
+			$uuid = uniqid("model_");
 			$all_inserted_ids = [];
 
 			foreach ($files_array as $path) {
 				$path = convert_to_tfjs($path);
-				$all_inserted_ids = array_merge($all_inserted_ids, insert_directory_into_db($model_name, $path, $uid));
+				$all_inserted_ids = array_merge($all_inserted_ids, insert_directory_into_db($model_name, $path, $Uuid));
 			}
 
 			// insert pt_file as well
 			if ($pt_file && $pt_file_path && is_file($pt_file_path)) {
-				$pt_inserted_id = insert_file_into_db($model_name, $pt_file_path, $uid, $pt_file);
+				$pt_inserted_id = insert_file_into_db($model_name, $pt_file_path, $uuid, $pt_file);
 				if ($pt_inserted_id) $all_inserted_ids[] = $pt_inserted_id;
 			}
 
