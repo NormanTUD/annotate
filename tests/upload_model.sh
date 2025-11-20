@@ -1,5 +1,9 @@
 #!/bin/bash
 
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+
+cd "$SCRIPT_DIR"
+
 HOST=$1
 PORT=$2
 
