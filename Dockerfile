@@ -4,29 +4,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV APACHE_PORT=8080
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
 
-# Grundlegende Pakete, Apache und PHP installieren
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        apache2 \
-        php \
-        php-mysqli \
-        php-gd \
-        php-cli \
-        libapache2-mod-php \
-        sudo \
-        curl \
-        git \
-        zip \
-        libjpeg-dev \
-        libpng-dev \
-        libfreetype6-dev \
-        mariadb-client \
-        iproute2 \
-        iputils-ping \
-        uuid-runtime \
-        build-essential \
-        python3-dev \
-        && apt-get clean && rm -rf /var/lib/apt/lists/*
+        build-essential python3-dev libjpeg-dev libpng-dev libfreetype6-dev \
+    && python3 -m pip install --no-cache-dir jax tensorflowjs onnx2tf sng4onnx ... \
+    && apt-get purge -y build-essential python3-dev libjpeg-dev libpng-dev libfreetype6-dev \
+    && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Apache rewrite module aktivieren
 RUN a2enmod rewrite
