@@ -72,6 +72,7 @@ if ! curl "$models_url" | grep -q "$model_name_uuid"; then
 fi
 
 delete_url="$models_url?delete_model=$model_name_uuid"
+echo "Curling $delete_url"
 curl "$delete_url" >/dev/null
 
 if curl "$models_url" | grep "$model_name_uuid"; then
