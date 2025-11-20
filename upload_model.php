@@ -12,7 +12,8 @@ ob_implicit_flush(true);
 header('Content-Type: text/html; charset=utf-8');
 
 // --- Optional: Browser am Leben halten ---
-echo str_repeat(' ', 1024); // Sendet 1KB, Browser beginnt zu rendern
+#echo str_repeat(' ', 1024); // Sendet 1KB, Browser beginnt zu rendern
+echo "Starting Conversion-process...\n<br>";
 flush();
 
 // --- Request Handling ---
