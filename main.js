@@ -59,7 +59,6 @@ var zoom_input;
 		if (!w) return;
 		w.classList.add('nothing-found');
 
-		// Klasse nach 1 Sekunde wieder entfernen, damit sie erneut abgespielt werden kann
 		setTimeout(() => w.classList.remove('nothing-found'), 1000);
 	};
 })();
@@ -136,7 +135,6 @@ async function load_model() {
 
 		console.log("Loading TFJS model from:", model_json_url);
 
-		// Versuch, das Manifest zuerst zu holen, für Debug
 		const resp = await fetch(model_json_url);
 		const model_json = await resp.json();
 
@@ -154,7 +152,6 @@ async function load_model() {
 		console.error("Model load failed:", e);
 		if (e.stack) console.error(e.stack);
 
-		// TFJS Fehler auswerten
 		if (e.message.includes("tensor should have")) {
 			const match = e.message.match(/shape, \[([^\]]+)\], .* has (\d+)/);
 			if (match) {
@@ -728,12 +725,10 @@ function processModelOutput(res) {
 
 	const conf_threshold = getConfThreshold();
 
-	// Iteriere über alle Predictions
 	for (let i = 0; i < numPredictions; i++) {
 		const features = data.map(arr => arr[i]);
 		const [x, y, w, h, ...classScores] = features;
 
-		// Top Score und Klasse
 		let bestScore = -Infinity;
 		let bestClass = -1;
 		for (let c = 0; c < classScores.length; c++) {
@@ -743,7 +738,6 @@ function processModelOutput(res) {
 			}
 		}
 
-		// Relative Koordinaten
 		const relX = x / imgsz;
 		const relY = y / imgsz;
 		const relW = w / imgsz;
@@ -761,12 +755,9 @@ function processModelOutput(res) {
 			classes.push(bestClass);
 
 			console.info(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
-		//} else {
-		//	console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore} was not enough (min: ${conf_threshold})`);
 		}
 	}
 
-	// --- Non-Maximum Suppression ---
 	const keepBoxes = [];
 	const keepScores = [];
 	const keepClasses = [];
@@ -790,7 +781,6 @@ function processModelOutput(res) {
 
 	log(`Processed ${keepBoxes.length} boxes after NMS`);
 
-	// --- Umwandlung zurück zu [cx, cy, bw, bh] ---
 	const finalBoxes = keepBoxes.map(b => {
 		const cx = (b[0] + b[2]) / 2;
 		const cy = (b[1] + b[3]) / 2;
@@ -1053,7 +1043,6 @@ async function create_selects_from_annotation(force = 0) {
 			});
 
 		} else {
-			// Wenn keine KI-Namen vorhanden und KI gerade nicht läuft
 			if (!running_ki) {
 				if ($("#ki_detected_names").html() !== "") {
 					$("#ki_detected_names").html("");
@@ -1219,7 +1208,6 @@ async function set_img_from_filename(fn) {
 
 	document.title = "annotate - " + fn;
 
-	// Warten bis Bildwechsel komplett+FadeIn fertig ist
 	await fade_image_transition(fn);
 
 	await load_page();
