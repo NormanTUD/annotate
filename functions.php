@@ -324,9 +324,9 @@
 			}
 		
 			if($curated_percent) {
-				$str .= " (".htmlentities($annotated_str)."% annotiert, davon $curated_percent% kuratiert)";
+				$str .= " (".htmlentities($annotated_str)."% annotated, of which $curated_percent% are curated)";
 			} else {
-				$str .= " (".htmlentities($annotated_str)."% annotiert)";
+				$str .= " (".htmlentities($annotated_str)."% annotated)";
 			}
 		}
 
