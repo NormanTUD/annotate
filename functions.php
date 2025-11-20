@@ -1255,6 +1255,25 @@
 		return $inserted_ids;
 	}
 
+	function get_all_filenames($dir) {
+		$files = [];
+		if (!is_dir($dir)) return $files;
+
+		$items = scandir($dir);
+		foreach ($items as $item) {
+			if ($item === '.' || $item === '..') continue;
+			$path = $dir . '/' . $item;
+			if (is_file($path)) {
+				$files[] = $item; // nur der Dateiname, kein Pfad
+			} elseif (is_dir($path)) {
+				// optional: rekursiv Unterordner durchsuchen
+				$files = array_merge($files, get_all_filenames($path));
+			}
+		}
+		return $files;
+	}
+
+
 	function insert_model_into_db($model_name, $files_array, $pt_file_path, $pt_file) {
 		try {
 			$uuid = uniqid("model_"); // eine UUID pro Model-Gruppe
@@ -1262,7 +1281,7 @@
 
 			foreach ($files_array as $path) {
 				$path = convert_to_tfjs($path);
-				$filenames_in_path = get_all_filenames($path); // Hilfsfunktion, die alle Dateien im Pfad zurückgibt
+				$filenames_in_path = get_all_filenames($path);
 
 				foreach ($filenames_in_path as $filename) {
 					// prüfen, ob filename+uuid schon existiert
