@@ -26,8 +26,8 @@ RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.expor
     $(python3 -m site --user-site)/tensorflowjs/converters/jax_conversion.py || true
 
 # Apache Konfiguration anpassen
-RUN sed -ri -e "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/sites-available/*.conf && \
-    sed -ri -e "s!/var/www/!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|" /etc/apache2/sites-available/000-default.conf
+RUN sed -i "s|<Directory /var/www/html>|<Directory ${APACHE_DOCUMENT_ROOT}>|" /etc/apache2/apache2.conf
 
 # Berechtigungen für /tmp
 RUN chmod 777 -R /tmp && chmod o+t -R /tmp
