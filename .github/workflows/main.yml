@@ -34,7 +34,7 @@ jobs:
           df -h /
           apt-get update
           apt-get purge -y man-db manpages
-          apt-get install -y php sudo
+          apt-get install -y --no-install-recommends php sudo
           df -h /
 
       - name: Run Playwright Tests
