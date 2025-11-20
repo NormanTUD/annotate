@@ -33,9 +33,8 @@ RUN apt-get update && apt-get install -y wget build-essential \
     && ln -sf /usr/local/bin/python3.11 /usr/bin/python3 \
     && wget https://bootstrap.pypa.io/get-pip.py \
     && python3.11 get-pip.py \
-    && cd .. && rm -rf Python-3.11.8 Python-3.11.8.tgz get-pip.py
-
-RUN sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
+    && cd .. && rm -rf Python-3.11.8 Python-3.11.8.tgz get-pip.py && \
+    apt autoremove -y && apt autoclean && apt clean
 
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 
