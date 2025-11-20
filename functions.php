@@ -423,7 +423,6 @@
 	}
 
 	function execute_query($query) {
-		echo "\n\n>>>\n\n$query\n\n";
 		$res = mysqli_query($GLOBALS['dbh'], $query);
 
 		if (!$res) {
