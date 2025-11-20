@@ -4,36 +4,36 @@ HOST="localhost"
 PORT="1112"
 
 print_help() {
-    echo "Usage: $0 [-h host] [-p port]"
-    echo "Defaults: host=localhost, port=1112"
+	echo "Usage: $0 [-h host] [-p port]"
+	echo "Defaults: host=localhost, port=1112"
 }
 
 # parse long flag first
 if [[ "$1" == "--help" ]]; then
-    print_help
-    exit 0
+	print_help
+	exit 0
 fi
 
 while getopts "h:p:" opt; do
-    case "$opt" in
-        h) HOST="$OPTARG" ;;
-        p) PORT="$OPTARG" ;;
-        *) print_help; exit 1 ;;
-    esac
+	case "$opt" in
+		h) HOST="$OPTARG" ;;
+		p) PORT="$OPTARG" ;;
+		*) print_help; exit 1 ;;
+	esac
 done
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 cd "$SCRIPT_DIR" || exit 1
 
 curl "http://$HOST:$PORT/upload_model.php" \
-  -X POST \
-  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0' \
-  -H 'Accept: */*' \
-  -H 'Accept-Language: en-US,en;q=0.5' \
-  -H "Referer: http://$HOST:$PORT/models.php" \
-  -H "Origin: http://$HOST:$PORT" \
-  -H 'DNT: 1' \
-  -H 'Connection: keep-alive' \
-  -H 'Cookie: language_cookie=de; PHPSESSID=eipc9q7sc1rg3ul754et4kfeet' \
-  -F "model_name=my_test_model" \
-  -F "pt_model_file=@last.pt;filename=last.pt"
+	-X POST \
+	-H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0' \
+	-H 'Accept: */*' \
+	-H 'Accept-Language: en-US,en;q=0.5' \
+	-H "Referer: http://$HOST:$PORT/models.php" \
+	-H "Origin: http://$HOST:$PORT" \
+	-H 'DNT: 1' \
+	-H 'Connection: keep-alive' \
+	-H 'Cookie: language_cookie=de; PHPSESSID=eipc9q7sc1rg3ul754et4kfeet' \
+	-F "model_name=my_test_model" \
+	-F "pt_model_file=@last.pt;filename=last.pt"
