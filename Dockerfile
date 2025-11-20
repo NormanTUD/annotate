@@ -25,6 +25,8 @@ RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' \
     $(python3 -m site --user-site)/tensorflowjs/converters/jax_conversion.py || true
 
+RUN apt-get update && apt install -y curl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Apache Konfiguration anpassen
 RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|" /etc/apache2/sites-available/000-default.conf
 RUN sed -i "s|<Directory /var/www/html>|<Directory ${APACHE_DOCUMENT_ROOT}>|" /etc/apache2/apache2.conf
@@ -48,7 +50,5 @@ RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost && \
     rm $APACHE_DOCUMENT_ROOT/.env
 
 EXPOSE $APACHE_PORT
-
-RUN apt-get update && apt install -y curl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
