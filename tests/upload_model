@@ -29,7 +29,7 @@ sleep 10
 
 tmpfile=$(mktemp)
 
-model_name="auto_test_model_$(tr -dc 'a-z' </dev/urandom | head -c 12)"
+model_name="auto_test_model_$RANDOM"
 
 base_url="http://$HOST:$PORT"
 models_url="$base_url/models.php"
