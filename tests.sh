@@ -21,7 +21,7 @@ if [[ $exit_code -ne 0 ]]; then
 	exit 1
 fi
 
-bash docker.sh --local-port 9912 --instance-name annotate_test
+bash -x docker.sh --local-port 9912 --instance-name annotate_test
 exit_code=$?
 
 if [[ $exit_code -ne 0 ]]; then
