@@ -445,16 +445,21 @@
 			}
 		}
 
+		$export_gui = "";
 
-		$str .= '
-<nav class="main-nav">
-  <a href="index.php">Home</a>
-  <a href="models.php">Models</a>
-  <a href="upload.php">Upload Images</a>
-  <a href="overview.php">Overview</a>
-  <a href="export_annotations_gui.php">Export annotations</a>
-</nav>
-';
+		if(get_number_of_annotated_imgs() > 0) {
+			$export_gui = '<a href="export_annotations_gui.php">Export annotations</a>';
+		}
+
+		$str .= "
+			<nav class='main-nav'>
+				<a href='index.php'>Home</a>
+				<a href='models.php'>Models</a>
+				<a href='upload.php'>Upload Images</a>
+				<a href='overview.php'>Overview</a>
+				$export_gui
+			</nav>
+		";
 
 		return $str;
 	}
