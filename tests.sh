@@ -40,7 +40,7 @@ if [[ $exit_code -ne 0 ]]; then
 	exit $exit_code
 fi
 
-bash tests/upload_model -h localhost -p 9912
+bash tests/upload_model
 exit_code=$?
 
 if [[ $exit_code -ne 0 ]]; then

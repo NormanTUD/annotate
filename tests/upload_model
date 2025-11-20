@@ -3,7 +3,7 @@
 set -x
 
 HOST="localhost"
-PORT="1112"
+PORT="9912"
 
 print_help() {
 	echo "Usage: $0 [-h host] [-p port]"
