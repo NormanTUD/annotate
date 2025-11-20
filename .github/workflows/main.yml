@@ -38,7 +38,6 @@ jobs:
           bash -x run_tests --no-cache
 
   tfjsconverter:
-    needs: [playwright]
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
