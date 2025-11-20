@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+if ! command -v ip 2>/dev/null >/dev/null; then
+	echo "ip not found. Try installing iproute2"
+	exit 6
+fi
+
 # Grundlegende Tools prüfen
 for cmd in apt dpkg-query sudo; do
     if ! command -v "$cmd" &>/dev/null; then
