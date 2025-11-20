@@ -2,32 +2,32 @@
 
 my_python() {
 	if command -v python3 &>/dev/null; then
-		echo "Trying python3..."
+		echo ">>> Trying python3..."
 		python3 "$@"
 	elif command -v python3.11 &>/dev/null; then
-		echo "Trying python3.11..."
+		echo ">>> Trying python3.11..."
 		python3.11 "$@"
 	elif command -v python &>/dev/null; then
-		echo "Trying python..."
+		echo ">>> Trying python..."
 		python "$@"
 	else
-		echo "Error: No Python interpreter found!" >&2
+		echo ">>> Error: No Python interpreter found!" >&2
 		return 1
 	fi
 }
 
 my_pip() {
 	if command -v pip3 &>/dev/null; then
-		echo "Trying pip3..."
+		echo ">>> Trying pip3..."
 		pip3 "$@"
 	elif command -v pip3.11 &>/dev/null; then
-		echo "Trying pip3.11..."
+		echo ">>> Trying pip3.11..."
 		pip3.11 "$@"
 	elif command -v pip &>/dev/null; then
-		echo "Trying pip..."
+		echo ">>> Trying pip..."
 		pip "$@"
 	else
-		echo "Error: No pip found!" >&2
+		echo ">>> Error: No pip found!" >&2
 		return 1
 	fi
 }
