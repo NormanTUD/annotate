@@ -136,11 +136,9 @@ if ! command -v docker-compose &>/dev/null && ! command -v docker-compose &>/dev
     sudo chmod +x /usr/local/bin/docker-compose
 fi
 
-CMD="docker compose"
+CMD="docker-compose"
 if [[ "$(id -u)" -ne 0 ]] && ! groups "$USER" | grep -qw docker; then
-	CMD="sudo docker compose"
-else
-	CMD="docker compose"
+	CMD="sudo docker-compose"
 fi
 
 # 🔧 Fix: www-data Zugriff auf Docker-Socket
