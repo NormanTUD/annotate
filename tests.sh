@@ -16,6 +16,22 @@ my_python() {
 	fi
 }
 
+my_pip() {
+	if command -v pip3 &>/dev/null; then
+		echo "Trying pip3..."
+		pip3 "$@"
+	elif command -v pip3.11 &>/dev/null; then
+		echo "Trying pip3.11..."
+		pip3.11 "$@"
+	elif command -v pip &>/dev/null; then
+		echo "Trying pip..."
+		pip "$@"
+	else
+		echo "Error: No pip found!" >&2
+		return 1
+	fi
+}
+
 if command -v php 2>/dev/null >/dev/null; then
 	php -l *.php
 
@@ -57,14 +73,14 @@ if [[ ! -d ~/.annotate_test_env ]]; then
 	my_python -m venv ~/.annotate_test_env
 	source ~/.annotate_test_env/bin/activate
 
-	if ! pip install linkchecker; then
-		echo "pip install linkchecker failed. Are you online?"
+	if ! my_pip install linkchecker; then
+		echo "my_pip install linkchecker failed. Are you online?"
 		rm -rf ~/.annotate_test_env
 		exit 1
 	fi
 
-	if ! pip install playwright; then
-		echo "pip install playwright failed. Are you online?"
+	if ! my_pip install playwright; then
+		echo "my_pip install playwright failed. Are you online?"
 		rm -rf ~/.annotate_test_env
 		exit 1
 	fi
@@ -84,9 +100,9 @@ if [[ $exit_code -ne 0 ]]; then
 	exit 5
 fi
 
-echo "====== pip install playwright ======"
-if ! pip install playwright; then
-	echo "pip install playwright failed. Are you online?"
+echo "====== my_pip install playwright ======"
+if ! my_pip install playwright; then
+	echo "my_pip install playwright failed. Are you online?"
 	rm -rf ~/.annotate_test_env
 	exit 1
 fi
