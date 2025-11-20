@@ -66,7 +66,7 @@ fi
 model_name_uuid=$(grep "saved into DB" "$tmpfile" | sed -e "s#.*Model '\(.*\)' saved into DB.*#\\1#")
 echo "extracted model name: $model_name_uuid"
 
-echo "curling $models_url to check if it contains $model_name_uuid"
+echo "Curling $models_url to check if it contains $model_name_uuid"
 if ! curl -sS "$models_url" | grep -q "$model_name_uuid"; then
 	echo "Model-page does not contain $model_name_uuid"
 	exit 4
