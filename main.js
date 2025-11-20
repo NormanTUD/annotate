@@ -1094,6 +1094,8 @@ async function load_page() {
 		anno = undefined;
 	}
 
+	create_zoom_slider();
+
 	await load_dynamic_content();
 
 	await make_item_anno($("#image")[0], [
@@ -1102,8 +1104,6 @@ async function load_page() {
 			vocabulary: tags
 		}
 	]);
-
-	create_zoom_slider();
 }
 
 async function load_dynamic_content () {
