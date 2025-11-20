@@ -515,7 +515,7 @@
 		return ['names' => $names];
 	}
 
-	function insert_model_labels_from_yaml($yaml_path, $model_uid) {
+	function insert_model_labels_from_yaml($yaml_path, $model_uuid) {
 		echo "Loading YAML: $yaml_path\n";
 		$yaml_content = file_get_contents($yaml_path);
 
@@ -538,7 +538,7 @@
 			$label_name = trim($label_name);
 
 			$check_query = "SELECT id FROM model_labels 
-				WHERE uid=" . esc($model_uid) . " 
+				WHERE uid=" . esc($model_uuid) . " 
 				AND label_index=" . intval($index);
 
 			$res = rquery($check_query);
@@ -551,7 +551,7 @@
 				echo " → Inserting label '$label_name'\n";
 
 				$insert_query = "INSERT INTO model_labels (uid, label_index, label_name) VALUES (" .
-					esc($model_uid) . ", " .
+					esc($model_uuid) . ", " .
 					intval($index) . ", " .
 					esc($label_name) . ")";
 
@@ -788,8 +788,8 @@
 		rquery($query);
 	}
 
-	function delete_model ($model_uid) {
-		$query = "delete from models where uid = ".esc($model_uid);
+	function delete_model ($model_uuid) {
+		$query = "delete from models where uid = ".esc($model_uuid).' or model_name = '.esc($model_uuid);
 
 		rquery($query);
 	}
