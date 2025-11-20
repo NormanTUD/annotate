@@ -25,7 +25,7 @@ RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' \
     $(python3 -m site --user-site)/tensorflowjs/converters/jax_conversion.py || true
 
-RUN apt-get update && apt install -y --no-install-recommends curl uuid-runtime libgl1 libglvnd0 && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt install -y --no-install-recommends curl uuid-runtime libgl1 libglvnd0 php-mysql && apt-get autoremove -y && apt-get clean && apt-get autoclean && rm -rf /var/lib/apt/lists/*
 
 RUN PHP_INI=$(find /etc/php -name php.ini | grep apache2) && \
     sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' "$PHP_INI" && \
@@ -38,10 +38,6 @@ RUN sed -i "s/80/${APACHE_PORT}/" /etc/apache2/ports.conf
 RUN sed -i "s/*:80/*:${APACHE_PORT}/" /etc/apache2/sites-available/000-default.conf
 
 RUN rm /var/www/html/index.html
-
-RUN apt-get update && apt-get install -y php-mysql && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
 # Berechtigungen für /tmp
 RUN chmod 777 -R /tmp && chmod o+t -R /tmp
 
