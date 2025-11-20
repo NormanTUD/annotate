@@ -170,3 +170,5 @@ $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
 $CMD -p "${INSTANCE_NAME}" up -d
 
 docker ps
+
+docker exec annotate_test_annotate curl -s http://localhost:8080/
