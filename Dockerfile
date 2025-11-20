@@ -28,6 +28,8 @@ RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.expor
 # Apache Konfiguration anpassen
 RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|" /etc/apache2/sites-available/000-default.conf
 RUN sed -i "s|<Directory /var/www/html>|<Directory ${APACHE_DOCUMENT_ROOT}>|" /etc/apache2/apache2.conf
+RUN sed -i "s/80/${APACHE_PORT}/" /etc/apache2/ports.conf
+RUN sed -i "s/*:80/*:${APACHE_PORT}/" /etc/apache2/sites-available/000-default.conf
 
 # Berechtigungen für /tmp
 RUN chmod 777 -R /tmp && chmod o+t -R /tmp

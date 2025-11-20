@@ -166,7 +166,6 @@ if [[ $NO_CACHE -eq 1 ]]; then
     BUILD_ARGS="--no-cache"
 fi
 
-echo "RUNNING BUILD COMMAND: $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS"
 $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
 
 $CMD -p "${INSTANCE_NAME}" up -d
