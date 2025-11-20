@@ -32,10 +32,10 @@ RUN PHP_INI=$(find /etc/php -name php.ini | grep apache2) && \
     sed -i 's/^post_max_size = .*/post_max_size = 100M/' "$PHP_INI"
 
 # Apache Konfiguration anpassen
-RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|" /etc/apache2/sites-available/000-default.conf
-RUN sed -i "s|<Directory /var/www/html>|<Directory ${APACHE_DOCUMENT_ROOT}>|" /etc/apache2/apache2.conf
-RUN sed -i "s/80/${APACHE_PORT}/" /etc/apache2/ports.conf
-RUN sed -i "s/*:80/*:${APACHE_PORT}/" /etc/apache2/sites-available/000-default.conf
+RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|" /etc/apache2/sites-available/000-default.conf && \
+    sed -i "s|<Directory /var/www/html>|<Directory ${APACHE_DOCUMENT_ROOT}>|" /etc/apache2/apache2.conf && \
+    sed -i "s/80/${APACHE_PORT}/" /etc/apache2/ports.conf && \
+    sed -i "s/*:80/*:${APACHE_PORT}/" /etc/apache2/sites-available/000-default.conf
 
 RUN rm /var/www/html/index.html
 # Berechtigungen für /tmp
