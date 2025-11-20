@@ -38,7 +38,7 @@ fi
 
 echo "====== Checking virtualenv ======"
 if [[ ! -d ~/.annotate_test_env ]]; then
-	python3 -m venv ~/.annotate_test_env
+	python -m venv ~/.annotate_test_env
 	source ~/.annotate_test_env/bin/activate
 
 	if ! pip install linkchecker; then
@@ -87,6 +87,6 @@ fi
 python -m playwright install --with-deps chromium
 
 echo "====== Run tests ======"
-python3 _run_tests.py $*
+python _run_tests.py $*
 exit_code=$?
 echo "====== Ran tests ======"
