@@ -120,7 +120,6 @@ while ($row = mysqli_fetch_assoc($category_count_result)) {
     ];
 }
 
-include("header.php");
 ?>
 <body>
 <div id="category_chart"></div>
