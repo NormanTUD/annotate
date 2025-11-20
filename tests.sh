@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 if command -v php 2>/dev/null >/dev/null; then
 	php -l *.php
 

@@ -169,8 +169,6 @@ if [[ $NO_CACHE -eq 1 ]]; then
 fi
 
 echo "RUNNING BUILD COMMAND: $CMD "${INSTANCE_NAME}" build $BUILD_ARGS"
-set -x 
 $CMD "${INSTANCE_NAME}" build $BUILD_ARGS
-set +x 
 
 $CMD "${INSTANCE_NAME}" up -d

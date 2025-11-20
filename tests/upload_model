@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 HOST="localhost"
 PORT="9912"
 
