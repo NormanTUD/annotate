@@ -40,7 +40,7 @@ curl -sS "http://$HOST:$PORT/upload_model.php" \
 	-F "model_name=my_test_model" \
 	-F "pt_model_file=@last.pt;filename=last.pt" 2>&1 | tee "$tmpfile"
 
-if ! grep -q "saved into DB" "$tmpfile"
+if ! grep -q "saved into DB" "$tmpfile"; then
 	echo "ERROR: $tmpfile does not contain 'saved into DB'"
 	exit 1
 fi
