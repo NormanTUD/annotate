@@ -18,35 +18,35 @@ if(count($available_models)) {
 <table border=1>
 <tr>
     <th>Name</th>
-    <th>UID</th>
+    <th>UUID</th>
     <th>Files</th>
     <th>Delete?</th>
 </tr>
 <?php
 	for ($i = 0; $i < count($available_models); $i++) {
 		$model_name = $available_models[$i][0];
-		$uid = $available_models[$i][1];
+		$uuid = $available_models[$i][1];
 
 		// Dateien aus DB holen
-		$stmt = $GLOBALS["pdo"]->prepare("SELECT filename FROM models WHERE uid = :uid");
-		$stmt->bindParam(':uid', $uid);
+		$stmt = $GLOBALS["pdo"]->prepare("SELECT filename FROM models WHERE uuid = :uuid");
+		$stmt->bindParam(':uuid', $uuid);
 		$stmt->execute();
 		$files = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 		print "<tr>\n";
 		print " <td>$model_name</td>\n";
-		print " <td>$uid</td>\n";
+		print " <td>$uuid</td>\n";
 
 		// Dateien als Download-Links
 		print " <td>";
 		foreach ($files as $file) {
 			$filename = htmlspecialchars($file['filename']);
-			$link = "get_model_file.php?uid=$uid&filename=" . urlencode($filename);
+			$link = "get_model_file.php?uuid=$uuid&filename=" . urlencode($filename);
 			print "<a href='$link'>$filename</a><br>";
 		}
 		print "</td>\n";
 
-		print " <td><a href='models.php?delete_model=$uid'>Delete!</a></td>\n";
+		print " <td><a href='models.php?delete_model=$uuid'>Delete!</a></td>\n";
 		print "</tr>\n";
 	}
 ?>
