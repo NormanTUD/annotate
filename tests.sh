@@ -84,7 +84,7 @@ source ~/.annotate_test_env/bin/activate
 
 echo "====== linkchecker ======"
 
-linkchecker http://localhost:9912
+linkchecker http://annotate_test_annotate:9912
 exit_code=$?
 
 if [[ $exit_code -ne 0 ]]; then
