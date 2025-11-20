@@ -117,14 +117,11 @@
 	}
 
 	function try_connect($retries = 5, $delay_sec = 2) {
-		global $dbh, $pdo;
-
 		for ($i = 0; $i < $retries; $i++) {
 			try {
-				$dbh = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS['db_port']);
-				$GLOBALS["pdo"] = new PDO("mysql:host={$GLOBALS['db_host']};dbname={$GLOBALS['db_name']}", $GLOBALS['db_username'], $GLOBALS['db_password'], [
-					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-				]);
+				$GLOBALS["dbh"] = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS['db_port']);
+				$GLOBALS["pdo"] = new PDO("mysql:host={$GLOBALS['db_host']};dbname={$GLOBALS['db_name']}", $GLOBALS['db_username'], $GLOBALS['db_password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+
 				return true;
 			} catch (\Throwable $e) {
 				// Ignore
@@ -134,7 +131,9 @@
 		sleep(5);
 
 		try {
-			$dbh = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS['db_port']);
+			$GLOBALS["dbh"] = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS['db_port']);
+			$GLOBALS["pdo"] = new PDO("mysql:host={$GLOBALS['db_host']};dbname={$GLOBALS['db_name']}", $GLOBALS['db_username'], $GLOBALS['db_password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+
 			create_tables();
 			return true;
 		} catch (\Throwable $e) {
