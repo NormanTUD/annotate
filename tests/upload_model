@@ -58,8 +58,7 @@ if ! grep -q "Inserting label" "$tmpfile"; then
 	exit 3
 fi
 
-model_name_uuid=$(cat "$tmpfile" | grep "saved into DB" | sed -e "s#.*Model '#" -e "s#' saved into DB.*")
-
+model_name_uuid=$(grep "saved into DB" "$tmpfile" | sed -e "s#.*Model '\(.*\)' saved into DB.*#\\1#")
 echo "extracted model name: $model_name_uuid"
 
 rm "$tmpfile"
