@@ -17,9 +17,16 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
-RUN curl https://pyenv.run | bash
-ENV PATH="/root/.pyenv/shims:/root/.pyenv/bin:$PATH"
-RUN pyenv install 3.11.10 && pyenv global 3.11.10
+#RUN curl https://pyenv.run | bash
+#ENV PATH="/root/.pyenv/shims:/root/.pyenv/bin:$PATH"
+#RUN pyenv install 3.11.10 && pyenv global 3.11.10
+
+RUN apt-get update && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y python3.11 python3.11-dev python3.11-distutils python3.11-venv \
+    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 -
 
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 
