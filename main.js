@@ -1271,26 +1271,30 @@ async function load_next_random_image(fn = false) {
 	await load_dynamic_content();
 }
 
-document.onkeydown = function (e) {
-	if($(":focus").length) {
-		return;
-	}
-
+document.onkeydown = function(e) {
 	e = e || window.event;
+
+	const target = e.target || e.srcElement;
+	const is_typing_field = target.tagName === "INPUT" && target.type === "text"
+		|| target.tagName === "TEXTAREA"
+		|| target.isContentEditable;
+
+	if (is_typing_field) return;
+
 	switch (e.which) {
-		case 79:
+		case 79: // O
 			move_to_offtopic();
 			break;
-		case 78:
-			load_next_random_image()
+		case 78: // N
+			load_next_random_image();
 			break;
-		case 75:
+		case 75: // K
 			predictImageWithModel();
 			break;
 		default:
 			break;
 	}
-}
+};
 
 function curate_anno (image) {
 	$.ajax({
