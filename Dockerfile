@@ -29,9 +29,6 @@ RUN pip3 install --break-system-packages --ignore-installed imagehash
 RUN groupadd -f docker
 RUN usermod -aG docker www-data
 
-ARG INSTANCE_NAME
-RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost
-
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed jax
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed tensorflowjs
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed ultralytics
@@ -47,8 +44,11 @@ RUN chmod 777 -R /tmp && chmod o+t -R /tmp
 # Copy environment file
 COPY .env /var/www/html/.env
 
+ARG INSTANCE_NAME
+
 # Adjust Apache config & extract DB credentials
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf && \
+    echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost && \
     sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
     grep "DB_PASSWORD" .env | sed -e 's#.*=##' >> /etc/dbpw && \
     grep "DB_USER" .env | sed -e 's#.*=##' >> /etc/dbuser && \
