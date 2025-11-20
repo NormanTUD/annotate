@@ -116,37 +116,106 @@
 		return false;
 	}
 
+	function verify_mysqli_connection($conn) {
+		if (!$conn instanceof mysqli) return false;
+		if ($conn->connect_errno) return false;
+		return $conn->ping();
+	}
+
+	function verify_pdo_connection($pdo) {
+		if (!$pdo instanceof PDO) return false;
+
+		try {
+			$stmt = $pdo->query("SELECT 1");
+			return $stmt !== false;
+		} catch (Throwable $e) {
+			return false;
+		}
+	}
+
+	function create_pdo($host, $db, $user, $pass) {
+		$dsn = "mysql:host={$host};dbname={$db}";
+		return new PDO($dsn, $user, $pass, [
+			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+			PDO::ATTR_PERSISTENT => false,
+		]);
+	}
+
+	function safe_connect_attempt($with_db = true) {
+		$host = $GLOBALS['db_host'];
+		$user = $GLOBALS['db_username'];
+		$pass = $GLOBALS['db_password'];
+		$db   = $GLOBALS['db_name'];
+		$port = $GLOBALS['db_port'];
+
+		$db_for_mysqli = $with_db ? $db : null;
+
+		$mysqli = safe_mysqli_connect($host, $user, $pass, $db_for_mysqli, $port);
+		$pdo    = null;
+
+		if ($with_db) {
+			$pdo = create_pdo($host, $db, $user, $pass);
+		} else {
+			// DB existiert evtl. nicht → ohne db verbinden
+			$pdo = new PDO(
+				"mysql:host={$host}",
+				$user,
+				$pass,
+				[PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+			);
+		}
+
+		// Verifikation
+		if (!verify_mysqli_connection($mysqli)) {
+			throw new RuntimeException("MySQLi connection invalid after connect.");
+		}
+		if (!verify_pdo_connection($pdo)) {
+			throw new RuntimeException("PDO connection invalid after connect.");
+		}
+
+		$GLOBALS['dbh'] = $mysqli;
+		$GLOBALS['pdo'] = $pdo;
+		return true;
+	}
+
 	function try_connect($retries = 5) {
 		for ($i = 0; $i < $retries; $i++) {
 			try {
-				$GLOBALS["dbh"] = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS['db_port']);
-				$GLOBALS["pdo"] = new PDO("mysql:host={$GLOBALS['db_host']};dbname={$GLOBALS['db_name']}", $GLOBALS['db_username'], $GLOBALS['db_password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-
+				safe_connect_attempt(true);
 				return true;
-			} catch (\Throwable $e) {
-				// Ignore
-				sleep(3);
+			} catch (Throwable $e) {
+				error_log("Connect attempt $i failed: ".$e->getMessage());
+				sleep(2);
 			}
 		}
 
-		sleep(5);
+		sleep(3);
 
 		try {
-			$GLOBALS["dbh"] = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], null, $GLOBALS['db_port']);
-			$GLOBALS["pdo"] = new PDO("mysql:host={$GLOBALS['db_host']};dbname={$GLOBALS['db_name']}", $GLOBALS['db_username'], $GLOBALS['db_password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-
+			safe_connect_attempt(false);
 			create_tables();
+
+			// Noch einmal prüfen (ja, schon erlebt dass danach wieder null war…)
+			if (!verify_pdo_connection($GLOBALS['pdo']) || !verify_mysqli_connection($GLOBALS['dbh'])) {
+				throw new RuntimeException("Connections became invalid after table creation.");
+			}
+
 			return true;
-		} catch (\Throwable $e) {
+		} catch (Throwable $e) {
 			echo "Final attempt failed.<br>";
+
 			$pingable = safe_fsockopen($GLOBALS['db_host'], $GLOBALS['db_port']) ? "Yes" : "No";
 			echo "Host pingable? <tt>$pingable</tt><br>";
+
 			echo "Error:<pre>".$e->getMessage()."</pre>";
 			return false;
 		}
 	}
 
-	if (!try_connect()) die("Failed to connect to MySQL after retries.");
+	if (!try_connect()) {
+		die("Failed to connect to MySQL after retries.");
+	}
 
 	create_tables();
 
