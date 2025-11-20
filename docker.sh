@@ -169,3 +169,6 @@ fi
 $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
 
 $CMD -p "${INSTANCE_NAME}" up -d
+
+echo "docker ps:"
+docker ps
