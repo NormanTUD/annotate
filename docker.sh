@@ -9,11 +9,10 @@ for cmd in apt dpkg-query sudo; do
     fi
 done
 
-# Docker installieren falls nötig
 if ! command -v docker &>/dev/null; then
     echo "docker not found. Installing docker..."
     sudo apt update
-    sudo apt install -y docker.io
+    sudo apt install -y --no-install-recommends docker.io
 fi
 
 # Whiptail & git installieren falls nötig
@@ -127,13 +126,11 @@ networks:
     driver: bridge
 EOL
 
-# Docker Compose installieren falls nötig
 if ! command -v docker compose &>/dev/null && ! command -v docker-compose &>/dev/null; then
     sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
 fi
 
-# Compose Command
 CMD="docker compose"
 if [[ "$(id -u)" -ne 0 ]] && ! groups "$USER" | grep -qw docker; then
 	CMD="sudo docker compose"
@@ -166,5 +163,9 @@ if [[ $NO_CACHE -eq 1 ]]; then
     BUILD_ARGS="--no-cache"
 fi
 
+echo "RUNNING BUILD COMMAND: $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS"
+set -x 
 $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
+set +x 
+
 $CMD -p "${INSTANCE_NAME}" up -d
