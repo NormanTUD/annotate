@@ -34,7 +34,7 @@ jobs:
           df -h /
           apt-get update
           apt-get purge -y man-db manpages
-          apt-get install -y --no-install-recommends php sudo curl iproute2 python3 python3-pip
+          apt-get install -y --no-install-recommends php sudo curl iproute2 python3 python3-pip python3-venv
           df -h /
           curl -fsSL https://get.docker.com | bash
           df -h /
