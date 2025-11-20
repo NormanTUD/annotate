@@ -178,7 +178,7 @@ echo "ss -ltnp | grep -E ':${LOCAL_PORT}\b' || true"
 ss -ltnp | grep -E ":${LOCAL_PORT}\b" || true
 
 grep -q "container:" .github/workflows/*.yml && echo "Workflow uses job-level container — this may isolate localhost"
-[ -n "$GITHUB_ACTIONS" ] && echo "Running in GitHub Actions""
+[ -n "$GITHUB_ACTIONS" ] && echo "Running in GitHub Actions"
 
 CID=$(docker compose ps -q annotate_test_annotate)
 echo "CID: $CID"
