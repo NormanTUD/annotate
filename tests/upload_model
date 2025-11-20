@@ -53,6 +53,11 @@ if ! grep -q "Done importing model" "$tmpfile"; then
 	exit 2
 fi
 
+if ! grep -q "Inserting label" "$tmpfile"; then
+	echo "ERROR: $tmpfile does not contain 'Inserting label'"
+	exit 3
+fi
+
 rm "$tmpfile"
 
 exit 0
