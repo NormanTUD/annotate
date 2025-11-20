@@ -47,7 +47,6 @@ ARG INSTANCE_NAME
 RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost && \
     grep "DB_PASSWORD" $APACHE_DOCUMENT_ROOT/.env | sed -e 's#.*=##' >> /etc/dbpw && \
     grep "DB_USER" $APACHE_DOCUMENT_ROOT/.env | sed -e 's#.*=##' >> /etc/dbuser && \
-    grep "DB_HOST" $APACHE_DOCUMENT_ROOT/.env | sed -e 's#.*=##' >> /etc/dbhost && \
     grep "DB_PORT" $APACHE_DOCUMENT_ROOT/.env | sed -e 's#.*=##' >> /etc/dbport && \
     rm $APACHE_DOCUMENT_ROOT/.env
 
