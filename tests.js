@@ -1,3 +1,67 @@
+async function run_additional_tests() {
+    console.log("\n=== RUNNING ADDITIONAL TESTS ===");
+
+    let passed = 0;
+    let failed = 0;
+
+    function assert(condition, msg) {
+        if (condition) {
+            console.log("✓ PASS:", msg);
+            passed++;
+        } else {
+            console.error("✖ FAIL:", msg);
+            failed++;
+        }
+    }
+
+    // Predefined boxes for IOU tests
+    const boxA = [0, 0, 10, 10];
+    const boxB = [5, 5, 15, 15];
+
+    // --- uuidv4 additional ---
+    console.log("\n--- uuidv4 additional ---");
+    const id = uuidv4();
+    assert(id.split('-').length === 5, "uuidv4 has 5 segments separated by '-'");
+    assert(id.toLowerCase() === id, "uuidv4 is lowercase");
+
+    // --- getNewURL additional ---
+    console.log("\n--- getNewURL additional ---");
+    assert(getNewURL("http://example.com?x=1&y=2", "z", null).includes("z=null"), "getNewURL handles null value");
+    assert(getNewURL("http://example.com?x=1", "x", undefined).includes("x=undefined"), "getNewURL handles undefined value");
+    assert(getNewURL("http://example.com?x=1", "x", "").includes("x="), "getNewURL handles empty string value");
+
+    // --- iou additional ---
+    console.log("\n--- iou additional ---");
+    const boxZero = [0,0,0,0];
+    assert(iou(boxZero, boxA) === 0, "iou with zero-size box = 0");
+    assert(iou(boxA, boxZero) === 0, "iou commutes with zero-size box");
+    assert(iou([0,0,1,1], [1,1,2,2]) === 0, "iou boxes touching at corner = 0");
+
+    // --- getShape additional ---
+    console.log("\n--- getShape additional ---");
+    assert(JSON.stringify(getShape([[[1],[2]], [[3],[4]]])) === JSON.stringify([2,2,1]), "getShape non-uniform but rectangular 3D array");
+    assert(JSON.stringify(getShape([[[1,2], [3,4]], [[5,6], [7,8]]])) === JSON.stringify([2,2,2]), "getShape 3D uniform array");
+
+    // --- get_names_from_ki_anno additional ---
+    console.log("\n--- get_names_from_ki_anno additional ---");
+    const sampleAnno6 = [{body:[{value:null}, {value:""}]}];
+    const names6 = get_names_from_ki_anno(sampleAnno6);
+    assert(names6[null] === 1 && names6[""] === 1, "get_names_from_ki_anno handles null and empty string");
+
+    // --- get_annotate_element additional ---
+    console.log("\n--- get_annotate_element additional ---");
+    if ($("#image").length > 0) {
+        const a = get_annotate_element("test", 0, 0, 1, 1);
+        assert(a.id.length > 1, "annotation ID exists");
+        assert(a.body[0].value === "test", "annotation label correct");
+        const a2 = get_annotate_element("test", 0, 0, 1, 1, "extra");
+        assert(a2 !== null, "annotation accepts extra parameters gracefully");
+    }
+
+    console.log(`\n=== ADDITIONAL TESTS DONE: ${passed} passed, ${failed} failed ===`);
+    return failed;
+}
+
 async function run_tests() {
 	console.log("=== RUNNING TESTS ===");
 
@@ -349,6 +413,8 @@ async function run_tests() {
 	assert(bc7.bestClass === -1 && bc7.bestScore === -Infinity, "getBestClass handles empty array");
 
 	console.log(`\n=== TESTS DONE: ${passed} passed, ${failed} failed ===`);
+
+	assert(await run_additional_tests() == 0, "additional tests failed");
 
 	return failed;
 }
