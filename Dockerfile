@@ -52,6 +52,8 @@ RUN echo "${INSTANCE_NAME}_mariadb" > /etc/dbhost && \
     grep "DB_PORT" $APACHE_DOCUMENT_ROOT/.env | sed -e 's#.*=##' >> /etc/dbport && \
     rm $APACHE_DOCUMENT_ROOT/.env
 
+RUN sudo apt-install -y zip unzip
+
 EXPOSE $APACHE_PORT
 
 CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
