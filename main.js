@@ -27,7 +27,14 @@ var zoom_input;
 		'pointer-events:none;' +
 		'transform-origin:center;' +
 		'animation:sweep 1.6s linear infinite;' +
-		'}';
+		'}' +
+
+		'@keyframes nothing_found_glow{' +
+		'0%{box-shadow:0 0 4px rgba(255,0,0,0.3)}' +
+		'50%{box-shadow:0 0 16px rgba(255,0,0,0.7)}' +
+		'100%{box-shadow:0 0 4px rgba(255,0,0,0.3)}}' +
+
+		'.nothing-found{position:relative; animation:nothing_found_glow 1s ease-in-out 1;}';
 
 	document.head.appendChild(style);
 
@@ -45,6 +52,15 @@ var zoom_input;
 		var w = get_wrapper();
 		if (!w) return;
 		w.classList.remove('ai-analyzing');
+	};
+
+	window.show_nothing_found_animation = function () {
+		var w = get_wrapper();
+		if (!w) return;
+		w.classList.add('nothing-found');
+
+		// Klasse nach 1 Sekunde wieder entfernen, damit sie erneut abgespielt werden kann
+		setTimeout(() => w.classList.remove('nothing-found'), 1000);
 	};
 })();
 
@@ -810,27 +826,13 @@ function iou(boxA, boxB) {
 	return interArea / (boxAArea + boxBArea - interArea);
 }
 
-function showIconNotification() {
-	const icon = document.createElement('div');
-	icon.className = 'notification-icon';
-	icon.innerHTML = '❌'; // deutlich "nichts gefunden"
-	document.body.appendChild(icon);
-
-	requestAnimationFrame(() => icon.style.opacity = 1);
-
-	setTimeout(() => {
-		icon.style.opacity = 0;
-		icon.addEventListener('transitionend', () => icon.remove());
-	}, 1000);
-}
-
 async function handleAnnotations(boxes, scores, classes) {
 	if(enable_debug) {
 		log("handleAnnotations:", "boxes:", boxes, "scores:", scores, "classes:", classes);
 	}
 
 	if (boxes.length === 0) {
-		showIconNotification();
+		show_nothing_found_animation();
 		info("Nothing found", "Annotate manually");
 		return;
 	}
