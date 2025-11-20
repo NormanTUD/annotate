@@ -446,9 +446,11 @@
 		}
 
 		$export_gui = "";
+		$overview = "";
 
 		if(get_number_of_annotated_imgs() > 0) {
 			$export_gui = '<a href="export_annotations_gui.php">Export annotations</a>';
+			$overview = "<a href='overview.php'>Overview</a>";
 		}
 
 		$str .= "
@@ -456,7 +458,7 @@
 				<a href='index.php'>Home</a>
 				<a href='models.php'>Models</a>
 				<a href='upload.php'>Upload Images</a>
-				<a href='overview.php'>Overview</a>
+				$overview	
 				$export_gui
 			</nav>
 		";
