@@ -89,7 +89,7 @@
 		return $conn;
 	}
 
-	function safe_fsockopen($host, $port, $timeout = 5, $retries = 5, $delay_sec = 1) {
+	function ping_db($host, $port, $timeout = 5, $retries = 5, $delay_sec = 1) {
 		for ($i = 0; $i < $retries; $i++) {
 			$prev_handler = set_error_handler(function($errno, $errstr, $errfile, $errline) {
 				// swallow warnings while we probe the socket
@@ -203,7 +203,6 @@
 			safe_connect_attempt(false);
 			create_tables();
 
-			// Noch einmal prüfen (ja, schon erlebt dass danach wieder null war…)
 			if (!verify_pdo_connection($GLOBALS['pdo']) || !verify_mysqli_connection($GLOBALS['dbh'])) {
 				throw new RuntimeException("Connections became invalid after table creation.");
 			}
@@ -212,7 +211,7 @@
 		} catch (Throwable $e) {
 			echo "Final attempt failed.<br>";
 
-			$pingable = safe_fsockopen($GLOBALS['db_host'], $GLOBALS['db_port']) ? "Yes" : "No";
+			$pingable = ping_db($GLOBALS['db_host'], $GLOBALS['db_port']) ? "Yes" : "No";
 			echo "Host pingable? <tt>$pingable</tt><br>";
 
 			echo "Error:<pre>".$e->getMessage()."</pre>";
