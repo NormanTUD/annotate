@@ -47,4 +47,11 @@ if ! grep -q "saved into DB" "$tmpfile"; then
 	exit 1
 fi
 
+if ! grep -q "Done importing model" "$tmpfile"; then
+	echo "ERROR: $tmpfile does not contain 'Done importing model'"
+	exit 2
+fi
+
+rm "$tmpfile"
+
 exit 0
