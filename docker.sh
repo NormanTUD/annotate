@@ -168,20 +168,3 @@ fi
 $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
 
 $CMD -p "${INSTANCE_NAME}" up -d
-
-
-echo "============================="
-echo "DEBUG DEBUG DEBUG DEBUG DEBUG"
-echo "============================="
-
-echo "ss -ltnp | grep -E ':${LOCAL_PORT}\b' || true"
-ss -ltnp | grep -E ":${LOCAL_PORT}\b" || true
-
-grep -q "container:" .github/workflows/*.yml && echo "Workflow uses job-level container — this may isolate localhost"
-[ -n "$GITHUB_ACTIONS" ] && echo "Running in GitHub Actions"
-
-CID=$(docker ps | grep -v CONTAINER | grep -v maria | head -n1 | sed -e 's#\s.*##')
-echo "CID: $CID"
-IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $CID)
-echo "IP: $IP"
-curl -v "http://${IP}:$LOCAL_PORT/health" || echo "cannot reach via container IP"
