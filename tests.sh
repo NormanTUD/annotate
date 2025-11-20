@@ -53,7 +53,7 @@ if [[ $exit_code -ne 0 ]]; then
 	exit $exit_code
 fi
 
-#bash tests/upload_model -h annotate_test_annotate
+#bash tests/upload_model -h localhost
 #exit_code=$?
 #if [[ $exit_code -ne 0 ]]; then
 #	echo "bash tests/upload_model failed with exit_code $exit_code"
@@ -84,7 +84,7 @@ source ~/.annotate_test_env/bin/activate
 
 echo "====== linkchecker ======"
 
-linkchecker http://annotate_test_annotate:9912
+linkchecker http://localhost:9912
 exit_code=$?
 
 if [[ $exit_code -ne 0 ]]; then
