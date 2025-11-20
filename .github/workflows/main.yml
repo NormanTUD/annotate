@@ -24,7 +24,7 @@ jobs:
           df -h /
           apt-get remove -y --purge man-db popularity-contest bsdmainutils && \
           apt-get autoremove -y && apt-get clean && \
-          apt-get install -y php
+          apt-get install -y php sudo
           rm -rf /var/lib/apt/lists/*
           df -h /
       - name: Checkout Code
