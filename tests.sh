@@ -29,6 +29,14 @@ if [[ $exit_code -ne 0 ]]; then
 	exit $exit_code
 fi
 
+bash tests/upload_model
+exit_code=$?
+
+if [[ $exit_code -ne 0 ]]; then
+	echo "bash tests/upload_model failed with exit_code $exit_code"
+	exit 1
+fi
+
 echo "====== Checking virtualenv ======"
 if [[ ! -d ~/.annotate_test_env ]]; then
 	python3 -m venv ~/.annotate_test_env
