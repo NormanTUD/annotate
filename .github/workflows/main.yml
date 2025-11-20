@@ -17,6 +17,11 @@ jobs:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
     steps:
+      - name: Clean system packages
+        run: |
+          sudo apt-get remove -y --purge man-db popularity-contest bsdmainutils && \
+          sudo apt-get autoremove -y && sudo apt-get clean && \
+          sudo rm -rf /var/lib/apt/lists/*
       - name: Checkout Code
         uses: actions/checkout@v3
 
