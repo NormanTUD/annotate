@@ -17,6 +17,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
+RUN curl https://pyenv.run | bash
+ENV PATH="/root/.pyenv/shims:/root/.pyenv/bin:$PATH"
+RUN pyenv install 3.11.10 && pyenv global 3.11.10
+
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 
 # PHP extensions
