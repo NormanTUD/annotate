@@ -1,11 +1,29 @@
 #!/bin/bash
 
+HOST="localhost"
+PORT="1112"
+
+print_help() {
+    echo "Usage: $0 [-h host] [-p port]"
+    echo "Defaults: host=localhost, port=1112"
+}
+
+# parse long flag first
+if [[ "$1" == "--help" ]]; then
+    print_help
+    exit 0
+fi
+
+while getopts "h:p:" opt; do
+    case "$opt" in
+        h) HOST="$OPTARG" ;;
+        p) PORT="$OPTARG" ;;
+        *) print_help; exit 1 ;;
+    esac
+done
+
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
-
-cd "$SCRIPT_DIR"
-
-HOST=$1
-PORT=$2
+cd "$SCRIPT_DIR" || exit 1
 
 curl "http://$HOST:$PORT/upload_model.php" \
   -X POST \
