@@ -119,7 +119,14 @@
 	function verify_mysqli_connection($conn) {
 		if (!$conn instanceof mysqli) return false;
 		if ($conn->connect_errno) return false;
-		return $conn->ping();
+
+		try {
+			// Minimaler Check, der ping ersetzt
+			$result = $conn->query("SELECT 1");
+			return $result !== false;
+		} catch (Throwable $e) {
+			return false;
+		}
 	}
 
 	function verify_pdo_connection($pdo) {
