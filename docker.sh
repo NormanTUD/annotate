@@ -168,8 +168,3 @@ fi
 $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
 
 $CMD -p "${INSTANCE_NAME}" up -d
-
-echo "Waiting 10 seconds before continuing..."
-sleep 10
-
-exit 0

@@ -29,6 +29,9 @@ if [[ $exit_code -ne 0 ]]; then
 	exit $exit_code
 fi
 
+echo "Waiting 10 seconds before continuing..."
+sleep 10
+
 bash tests/upload_model -h localhost
 exit_code=$?
 if [[ $exit_code -ne 0 ]]; then
