@@ -180,7 +180,7 @@ ss -ltnp | grep -E ":${LOCAL_PORT}\b" || true
 grep -q "container:" .github/workflows/*.yml && echo "Workflow uses job-level container — this may isolate localhost"
 [ -n "$GITHUB_ACTIONS" ] && echo "Running in GitHub Actions"
 
-CID=$(docker compose ps -q annotate_test_annotate)
+CID=$(docker ps | grep -v CONTAINER | grep -v maria | head -n1 | sed -e 's#\s.*##')
 echo "CID: $CID"
 IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $CID)
 echo "IP: $IP"
