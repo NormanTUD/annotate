@@ -197,10 +197,6 @@ function move_from_offtopic () {
 	move_file("move_from_offtopic");
 }
 
-function move_to_unidentifiable () {
-	move_file("move_to_unidentifiable");
-}
-
 function move_file (to) {
 	var image = $("#image")[0].src.replace(/.*filename=/, "");
 
@@ -1282,9 +1278,6 @@ document.onkeydown = function (e) {
 
 	e = e || window.event;
 	switch (e.which) {
-		case 85:
-			move_to_unidentifiable();
-			break;
 		case 79:
 			move_to_offtopic();
 			break;
