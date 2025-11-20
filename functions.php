@@ -521,7 +521,6 @@
 	function insert_model_labels_from_yaml($yaml_path, $model_uuid) {
 		echo "Loading YAML: $yaml_path\n";
 		$yaml_content = file_get_contents($yaml_path);
-
 		if ($yaml_content === false) {
 			echo "ERROR: Could not read YAML file.\n";
 			throw new Exception("File read error");
@@ -529,11 +528,18 @@
 
 		echo "Parsing YAML...\n";
 		$data = parse_simple_yaml_names($yaml_content);
-
 		if (!isset($data['names']) || !is_array($data['names'])) {
 			echo "ERROR: No 'names' array found in YAML.\n";
 			throw new Exception("No 'names' block");
 		}
+
+		// Resolve uuid to model_id
+		$res = rquery("SELECT id FROM models WHERE uuid=" . esc($model_uuid) . " LIMIT 1");
+		if (!$res || mysqli_num_rows($res) === 0) {
+			throw new Exception("Model UUID not found in models table");
+		}
+		$row = mysqli_fetch_assoc($res);
+		$model_id = intval($row['id']);
 
 		echo "Found ".count($data['names'])." labels in YAML.\n";
 
@@ -541,23 +547,20 @@
 			$label_name = trim($label_name);
 
 			$check_query = "SELECT id FROM model_labels 
-				WHERE uuid=" . esc($model_uuid) . " 
+				WHERE model_id=" . $model_id . " 
 				AND label_index=" . intval($index);
 
 			$res = rquery($check_query);
-
 			if (!$res) {
 				echo "ERROR: Query failed.\n";
 			}
 
 			if (mysqli_num_rows($res) === 0) {
 				echo " → Inserting label '$label_name'\n";
-
-				$insert_query = "INSERT INTO model_labels (uuid, label_index, label_name) VALUES (" .
-					esc($model_uuid) . ", " .
+				$insert_query = "INSERT INTO model_labels (model_id, label_index, label_name) VALUES (" .
+					$model_id . ", " .
 					intval($index) . ", " .
 					esc($label_name) . ")";
-
 				rquery($insert_query);
 			} else {
 				echo " → Already exists. Skipping.\n";
