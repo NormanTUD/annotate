@@ -115,11 +115,41 @@ else
 fi
 
 mkdir -p images
-IFS=$\'\\n\'
-for i in $(ls labels | sed -e "s#\.txt#.jpg#"); do
-	if [[ ! -e "images/$i" ]]; then
-		wget -nc "'.$GLOBALS["base_url"].'/print_image.php?filename=$i" -O "images/$i"
-	fi
+IFS=$\'\n\'
+files=($(ls labels | sed -e "s#\.txt#.jpg#"))
+total=${#files[@]}
+
+draw_bar() {
+    local progress=$1
+    local width=40
+    local filled=$((progress * width / 100))
+    local empty=$((width - filled))
+    printf "["
+    printf "%0.s=" $(seq 1 $filled)
+    printf "%0.s " $(seq 1 $empty)
+    printf "] %3d%%" "$progress"
+}
+
+for idx in "${!files[@]}"; do
+    file="${files[$idx]}"
+    if [[ -e "images/$file" ]]; then
+        echo -e "\e[1;33m[$((idx+1))/$total] $file exists, skipping\e[0m"
+        continue
+    fi
+
+    echo -e "\e[1;34m[$((idx+1))/$total] Downloading $file\e[0m"
+
+    tmp_file=$(mktemp)
+    wget -q --show-progress "'.$GLOBALS['base_url'].'/print_image.php?filename=$file" -O "$tmp_file" 2>&1 | while read -r line; do
+        if [[ $line =~ ([0-9]{1,3})% ]]; then
+            percent="${BASH_REMATCH[1]}"
+            printf "\r"
+            draw_bar "$percent"
+        fi
+    done
+
+    mv "$tmp_file" "images/$file"
+    echo -e " \e[1;32m✔ Done\e[0m"
 done
 
 yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model='.$model_name.' hsv_h=0.03 hsv_s=0.6 hsv_v=0.5 degrees=180 shear=30 perspective=0.0001 fliplr=1 mosaic=0.1 mixup=0.1 cutmix=0.1 copy_paste=0.1 batch=-1
