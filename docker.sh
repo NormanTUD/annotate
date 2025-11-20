@@ -161,7 +161,7 @@ if [[ -S /var/run/docker.sock ]]; then
 	fi
 fi
 
-$CMD -p "${INSTANCE_NAME}" down --remove-orphans
+$CMD "${INSTANCE_NAME}" down -p --remove-orphans
 
 BUILD_ARGS=""
 if [[ $NO_CACHE -eq 1 ]]; then
