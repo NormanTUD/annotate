@@ -1,5 +1,21 @@
 #!/bin/bash
 
+my_python() {
+	if command -v python3 &>/dev/null; then
+		echo "Trying python3..."
+		python3 "$@"
+	elif command -v python3.11 &>/dev/null; then
+		echo "Trying python3.11..."
+		python3.11 "$@"
+	elif command -v python &>/dev/null; then
+		echo "Trying python..."
+		python "$@"
+	else
+		echo "Error: No Python interpreter found!" >&2
+		return 1
+	fi
+}
+
 if command -v php 2>/dev/null >/dev/null; then
 	php -l *.php
 
@@ -38,7 +54,7 @@ fi
 
 echo "====== Checking virtualenv ======"
 if [[ ! -d ~/.annotate_test_env ]]; then
-	python -m venv ~/.annotate_test_env
+	my_python -m venv ~/.annotate_test_env
 	source ~/.annotate_test_env/bin/activate
 
 	if ! pip install linkchecker; then
@@ -78,15 +94,15 @@ fi
 echo "====== playwright install chromium ======"
 playwright install chromium
 
-echo "====== python -m playwright install --with-deps chromium ======"
+echo "====== my_python -m playwright install --with-deps chromium ======"
 
 if ! which chromium 2> /dev/null >/dev/null; then
 	sudo apt install chromium
 fi
 
-python -m playwright install --with-deps chromium
+my_python -m playwright install --with-deps chromium
 
 echo "====== Run tests ======"
-python _run_tests.py $*
+my_python _run_tests.py $*
 exit_code=$?
 echo "====== Ran tests ======"
