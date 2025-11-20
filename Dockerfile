@@ -15,6 +15,7 @@ RUN apt-get update && \
 RUN a2enmod rewrite
 
 # Userrechte & sudo konfigurieren
+RUN mkdir -p /etc/sudoers.d
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 RUN groupadd -f docker && usermod -aG docker www-data
 
