@@ -27,6 +27,8 @@ cd "$SCRIPT_DIR" || exit 1
 
 tmpfile=$(mktemp)
 
+model_name="auto_test_model_$(tr -dc 'a-z' </dev/urandom | head -c 12)"
+
 curl -sS "http://$HOST:$PORT/upload_model.php" \
 	-X POST \
 	-H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0' \
@@ -37,7 +39,7 @@ curl -sS "http://$HOST:$PORT/upload_model.php" \
 	-H 'DNT: 1' \
 	-H 'Connection: keep-alive' \
 	-H 'Cookie: language_cookie=de; PHPSESSID=eipc9q7sc1rg3ul754et4kfeet' \
-	-F "model_name=my_test_model" \
+	-F "model_name=$model_name" \
 	-F "pt_model_file=@last.pt;filename=last.pt" 2>&1 | tee "$tmpfile"
 
 if ! grep -q "saved into DB" "$tmpfile"; then
