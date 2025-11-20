@@ -103,7 +103,7 @@ function svg_point_matrix_transform(p, matrix) {
 function parse_annos_from_anno(anno_input, img, svg) {
 	let list = Array.isArray(anno_input) ? anno_input : (typeof anno_input === 'string' ? JSON.parse(anno_input) : []);
 	let out = [];
-	let transform = precompute_svg_image_transform(img, svg); // nur einmal
+	let transform = precompute_svg_image_transform(img, svg);
 
 	for (let a of list) {
 		try {
@@ -266,7 +266,7 @@ function annotate_svg(svg, img) {
 	if (!svg) return;
 	clear_previous_labels(svg);
 
-	const category_counts = {}; // Zähler für jedes Label
+	const category_counts = {};
 
 	var cnt = 0;
 
@@ -281,14 +281,12 @@ function annotate_svg(svg, img) {
 		let box = rect_bbox_from_element(rect);
 		let color = color_from_string(category);
 
-		// Standardposition Label
 		let label_height = 20;
 		let label_width = Math.max(30, Math.min(box.width, category.length * 8));
 		let label_x = box.x;
 		let label_y = box.y - label_height;
 		if (label_y < 0) label_y = box.y;
 
-		// Zeichne nur max 30 Labels pro Kategorie
 		if (category_counts[category] < 30) {
 			let bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 			bg.setAttribute("x", label_x);
@@ -334,12 +332,10 @@ function throttle(func, limit) {
 }
 
 function watch_svg_auto() {
-	// Bild und SVG automatisch suchen
 	const img = Array.from(document.images).find(i => i.src.includes('print_image.php?filename='));
 	const svg = document.querySelector('svg.a9s-annotationlayer');
 
 	if (!img || !svg) {
-		// Falls noch nicht geladen, retry nach kurzer Zeit
 		setTimeout(watch_svg_auto, 500);
 		return;
 	}
