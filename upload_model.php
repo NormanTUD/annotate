@@ -1,5 +1,4 @@
 <?php
-//include("header.php");
 include_once("functions.php");
 
 // --- Unlimited execution time ---

@@ -25,6 +25,8 @@ done
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 cd "$SCRIPT_DIR" || exit 1
 
+sleep 10
+
 tmpfile=$(mktemp)
 
 model_name="auto_test_model_$(tr -dc 'a-z' </dev/urandom | head -c 12)"
