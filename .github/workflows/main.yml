@@ -30,7 +30,7 @@ jobs:
         run: |
           sudo Xvfb :99 -ac &
           export DISPLAY=:99
-          bash tests.sh
+          bash tests.sh --no-cache
 
   tfjsconverter:
     runs-on: ubuntu-22.04

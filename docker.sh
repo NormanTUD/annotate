@@ -30,12 +30,14 @@ DB_USER=root
 DB_PASSWORD=""
 LOCAL_PORT=""
 custom_local_db_dir=0
+NO_CACHE=0
 
 help_message() {
     echo "Usage: bash docker.sh [OPTIONS]"
     echo "  --local-db-dir     Path to local db dir"
     echo "  --local-port       Local port for GUI"
     echo "  --instance-name    Name of the instance"
+    echo "  --no-cache         Disables docker-cache"
     echo "  --help             Show this help message"
 }
 
@@ -45,6 +47,7 @@ while [[ "$#" -gt 0 ]]; do
         --instance-name*) INSTANCE_NAME="$2"; shift ;;
         --local-db-dir*) local_db_dir="$(realpath "$2")"; custom_local_db_dir=1; shift ;;
         --local-port*) LOCAL_PORT="$2"; shift ;;
+        --no-cache) NO_CACHE=1 ;;
         --help) help_message; exit 0 ;;
         *) echo "Unknown option '$1'"; help_message; exit 1 ;;
     esac
@@ -156,9 +159,12 @@ if [[ -S /var/run/docker.sock ]]; then
 	fi
 fi
 
-# Stop & remove existing
 $CMD -p "${INSTANCE_NAME}" down --remove-orphans
 
-# Build & start
-$CMD -p "${INSTANCE_NAME}" build
+BUILD_ARGS=""
+if [[ $NO_CACHE -eq 1 ]]; then
+    BUILD_ARGS="--no-cache"
+fi
+
+$CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
 $CMD -p "${INSTANCE_NAME}" up -d
