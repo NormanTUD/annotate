@@ -13,7 +13,7 @@ include_once("functions.php");
 	<script src="libs/jquery.min.js"></script>
 	<script src="main.js"></script>
 	<script src="label_annos.js"></script>
-	<script src="tests.js"></script>
+	<script src="js_tests.js"></script>
 	<script src='libs/tf.js'></script>
 	<script src='libs/tf-backend-wasm.min.js'></script>
 	<script>
