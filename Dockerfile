@@ -25,7 +25,7 @@ RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' \
     $(python3 -m site --user-site)/tensorflowjs/converters/jax_conversion.py || true
 
-RUN apt-get update && apt install -y --no-install-recommends curl libglib2.0-0 uuid-runtime libgl1 libglvnd0 php-mysql && apt-get autoremove -y && apt-get clean && apt-get autoclean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt install -y --no-install-recommends curl php-mysql libglib2.0-0 uuid-runtime libgl1 libglvnd0 php-mysql && apt-get autoremove -y && apt-get clean && apt-get autoclean && rm -rf /var/lib/apt/lists/*
 
 RUN PHP_INI=$(find /etc/php -name php.ini | grep apache2) && \
     sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' "$PHP_INI" && \
