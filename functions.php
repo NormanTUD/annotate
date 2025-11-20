@@ -424,7 +424,9 @@
 
 	function execute_query($query) {
 		$res = mysqli_query($GLOBALS['dbh'], $query);
-		if (!$res) handle_query_error($query);
+		if (!$res) {
+			handle_query_error($query);
+		}
 		return $res;
 	}
 
