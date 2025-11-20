@@ -1,6 +1,5 @@
 create database if not exists annotate;
 use annotate;
-CREATE DATABASE IF NOT EXISTS annotate; USE annotate;
 CREATE TABLE IF NOT EXISTS image (id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, filename VARCHAR(200) UNIQUE, width INT UNSIGNED, height INT UNSIGNED, deleted INT UNSIGNED DEFAULT 0, offtopic INT UNSIGNED DEFAULT 0, perception_hash VARCHAR(50) DEFAULT NULL, unidentifiable INT DEFAULT 0, INDEX idx_image (id, filename, width, height, perception_hash, deleted), INDEX idx_image_deleted_offtopic_perception_hash_id (deleted, offtopic, perception_hash, id), INDEX image_filename (filename)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS category (id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, name VARCHAR(200) UNIQUE, INDEX idx_category (id, name)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS user (id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, name VARCHAR(200) UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
