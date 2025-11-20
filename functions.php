@@ -78,15 +78,55 @@
 		set_error_handler(function($errno, $errstr) {
 			throw new Exception($errstr, $errno);
 		});
+
 		try {
-			$conn = mysqli_connect($host, $user, $pass, $db, $port);
-			if (!$conn) {
-				throw new Exception(mysqli_connect_error(), mysqli_connect_errno());
+			try {
+				// Normal connection attempt (with DB)
+				$conn = mysqli_connect($host, $user, $pass, $db, $port);
+				if (!$conn) {
+					throw new Exception(mysqli_connect_error(), mysqli_connect_errno());
+				}
+				return $conn;
+
+			} catch (Throwable $e) {
+
+				// If no DB name -> nothing to create -> rethrow
+				if (!$db) {
+					throw $e;
+				}
+
+				// Only create DB if the problem is "Unknown database"
+				$msg = $e->getMessage();
+				if (stripos($msg, 'Unknown database') === false) {
+					throw $e;
+				}
+
+				// Connect without database to create it
+				$tmp = mysqli_connect($host, $user, $pass, "", $port);
+				if (!$tmp) {
+					throw new Exception("Cannot connect without DB: ".mysqli_connect_error(), mysqli_connect_errno());
+				}
+
+				// Create database
+				$sql = "CREATE DATABASE IF NOT EXISTS `" . $db . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+				if (!mysqli_query($tmp, $sql)) {
+					throw new Exception("Failed to create database `$db`: ".mysqli_error($tmp));
+				}
+
+				mysqli_close($tmp);
+
+				// Try again WITH the database
+				$conn2 = mysqli_connect($host, $user, $pass, $db, $port);
+				if (!$conn2) {
+					throw new Exception("Database `$db` created but reconnect failed: ".mysqli_connect_error(), mysqli_connect_errno());
+				}
+
+				return $conn2;
 			}
+
 		} finally {
 			restore_error_handler();
 		}
-		return $conn;
 	}
 
 	function ping_db($host, $port, $timeout = 5, $retries = 5, $delay_sec = 1) {
