@@ -44,8 +44,7 @@ jobs:
   tag:
     needs: [playwright, tfjsconverter]
     runs-on: ubuntu-22.04
-    if: ${{ success() }}
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ success() && github.event_name == 'push' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
