@@ -43,6 +43,7 @@ jobs:
         run: |
           Xvfb :99 -ac &
           export DISPLAY=:99
+          echo "Running tests.sh"
           bash -x tests.sh --no-cache
 
   tfjsconverter:
