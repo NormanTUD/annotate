@@ -24,7 +24,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 RUN apt-get update && apt-get install -y wget build-essential \
     libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
     libffi-dev libncurses5-dev libgdbm-dev xz-utils tk-dev liblzma-dev \
-    && rm -rf /var/lib/apt/lists/* \
     && wget https://www.python.org/ftp/python/3.11.8/Python-3.11.8.tgz \
     && tar xvf Python-3.11.8.tgz \
     && cd Python-3.11.8 \
@@ -34,8 +33,14 @@ RUN apt-get update && apt-get install -y wget build-essential \
     && ln -sf /usr/local/bin/python3.11 /usr/bin/python3 \
     && wget https://bootstrap.pypa.io/get-pip.py \
     && python3.11 get-pip.py \
-    && cd .. && rm -rf Python-3.11.8 Python-3.11.8.tgz get-pip.py && \
-    apt autoremove -y && apt autoclean && apt clean
+    && cd .. \
+    && rm -rf Python-3.11.8 Python-3.11.8.tgz get-pip.py \
+    && apt-get purge -y wget build-essential libssl-dev zlib1g-dev libbz2-dev \
+       libreadline-dev libsqlite3-dev libffi-dev libncurses5-dev libgdbm-dev \
+       xz-utils tk-dev liblzma-dev \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 
