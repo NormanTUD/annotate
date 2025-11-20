@@ -36,7 +36,7 @@ RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data
 RUN groupadd -f docker && usermod -aG docker www-data
 
 # PHP Extensions konfigurieren
-RUN docker-php-ext-configure gd --with-jpeg && docker-php-ext-install gd mysqli pdo pdo_mysql exif
+#RUN docker-php-ext-configure gd --with-jpeg && docker-php-ext-install gd mysqli pdo pdo_mysql exif
 
 # Python Pakete installieren
 RUN python3 -m pip install --no-cache-dir --progress-bar=off --break-system-packages --ignore-installed \
