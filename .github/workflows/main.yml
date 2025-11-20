@@ -19,9 +19,7 @@ jobs:
     steps:
       - name: Clean system packages
         run: |
-          sudo apt-get remove -y --purge man-db popularity-contest bsdmainutils && \
-          sudo apt-get autoremove -y && apt-get clean && \
-          sudo rm s-rf /var/lib/apt/lists/*
+          sudo apt-get remove -y --purge man-db popularity-contest bsdmainutils
       - name: Checkout Code
         uses: actions/checkout@v3
 
