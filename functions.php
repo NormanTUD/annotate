@@ -334,7 +334,6 @@
 		$str .= '
 <nav class="main-nav">
   <a href="index.php">Home</a>
-  <a href="stat.php">Statistics</a>
   <a href="models.php">Models</a>
   <a href="upload.php">Upload Images</a>
   <a href="overview.php">Overview</a>
