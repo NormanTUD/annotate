@@ -37,8 +37,6 @@ RUN sed -i "s|<Directory /var/www/html>|<Directory ${APACHE_DOCUMENT_ROOT}>|" /e
 RUN sed -i "s/80/${APACHE_PORT}/" /etc/apache2/ports.conf
 RUN sed -i "s/*:80/*:${APACHE_PORT}/" /etc/apache2/sites-available/000-default.conf
 
-RUN ln -s /usr/local/bin/python3.11 /usr/local/bin/python3
-
 RUN rm /var/www/html/index.html
 # Berechtigungen für /tmp
 RUN chmod 777 -R /tmp && chmod o+t -R /tmp
