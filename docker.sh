@@ -159,14 +159,14 @@ if [[ -S /var/run/docker.sock ]]; then
 	fi
 fi
 
-$CMD "${INSTANCE_NAME}" down --remove-orphans
+$CMD -p "${INSTANCE_NAME}" down --remove-orphans
 
 BUILD_ARGS=""
 if [[ $NO_CACHE -eq 1 ]]; then
     BUILD_ARGS="--no-cache"
 fi
 
-echo "RUNNING BUILD COMMAND: $CMD "${INSTANCE_NAME}" build $BUILD_ARGS"
-$CMD "${INSTANCE_NAME}" build $BUILD_ARGS
+echo "RUNNING BUILD COMMAND: $CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS"
+$CMD -p "${INSTANCE_NAME}" build $BUILD_ARGS
 
-$CMD "${INSTANCE_NAME}" up -d
+$CMD -p "${INSTANCE_NAME}" up -d
