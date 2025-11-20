@@ -122,7 +122,7 @@
 		for ($i = 0; $i < $retries; $i++) {
 			try {
 				$dbh = safe_mysqli_connect($GLOBALS['db_host'], $GLOBALS['db_username'], $GLOBALS['db_password'], $GLOBALS['db_name'], $GLOBALS['db_port']);
-				$pdo = new PDO("mysql:host={$GLOBALS['db_host']};dbname={$GLOBALS['db_name']}", $GLOBALS['db_username'], $GLOBALS['db_password'], [
+				$GLOBALS["pdo"] = new PDO("mysql:host={$GLOBALS['db_host']};dbname={$GLOBALS['db_name']}", $GLOBALS['db_username'], $GLOBALS['db_password'], [
 					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 				]);
 				return true;
