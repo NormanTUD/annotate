@@ -26,7 +26,7 @@ $files = [];
 $modelName = "";
 
 if(isset($_POST['model_name']) && strtolower($_POST["model_name"]) == "none") {
-	die("❌Error: Model name cannot be 'None' (case-insensitive).")
+	die("❌Error: Model name cannot be 'None' (case-insensitive).");
 }
 
 // --- TFJS Upload ---
