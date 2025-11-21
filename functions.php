@@ -259,6 +259,13 @@
 		}
 	}
 
+	function force_reconnect() {
+		if ($GLOBALS['pdo']) { $GLOBALS['pdo'] = null; }
+		if ($GLOBALS['dbh']) { @$GLOBALS['dbh']->close(); }
+
+		try_connect();
+	}
+
 	if (!try_connect()) {
 		die("Failed to connect to MySQL after retries.");
 	}
@@ -1397,6 +1404,8 @@
 
 
 	function insert_model_into_db($model_name, $files_array, $pt_file_path, $pt_file) {
+		force_reconnect();
+
 		try {
 			$uuid = uniqid("model_"); // eine UUID pro Model-Gruppe
 			$all_inserted_ids = [];

@@ -101,13 +101,6 @@ else if (isset($_FILES['pt_model_file'])) {
 
 // --- Model in DB speichern ---
 if (!$has_model_uploaded) {
-	print("=====================\n");
-	print("=====================\n");
-	print("=====================\n");
-	var_dump($_FILES);
-	print("=====================\n");
-	print("=====================\n");
-	print("=====================\n");
 	die("❌Error: Please provide both a TFJS model name + files, or a PyTorch model file.");
 }
 
