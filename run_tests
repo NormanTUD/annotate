@@ -32,6 +32,14 @@ fi
 echo "Waiting 10 seconds before continuing..."
 sleep 10
 
+bash tests/empty_page
+exit_code=$?
+if [[ $exit_code -ne 0 ]]; then
+	echo "bash tests/empty_page failed with exit_code $exit_code"
+	exit 1
+fi
+
+
 bash tests/upload_model -h localhost
 exit_code=$?
 if [[ $exit_code -ne 0 ]]; then
