@@ -531,6 +531,10 @@ function get_element() {
 }
 
 async function predictImageWithModel() {
+	if($("#chosen_model").val().toLowerCase() == "none") {
+		info("No AI model chosen");
+		return;
+	}
 	start_ai_animation();
 
 	log("Starting prediction workflow...");

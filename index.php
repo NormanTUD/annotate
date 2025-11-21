@@ -53,17 +53,15 @@
 								if(count($available_models) == 1) {
 									print "<span style='visibility: none'>";
 								}
-								print "AI-Model: <select class='disable_in_autonext' id='chosen_model'>";
+								print "AI-Model: <select class='disable_in_autonext' onchange='predictImageWithModel()' id='chosen_model'>";
+								print "<option selected value='none'>None</option>";
+
 								$i = 0;
 								foreach ($available_models as $_model) {
 									$model_name = $_model[0];
 									$model_uid = $_model[1];
 
-									$selected = "";
-									if($i == 0) {
-										$selected = " selected ";
-									}
-									print "<option $selected value='$model_uid'>$model_name</option>";
+									print "<option value='$model_uid'>$model_name</option>";
 									$i++;
 								}
 								print "</select>";
