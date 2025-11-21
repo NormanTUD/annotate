@@ -2,13 +2,7 @@
 
 source tests/php_syntax_check
 
-bash -n *.sh
-exit_code=$?
-
-if [[ $exit_code -ne 0 ]]; then
-	echo "Some bash scripts had syntax errors"
-	exit 1
-fi
+source tests/bash_syntax_check
 
 bash docker.sh --local-port 9912 --instance-name annotate_test
 exit_code=$?
