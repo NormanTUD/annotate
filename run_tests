@@ -10,8 +10,6 @@ source tests/empty_page
 
 source tests/upload_model
 
-source tests/venv
-
 source tests/linkchecker
 
 source tests/playwright

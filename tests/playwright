@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source tests/venv
+
 echo "====== pip3 install playwright ======"
 if ! pip3 install playwright; then
 	echo "pip3 install playwright failed. Are you online?"

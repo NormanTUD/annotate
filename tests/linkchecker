@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source tests/venv
+
 echo "====== linkchecker ======"
 
 linkchecker http://localhost:9912
