@@ -1638,6 +1638,9 @@ function create_zoom_slider() {
 	resetBtn.type = 'button';
 	resetBtn.textContent = 'Reset';
 	resetBtn.style.marginLeft = '6px';
+	resetBtn.onclick = function () {
+		reset_zoom();
+	};
 	toolbar.appendChild(resetBtn);
 
 	// insert toolbar before the image container
