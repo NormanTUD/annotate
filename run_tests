@@ -8,7 +8,7 @@ source tests/run_in_docker
 
 source tests/empty_page
 
-source tests/upload_model
+source tests/model
 
 source tests/linkchecker
 
