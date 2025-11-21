@@ -1,6 +1,6 @@
 #!/bin/bash
 
-bash tests2_models_is_empty
+bash tests/_models_is_empty
 exit_code=$?
 if [[ $exit_code -ne 0 ]]; then
 	echo "bash tests/upload_model failed with exit_code $exit_code"
