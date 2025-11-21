@@ -47,27 +47,7 @@ if [[ $exit_code -ne 0 ]]; then
 	exit 1
 fi
 
-echo "====== Checking virtualenv ======"
-if [[ ! -d ~/.annotate_test_env ]]; then
-	python3 -m venv ~/.annotate_test_env
-	source ~/.annotate_test_env/bin/activate
-
-	if ! pip3 install linkchecker; then
-		echo "pip3 install linkchecker failed. Are you online?"
-		rm -rf ~/.annotate_test_env
-		exit 1
-	fi
-
-	if ! pip3 install playwright; then
-		echo "pip3 install playwright failed. Are you online?"
-		rm -rf ~/.annotate_test_env
-		exit 1
-	fi
-	playwright install chromium
-	playwright install firefox
-fi
-
-source ~/.annotate_test_env/bin/activate
+source tests/venv
 
 echo "====== linkchecker ======"
 
