@@ -49,35 +49,6 @@ fi
 
 source tests/venv
 
-echo "====== linkchecker ======"
+source tests/linkchecker
 
-linkchecker http://localhost:9912
-exit_code=$?
-
-if [[ $exit_code -ne 0 ]]; then
-	echo "linkchecker failed"
-	exit 5
-fi
-
-echo "====== pip3 install playwright ======"
-if ! pip3 install playwright; then
-	echo "pip3 install playwright failed. Are you online?"
-	rm -rf ~/.annotate_test_env
-	exit 1
-fi
-
-echo "====== playwright install chromium ======"
-playwright install chromium
-
-echo "====== python3 -m playwright install --with-deps chromium ======"
-
-if ! which chromium 2> /dev/null >/dev/null; then
-	sudo apt install chromium
-fi
-
-python3 -m playwright install --with-deps chromium
-
-echo "====== Run tests ======"
-python3 _run_tests.py $*
-exit_code=$?
-echo "====== Ran tests ======"
+source tests/playwright
