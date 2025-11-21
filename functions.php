@@ -1566,4 +1566,6 @@
 	}
 
 	$GLOBALS["base_url"] = get_base_url();
+
+	rquery("SET GLOBAL max_allowed_packet=1024*1024*1024");
 ?>
