@@ -1,6 +1,13 @@
 #!/bin/bash
 
+if ! command -v curl 2>&1 >/dev/null; then
+	echo "curl not installed. Try sudo apt install -y curl"
+	exit 255
+fi
+
 source tests/venv
+
+curl localhost:9912 2>/dev/null >/dev/null
 
 echo "====== pip3 install playwright ======"
 if ! pip3 install playwright; then
