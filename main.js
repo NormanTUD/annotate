@@ -735,6 +735,7 @@ function processModelOutput(res) {
 
 	const conf_threshold = getConfThreshold();
 
+	console.group("Getting boxes...");
 	for (let i = 0; i < numPredictions; i++) {
 		const features = data.map(arr => arr[i]);
 		const [x, y, w, h, ...classScores] = features;
@@ -767,6 +768,7 @@ function processModelOutput(res) {
 			console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
 		}
 	}
+	console.groupEnd();
 
 	const keepBoxes = [];
 	const keepScores = [];
