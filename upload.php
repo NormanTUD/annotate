@@ -74,7 +74,7 @@
 
 					$.ajax({
 						type: 'POST',
-						url: 'upload_file.php',
+						url: 'upload_image.php',
 						data: formData,
 						cache: false,
 						contentType: false,
