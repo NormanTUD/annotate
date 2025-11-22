@@ -76,9 +76,9 @@ if ! curl -sS "$models_url" | grep -q "$model_name_uuid"; then
 	exit 4
 fi
 
-delete_url="$models_url?delete_model=$model_name_uuid"
-echo "Curling $delete_url"
-curl -sS "$delete_url" >/dev/null
+#delete_url="$models_url?delete_model=$model_name_uuid"
+#echo "Curling $delete_url"
+#curl -sS "$delete_url" >/dev/null
 
 if curl -sS "$models_url" | grep "$model_name_uuid"; then
 	echo "Model-Name $model_name_uuid is contained in models.php even after deleting it"
