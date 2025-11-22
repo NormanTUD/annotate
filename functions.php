@@ -1425,7 +1425,6 @@
 				}
 			}
 
-			// insert pt_file as well
 			if ($pt_file && $pt_file_path && is_file($pt_file_path)) {
 				$pt_filename = basename($pt_file_path);
 				$check = rquery("SELECT id FROM models WHERE filename=" . esc($pt_filename) . " AND uuid=" . esc($uuid));
