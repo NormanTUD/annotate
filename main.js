@@ -537,10 +537,11 @@ async function load_model_and_predict () {
 }
 
 async function predictImageWithModel() {
-	if($("#chosen_model").val().toLowerCase() == "none") {
+	if($("#chosen_model").length && $("#chosen_model").val().toLowerCase() == "none") {
 		info("No AI model chosen");
 		return;
 	}
+
 	start_ai_animation();
 
 	log("Starting prediction workflow...");
