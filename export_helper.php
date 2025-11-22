@@ -334,16 +334,16 @@ fi';
 
 		// <object-class> <x> <y> <width> <height>
 		if(count($images)) {
-			foreach ($images as $fn => $imgname) {
-				$w = $imgname[0]["width"];
-				$h = $imgname[0]["height"];
+			foreach ($images as $fn => $img_data) {
+				$w = $img_data[0]["width"];
+				$h = $img_data[0]["height"];
 
 				$base_structs[] = '<div class="container_div" style="position: relative; display: inline-block;">';
 				$base_structs[] = '  <img class="images" src="print_image.php?filename='.$fn.'" style="display: block;">';
 
 				// ein einziges svg für alle Annotations
 				$annotations = [];
-				foreach ($imgname as $this_anno_data) {
+				foreach ($img_data as $this_anno_data) {
 					$id = isset($this_anno_data["id"]) ? (string)$this_anno_data["id"] : '';
 					$x = isset($this_anno_data["x_start"]) ? floatval($this_anno_data["x_start"]) : 0.0;
 					$y = isset($this_anno_data["y_start"]) ? floatval($this_anno_data["y_start"]) : 0.0;
@@ -375,7 +375,6 @@ fi';
 					// Labels zusammenführen
 					$labels = array_merge($labels_from_db, $categories);
 
-					// Mapping id => label erstellen
 					$id_to_label = [];
 					foreach ($labels as $idx => $lbl) {
 						$id_to_label[strval($idx + 1)] = $lbl;
