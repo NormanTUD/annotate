@@ -78,4 +78,16 @@ fi
 
 bash tests/export_and_train
 
+CAT_OVERVIEW_PAGE=$(curl -sS "http://localhost:9912/export_annotations.php?format=html&show_categories[]=cat")
+
+if ! echo "$CAT_OVERVIEW_PAGE" | grep -q "example.jpg"; then
+	echo "Overview page does not contain example.jpg"
+	exit 1
+fi
+
+if ! echo "$CAT_OVERVIEW_PAGE" | grep -q "data.label..cat"; then
+	echo "Overview page does not contain 'data-label=\"cat\"'"
+	exit 1
+fi
+
 exit 0
