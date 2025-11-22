@@ -48,9 +48,14 @@ if [[ $(cat labels/example.txt | wc -l) -ne 1 ]]; then
 	exit 6
 fi
 
+if [[ $(cat labels/example.txt | sed -e 's#\s.*##') -ne 0 ]]; then
+	echo "The category of example.txt is not 0"
+	exit 7
+fi
+
 if ! bash train; then
 	echo "bash train failed"
-	exit 7
+	exit 8
 fi
 
 exit 0
