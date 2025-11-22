@@ -9,23 +9,23 @@ source tests/venv
 
 curl localhost:9912 2>/dev/null >/dev/null || bash tests/run_in_docker
 
-echo "====== pip3 install playwright ======"
-if ! pip3 install playwright; then
-	echo "pip3 install playwright failed. Are you online?"
-	rm -rf ~/.annotate_test_env
-	exit 1
-fi
-
-echo "====== playwright install chromium ======"
-playwright install chromium
-
-echo "====== python3 -m playwright install --with-deps chromium ======"
-
-if ! which chromium 2> /dev/null >/dev/null; then
-	sudo apt install chromium
-fi
-
-[ -f "$HOME/.playwright_deps_installed" ] || { python3 -m playwright install --with-deps chromium && touch "$HOME/.playwright_deps_installed"; }
+[ -f "$HOME/.playwright_deps_installed" ] || {
+	echo "====== pip3 install playwright ======" && {
+		pip3 install playwright || {
+			echo "pip3 install playwright failed. Are you online?" 
+			rm -rf ~/.annotate_test_env
+			exit 1
+		}
+	} &&
+	echo "====== playwright install chromium ======" && \
+	playwright install chromium && \
+	{
+		which chromium 2> /dev/null >/dev/null || sudo apt install chromium
+	} && \
+	echo "====== python3 -m playwright install --with-deps chromium ======" && \
+	python3 -m playwright install --with-deps chromium && \
+	touch "$HOME/.playwright_deps_installed";
+}
 
 echo "====== Run tests ======"
 python3 _run_tests.py $*
