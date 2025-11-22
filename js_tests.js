@@ -122,6 +122,37 @@ async function run_additional_tests() {
     return failed;
 }
 
+async function test_load_model_and_predict() {
+	const $chosen_model = $("#chosen_model");
+	if($chosen_model.children().length != 2) {
+		console.error(`#chosen_model does not have 2 inputs`);
+		return false;
+	}
+
+	const load_this_model = $($chosen_model.children()[1]).val()
+
+	console.log(`Loading ${load_this_model}`);
+
+	$chosen_model.val(load_this_model);
+
+	await load_model_and_predict();
+
+	console.debug("Waiting 2 seconds");
+	await sleep(2000);
+
+	if($(".ki_select_box").children().length != 1) {
+		console.error(`.ki_select_box does not have exactly 1 child`);
+		return false;
+	}
+
+	if($(".ki_select_box").children().eq(0).val() != "cat") {
+		console.error(`Detected category is not 'cat'`);
+		return false;
+	}
+
+	return true;
+}
+
 async function run_tests() {
 	console.log("=== RUNNING TESTS ===");
 
@@ -475,6 +506,8 @@ async function run_tests() {
 	console.log(`\n=== TESTS DONE: ${passed} passed, ${failed} failed ===`);
 
 	assert(await run_additional_tests() == 0, "additional tests failed");
+
+	assert(await test_load_model_and_predict(), "test_load_model_and_predict tests failed");
 
 	return failed;
 }
