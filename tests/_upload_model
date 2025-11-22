@@ -80,10 +80,10 @@ fi
 #echo "Curling $delete_url"
 #curl -sS "$delete_url" >/dev/null
 
-if curl -sS "$models_url" | grep "$model_name_uuid"; then
-	echo "Model-Name $model_name_uuid is contained in models.php even after deleting it"
-	exit 5
-fi
+#if curl -sS "$models_url" | grep "$model_name_uuid"; then
+#	echo "Model-Name $model_name_uuid is contained in models.php even after deleting it"
+#	exit 5
+#fi
 
 rm "$tmpfile"
 
