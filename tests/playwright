@@ -70,3 +70,8 @@ source tests/model
 
 python3 _run_tests.py $*
 exit_code=$?
+
+if [[ $exit_code -ne 0 ]]; then
+	echo "_run_tests.py failed with exit_code $exit_code"
+	exit $exit_code
+fi
