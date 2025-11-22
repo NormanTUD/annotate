@@ -1,4 +1,6 @@
 <?php
+	include_once("functions.php");
+
 	function delete_all_data() {
 		header('Content-Type: application/json');
 
