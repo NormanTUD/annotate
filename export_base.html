@@ -43,6 +43,10 @@
 			var labels = [];
 		</script>
 		<div id="top">
+			<span id="tab_home_top"></span>
+		</div>
+
+		<div id="edit_tools">
 			<table>
 				<tr>
 					<td>Curate on click?</td>
@@ -140,5 +144,9 @@
 				$("#delete_on_click").prop("checked", false);
 				$("#open_deleted_in_new_tab").prop("checked", false);
 			}
+
+			$(document).ready(() => {
+				print_home();
+			});
 		</script>
 	</body>
