@@ -52,5 +52,12 @@ if [[ $NR_LINES_NO_IMAGES -ne 1 ]]; then
 	exit 1
 fi
 
+echo "Image upload test"
+image_upload_output_count=$(curl -sS -X POST -F "image=@tests/example.jpg" http://localhost:9912/upload_image.php | grep "src='print_image.php?filename=example.jpg" | wc -l)
+if [[ $image_upload_output_count -ne 1 ]]; then
+	echo "Failed to upload image"
+	exit 1
+fi
+
 python3 _run_tests.py $*
 exit_code=$?
