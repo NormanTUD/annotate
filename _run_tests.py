@@ -190,7 +190,7 @@ async def main():
 if __name__ == "__main__":
     try:
         code = asyncio.run(main())
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, RuntimeError):
         logging.exception("Cancelled with CTRL-c")
         code = 0
     except Exception:
