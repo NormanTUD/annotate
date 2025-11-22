@@ -764,7 +764,7 @@ function processModelOutput(res) {
 			scores.push(bestScore);
 			classes.push(bestClass);
 
-			console.info(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
+			console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
 		}
 	}
 
