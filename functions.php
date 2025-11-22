@@ -1429,7 +1429,7 @@
 				$pt_filename = basename($pt_file_path);
 				$check = rquery("SELECT id FROM models WHERE filename=" . esc($pt_filename) . " AND uuid=" . esc($uuid));
 				if (mysqli_num_rows($check) === 0) {
-					$pt_inserted_id = insert_file_into_db($model_name, $pt_file_path, $uuid, $pt_filename);
+					$pt_inserted_id = insert_file_into_db($model_name, $pt_file_path, $uuid, "model.pt");
 					if ($pt_inserted_id) $all_inserted_ids[] = $pt_inserted_id;
 				} else {
 					echo " → Skipping duplicate PT file '$pt_filename'\n";
