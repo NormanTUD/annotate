@@ -59,5 +59,12 @@ if [[ $image_upload_output_count -ne 1 ]]; then
 	exit 1
 fi
 
+echo "Testing if newly uploaded image is unannotated"
+NR_ANNOTATED_ZERO_LINES=$(curl -sS localhost:9912/print_home.php | grep "unnnotated: 1" | wc -l)
+if [[ $NR_ANNOTATED_ZERO_LINES -ne 1 ]]; then
+	echo "There was an error getting print_home.php: searching for 'unnnotated: 1' yielded $NR_ANNOTATED_ZERO_LINES results instead of 1"
+	exit 1
+fi
+
 python3 _run_tests.py $*
 exit_code=$?
