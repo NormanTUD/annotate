@@ -154,106 +154,109 @@ function compute_overlap_score(annot_box, p_box, opts) {
 }
 
 function get_category_for_annotation(rect, svg, img) {
-    if (!rect || !svg) return 'unknown';
-    let annot_box = rect_bbox_from_element(rect);
+	if (!rect || !svg) {
+		console.log("Neither rect nor svg are defined);
+		return 'unknown';
+	}
+	let annot_box = rect_bbox_from_element(rect);
 
-    let opts = { w_area: 0.75, w_pos: 0.25, min_score: 0.03 };
+	let opts = { w_area: 0.75, w_pos: 0.25, min_score: 0.03 };
 
-    // --- precompute text boxes once ---
-    let text_boxes = [];
-    let texts = svg.querySelectorAll('text');
-    for (let t of texts) {
-        try {
-            let tb = t.getBBox();
-            let txt = (t.textContent || '').trim();
-            if (txt) text_boxes.push({ node: t, box: { x: tb.x, y: tb.y, width: tb.width, height: tb.height }, txt });
-        } catch (e) {}
-    }
+	// --- precompute text boxes once ---
+	let text_boxes = [];
+	let texts = svg.querySelectorAll('text');
+	for (let t of texts) {
+		try {
+			let tb = t.getBBox();
+			let txt = (t.textContent || '').trim();
+			if (txt) text_boxes.push({ node: t, box: { x: tb.x, y: tb.y, width: tb.width, height: tb.height }, txt });
+		} catch (e) {}
+	}
 
-    // --- precompute r6o-editor boxes if img is provided ---
-    let div_boxes = [];
-    if (img) {
-        let divs = document.querySelectorAll('.r6o-editor');
-        if (divs.length) {
-            let imgRect = img.getBoundingClientRect();
-            let svgRect = svg.getBoundingClientRect();
-            let scaleX = 1, scaleY = 1;
-            try {
-                let vb = svg.viewBox.baseVal;
-                scaleX = vb.width / svgRect.width;
-                scaleY = vb.height / svgRect.height;
-            } catch (e) {}
-            for (let div of divs) {
-                try {
-                    let d = div.getBoundingClientRect();
-                    let relX = (d.left - imgRect.left) * scaleX;
-                    let relY = (d.top - imgRect.top) * scaleY;
-                    let relW = d.width * scaleX;
-                    let relH = d.height * scaleY;
-                    div_boxes.push({ node: div, box: { x: relX, y: relY, width: relW, height: relH } });
-                } catch (e) {}
-            }
-        }
-    }
+	// --- precompute r6o-editor boxes if img is provided ---
+	let div_boxes = [];
+	if (img) {
+		let divs = document.querySelectorAll('.r6o-editor');
+		if (divs.length) {
+			let imgRect = img.getBoundingClientRect();
+			let svgRect = svg.getBoundingClientRect();
+			let scaleX = 1, scaleY = 1;
+			try {
+				let vb = svg.viewBox.baseVal;
+				scaleX = vb.width / svgRect.width;
+				scaleY = vb.height / svgRect.height;
+			} catch (e) {}
+			for (let div of divs) {
+				try {
+					let d = div.getBoundingClientRect();
+					let relX = (d.left - imgRect.left) * scaleX;
+					let relY = (d.top - imgRect.top) * scaleY;
+					let relW = d.width * scaleX;
+					let relH = d.height * scaleY;
+					div_boxes.push({ node: div, box: { x: relX, y: relY, width: relW, height: relH } });
+				} catch (e) {}
+			}
+		}
+	}
 
-    // --- 1) try annotations if available ---
-    try {
-        let raw_annos = (typeof anno !== 'undefined' && typeof anno.getAnnotations === 'function')
-                        ? anno.getAnnotations()
-                        : window.__anno_json__;
-        if (raw_annos) {
-            let parsed = parse_annos_from_anno(raw_annos, img, svg);
-            let best = { score: 0, label: 'unknown', debug: null };
-            for (let p of parsed) {
-                let res = compute_overlap_score(annot_box, p.box, opts);
-                if (res.score > best.score) {
-                    best.score = res.score;
-                    best.label = (p.label || 'unknown').trim();
-                    best.debug = { box: p.box, res };
-                }
-            }
-            if (best.score >= opts.min_score) {
-                if (window.__anno_debug) console.log('anno-match', best);
-                return best.label;
-            }
-            if (window.__anno_debug) console.log('no anno passed threshold', parsed.map(p => ({label:p.label, box:p.box})));
-        }
-    } catch (e) {
-        if (window.__anno_debug) console.error('anno-parse-error', e);
-    }
+	// --- 1) try annotations if available ---
+	try {
+		let raw_annos = (typeof anno !== 'undefined' && typeof anno.getAnnotations === 'function')
+			? anno.getAnnotations()
+			: window.__anno_json__;
+		if (raw_annos) {
+			let parsed = parse_annos_from_anno(raw_annos, img, svg);
+			let best = { score: 0, label: 'unknown', debug: null };
+			for (let p of parsed) {
+				let res = compute_overlap_score(annot_box, p.box, opts);
+				if (res.score > best.score) {
+					best.score = res.score;
+					best.label = (p.label || 'unknown').trim();
+					best.debug = { box: p.box, res };
+				}
+			}
+			if (best.score >= opts.min_score) {
+				if (window.__anno_debug) console.log('anno-match', best);
+				return best.label;
+			}
+			if (window.__anno_debug) console.log('no anno passed threshold', parsed.map(p => ({label:p.label, box:p.box})));
+		}
+	} catch (e) {
+		if (window.__anno_debug) console.error('anno-parse-error', e);
+	}
 
-    // --- 2) exact text overlap ---
-    for (let t of text_boxes) {
-        if (boxes_intersect(annot_box, t.box)) return t.txt;
-    }
+	// --- 2) exact text overlap ---
+	for (let t of text_boxes) {
+		if (boxes_intersect(annot_box, t.box)) return t.txt;
+	}
 
-    // --- 3) nearest-above heuristic ---
-    if (text_boxes.length) {
-        let best_txt = 'unknown';
-        let best_score = Infinity;
-        for (let t of text_boxes) {
-            let dx = Math.abs((t.box.x + t.box.width / 2) - (annot_box.x + annot_box.width / 2));
-            let dy = (t.box.y + t.box.height) - annot_box.y;
-            let score = dx + Math.max(0, dy);
-            if (score < best_score) {
-                best_score = score;
-                best_txt = t.txt;
-            }
-        }
-        if (best_txt !== 'unknown') return best_txt;
-    }
+	// --- 3) nearest-above heuristic ---
+	if (text_boxes.length) {
+		let best_txt = 'unknown';
+		let best_score = Infinity;
+		for (let t of text_boxes) {
+			let dx = Math.abs((t.box.x + t.box.width / 2) - (annot_box.x + annot_box.width / 2));
+			let dy = (t.box.y + t.box.height) - annot_box.y;
+			let score = dx + Math.max(0, dy);
+			if (score < best_score) {
+				best_score = score;
+				best_txt = t.txt;
+			}
+		}
+		if (best_txt !== 'unknown') return best_txt;
+	}
 
-    // --- 4) r6o-editor fallback ---
-    if (div_boxes.length) {
-        for (let d of div_boxes) {
-            if (boxes_intersect(annot_box, d.box)) {
-                let labelSpan = d.node.querySelector('.r6o-label');
-                if (labelSpan) return labelSpan.textContent.trim();
-            }
-        }
-    }
+	// --- 4) r6o-editor fallback ---
+	if (div_boxes.length) {
+		for (let d of div_boxes) {
+			if (boxes_intersect(annot_box, d.box)) {
+				let labelSpan = d.node.querySelector('.r6o-label');
+				if (labelSpan) return labelSpan.textContent.trim();
+			}
+		}
+	}
 
-    return 'unknown';
+	return 'unknown';
 }
 
 function clear_previous_labels(svg) {
@@ -311,7 +314,7 @@ function annotate_svg(svg, img) {
 
 			category_counts[category]++;
 		}
-		
+
 		cnt++;
 	});
 
