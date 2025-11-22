@@ -35,6 +35,8 @@ export DELETE_KEY=$(uuidgen); \
 echo "Deleting all currently existing data..."
 curl "http://localhost:9912/delete_all_data.php?delete_key=$DELETE_KEY"
 
+echo ""
+
 echo "Testing if 0 images are annotated"
 
 NR_ANNOTATED_ZERO_LINES=$(curl -sS localhost:9912/print_home.php | grep "Annotated: 0" | wc -l)
