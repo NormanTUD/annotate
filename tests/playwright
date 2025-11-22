@@ -27,7 +27,5 @@ curl localhost:9912 2>/dev/null >/dev/null || bash tests/run_in_docker
 	touch "$HOME/.playwright_deps_installed";
 }
 
-echo "====== Run tests ======"
 python3 _run_tests.py $*
 exit_code=$?
-echo "====== Ran tests ======"
