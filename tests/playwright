@@ -45,5 +45,11 @@ if [[ $NR_ANNOTATED_ZERO_LINES -ne 1 ]]; then
 	exit 1
 fi
 
+NR_LINES_NO_IMAGES=$(curl -sS localhost:9912 | grep "No images are available" | wc -l)
+if [[ $NR_LINES_NO_IMAGES -ne 1 ]]; then
+	echo "There was an error getting startpage: searching for 'No images are available' yielded $NR_LINES_NO_IMAGES results instead of 1"
+	exit 1
+fi
+
 python3 _run_tests.py $*
 exit_code=$?
