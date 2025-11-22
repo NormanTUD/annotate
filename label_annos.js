@@ -155,7 +155,7 @@ function compute_overlap_score(annot_box, p_box, opts) {
 
 function get_category_for_annotation(rect, svg, img) {
 	if (!rect || !svg) {
-		console.log("Neither rect nor svg are defined);
+		console.log("Neither rect nor svg are defined");
 		return 'unknown';
 	}
 	let annot_box = rect_bbox_from_element(rect);
