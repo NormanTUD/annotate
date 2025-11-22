@@ -7,7 +7,7 @@ fi
 
 source tests/venv
 
-curl localhost:9912 2>/dev/null >/dev/null
+curl localhost:9912 2>/dev/null >/dev/null || bash tests/run_in_docker
 
 echo "====== pip3 install playwright ======"
 if ! pip3 install playwright; then
