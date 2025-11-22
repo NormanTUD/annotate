@@ -33,4 +33,14 @@ if ! bash -n visualize; then
 	echo "Failed: visualize is not a valid bash file"
 fi
 
+if [[ $(ls labels | wc -l) -ne 1 ]]; then
+	echo "labels does not have exactly one entry"
+	exit 4
+fi
+
+if ! ls labels/example.txt 2>/dev/null >/dev/null; then
+	echo "labels does not contain example.txt"
+	exit 4
+fi
+
 exit 0
