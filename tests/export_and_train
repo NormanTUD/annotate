@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-url="http://localhost:9912/export_annotations.php?model=yolo11n.yaml&max_files=0&epochs=2000&validation_split=0&test_split=0&empty=0&group_by_perception_hash=0&only_curated=0&only_uncurated=0&max_truncation=100"
+url="http://localhost:9912/export_annotations.php?model=yolo11n.yaml&max_files=0&epochs=1&validation_split=0&test_split=0&empty=0&group_by_perception_hash=0&only_curated=0&only_uncurated=0&max_truncation=100"
 
 tmp=$(mktemp -d)
 cd "$tmp" || exit 1
@@ -40,7 +40,12 @@ fi
 
 if ! ls labels/example.txt 2>/dev/null >/dev/null; then
 	echo "labels does not contain example.txt"
-	exit 4
+	exit 5
+fi
+
+if ! bash train; then
+	echo "bash train failed"
+	exit 6
 fi
 
 exit 0
