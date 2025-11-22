@@ -75,3 +75,7 @@ if [[ $exit_code -ne 0 ]]; then
 	echo "_run_tests.py failed with exit_code $exit_code"
 	exit $exit_code
 fi
+
+bash tests/export_and_train
+
+exit 0
