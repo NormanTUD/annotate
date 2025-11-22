@@ -1,3 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-#wget http://localhost:9912/export_annotations.php?model=yolo11n.yaml&max_files=0&epochs=2000&validation_split=0&test_split=0&empty=0&group_by_perception_hash=0&only_curated=0&only_uncurated=0&max_truncation=100
+url="http://localhost:9912/export_annotations.php?model=yolo11n.yaml&max_files=0&epochs=2000&validation_split=0&test_split=0&empty=0&group_by_perception_hash=0&only_curated=0&only_uncurated=0&max_truncation=100"
+
+tmp=$(mktemp -d)
+cd "$tmp" || exit 1
+
+wget "$url" -O test.zip
+if [[ ! -e test.zip ]]; then
+	echo "Download failed: test.zip does not exist"
+	exit 1
+fi
+
+unzip -q test.zip || {
+	echo "Unzipping test.zip failed"
+	exit 2
+}
+
+echo "Files extracted to: $tmp"
