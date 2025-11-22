@@ -35,5 +35,13 @@ export DELETE_KEY=$(uuidgen); \
 echo "Deleting all currently existing data..."
 curl "http://localhost:9912/delete_all_data.php?delete_key=$DELETE_KEY"
 
+echo "Testing if 0 images are annotated"
+
+NR_ANNOTATED_ZERO_LINES=$(curl -sS localhost:9912/print_home.php | grep "Annotated: 0" | wc -l)
+if [[ $NR_ANNOTATED_ZERO_LINES -ne 1 ]]; then
+	echo "There was an error getting print_home.php: searching for 'Annotated: 0' yielded $NR_ANNOTATED_ZERO_LINES results instead of 1"
+	exit 1
+fi
+
 python3 _run_tests.py $*
 exit_code=$?
