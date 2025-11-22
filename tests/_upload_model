@@ -48,7 +48,7 @@ curl -sS "$upload_model_url" \
 	-H 'Connection: keep-alive' \
 	-H 'Cookie: language_cookie=de; PHPSESSID=eipc9q7sc1rg3ul754et4kfeet' \
 	-F "model_name=$model_name" \
-	-F "pt_model_file=@last.pt" 2>&1 | tee "$tmpfile"
+	-F "pt_model_file=@yolo11n.pt" 2>&1 | tee "$tmpfile"
 
 echo ""
 
