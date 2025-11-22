@@ -345,6 +345,7 @@ fi';
 				$annotations = [];
 				foreach ($img_data as $this_anno_data) {
 					$id = isset($this_anno_data["id"]) ? (string)$this_anno_data["id"] : '';
+					$cat = isset($this_anno_data["category"]) ? (string)$this_anno_data["category"] : "";
 					$x = isset($this_anno_data["x_start"]) ? floatval($this_anno_data["x_start"]) : 0.0;
 					$y = isset($this_anno_data["y_start"]) ? floatval($this_anno_data["y_start"]) : 0.0;
 					$width  = isset($this_anno_data["w"]) ? floatval($this_anno_data["w"]) : 0.0;
@@ -353,40 +354,7 @@ fi';
 					if ($width < 0) $width = 0;
 					if ($height < 0) $height = 0;
 
-					// Labels aus model_labels holen
-					$labels_from_db = [];
-					$res = rquery("SELECT ml.label_name
-						FROM model_labels ml
-						JOIN models m ON ml.id = ml.model_id
-						ORDER BY ml.label_index ASC");
-					while ($row = mysqli_fetch_assoc($res)) {
-						$labels_from_db[] = $row['label_name'];
-					}
-
-					// Fallback auf alte Kategorie-Tabelle
-					$categories = [];
-					$res = rquery('SELECT name FROM category ORDER BY id');
-					while ($row = mysqli_fetch_row($res)) {
-						if (!in_array($row[0], $categories)) {
-							$categories[] = $row[0];
-						}
-					}
-
-					// Labels zusammenführen
-					$labels = array_merge($labels_from_db, $categories);
-
-					$id_to_label = [];
-					foreach ($labels as $idx => $lbl) {
-						$id_to_label[strval($idx + 1)] = $lbl;
-					}
-
-
-					$id_to_label = [];
-					foreach ($labels as $idx => $lbl) {
-						$id_to_label[strval($idx + 1)] = $lbl; // +1 weil DB IDs wahrscheinlich bei 1 starten
-					}
-					$label = isset($id_to_label[$id]) ? $id_to_label[$id] : 'id:' . $id;
-					$esc_label = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+					$esc_label = htmlspecialchars($cat, ENT_QUOTES, 'UTF-8');
 					$esc_id = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
 
 					$text_x = $x + ($width / 2.0);
