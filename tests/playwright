@@ -32,6 +32,7 @@ export DELETE_KEY=$(uuidgen); \
 	docker exec "$CID" sh -c "echo '$DELETE_KEY' > /etc/delete_all_key"; \
 	echo "KEY: $DELETE_KEY"
 
+echo "Deleting all currently existing data..."
 curl "http://localhost:9912/delete_all_data.php?delete_key=$DELETE_KEY"
 
 python3 _run_tests.py $*
