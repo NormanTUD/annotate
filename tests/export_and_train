@@ -25,7 +25,12 @@ for needs_to_exists in dataset.yaml labels labels.json train visualize; do
 	fi
 done
 
-bash -n train || { echo "Failed: train is not a valid bash file"; exit 4 }
-bash -n visualize || { echo "Failed: visualize is not a valid bash file"; exit 5 }
+if ! bash -n train; then
+	echo "Failed: train is not a valid bash file"
+fi
+
+if ! bash -n visualize; then
+	echo "Failed: visualize is not a valid bash file"
+fi
 
 exit 0
