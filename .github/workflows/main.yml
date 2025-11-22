@@ -35,7 +35,7 @@ jobs:
           Xvfb :99 -ac &
           export DISPLAY=:99
           echo "Running run_tests"
-          bash -x run_tests --no-cache
+          bash -x run_tests
 
   tfjsconverter:
     runs-on: ubuntu-22.04
