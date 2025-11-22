@@ -58,4 +58,19 @@ if ! bash train; then
 	exit 8
 fi
 
+if [[ ! -e runs/detect/train/results.csv ]]; then
+	echo "runs/detect/train/results.csv not found"
+	exit 9
+fi
+
+if [[ $(cat runs/detect/train/results.csv | wc -l) -ne 2 ]]; then
+	echo "runs/detect/train/results.csv does not contain 2 lines"
+	exit 10
+fi
+
+if [[ ! -e runs/detect/train/weights/best.pt ]]; then
+	echo "runs/detect/train/weights/best.pt not found"
+	exit 11
+fi
+
 exit 0
