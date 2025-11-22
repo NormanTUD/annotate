@@ -153,12 +153,19 @@ for idx in "${!files[@]}"; do
 done
 
 yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model='.$model_name.' hsv_h=0.03 hsv_s=0.6 hsv_v=0.5 degrees=180 shear=30 perspective=0.0001 fliplr=1 mosaic=0.1 mixup=0.1 cutmix=0.1 copy_paste=0.1 batch=-1
+exit_code=$?
+
+if [[ $exit_code -ne 0 ]]; then
+	echo "yolo failed with exit-code $exit_code"
+	exit $exit_code
+fi
 
 run_dir=runs/detect/train/weights/
 if [[ -d $run_dir ]]; then
-	yolo export model=$run_dir/best.pt format=tfjs && cp labels.json $run_dir/best_web_model/
+	exit 0
 else
 	echo "$run_dir could not be found"
+	exit 1
 fi
 
 ';
