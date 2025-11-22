@@ -27,5 +27,12 @@ curl localhost:9912 2>/dev/null >/dev/null || bash tests/run_in_docker
 	touch "$HOME/.playwright_deps_installed";
 }
 
+export DELETE_KEY=$(uuidgen); \
+	CID=$(docker ps --format '{{.ID}} {{.Names}}' | grep annotate_test_annotate | awk '{print $1}'); \
+	docker exec "$CID" sh -c "echo '$DELETE_KEY' > /etc/delete_all_key"; \
+	echo "KEY: $DELETE_KEY"
+
+curl "http://localhost:9912/delete_all_data.php?delete_key=$DELETE_KEY"
+
 python3 _run_tests.py $*
 exit_code=$?
