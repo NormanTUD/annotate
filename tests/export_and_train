@@ -17,3 +17,12 @@ unzip -q test.zip || {
 }
 
 echo "Files extracted to: $tmp"
+
+for needs_to_exists in dataset.yaml labels labels.json train visualize; do
+	if [[ ! -e $needs_to_exists ]]; then
+		echo "Fail: file $needs_to_exists needs to exist but does not"
+		exit 3
+	fi
+done
+
+exit 0
