@@ -338,50 +338,77 @@ fi';
 				$w = $imgname[0]["width"];
 				$h = $imgname[0]["height"];
 
-				$annotation_base = '
-							<g class="a9s-annotation">
-								<rect class="a9s-inner" x="${x_0}" y="${y_0}" width="${x_1}" height="${y_1}"></rect>
-							</g>
-				';
+				$base_structs[] = '<div class="container_div" style="position: relative; display: inline-block;">';
+				$base_structs[] = '  <img class="images" src="print_image.php?filename='.$fn.'" style="display: block;">';
 
-				$this_annos = array();
-
-				$ahref_start = "";
-				$ahref_end = "";
-
-				$base_structs[] = $ahref_start.'
-					<div class="container_div" style="position: relative; display: inline-block;">
-						<img class="images" src="print_image.php?filename='.$fn.'" style="display: block;">
-				'.$ahref_end;
-
+				// ein einziges svg für alle Annotations
+				$annotations = [];
 				foreach ($imgname as $this_anno_data) {
-					$this_anno = $annotation_base;
+					$id = isset($this_anno_data["id"]) ? (string)$this_anno_data["id"] : '';
+					$x = isset($this_anno_data["x_start"]) ? floatval($this_anno_data["x_start"]) : 0.0;
+					$y = isset($this_anno_data["y_start"]) ? floatval($this_anno_data["y_start"]) : 0.0;
+					$width  = isset($this_anno_data["w"]) ? floatval($this_anno_data["w"]) : 0.0;
+					$height = isset($this_anno_data["h"]) ? floatval($this_anno_data["h"]) : 0.0;
 
-					$this_anno = preg_replace('/\$\{id\}/', $this_anno_data["id"], $this_anno);
-					$this_anno = preg_replace('/\$\{x_0\}/', $this_anno_data["x_start"], $this_anno);
-					$this_anno = preg_replace('/\$\{x_1\}/', $this_anno_data["w"], $this_anno);
-					$this_anno = preg_replace('/\$\{y_0\}/', $this_anno_data["y_start"], $this_anno);
-					$this_anno = preg_replace('/\$\{y_1\}/', $this_anno_data["h"], $this_anno);
+					if ($width < 0) $width = 0;
+					if ($height < 0) $height = 0;
 
-					$this_annos[] = $this_anno;
+					// Labels aus model_labels holen
+					$labels_from_db = [];
+					$res = rquery("SELECT ml.label_name
+						FROM model_labels ml
+						JOIN models m ON ml.id = ml.model_id
+						ORDER BY ml.label_index ASC");
+					while ($row = mysqli_fetch_assoc($res)) {
+						$labels_from_db[] = $row['label_name'];
+					}
 
-					$annotations_string = join("\n", $this_annos);
+					// Fallback auf alte Kategorie-Tabelle
+					$categories = [];
+					$res = rquery('SELECT name FROM category ORDER BY id');
+					while ($row = mysqli_fetch_row($res)) {
+						if (!in_array($row[0], $categories)) {
+							$categories[] = $row[0];
+						}
+					}
+
+					// Labels zusammenführen
+					$labels = array_merge($labels_from_db, $categories);
+
+					// Mapping id => label erstellen
+					$id_to_label = [];
+					foreach ($labels as $idx => $lbl) {
+						$id_to_label[strval($idx + 1)] = $lbl;
+					}
 
 
-					$base_struct = '
-						<svg class="a9s-annotationlayer" width='.$w.' height='.$h.' viewBox="0 0 '.$w.' '.$h.'">
-							<g>
-								'.$annotations_string.'
-							</g>
-						</svg>
-					';
+					$id_to_label = [];
+					foreach ($labels as $idx => $lbl) {
+						$id_to_label[strval($idx + 1)] = $lbl; // +1 weil DB IDs wahrscheinlich bei 1 starten
+					}
+					$label = isset($id_to_label[$id]) ? $id_to_label[$id] : 'id:' . $id;
+					$esc_label = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+					$esc_id = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
 
-					#dier($annotations_string);
+					$text_x = $x + ($width / 2.0);
+					$text_y = max(4, $y - 4);
 
-					$base_structs[] = $base_struct;
+					$annotations[] = '<g class="a9s-annotation" data-id="'.$esc_id.'" data-label="'.$esc_label.'">'
+						. '<rect class="a9s-inner" x="'.$x.'" y="'.$y.'" width="'.$width.'" height="'.$height.'"></rect>'
+						. '<text class="a9s-label" x="'.$text_x.'" y="'.$text_y.'" text-anchor="middle" alignment-baseline="baseline" font-size="12" style="pointer-events:auto;">'.$esc_label.'</text>'
+						. '</g>';
 				}
 
-				$base_structs[] = "</div>";
+				$annotations_string = implode("\n", $annotations);
+
+				$base_structs[] = '<svg class="a9s-annotationlayer" width="'.$w.'" height="'.$h.'" viewBox="0 0 '.$w.' '.$h.'" style="position:absolute;left:0;top:0;pointer-events:none;" preserveAspectRatio="xMinYMin meet">'
+					. '<g>'
+					. $annotations_string
+					. '</g>'
+					. '</svg>';
+
+				$base_structs[] = '</div>';
+
 			}
 
 			$new_html = join("\n", $base_structs);
