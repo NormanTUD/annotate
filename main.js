@@ -530,6 +530,12 @@ function get_element() {
 	return null;
 }
 
+async function load_model_and_predict () {
+	await load_labels();
+
+	await predictImageWithModel();
+}
+
 async function predictImageWithModel() {
 	if($("#chosen_model").val().toLowerCase() == "none") {
 		info("No AI model chosen");
