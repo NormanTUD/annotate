@@ -612,7 +612,9 @@ async function prepareUIForPrediction() {
 	show_ai_stuff();
 	running_ki = true;
 	$("body").css("cursor", "progress");
-	await anno.clearAnnotations();
+	if(anno) {
+		await anno.clearAnnotations();
+	}
 	log("Annotations cleared.");
 	await load_model();
 	log("Model loaded.");
