@@ -97,21 +97,116 @@ rm "$GNUPLOT_SCRIPT"
 
 
 	function write_train_bash ($tmp_dir, $epochs, $model_name) {
-		$train_bash = '#!/bin/bash
+		$train_bash = '#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+DEFAULT_EPOCHS='.$epochs.'
+DEFAULT_BATCH=16
+DEFAULT_IMGSZ='.$GLOBALS['imgsz'].'
+DEFAULT_DEVICE=""
+DEFAULT_LR0=0.01
+DEFAULT_LRF=0.01
+DEFAULT_MOMENTUM=0.937
+DEFAULT_WEIGHT_DECAY=0.0005
+DEFAULT_WARMUP_EPOCHS=3.0
+DEFAULT_WARMUP_MOMENTUM=0.8
+DEFAULT_WARMUP_BIAS_LR=0.1
+# Augmentations
+DEFAULT_HSV_H=0.015
+DEFAULT_HSV_S=0.7
+DEFAULT_HSV_V=0.4
+DEFAULT_DEGREES=0.0
+DEFAULT_TRANSLATE=0.1
+DEFAULT_SCALE=0.5
+DEFAULT_SHEAR=0.0
+DEFAULT_PERSPECTIVE=0.0
+DEFAULT_FLIPLR=0.5
+DEFAULT_MOSAIC=1.0
+DEFAULT_MIXUP=0.0
+DEFAULT_COPY_PASTE=0.0
 
-VENV_PATH="$HOME/.yolov11_venv"
+VENV_PATH="${HOME}/.yolov11_venv"
 
 if [[ ! -d $VENV_PATH ]]; then
-	echo "$VENV_PATH will be created"
-	python3 -m venv $VENV_PATH
-	source $VENV_PATH/bin/activate
-	echo "Installing YoloV11"
-	pip3 install ultralytics onnx2tf tf_keras onnx_graphsurgeon sng4onnx
+  echo "Creating virtualenv at $VENV_PATH"
+  python3 -m venv "$VENV_PATH"
+  source "$VENV_PATH/bin/activate"
+  pip install ultralytics onnx2tf tf_keras onnx_graphsurgeon sng4onnx
 else
-	echo "$VENV_PATH already exists"
-	source $VENV_PATH/bin/activate
+  echo "Using existing virtualenv at $VENV_PATH"
+  source "$VENV_PATH/bin/activate"
+fi
+
+DATA=""
+MODEL="'.$model_name.'"
+epochs="$DEFAULT_EPOCHS"
+batch="$DEFAULT_BATCH"
+imgsz="$DEFAULT_IMGSZ"
+device="$DEFAULT_DEVICE"
+lr0="$DEFAULT_LR0"
+lrf="$DEFAULT_LRF"
+momentum="$DEFAULT_MOMENTUM"
+weight_decay="$DEFAULT_WEIGHT_DECAY"
+warmup_epochs="$DEFAULT_WARMUP_EPOCHS"
+warmup_momentum="$DEFAULT_WARMUP_MOMENTUM"
+warmup_bias_lr="$DEFAULT_WARMUP_BIAS_LR"
+hsv_h="$DEFAULT_HSV_H"
+hsv_s="$DEFAULT_HSV_S"
+hsv_v="$DEFAULT_HSV_V"
+degrees="$DEFAULT_DEGREES"
+translate="$DEFAULT_TRANSLATE"
+scale="$DEFAULT_SCALE"
+shear="$DEFAULT_SHEAR"
+perspective="$DEFAULT_PERSPECTIVE"
+fliplr="$DEFAULT_FLIPLR"
+mosaic="$DEFAULT_MOSAIC"
+mixup="$DEFAULT_MIXUP"
+copy_paste="$DEFAULT_COPY_PASTE"
+
+print_usage() {
+  echo "Usage: $0 --data=dataset.yaml --model=yolo11s.yaml [--epochs=N] [--batch=N] [--imgsz=N] ..."
+  echo "You can set any YOLO train argument as --arg=value"
+}
+
+# Parse CLI args
+for arg in "$@"; do
+  case $arg in
+    --data=*) DATA="${arg#*=}" ;;
+    --model=*) MODEL="${arg#*=}" ;;
+    --epochs=*) epochs="${arg#*=}" ;;
+    --batch=*) batch="${arg#*=}" ;;
+    --imgsz=*) imgsz="${arg#*=}" ;;
+    --device=*) device="${arg#*=}" ;;
+    --lr0=*) lr0="${arg#*=}" ;;
+    --lrf=*) lrf="${arg#*=}" ;;
+    --momentum=*) momentum="${arg#*=}" ;;
+    --weight_decay=*) weight_decay="${arg#*=}" ;;
+    --warmup_epochs=*) warmup_epochs="${arg#*=}" ;;
+    --warmup_momentum=*) warmup_momentum="${arg#*=}" ;;
+    --warmup_bias_lr=*) warmup_bias_lr="${arg#*=}" ;;
+    --hsv_h=*) hsv_h="${arg#*=}" ;;
+    --hsv_s=*) hsv_s="${arg#*=}" ;;
+    --hsv_v=*) hsv_v="${arg#*=}" ;;
+    --degrees=*) degrees="${arg#*=}" ;;
+    --translate=*) translate="${arg#*=}" ;;
+    --scale=*) scale="${arg#*=}" ;;
+    --shear=*) shear="${arg#*=}" ;;
+    --perspective=*) perspective="${arg#*=}" ;;
+    --fliplr=*) fliplr="${arg#*=}" ;;
+    --mosaic=*) mosaic="${arg#*=}" ;;
+    --mixup=*) mixup="${arg#*=}" ;;
+    --copy_paste=*) copy_paste="${arg#*=}" ;;
+    --help) print_usage; exit 0 ;;
+    *) echo "Unknown argument: $arg"; print_usage; exit 1 ;;
+  esac
+done
+
+if [[ -z "$DATA" ]]; then
+  DATA="dataset.yaml"
+fi
+
+if [[ -z "$MODEL" ]]; then
+  MODEL="yolo11s.yaml"
 fi
 
 mkdir -p images
@@ -120,55 +215,65 @@ files=($(ls labels | sed -e "s#\.txt#.jpg#"))
 total=${#files[@]}
 
 draw_bar() {
-    local progress=$1
-    local width=40
-    local filled=$((progress * width / 100))
-    local empty=$((width - filled))
-    printf "["
-    printf "%0.s=" $(seq 1 $filled)
-    printf "%0.s " $(seq 1 $empty)
-    printf "] %3d%%" "$progress"
+  local progress=$1
+  local width=40
+  local filled=$((progress * width / 100))
+  local empty=$((width - filled))
+  printf "["
+  printf "%0.s=" $(seq 1 $filled)
+  printf "%0.s " $(seq 1 $empty)
+  printf "] %3d%%" "$progress"
 }
 
 for idx in "${!files[@]}"; do
-    file="${files[$idx]}"
-    if [[ -e "images/$file" ]]; then
-        echo -e "\e[1;33m[$((idx+1))/$total] $file exists, skipping\e[0m"
-        continue
+  file="${files[$idx]}"
+  if [[ -e "images/$file" ]]; then
+    echo -e "\e[1;33m[$((idx+1))/$total] $file exists, skipping\e[0m"
+    continue
+  fi
+
+  echo -e "\e[1;34m[$((idx+1))/$total] Downloading $file\e[0m"
+  tmp_file=$(mktemp)
+  wget -q --show-progress "'.$GLOBALS['base_url'].'//print_image.php?filename=$file" -O "$tmp_file" 2>&1 | while read -r line; do
+    if [[ $line =~ ([0-9]{1,3})% ]]; then
+      percent="${BASH_REMATCH[1]}"
+      printf "\r"
+      draw_bar "$percent"
     fi
-
-    echo -e "\e[1;34m[$((idx+1))/$total] Downloading $file\e[0m"
-
-    tmp_file=$(mktemp)
-    wget -q --show-progress "'.$GLOBALS['base_url'].'/print_image.php?filename=$file" -O "$tmp_file" 2>&1 | while read -r line; do
-        if [[ $line =~ ([0-9]{1,3})% ]]; then
-            percent="${BASH_REMATCH[1]}"
-            printf "\r"
-            draw_bar "$percent"
-        fi
-    done
-
-    mv "$tmp_file" "images/$file"
-    echo -e " \e[1;32m✔ Done\e[0m"
+  done
+  mv "$tmp_file" "images/$file"
+  echo -e " \e[1;32m✔ Done\e[0m"
 done
 
-yolo task=detect mode=train data=dataset.yaml epochs='.$epochs.' imgsz='.$GLOBALS["imgsz"].' model='.$model_name.' hsv_h=0.03 hsv_s=0.6 hsv_v=0.5 degrees=180 shear=30 perspective=0.0001 fliplr=1 mosaic=0.1 mixup=0.1 cutmix=0.1 copy_paste=0.1 batch=-1
+cmd="yolo detect train data=$DATA model=$MODEL epochs=$epochs batch=$batch imgsz=$imgsz"
+
+cmd+=" lr0=$lr0 lrf=$lrf momentum=$momentum weight_decay=$weight_decay"
+cmd+=" warmup_epochs=$warmup_epochs warmup_momentum=$warmup_momentum warmup_bias_lr=$warmup_bias_lr"
+cmd+=" hsv_h=$hsv_h hsv_s=$hsv_s hsv_v=$hsv_v"
+cmd+=" degrees=$degrees translate=$translate scale=$scale shear=$shear perspective=$perspective"
+cmd+=" fliplr=$fliplr mosaic=$mosaic mixup=$mixup copy_paste=$copy_paste"
+
+if [[ -n "$device" ]]; then
+  cmd+=" device=$device"
+fi
+
+echo "Running: $cmd"
+eval "$cmd"
 exit_code=$?
 
 if [[ $exit_code -ne 0 ]]; then
-	echo "yolo failed with exit-code $exit_code"
-	exit $exit_code
+  echo "yolo failed with exit-code $exit_code"
+  exit $exit_code
 fi
 
-run_dir=runs/detect/train/weights/
+run_dir="runs/detect/train/weights/"
 if [[ -d $run_dir ]]; then
-	exit 0
+  echo "Training done, weights in $run_dir"
+  exit 0
 else
-	echo "$run_dir could not be found"
-	exit 1
-fi
-
-';
+  echo "Error: $run_dir could not be found"
+  exit 1
+fi';
 
 		file_put_contents("$tmp_dir/train", $train_bash);
 	}
