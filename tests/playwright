@@ -66,5 +66,7 @@ if [[ $NR_ANNOTATED_ZERO_LINES -ne 1 ]]; then
 	exit 1
 fi
 
+source tests/model
+
 python3 _run_tests.py $*
 exit_code=$?
