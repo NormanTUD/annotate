@@ -574,7 +574,7 @@ async function predictImageWithModel() {
 		const { boxes, scores, classes } = await extractDetectionData(predictionResult);
 		log(`Detection data extracted: ${boxes.length} boxes`);
 
-		await displayPredictionResults(boxes, scores, classes);
+		await handleAnnotations(boxes, scores, classes);
 
 		await cleanupAfterPrediction();
 
@@ -646,13 +646,6 @@ async function extractDetectionData(predictionResult) {
 	const data = await processModelOutput(predictionResult);
 	log(`Processed output: ${data.boxes.length} boxes`);
 	return data;
-}
-
-async function displayPredictionResults(boxes, scores, classes) {
-	log("Displaying prediction results...");
-	show_spinner("Working on results...");
-	await handleAnnotations(boxes, scores, classes);
-	log("Results displayed.");
 }
 
 async function cleanupAfterPrediction() {
