@@ -572,7 +572,7 @@ async function predictImageWithModel() {
 			return;
 		}
 
-		const { boxes, scores, classes } = await processModelOutput(predictionResult, modelWidth, modelHeight);
+		const { boxes, scores, classes } = await processModelOutput(predictionResult);
 		log(`Detection data extracted: ${boxes.length} boxes`);
 
 		await handleAnnotations(boxes, scores, classes);
@@ -707,10 +707,8 @@ async function predict(modelWidth, modelHeight) {
 	return res;
 }
 
-function processModelOutput(predictionResult, modelWidth, modelHeight) {
+function processModelOutput(res) {
 	log("processModelOutput: Starting...");
-	const res = predictionResult;
-	console.log(res);
 
 	const rawBoxes = [];
 	const scores = [];
@@ -727,28 +725,36 @@ function processModelOutput(predictionResult, modelWidth, modelHeight) {
 	console.group("Getting boxes...");
 	for (let i = 0; i < numPredictions; i++) {
 		const features = data.map(arr => arr[i]);
-		const [x, y, w, h, obj_conf, ...classScores] = features;
+		const [x, y, w, h, ...classScores] = features;
 
-		let bestClassScore = Math.max(...classScores);
-		let bestClass = classScores.indexOf(bestClassScore);
+		let bestScore = -Infinity;
+		let bestClass = -1;
+		for (let c = 0; c < classScores.length; c++) {
+			if (classScores[c] > bestScore) {
+				bestScore = classScores[c];
+				bestClass = c;
+			}
+		}
 
-		let conf = obj_conf * bestClassScore;
+		const relX = x / imgsz;
+		const relY = y / imgsz;
+		const relW = w / imgsz;
+		const relH = h / imgsz;
+		const x1 = relX - relW / 2;
+		const y1 = relY - relH / 2;
+		const x2 = relX + relW / 2;
+		const y2 = relY + relH / 2;
 
-		if (conf > conf_threshold) {
-			const relX = x / imgsz;
-			const relY = y / imgsz;
-			const relW = w / imgsz;
-			const relH = h / imgsz;
-			const x1 = relX - relW / 2;
-			const y1 = relY - relH / 2;
-			const x2 = relX + relW / 2;
-			const y2 = relY + relH / 2;
-			rawBoxes.push([x1, y1, x2, y2]);
-			scores.push(conf);
+		const bbox = [x1, y1, x2, y2];
+
+		if (bestScore > conf_threshold) {
+			rawBoxes.push(bbox);
+			scores.push(bestScore);
 			classes.push(bestClass);
+
+			console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
 		}
 	}
-
 	console.groupEnd();
 
 	const keepBoxes = [];
