@@ -27,8 +27,8 @@ RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.expor
     $(python3 -m site --user-site)/tensorflowjs/converters/jax_conversion.py || true
 
 RUN PHP_INI=$(find /etc/php -name php.ini | grep apache2) && \
-    sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' "$PHP_INI" && \
-    sed -i 's/^post_max_size = .*/post_max_size = 100M/' "$PHP_INI"
+    sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 200M/' "$PHP_INI" && \
+    sed -i 's/^post_max_size = .*/post_max_size = 200M/' "$PHP_INI"
 
 # Apache Konfiguration anpassen
 RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|" /etc/apache2/sites-available/000-default.conf && \
