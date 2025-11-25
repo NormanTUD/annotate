@@ -1,6 +1,7 @@
 "use strict";
 
 var zoom_input;
+var zoom_factor = 1.0;
 
 (function () {
 	var style = document.createElement('style');
@@ -1388,9 +1389,6 @@ $(document).ready(() => {
 	load_labels();
 	show_or_hide_ai_stuff();
 })
-
-// --- Zoom / overlay sync — paste this and remove older zoom code ---
-let zoom_factor = 1.0;
 
 function update_overlay_and_image_size() {
 	const img = document.getElementById("image");
