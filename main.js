@@ -708,68 +708,129 @@ async function predict(modelWidth, modelHeight) {
 }
 
 /**
- * Verarbeitet die rohe YOLO-Modellausgabe (dynamische Shape) zu finalen Bounding Boxes.
+ * Verarbeitet die rohe YOLO-Modellausgabe. Ermittelt die Features aus der Länge des
+ * fehlerhaften Rohdaten-Arrays und leitet die Kandidatenanzahl ab.
  *
- * @param {Array<Array<number>>} res - Die rohe Modellausgabe als JS Array.
- * @param {number} modelWidth - Die Breite, mit der das Modell trainiert wurde (z.B. 640).
- * @param {number} modelHeight - Die Höhe, mit der das Modell trainiert wurde (z.B. 640).
- * @returns {Promise<{boxes: number[][], scores: number[], classes: number[]}>} - Ein Objekt mit den erkannten Boxen, Scores und Klassen-IDs.
+ * @param {Array<any>} res - Die rohe Modellausgabe, wahrscheinlich falsch extrahiert.
+ * @param {number} modelWidth - Die Breite, mit der das Modell trainiert wurde.
+ * @param {number} modelHeight - Die Höhe, mit der das Modell trainiert wurde.
+ * @returns {Promise<{boxes: number[][], scores: number[], classes: number[]}>}
  */
 async function processModelOutput(res, modelWidth, modelHeight) {
-    console.group("🔥 YOLO Post-Processing DEBUG: NEUE FEHLERANALYSE");
+    console.group("🔥 YOLO Post-Processing DEBUG: Deterministische Korrektur");
     const startTime = performance.now();
 
-    // Konfiguration
     const confThreshold = conf || 0.3;
     const iouThreshold = 0.45;
 
-    const rawData = res[0];
+    // *** 1. Rohdaten-Extraktion und Shape-Ermittlung ***
+
+    // Annahme: Wenn res[0] ein kurzes Array ist, enthält dessen Länge die Features (F).
+    let rawData;
+    let F_TENTATIVE = 0; // Tentative Features
+
+    if (Array.isArray(res) && Array.isArray(res[0]) && res[0].length < 200) {
+        // Fall A: rawData ist das Array mit der Länge F (z.B. 84 oder 61)
+        F_TENTATIVE = res[0].length;
+
+        // Wir müssen die rohen, flachen Daten neu zusammensetzen, da die Extraktion
+        // das innere Array nicht als flache Liste von F*C Elementen liefert.
+        // D.h. wir nehmen an, dass der flache Tensor F * C Elemente enthält.
+
+        // Da die korrekte Extraktion schwierig ist, setzen wir rawData auf den ersten Eintrag.
+        // Die Fehler der letzten Male zeigten, dass die Gesamtmenge (F*C) 800625 oder 705600 war.
+
+        // Das ist die kritische Stelle: Wir erzwingen die Extraktion des flachen Tensors
+        // aus der Struktur von res, die wir nicht genau kennen.
+        // Wir nehmen an, dass res[0] ein Array von C*F Elementen ODER ein Tensor ist.
+
+        // VORSICHT: Dies ist nur ein Workaround für die fehlerhafte predict-Ausgabe!
+        // Wir müssen erraten, wo die flache Liste ist.
+
+        if (Array.isArray(res[0][0])) {
+             // Z.B. Shape [1, F, C] -> res[0] ist ein Array von F Arrays à C Elemente.
+             // Dies ist die FALSCHE Konvertierung! Wir flachen es ab.
+             rawData = res[0].flat();
+             F_TENTATIVE = res[0].length; // F
+        } else {
+             // Wenn res[0] ein flaches Array ist, aber zu kurz, ist es fehlerhaft.
+             // Wenn das Modell nur EINEN Output-Tensor hat, ist es wahrscheinlich res[0].
+             rawData = res[0];
+        }
+
+    } else if (Array.isArray(res) && res.length > 20000) {
+        // Fall B: res ist bereits das flache Array (z.B. 705600 Elemente)
+        rawData = res;
+    } else {
+        // Schwerwiegender Fehlerfall: Die Struktur ist unbekannt oder leer.
+        console.error(`❌ Strukturfehler: Die Modellausgabe ('res') ist nicht das erwartete Array von Arrays oder zu kurz.`);
+        console.groupEnd();
+        return { boxes: [], scores: [], classes: [] };
+    }
+
     const TOTAL_ELEMENTS = rawData.length;
 
-    // *************************************************************************************
-    // 1. KORREKTE SHAPE-ERMITTLUNG BASIEREND AUF FEHLERMELDUNG
-    // *************************************************************************************
+    // Deterministic Mapping: F -> C
+    // Wir versuchen, F und C anhand der TOTAL_ELEMENTS zu bestimmen.
+    const FEATURE_TO_CANDIDATES = [
+        { F: 84, C: 8400, classes: 80, total: 705600 },   // Standard
+        { F: 61, C: 13125, classes: 57, total: 800625 }, // Dein 2. Modell
+        { F: 25, C: 32025, classes: 21, total: 800625 }  // Dein 3. Modell (optional)
+    ];
 
-    // Die Fehlermeldung verrät die tatsächliche interne Shape des Arrays: (61, 13125)
-    // TF.js hat versucht, die flache Datenstruktur (800625 Elemente) als (61, 13125) zu interpretieren.
-    const ACTUAL_FEATURES_PER_BOX = 61; // 4 Boxen + 57 Klassen
-    const ACTUAL_CANDIDATES = 13125;
-    const CORRECT_CLASSES_COUNT = ACTUAL_FEATURES_PER_BOX - 4; // 57 Klassen
+    let FINAL_FEATURES = 0;
+    let KNOWN_CLASSES_COUNT = 0;
+    let FINAL_CANDIDATES = 0;
+    let DYNAMIC_MATCH = false;
 
-    console.log(`ℹ️ Modell-Input-Größe: ${modelWidth}x${modelHeight}`);
-    console.log(`ℹ️ Array-Größe: ${TOTAL_ELEMENTS} Elemente`);
-    console.log(`✅ Korrigierte Shape-Annahme: [Features: ${ACTUAL_FEATURES_PER_BOX}, Kandidaten: ${ACTUAL_CANDIDATES}]`);
-    console.log(`✅ Abgeleitete Klassen: ${CORRECT_CLASSES_COUNT} Klassen`);
+    for (const set of FEATURE_TO_CANDIDATES) {
+        if (TOTAL_ELEMENTS === set.total) {
+            FINAL_FEATURES = set.F;
+            KNOWN_CLASSES_COUNT = set.classes;
+            FINAL_CANDIDATES = set.C;
+            DYNAMIC_MATCH = true;
+            break;
+        }
+    }
+
+    if (!DYNAMIC_MATCH) {
+        console.error(`❌ Kritischer Shape-Fehler: Gesamtanzahl ${TOTAL_ELEMENTS} passt zu keinem bekannten Modell-Output.`);
+        console.warn("   -> Prüfe, ob das Modell tatsächlich diese Größe zurückgibt oder ob die Liste KNOWN_FEATURE_SETS unvollständig ist.");
+        console.groupEnd();
+        return { boxes: [], scores: [], classes: [] };
+    }
+
+    console.log(`ℹ️ Modell-Input: ${modelWidth}x${modelHeight}, Klassen: ${KNOWN_CLASSES_COUNT}`);
+    console.log(`✅ Shape: [Features: ${FINAL_FEATURES}, Kandidaten: ${FINAL_CANDIDATES}] (Total: ${TOTAL_ELEMENTS})`);
     console.log(`Konfiguration: Conf-Threshold=${confThreshold}, IoU-Threshold=${iouThreshold}`);
+
 
     // *************************************************************************************
     // 2. TENSOR-ERSTELLUNG UND TRANSPOSE
     // *************************************************************************************
 
-    // Erstellt Tensor [61, 13125] und fügt Batch-Dimension 1 hinzu -> [1, 61, 13125]
-    let predictionsTensor = tf.tensor(rawData, [ACTUAL_FEATURES_PER_BOX, ACTUAL_CANDIDATES]).expandDims(0);
-    console.log(`1. predictionsTensor initialisiert. Shape: [${predictionsTensor.shape.join(', ')}]`);
+    // KORREKT: Erstellt Tensor [Features, Kandidaten] -> [1, F, C]
+    let predictionsTensor = tf.tensor(rawData, [FINAL_FEATURES, FINAL_CANDIDATES]).expandDims(0);
+    console.log(`1. Tensor erstellt. Shape: [${predictionsTensor.shape.join(', ')}]`);
 
-    // Transponiere von [1, Features, Kandidaten] zu [1, Kandidaten, Features]
-    // [1, 61, 13125]  -> [1, 13125, 61] (Boxen in Zeilen)
+    // Transponiere von [1, F, C] zu [1, C, F]
     predictionsTensor = predictionsTensor.transpose([0, 2, 1]);
-    console.log(`2. predictionsTensor transponiert. Shape: [${predictionsTensor.shape.join(', ')}]`);
+    console.log(`2. Transponiert. Shape: [${predictionsTensor.shape.join(', ')}]`);
 
-    // Extrahieren der Box-Koordinaten (4) und der Klassen-Scores (57)
-    const [boxCoords, classScores] = tf.split(predictionsTensor, [4, CORRECT_CLASSES_COUNT], 2);
+    // Extrahieren der Box-Koordinaten (4) und der Klassen-Scores
+    const [boxCoords, classScores] = tf.split(predictionsTensor, [4, KNOWN_CLASSES_COUNT], 2);
 
     // Reduziere die Batch-Dimension
-    const boxes = boxCoords.squeeze(); // Shape [13125, 4] ([cx, cy, w, h])
-    const scores = classScores.squeeze(); // Shape [13125, 57]
+    const boxes = boxCoords.squeeze();
+    const scores = classScores.squeeze();
     console.log(`3. Boxen/Scores extrahiert. Boxes Shape: [${boxes.shape.join(', ')}], Scores Shape: [${scores.shape.join(', ')}]`);
 
     // 4. Maximum Score und Klasse finden
     const maxScores = scores.max(1);
     const classes = scores.argMax(1);
-    console.log(`4. Max Scores/Klassen berechnet. Max Scores Shape: [${maxScores.shape.join(', ')}]`);
 
     // *************************************************************************************
-    // 5. FILTERN NACH KONFIDENZ
+    // 5. FILTERN NACH KONFIDENZ & NMS
     // *************************************************************************************
 
     const maxScoresArray = await maxScores.array();
@@ -783,10 +844,10 @@ async function processModelOutput(res, modelWidth, modelHeight) {
         }
     });
 
-    console.log(`5. Konfidenz-Filterung: ${initialHighConfidenceCount} Boxen >= ${confThreshold} behalten.`);
+    console.log(`4. Konfidenz-Filterung: ${initialHighConfidenceCount} Boxen >= ${confThreshold} behalten.`);
 
     if (initialHighConfidenceCount === 0) {
-        console.warn("⚠️ KEINE Boxen haben den Konfidenz-Schwellenwert erreicht. 'conf' ist möglicherweise zu hoch.");
+        console.warn("⚠️ KEINE Boxen haben den Konfidenz-Schwellenwert erreicht.");
         tf.dispose([predictionsTensor, boxCoords, classScores, boxes, scores, maxScores, classes]);
         console.groupEnd();
         return { boxes: [], scores: [], classes: [] };
@@ -794,31 +855,16 @@ async function processModelOutput(res, modelWidth, modelHeight) {
 
     const filteredBoxes = tf.gather(boxes, keepIndices);
     const filteredScores = tf.gather(maxScores, keepIndices);
-    const filteredClasses = tf.gather(classes, keepIndices);
-    console.log(`6. Gefilterte Tensoren erstellt. Boxen-Anzahl: ${filteredBoxes.shape[0]}`);
 
-    // DEBUG: Überprüfe die Skalierung der Box-Koordinaten VOR der Normalisierung
-    const [debugCx, debugCy, debugW, debugH] = tf.split(filteredBoxes.slice([0, 0], [1, 4]), 4, 1);
-    const debugBoxData = await Promise.all([debugCx.array(), debugCy.array(), debugW.array(), debugH.array()]);
-    console.log(`DEBUG: Box 0 (Cx, Cy, W, H): [${debugBoxData.map(d => d[0][0].toFixed(2)).join(', ')}]`);
-
-    // *************************************************************************************
-    // 6. NMS VORBEREITUNG (cx, cy, w, h -> ymin, xmin, ymax, xmax)
-    // *************************************************************************************
+    // NMS Vorbereitung (cx, cy, w, h -> ymin, xmin, ymax, xmax)
     const [cx, cy, w, h] = tf.split(filteredBoxes, 4, 1);
-
     const x_min = tf.sub(cx, tf.div(w, 2));
     const y_min = tf.sub(cy, tf.div(h, 2));
     const x_max = tf.add(cx, tf.div(w, 2));
     const y_max = tf.add(cy, tf.div(h, 2));
-
     const boxesForNMS = tf.concat([y_min, x_min, y_max, x_max], 1);
 
-    // DEBUG: Überprüfe die NMS-Box-Konvertierung
-    const debugNMSBox = await boxesForNMS.slice([0, 0], [1, 4]).array();
-    console.log(`DEBUG: NMS-Box 0 (Ymin, Xmin, Ymax, Xmax): [${debugNMSBox[0].map(v => v.toFixed(2)).join(', ')}]`);
-
-    // 7. Non-Maximum Suppression (NMS)
+    // NMS Ausführung
     const nmsIndices = await tf.image.nonMaxSuppressionAsync(
         boxesForNMS,
         filteredScores,
@@ -827,58 +873,41 @@ async function processModelOutput(res, modelWidth, modelHeight) {
         confThreshold
     );
 
-    // *************************************************************************************
-    // 8. EXTRAHIERUNG & DYNAMISCHE NORMALISIERUNG AUF 0..1
-    // *************************************************************************************
     const finalIndices = await nmsIndices.array();
 
-    console.log(`7. NMS-Ergebnis: ${finalIndices.length} finale Boxen behalten.`);
-    if (finalIndices.length === 0 && initialHighConfidenceCount > 0) {
-        console.warn(`⚠️ NMS hat alle Boxen entfernt. 'iouThreshold' (${iouThreshold}) ist möglicherweise zu aggressiv.`);
-        // Ressourcen freigeben
-        tf.dispose([predictionsTensor, boxCoords, classScores, boxes, scores, maxScores, classes, filteredBoxes, filteredScores, filteredClasses, cx, cy, w, h, x_min, y_min, x_max, y_max, boxesForNMS, nmsIndices]);
-        console.groupEnd();
-        return { boxes: [], scores: [], classes: [] };
-    }
+    console.log(`5. NMS-Ergebnis: ${finalIndices.length} finale Boxen behalten.`);
 
-    // Normalisierungsfaktoren
+    // *************************************************************************************
+    // 6. DYNAMISCHE NORMALISIERUNG AUF 0..1
+    // *************************************************************************************
+
     const scaleFactorX = 1 / modelWidth;
     const scaleFactorY = 1 / modelHeight;
 
     const finalFilteredBoxes = tf.gather(filteredBoxes, finalIndices);
 
-    // Splitte die finalen Boxen in ihre Komponenten
     const [finalCx, finalCy, finalW, finalH] = tf.split(finalFilteredBoxes, 4, 1);
 
-    // Normalisiere die x- und Breiten-Werte
     const finalCxNormalized = finalCx.mul(scaleFactorX);
     const finalWNormalized = finalW.mul(scaleFactorX);
-
-    // Normalisiere die y- und Höhen-Werte
     const finalCyNormalized = finalCy.mul(scaleFactorY);
     const finalHNormalized = finalH.mul(scaleFactorY);
 
-    // Führe die Box-Daten wieder zusammen: [cx, cy, w, h] (0..1 Bereich)
     const finalBoxesTensor = tf.concat([finalCxNormalized, finalCyNormalized, finalWNormalized, finalHNormalized], 1);
 
     const finalScoresTensor = tf.gather(filteredScores, finalIndices);
-    const finalClassesTensor = tf.gather(filteredClasses, finalIndices);
+    const finalClassesTensor = tf.gather(classes, finalIndices);
 
     const finalBoxes = await finalBoxesTensor.array();
     const keepScores = await finalScoresTensor.array();
     const keepClasses = await finalClassesTensor.array();
 
-    // DEBUG: Überprüfe die finale, normalisierte Box
-    if (finalBoxes.length > 0) {
-        console.log(`DEBUG: Finale Box 0 (Normalisiert 0-1): [${finalBoxes[0].map(v => v.toFixed(4)).join(', ')}]`);
-    }
-
     // *************************************************************************************
-    // 9. RESSOURCEN FREIGEBEN
+    // 7. RESSOURCEN FREIGEBEN
     // *************************************************************************************
     const tensorsToDispose = [
         predictionsTensor, boxCoords, classScores, boxes, scores, maxScores, classes,
-        filteredBoxes, filteredScores, filteredClasses,
+        filteredBoxes, filteredScores,
         cx, cy, w, h, x_min, y_min, x_max, y_max, boxesForNMS, nmsIndices,
         finalFilteredBoxes, finalCx, finalCy, finalW, finalH,
         finalCxNormalized, finalCyNormalized, finalWNormalized, finalHNormalized,
@@ -889,7 +918,7 @@ async function processModelOutput(res, modelWidth, modelHeight) {
 
     const endTime = performance.now();
     console.log(`✅ Post-Processing abgeschlossen in ${(endTime - startTime).toFixed(2)} ms.`);
-    console.log(`Rückgabe: ${finalBoxes.length} Boxen, Scores: ${keepScores.length}, Klassen: ${keepClasses.length}`);
+    console.log(`Rückgabe: ${finalBoxes.length} Boxen.`);
     console.groupEnd();
 
     return { boxes: finalBoxes, scores: keepScores, classes: keepClasses };
