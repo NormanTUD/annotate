@@ -710,6 +710,8 @@ async function predict(modelWidth, modelHeight) {
 function processModelOutput(res) {
 	log("processModelOutput: Starting...");
 
+	console.log("RES:", res, "RES-shape: ", getShape(res));
+
 	const rawBoxes = [];
 	const scores = [];
 	const classes = [];
