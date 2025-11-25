@@ -140,7 +140,7 @@ async function test_load_model_and_predict() {
 	console.debug("Waiting 2 seconds");
 	await sleep(2000);
 
-	if($(".ki_select_box").children().length != 0) {
+	if($(".ki_select_box").children().length <= 0) {
 		console.error(`.ki_select_box does not have more than 0 children`);
 		return false;
 	}
