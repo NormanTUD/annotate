@@ -824,6 +824,13 @@ function iou(boxA, boxB) {
 	return interArea / (boxAArea + boxBArea - interArea);
 }
 
+function clamp(v, a, b) {
+	if (isNaN(v)) return a;
+	if (v < a) return a;
+	if (v > b) return b;
+	return v;
+}
+
 async function handleAnnotations(boxes, scores, classes) {
 	if(enable_debug) {
 		log("handleAnnotations:", "boxes:", boxes, "scores:", scores, "classes:", classes);
