@@ -709,6 +709,7 @@ async function predict(modelWidth, modelHeight) {
 
 function processModelOutput(predictionResult, modelWidth, modelHeight) {
 	log("processModelOutput: Starting...");
+	const res = predictionResult;
 	console.log(res);
 
 	const rawBoxes = [];
