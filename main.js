@@ -707,94 +707,148 @@ async function predict(modelWidth, modelHeight) {
 	return res;
 }
 
-function processModelOutput(res) {
-	log("processModelOutput: Starting...");
+/**
+ * Verarbeitet die rohe YOLO-Modellausgabe (Shape [1, 84, 8400]) zu finalen Bounding Boxes, Scores und Klassen.
+ *
+ * @param {Array<Array<number>>} res - Die rohe Modellausgabe als JS Array (Shape [1, 84, 8400]).
+ * @returns {Promise<{boxes: number[][], scores: number[], classes: number[]}>} - Ein Objekt mit den erkannten Boxen, Scores und Klassen-IDs.
+ */
+async function processModelOutput(res) {
+    console.group("🔍 YOLOv11 Post-Processing Debug");
+    const startTime = performance.now();
 
-	console.log("RES:", res, "RES-shape: ", getShape(res));
+    // Konfiguration
+    const confThreshold = conf || 0.3; // Nimmt die globale 'conf' Variable an
+    const iouThreshold = 0.45;
+    const TOTAL_CANDIDATES = 8400;
 
-	const rawBoxes = [];
-	const scores = [];
-	const classes = [];
+    console.log(`Konfiguration: Conf-Threshold=${confThreshold}, IoU-Threshold=${iouThreshold}`);
 
-	const data = res[0];  // YOLOv11 Tensor: [features x predictions]
-	const numPredictions = data[0].length;
-	const numFeatures = data.length;
+    // 1. Array in tf.Tensor umwandeln und Transponieren
+    const rawData = res[0];
 
-	log(`Raw data shape: ${numFeatures} features x ${numPredictions} predictions`);
+    // KORREKTUR: Erstellung des Tensors mit Batch-Dimension
+    // Erstellt Tensor [84, 8400] und fügt Batch-Dimension 1 hinzu -> [1, 84, 8400]
+    let predictionsTensor = tf.tensor(rawData, [84, TOTAL_CANDIDATES]).expandDims(0);
+    console.log(`1. predictionsTensor initialisiert. Shape: [${predictionsTensor.shape.join(', ')}]`);
 
-	const conf_threshold = getConfThreshold();
+    // Transponiere von [1, 84, 8400] zu [1, 8400, 84] (Boxen in Zeilen)
+    predictionsTensor = predictionsTensor.transpose([0, 2, 1]);
+    console.log(`2. predictionsTensor transponiert. Shape: [${predictionsTensor.shape.join(', ')}]`);
 
-	console.group("Getting boxes...");
-	for (let i = 0; i < numPredictions; i++) {
-		const features = data.map(arr => arr[i]);
-		const [x, y, w, h, ...classScores] = features;
+    // Extrahieren der Box-Koordinaten (4) und der Klassen-Scores (80)
+    const [boxCoords, classScores] = tf.split(predictionsTensor, [4, 80], 2);
 
-		let bestScore = -Infinity;
-		let bestClass = -1;
-		for (let c = 0; c < classScores.length; c++) {
-			if (classScores[c] > bestScore) {
-				bestScore = classScores[c];
-				bestClass = c;
-			}
-		}
+    // Reduziere die Batch-Dimension (von [1, 8400, ...] auf [8400, ...])
+    const boxes = boxCoords.squeeze(); // Shape [8400, 4] ([cx, cy, w, h])
+    const scores = classScores.squeeze(); // Shape [8400, 80]
+    console.log(`3. Boxen und Scores extrahiert. Boxes Shape: [${boxes.shape.join(', ')}], Scores Shape: [${scores.shape.join(', ')}]`);
 
-		const relX = x / imgsz;
-		const relY = y / imgsz;
-		const relW = w / imgsz;
-		const relH = h / imgsz;
-		const x1 = relX - relW / 2;
-		const y1 = relY - relH / 2;
-		const x2 = relX + relW / 2;
-		const y2 = relY + relH / 2;
+    // 2. Maximum Score und Klasse finden
+    const maxScores = scores.max(1); // Shape [8400]
+    const classes = scores.argMax(1); // Shape [8400]
 
-		const bbox = [x1, y1, x2, y2];
+    // 3. Filtern nach Konfidenz-Schwellenwert
+    const maxScoresArray = await maxScores.array();
 
-		if (bestScore > conf_threshold) {
-			rawBoxes.push(bbox);
-			scores.push(bestScore);
-			classes.push(bestClass);
+    let initialHighConfidenceCount = 0;
+    const keepIndices = [];
+    maxScoresArray.forEach((score, index) => {
+        if (score >= confThreshold) {
+            keepIndices.push(index);
+            initialHighConfidenceCount++;
+        }
+    });
 
-			console.debug(`Detected box for class ${bestClass} (${labels[bestClass]}) at [${bbox.join(", ")}], confidence: ${bestScore}`);
-		}
-	}
-	console.groupEnd();
+    console.log(`4. Konfidenz-Filterung. Boxen vor Filterung: ${TOTAL_CANDIDATES}. Boxen >= ${confThreshold}: ${initialHighConfidenceCount}`);
 
-	const keepBoxes = [];
-	const keepScores = [];
-	const keepClasses = [];
+    if (initialHighConfidenceCount === 0) {
+        console.warn("⚠️ KEINE Boxen haben den Konfidenz-Schwellenwert erreicht. Versuche, 'conf' zu reduzieren.");
+        tf.dispose([predictionsTensor, boxCoords, classScores, boxes, scores, maxScores, classes]);
+        console.groupEnd();
+        return { boxes: [], scores: [], classes: [] };
+    }
 
-	const indices = scores.map((s, i) => i).sort((a, b) => scores[b] - scores[a]);
+    const filteredBoxes = tf.gather(boxes, keepIndices);
+    const filteredScores = tf.gather(maxScores, keepIndices);
+    const filteredClasses = tf.gather(classes, keepIndices);
+    console.log(`5. Gefilterte Boxen-Anzahl: ${filteredBoxes.shape[0]}`);
 
-	const iouThreshold = getIouThreshold();
+    // 4. Konvertiere Boxen von [cx, cy, w, h] zu [y_min, x_min, y_max, x_max] für NMS
+    // NMS in TF.js erwartet das Format [y_min, x_min, y_max, x_max].
+    const [cx, cy, w, h] = tf.split(filteredBoxes, 4, 1);
 
-	while (indices.length > 0) {
-		const i = indices.shift();
-		keepBoxes.push(rawBoxes[i]);
-		keepScores.push(scores[i]);
-		keepClasses.push(classes[i]);
+    const exampleCx = (await cx.array())[0];
+    const exampleCy = (await cy.array())[0];
+    const exampleW = (await w.array())[0];
+    const exampleH = (await h.array())[0];
+    console.log(`   Box 0 (Cx, Cy, W, H, Skaliert): [${exampleCx}, ${exampleCy}, ${exampleW}, ${exampleH}]`);
 
-		for (let j = indices.length - 1; j >= 0; j--) {
-			if (iou(rawBoxes[i], rawBoxes[indices[j]]) > iouThreshold) {
-				indices.splice(j, 1);
-			}
-		}
-	}
+    const x_min = tf.sub(cx, tf.div(w, 2));
+    const y_min = tf.sub(cy, tf.div(h, 2));
+    const x_max = tf.add(cx, tf.div(w, 2));
+    const y_max = tf.add(cy, tf.div(h, 2));
 
-	log(`Processed ${keepBoxes.length} boxes after NMS`);
+    const boxesForNMS = tf.concat([y_min, x_min, y_max, x_max], 1);
+    console.log(`6. Box-Konvertierung für NMS (Y_min, X_min, Y_max, X_max). Beispiel: [${(await boxesForNMS.array())[0]}]`);
 
-	const finalBoxes = keepBoxes.map(b => {
-		const cx = (b[0] + b[2]) / 2;
-		const cy = (b[1] + b[3]) / 2;
-		const bw = b[2] - b[0];
-		const bh = b[3] - b[1];
-		return [cx, cy, bw, bh];
-	});
+    // 5. Non-Maximum Suppression (NMS)
+    const nmsIndices = await tf.image.nonMaxSuppressionAsync(
+        boxesForNMS,
+        filteredScores,
+        filteredBoxes.shape[0],
+        iouThreshold,
+        confThreshold
+    );
 
-	finalBoxes.forEach((b, i) => {
-		log(`Box ${i + 1}: class=${keepClasses[i]}, score=${keepScores[i].toFixed(3)}, cx,cy,bw,bh=[${b.map(v => v.toFixed(3)).join(', ')}]`);
-	});
+    // 6. Extrahieren und Normalisieren der finalen Ergebnisse
+    const finalIndices = await nmsIndices.array();
 
-	return { boxes: finalBoxes, scores: keepScores, classes: keepClasses };
+    console.log(`7. NMS-Ergebnis: ${finalIndices.length} finale Boxen behalten.`);
+    if (finalIndices.length === 0 && initialHighConfidenceCount > 0) {
+        console.warn(`⚠️ NMS hat alle ${initialHighConfidenceCount} Boxen entfernt. Versuche, 'iouThreshold' zu erhöhen.`);
+        // Ressourcen freigeben, wenn NMS alles verworfen hat
+        tf.dispose([
+            predictionsTensor, boxCoords, classScores, boxes, scores, maxScores, classes,
+            filteredBoxes, filteredScores, filteredClasses,
+            cx, cy, w, h, x_min, y_min, x_max, y_max, boxesForNMS, nmsIndices
+        ]);
+        console.groupEnd();
+        return { boxes: [], scores: [], classes: [] };
+    }
+
+    // ACHTUNG: Dies ist der entscheidende Normalisierungsschritt!
+    // Setze die Größe deines Modells (z.B. 640x640, 416x416).
+    const MODEL_SIZE = 640;
+    const scaleFactor = 1 / MODEL_SIZE;
+
+    // Boxen-Daten extrahieren (als [cx, cy, w, h]) und auf den Bereich [0..1] normalisieren.
+    const finalBoxesTensor = tf.gather(filteredBoxes, finalIndices)
+                                .mul(scaleFactor); // <--- Normalisierung
+
+    const finalScoresTensor = tf.gather(filteredScores, finalIndices);
+    const finalClassesTensor = tf.gather(filteredClasses, finalIndices);
+
+    const finalBoxes = await finalBoxesTensor.array(); // Array<Array<number>> ([cx, cy, w, h] von 0..1)
+    const keepScores = await finalScoresTensor.array();
+    const keepClasses = await finalClassesTensor.array();
+
+    // 7. Ressourcen freigeben
+    const tensorsToDispose = [
+        predictionsTensor, boxCoords, classScores, boxes, scores, maxScores, classes,
+        filteredBoxes, filteredScores, filteredClasses,
+        cx, cy, w, h, x_min, y_min, x_max, y_max, boxesForNMS, nmsIndices,
+        finalBoxesTensor, finalScoresTensor, finalClassesTensor
+    ];
+    tf.dispose(tensorsToDispose);
+    console.log(`8. ${tensorsToDispose.length} Tensoren freigegeben.`);
+
+    const endTime = performance.now();
+    console.log(`✅ Post-Processing abgeschlossen in ${(endTime - startTime).toFixed(2)} ms.`);
+    console.log(`Rückgabe: ${finalBoxes.length} Boxen, Scores: ${keepScores.length}, Klassen: ${keepClasses.length}`);
+    console.groupEnd();
+
+    return { boxes: finalBoxes, scores: keepScores, classes: keepClasses };
 }
 
 function iou(boxA, boxB) {
