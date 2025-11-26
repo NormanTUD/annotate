@@ -559,7 +559,7 @@
 				handle_query_error($query);
 			}
 			return $res;
-		} catch ($e) {
+		} catch (\Exception $e) {
 			dier("Failed executing query >".htmlentities($query)."<");
 		}
 	}
