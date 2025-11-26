@@ -250,9 +250,4 @@ a:hover {
 #col_right {
 	vertical-align: top;
 	text-align: end;
-	width: min-content;
-}
-
-#list {
-	width: fit-content;
 }
