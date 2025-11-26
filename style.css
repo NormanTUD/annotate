@@ -246,3 +246,8 @@ a:hover {
 #list ul {
 	counter-reset: li;
 }
+
+#col_right {
+	vertical-align: top;
+	text-align: end;
+}

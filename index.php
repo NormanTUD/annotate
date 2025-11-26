@@ -99,7 +99,7 @@
 					<a href="upload.php">Upload images</a> or check again later.
 				</div>
 			</td>
-			<td>
+			<td id="col_right">
 				Current tags:
 
 				<div id="list"></div>
