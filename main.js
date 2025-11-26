@@ -257,14 +257,14 @@ async function make_item_anno(elem, widgets={}) {
 			"body": annotation.body,
 			"id": annotation.id,
 			"source": annotation.target.source.replace(/.*\//, ""),
-			"full": JSON.stringify(annotation)
+			"full": JSON.stringify(annotation),
+			"used_model": used_model
 		};
 
 		$.ajax({
 			url: "submit.php",
 			type: "post",
 			data: data,
-			used_model: used_model,
 			success: async function (response) {
 				success("Create Anno: OK", response);
 				await load_dynamic_content();
