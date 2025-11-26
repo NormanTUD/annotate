@@ -546,6 +546,8 @@ async function predictImageWithModel() {
 		info("No AI model chosen");
 		return;
 	}
+	
+	used_model = $("#chosen_model").val();
 
 	start_ai_animation();
 
@@ -591,6 +593,8 @@ async function predictImageWithModel() {
 	}
 
 	stop_ai_animation();
+	
+	used_model = null;
 }
 
 async function getValidImageElement() {
