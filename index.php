@@ -100,8 +100,6 @@
 				</div>
 			</td>
 			<td id="col_right">
-				Current tags:
-
 				<div id="list"></div>
 			</td>
 		</tr>
