@@ -1,8 +1,13 @@
 <?php
 	include_once("functions.php");
 
+	$used_model = "";
+
 	if (!isset($_POST["source"])) die("No source given");
 	if (!isset($_POST["id"])) die("No ID given");
+	if (isset($_POST["used_model"])) {
+		$used_model = $_POST["used_model"];
+	}
 
 	$filename = urldecode(html_entity_decode($_POST["source"]));
 	$filename = preg_replace("/print_image.php.filename=/", "", $filename);
@@ -79,7 +84,8 @@
 			$w,
 			$h,
 			$json_to_store,
-			$annotarius_id
+			$annotarius_id,
+			$used_model
 		);
 
 		$saved_categories[] = htmlspecialchars($category_name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . " (anno-id: $anno_id)";
