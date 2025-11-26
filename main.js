@@ -264,6 +264,7 @@ async function make_item_anno(elem, widgets={}) {
 			url: "submit.php",
 			type: "post",
 			data: data,
+			used_model: used_model,
 			success: async function (response) {
 				success("Create Anno: OK", response);
 				await load_dynamic_content();
