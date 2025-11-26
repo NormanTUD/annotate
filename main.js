@@ -1355,7 +1355,7 @@ async function load_next_random_image(fn = false) {
 			ajax_url += "?like=" + encodeURIComponent(like);
 		}
 
-		show_spinner("Loading next image...");
+		log("Loading next image...");
 
 		try {
 			await $.ajax({
@@ -1379,7 +1379,7 @@ async function load_next_random_image(fn = false) {
 			}
 		}
 
-		hide_spinner();
+		log("Loaded next image");
 	}
 
 	await load_dynamic_content();
