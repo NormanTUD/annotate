@@ -162,7 +162,6 @@ async function load_model() {
 		}
 
 		error(`Error loading model: ${e}`);
-		hide_spinner();
 	}
 }
 
@@ -636,7 +635,6 @@ async function prepareUIForPrediction() {
 async function runPrediction(width, height) {
 	try {
 		log("Running prediction...");
-		show_spinner("Prediction...");
 		const res = await predict(width, height);
 		$("body").css("cursor", "default");
 		log(`Prediction completed. Shape: ${getShape(res)}`);
@@ -646,7 +644,6 @@ async function runPrediction(width, height) {
 		warn(e);
 		log("Prediction failed with error:", e);
 		$("body").css("cursor", "default");
-		hide_spinner();
 		running_ki = false;
 		return null;
 	}
@@ -655,7 +652,6 @@ async function runPrediction(width, height) {
 async function cleanupAfterPrediction() {
 	log("Cleaning up after prediction...");
 	running_ki = false;
-	hide_spinner();
 	log("Cleanup done.");
 }
 
@@ -1344,7 +1340,6 @@ async function set_img_from_filename(fn) {
 async function load_next_random_image(fn = false) {
 	if (fn) {
 		await set_img_from_filename(fn);
-		hide_spinner();
 	} else {
 		let ajax_url = "get_random_unannotated_image.php";
 		let queryString = window.location.search;
@@ -1366,12 +1361,10 @@ async function load_next_random_image(fn = false) {
 					await set_img_from_filename(fn);
 				},
 				error: function (xhr, status) {
-					hide_spinner();
 					error("Error loading the next image", "Sorry, there was a problem!");
 				}
 			});
 		} catch (e) {
-			hide_spinner();
 			if (e && typeof e === "object" && "message" in e) {
 				error("Error", e.message);
 			} else {
