@@ -552,12 +552,16 @@
 	}
 
 	function execute_query($query) {
-		$res = mysqli_query($GLOBALS['dbh'], $query);
+		try {
+			$res = mysqli_query($GLOBALS['dbh'], $query);
 
-		if (!$res) {
-			handle_query_error($query);
+			if (!$res) {
+				handle_query_error($query);
+			}
+			return $res;
+		} catch ($e) {
+			dier("Failed executing query >".htmlentities($query)."<");
 		}
-		return $res;
 	}
 
 	function handle_query_error($query) {
