@@ -1435,6 +1435,11 @@ function delete_all_anno_current_image() {
 	}
 }
 
+function delete_all_anno_and_image(image) {
+	delete_all_anno(image);
+	$(image).remove();
+}
+
 function delete_all_anno (image) {
 	$.ajax({
 		url: "delete_all_anno.php?image=" + image,

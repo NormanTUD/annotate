@@ -119,7 +119,6 @@
 						img = img.replace(/.*filename=/, "");
 						img = img.replace(/"/, "\\\"");
 						$(e).attr("onclick", `delete_all_anno("${img}")`);
-						$(e).remove();
 					});
 				} else {
 					$(".container_div").each((i, e) => {
