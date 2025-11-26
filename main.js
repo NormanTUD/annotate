@@ -1793,3 +1793,7 @@ function create_zoom_slider() {
 function start_annotation_watch() {
 	watch_svg('svg.a9s-annotationlayer', '#image');
 }
+
+function blur_chosen_model () {
+	$("#chosen_model").blur();
+}
