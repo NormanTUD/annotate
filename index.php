@@ -53,7 +53,7 @@
 								if(count($available_models) == 1) {
 									print "<span style='visibility: none'>";
 								}
-								print "AI-Model: <select class='disable_in_autonext' onchange='load_model_and_predict()' id='chosen_model'>";
+								print "Model: <select class='disable_in_autonext' onchange='load_model_and_predict()' id='chosen_model'>";
 								print "<option selected value='none'>None</option>";
 
 								$i = 0;
