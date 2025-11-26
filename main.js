@@ -532,9 +532,12 @@ function get_element() {
 }
 
 async function load_model_and_predict () {
+	blur_chosen_model();
+
 	await load_labels();
 
 	await predictImageWithModel();
+
 }
 
 async function predictImageWithModel() {
