@@ -1147,7 +1147,7 @@ async function create_selects_from_annotation(force = 0) {
 				if (!$.trim(box.html())) {
 					box.css({ width: 0 });
 					box.html(html);
-					box.animate({ width: "100%" }, 200);
+					box.animate({ width: "100%" }, 10);
 				} else {
 					box.html(html);
 				}
