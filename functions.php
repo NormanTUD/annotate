@@ -560,7 +560,7 @@
 			}
 			return $res;
 		} catch (\Exception $e) {
-			dier("Failed executing query >".htmlentities($query)."<");
+			dier("Failed executing query >".htmlentities(trim($query))."<");
 		}
 	}
 
