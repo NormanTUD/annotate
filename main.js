@@ -407,7 +407,8 @@ async function save_anno (annotation) {
 		"body": annotation.body,
 		"id": annotation.id,
 		"source": annotation.target.source.replace(/.*\//, ""),
-		"full": JSON.stringify(annotation)
+		"full": JSON.stringify(annotation),
+		"used_model": used_model
 	};
 
 	if(enable_debug) {
