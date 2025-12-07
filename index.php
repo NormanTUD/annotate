@@ -75,6 +75,10 @@
 
 						</p>
 						<div id="image_container" style="position: relative; display: inline-block; transform-origin: top left;">
+							<input type="range" id="rotate_slider" min="0" max="360" value="0" step="1">
+							<button id="save_rotated">Save Version</button>
+
+							<canvas id="annotate_canvas"></canvas>
 							<img id="image" />
 						</div>
 						<br>

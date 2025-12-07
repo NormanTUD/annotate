@@ -1805,3 +1805,96 @@ function start_annotation_watch() {
 function blur_chosen_model () {
 	$("#chosen_model").blur();
 }
+
+function autorotate() {
+	var img = document.getElementById("image")
+	var canvas = document.getElementById("annotate_canvas")
+	var ctx = canvas.getContext("2d")
+	var slider = document.getElementById("rotate_slider")
+
+	function resize_canvas_to_image() {
+		canvas.width = img.naturalWidth
+		canvas.height = img.naturalHeight
+	}
+
+	function render_rotated(angle_deg) {
+		var rad = angle_deg * Math.PI / 180
+		var w = canvas.width
+		var h = canvas.height
+
+		ctx.clearRect(0, 0, w, h)
+		ctx.save()
+		ctx.translate(w / 2, h / 2)
+		ctx.rotate(rad)
+		ctx.drawImage(img, -w / 2, -h / 2)
+		ctx.restore()
+	}
+
+	img.onload = function () {
+		resize_canvas_to_image()
+		render_rotated(0)
+	}
+
+	slider.oninput = function () {
+		render_rotated(this.value)
+	}
+}
+
+function autoalign() {
+	document.getElementById("auto_align").onclick = function () {
+		var src = cv.imread(canvas)
+		var gray = new cv.Mat()
+		cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY)
+
+		var edges = new cv.Mat()
+		cv.Canny(gray, edges, 50, 150)
+
+		var lines = new cv.Mat()
+		cv.HoughLines(edges, lines, 1, Math.PI / 180, 150)
+
+		if (lines.rows > 0) {
+			var theta = lines.data32F[1]
+			var angle = (theta - Math.PI / 2) * 180 / Math.PI
+			slider.value = angle
+			render_rotated(angle)
+		}
+
+		src.delete(); gray.delete(); edges.delete(); lines.delete()
+	}
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+
+	var img = document.getElementById("image")
+	var canvas = document.getElementById("annotate_canvas")
+	var ctx = canvas.getContext("2d")
+	var slider = document.getElementById("rotate_slider")
+
+	function resize_canvas_to_image() {
+		canvas.width = img.naturalWidth
+		canvas.height = img.naturalHeight
+	}
+
+	function render_rotated(angle_deg) {
+		var rad = angle_deg * Math.PI / 180
+		var w = canvas.width
+		var h = canvas.height
+
+		ctx.clearRect(0, 0, w, h)
+		ctx.save()
+		ctx.translate(w / 2, h / 2)
+		ctx.rotate(rad)
+		ctx.drawImage(img, -w / 2, -h / 2)
+		ctx.restore()
+	}
+
+	img.onload = function () {
+		resize_canvas_to_image()
+		render_rotated(0)
+	}
+
+	slider.oninput = function () {
+		render_rotated(this.value)
+	}
+
+})

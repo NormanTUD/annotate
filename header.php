@@ -16,6 +16,8 @@ include_once("functions.php");
 	<script src="js_tests.js"></script>
 	<script src='libs/tf.js'></script>
 	<script src='libs/tf-backend-wasm.min.js'></script>
+	<button id="auto_align">Auto Align</button>
+	<script src="https://docs.opencv.org/4.x/opencv.js"></script>
 	<script>
 		var labels = [];
 		const imgsz = <?php print $GLOBALS["imgsz"]; ?>;
