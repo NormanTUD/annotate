@@ -1812,11 +1812,6 @@ function blur_chosen_model () {
 }
 
 async function create_rotation_slider() {
-	    // -----------------------------------------------------------------
-	    // 🛠️ KORREKTUR: Alte Toolbar und Canvas entfernen.
-	    // Dies stellt sicher, dass beim Laden eines neuen Bildes
-	    // die Logik komplett neu initialisiert wird.
-	    // -----------------------------------------------------------------
 	    const oldToolbar = document.getElementById('rotation_toolbar');
 	    if (oldToolbar) oldToolbar.remove();
 
@@ -1884,10 +1879,6 @@ async function create_rotation_slider() {
 	    // Originalbild für Canvas
 	    let orig_img = new Image();
 
-	// ⭐ FIX: Muss die UNROTIERTE Originalversion vom Server laden.
-	// Wir verwenden 'rotation=0' als Parameter, um das Backend (print_image.php)
-	// anzuweisen, die gespeicherte Rotation zu ignorieren. 
-	// Wir fügen einen Cache-Buster '_' hinzu, um sicherzustellen, dass das Bild neu geladen wird.
 	const unrotated_url = `print_image.php?filename=${encodeURIComponent(fn)}&rotation=0&_=${Date.now()}`;
 	    orig_img.src = unrotated_url;
 
@@ -1916,10 +1907,6 @@ async function create_rotation_slider() {
 		        ctx.restore();
 		    }
 
-	    // ------------------------------
-	    // Lade aktuellen Rotationwert vom Server
-	    // ------------------------------
-	    // 🛠️ ABSOLUTE Logik: Der Slider-Wert ist der absolute Winkel
 	    let current_rotation = 0;
 	    try {
 		        const res = await fetch(`get_image_rotation.php?filename=${encodeURIComponent(fn)}`);
@@ -1952,14 +1939,12 @@ async function create_rotation_slider() {
 		        try {
 			            await fetch(`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`);
 
-			            // WICHTIG: Die aktuelle Rotation muss aktualisiert werden, damit
-			            // der Slider beim nächsten 'load_next_image' den korrekten Startwert hat.
 			            current_rotation = rot;
 
 			            await set_img_from_filename(fn, true, true); // Original neu laden
 			            canvas.style.display = 'none';
 			            img.style.display = 'block';
-			        } catch (e) {
+		        } catch (e) {
 				            console.warn("Rotation save failed", e);
 				        }
 		    }
