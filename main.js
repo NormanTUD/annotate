@@ -1812,6 +1812,11 @@ function blur_chosen_model () {
 }
 
 async function create_rotation_slider() {
+	    // -----------------------------------------------------------------
+	    // 🛠️ KORREKTUR: Alte Toolbar und Canvas entfernen.
+	    // Dies stellt sicher, dass beim Laden eines neuen Bildes
+	    // die Logik komplett neu initialisiert wird.
+	    // -----------------------------------------------------------------
 	    const oldToolbar = document.getElementById('rotation_toolbar');
 	    if (oldToolbar) oldToolbar.remove();
 
@@ -1880,9 +1885,10 @@ async function create_rotation_slider() {
 	    let orig_img = new Image();
 
 	// ⭐ FIX: Muss die UNROTIERTE Originalversion vom Server laden.
-	// Wir nehmen an, dass 'print_image.php' mit '&unrotated=1' die
-	// gespeicherte Rotation ignoriert und das Bild im 0°-Zustand liefert.
-	const unrotated_url = `print_image.php?filename=${encodeURIComponent(fn)}&unrotated=1`;
+	// Wir verwenden 'rotation=0' als Parameter, um das Backend (print_image.php)
+	// anzuweisen, die gespeicherte Rotation zu ignorieren. 
+	// Wir fügen einen Cache-Buster '_' hinzu, um sicherzustellen, dass das Bild neu geladen wird.
+	const unrotated_url = `print_image.php?filename=${encodeURIComponent(fn)}&rotation=0&_=${Date.now()}`;
 	    orig_img.src = unrotated_url;
 
 	    await new Promise(res => { orig_img.onload = res; });
