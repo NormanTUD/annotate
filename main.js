@@ -1261,7 +1261,9 @@ async function load_dynamic_content () {
 		}
 	});
 
-	create_rotation_slider();
+	if($("#rotation_slider").length == 0) {
+		create_rotation_slider();
+	}
 }
 
 function getNewURL(url, param, paramVal){
@@ -1921,6 +1923,8 @@ async function create_rotation_slider() {
 		const j = await res.json();
 		if (j.ok) {
 			current_rotation = parseInt(j.rotation);
+			console.debug(`Setting current_rotation to ${current_rotation}`)
+			console.trace();
 			rotation_input.value = current_rotation;
 			val.textContent = current_rotation + "°";
 			renderRotation(current_rotation);
