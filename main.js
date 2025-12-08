@@ -1324,7 +1324,11 @@ function fade_image_transition(fn) {
 	});
 }
 
-async function set_img_from_filename(fn, no_reset_zoom = false, reload = false) {
+async function set_img_from_filename(fn, no_reset_zoom = false, reload = false, no_remove_rotation_toolbar = false) {
+	if(!no_remove_rotation_toolbar) {
+		$("#rotation_toolbar").remove();
+	}
+
 	if(!no_reset_zoom) {
 		reset_zoom();
 	}
@@ -1924,7 +1928,6 @@ async function create_rotation_slider() {
 		if (j.ok) {
 			current_rotation = parseInt(j.rotation);
 			console.debug(`Setting current_rotation to ${current_rotation}`)
-			console.trace();
 			rotation_input.value = current_rotation;
 			val.textContent = current_rotation + "°";
 			renderRotation(current_rotation);
@@ -1961,7 +1964,7 @@ async function create_rotation_slider() {
 
 			current_rotation = result.rotation;
 
-			await set_img_from_filename(fn, true, true);
+			await set_img_from_filename(fn, true, true, true);
 
 			canvas.style.display = "none";
 			img.style.display    = "block";
