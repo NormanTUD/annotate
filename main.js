@@ -1304,7 +1304,7 @@ function fade_image_transition(fn) {
 			setTimeout(resolve, 200);
 		});
 
-		img.prop("src", "print_image.php?filename=" + encodeURIComponent(fn));
+		img.prop("src", "print_image.php?filename=" + encodeURIComponent(fn) + "&_=" + new Date().getTime());
 	});
 }
 
