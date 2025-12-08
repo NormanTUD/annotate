@@ -11,6 +11,7 @@
 
 	$filename = urldecode(html_entity_decode($_POST["source"]));
 	$filename = preg_replace("/print_image.php.filename=/", "", $filename);
+	$filename = preg_replace("/&_=.*/", "", $filename);
 
 	$image_id = get_or_create_image_id("", $filename);
 	if (!$image_id) die("Could not get image id for $filename");

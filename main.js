@@ -1207,6 +1207,10 @@ async function load_page() {
 
 	await load_dynamic_content();
 
+	await make_image_annotatable();
+}
+
+async function make_image_annotatable() {
 	await make_item_anno($("#image")[0], [
 		{
 			widget: 'TAG',
