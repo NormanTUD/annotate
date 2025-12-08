@@ -1940,18 +1940,18 @@ async function create_rotation_slider() {
 		    });
 
 	    async function saveRotation(rot) {
-		        try {
-			            await fetch(`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`);
+	        try {
+	            await fetch(`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`);
 
-			            current_rotation = rot;
+	            current_rotation = rot;
 
-			            await set_img_from_filename(fn, true, true); // Original neu laden
-			            canvas.style.display = 'none';
-			            img.style.display = 'block';
-		        } catch (e) {
-				            console.warn("Rotation save failed", e);
-				        }
-		    }
+	            await set_img_from_filename(fn, true, true); // Original neu laden
+	            canvas.style.display = 'none';
+	            img.style.display = 'block';
+	        } catch (e) {
+	            console.warn("Rotation save failed", e);
+	        }
+	    }
 
 	    rotation_input.addEventListener('change', (ev) => {
 		        const rot = parseInt(ev.target.value, 10);
