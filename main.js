@@ -1929,6 +1929,7 @@ async function create_rotation_slider() {
 	});
 
 	async function save_rotation(rot) {
+		show_spinner("Saving rotated image");
 		let url = `save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`;
 
 		try {
@@ -1951,6 +1952,8 @@ async function create_rotation_slider() {
 		} catch (e) {
 			error(`✖ Rotation failed: ${e.message}`);
 		}
+
+		hide_spinner();
 	}
 
 	rotation_input.addEventListener('change', (ev) => {
