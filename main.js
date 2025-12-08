@@ -1205,8 +1205,6 @@ async function load_page() {
 
 	create_zoom_slider();
 
-	create_rotation_slider();
-
 	await load_dynamic_content();
 
 	await make_item_anno($("#image")[0], [
@@ -1248,6 +1246,8 @@ async function load_dynamic_content () {
 			error("Error loading the current list", "Sorry, there was a problem!");
 		}
 	});
+
+	create_rotation_slider();
 }
 
 function getNewURL(url, param, paramVal){
