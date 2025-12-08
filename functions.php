@@ -998,6 +998,55 @@
 		}
 	}
 
+	function api_set_rotation($fn, $rotation) {
+		$out = [
+			"ok" => false,
+			"error" => null,
+			"filename" => null,
+			"rotation" => null
+		];
+
+		try {
+			$out["filename"] = $fn;
+			$out["rotation"] = $rotation;
+
+			if (!$fn || !$rotation && $rotation !== "0") {
+				$out["error"] = "missing_parameter";
+				return json_encode($out);
+			}
+
+			if (!is_numeric($rotation) || $rotation < 0 || $rotation > 360) {
+				$out["error"] = "invalid_rotation";
+				return json_encode($out);
+			}
+
+			if (preg_match("/\.\./", $fn) || !preg_match("/\.jpg$/i", $fn)) {
+				$out["error"] = "invalid_filename";
+				return json_encode($out);
+			}
+
+			set_rotation_for_image($fn, $rotation);
+
+			$out["ok"] = true;
+			$out["rotation"] = intval($rotation);
+
+		} catch (Throwable $e) {
+			$out["error"] = "exception";
+			$out["exception"] = $e->getMessage();
+		}
+
+		return json_encode($out);
+	}
+
+	function set_rotation_for_image ($fn, $rotation) {
+		if (!preg_match("/\.\./", $fn) && preg_match("/\.jpg$/i", $fn) && is_numeric($rotation) && $rotation >= 0 && $rotation <= 360) {
+			rquery(
+				"update image set rotation = ".intval($rotation)." where filename = ".esc($fn)
+			);
+			print "Rotation set to ".intval($rotation);
+		}
+	}
+
 	function get_base_url () {
 		if(!$_SERVER["REQUEST_SCHEME"]) {
 			die("REQUEST_SCHEME not in request");
