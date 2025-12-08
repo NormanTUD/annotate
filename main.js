@@ -1920,7 +1920,7 @@ async function create_rotation_slider() {
 		const res = await fetch(`get_image_rotation.php?filename=${encodeURIComponent(fn)}`);
 		const j = await res.json();
 		if (j.ok) {
-			current_rotation = parseInt(j.rotation, 10);
+			current_rotation = parseInt(j.rotation);
 			rotation_input.value = current_rotation;
 			val.textContent = current_rotation + "°";
 			renderRotation(current_rotation);
@@ -1934,13 +1934,13 @@ async function create_rotation_slider() {
 	rotation_input.addEventListener('input', (ev) => {
 		remove_current_annos(fn);
 
-		const rot = parseInt(ev.target.value, 10);
+		const rot = parseInt(ev.target.value);
 		val.textContent = rot + "°";
 
 		canvas.style.display = 'block';
 		img.style.display = 'none';
 
-		renderRotation(rot); // Rotiert den ABSOLUTEN Wert vom Slider
+		renderRotation(rot);
 	});
 
 	async function save_rotation(rot) {
@@ -1974,7 +1974,7 @@ async function create_rotation_slider() {
 	rotation_input.addEventListener('change', (ev) => {
 		remove_current_annos(fn);
 
-		const rot = parseInt(ev.target.value, 10);
+		const rot = parseInt(ev.target.value);
 		if (save_timeout) clearTimeout(save_timeout);
 		save_timeout = setTimeout(() => save_rotation(rot), 150);
 	});
