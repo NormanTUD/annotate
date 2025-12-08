@@ -1266,18 +1266,48 @@
 		return $unique_filename;
 	}
 
-	function print_image($fn) {
-		$query = "select image_content from image_data where filename = ".esc($fn);
+	function print_image($fn, $override_rotation = null) {
+		$query = "
+			SELECT d.image_content, i.rotation
+			FROM image_data d
+			LEFT JOIN image i ON i.filename = d.filename
+			WHERE d.filename = ".esc($fn)."
+			LIMIT 1
+		";
 
 		$res = rquery($query);
 
-		while ($row = mysqli_fetch_row($res)) {
-			header('Content-Type: image/jpeg');
-			print $row[0];
+		if (!($row = mysqli_fetch_row($res))) {
+			print "Image <b>".htmlentities($fn)."</b> not found";
 			exit(0);
 		}
 
-		print "Image <b>".htmlentities($fn)."</b> not found";
+		$img_blob = $row[0];
+		$db_rotation = $row[1];
+
+		$rotation = ($override_rotation !== null) ? $override_rotation : $db_rotation;
+
+		if (empty($rotation) || intval($rotation) === 0) {
+			header('Content-Type: image/jpeg');
+			print $img_blob;
+			exit(0);
+		}
+
+		$src = imagecreatefromstring($img_blob);
+		if (!$src) {
+			header('Content-Type: image/jpeg');
+			print $img_blob;
+			exit(0);
+		}
+
+		$bg = imagecolorallocate($src, 200, 200, 200);
+		$rotated = imagerotate($src, -intval($rotation), $bg);
+
+		header('Content-Type: image/jpeg');
+		imagejpeg($rotated, null, 95);
+
+		imagedestroy($src);
+		imagedestroy($rotated);
 		exit(0);
 	}
 
