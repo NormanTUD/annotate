@@ -1812,6 +1812,15 @@ function blur_chosen_model () {
 }
 
 async function create_rotation_slider() {
+    // Wenn ein neues Bild geladen wird, muss die alte Toolbar und der Canvas entfernt werden,
+    // um die Rotation-Logik neu zu initialisieren und das korrekte Bild zu laden.
+    const oldToolbar = document.getElementById('rotation_toolbar');
+    if (oldToolbar) oldToolbar.remove();
+
+    const oldCanvas = document.getElementById('rotation_canvas');
+    if (oldCanvas) oldCanvas.remove();
+
+    // Vermeidet Doppel-Einfügung, falls die Entfernung fehlschlägt (als zusätzliche Sicherheit)
 	if (document.getElementById('rotation_toolbar')) return;
 
 	const container = document.getElementById('image_container');
@@ -1859,7 +1868,7 @@ async function create_rotation_slider() {
 
 	container.parentNode.insertBefore(toolbar, container);
 
-	// Originalbild
+	// Originalbild (im DOM)
 	const img = document.getElementById('image');
 
 	// Canvas für Live Rotation
@@ -1869,10 +1878,11 @@ async function create_rotation_slider() {
 	container.appendChild(canvas);
 	const ctx = canvas.getContext('2d');
 
+	// Aktualisierung der orig_img Quelle
 	let orig_img = new Image();
-	orig_img.src = img.src;
+	orig_img.src = img.src; // WICHTIG: Nutzt den aktuellen src des #image Elements
 
-	await new Promise(res => { orig_img.onload = res; });
+	await new Promise(res => { orig_img.onload = res; }); // Wartet, bis das Bild geladen ist
 
 	function renderRotation(deg) {
 		const rad = deg * Math.PI / 180;
@@ -1929,7 +1939,11 @@ async function create_rotation_slider() {
 	async function saveRotation(rot) {
 		try {
 			await fetch(`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`);
-			await set_img_from_filename(fn, true, true); // Original neu laden
+			// Nach dem Speichern das Originalbild neu laden, damit es mit der Rotation
+			// vom Server (vermutlich über CSS/Transform) angezeigt wird.
+			await set_img_from_filename(fn, true, true);
+
+			// Canvas wieder verstecken und Originalbild anzeigen
 			canvas.style.display = 'none';
 			img.style.display = 'block';
 		} catch (e) {
