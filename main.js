@@ -1205,6 +1205,8 @@ async function load_page() {
 
 	create_zoom_slider();
 
+	create_rotation_slider();
+
 	await load_dynamic_content();
 
 	await make_item_anno($("#image")[0], [
@@ -1804,4 +1806,106 @@ function start_annotation_watch() {
 
 function blur_chosen_model () {
 	$("#chosen_model").blur();
+}
+
+async function create_rotation_slider() {
+	if (document.getElementById('rotation_toolbar')) return;
+
+	const container = document.getElementById('image_container');
+	if (!container) return;
+
+	const params = new URLSearchParams(window.location.search);
+	const fn = params.get("edit");
+	if (!fn) return;
+
+	const toolbar = document.createElement('div');
+	toolbar.id = 'rotation_toolbar';
+	toolbar.style.display = 'flex';
+	toolbar.style.alignItems = 'center';
+	toolbar.style.gap = '8px';
+	toolbar.style.marginBottom = '6px';
+	toolbar.style.userSelect = 'none';
+
+	const label = document.createElement('span');
+	label.textContent = 'Rotation:';
+	label.style.fontSize = '0.9em';
+	toolbar.appendChild(label);
+
+	const rotation_input = document.createElement('input');
+	rotation_input.type = 'range';
+	rotation_input.min = 0;
+	rotation_input.max = 360;
+	rotation_input.step = 1;
+	rotation_input.value = 0;
+	rotation_input.id = 'rotation_slider';
+	rotation_input.style.cursor = 'pointer';
+	rotation_input.style.width = '260px';
+	toolbar.appendChild(rotation_input);
+
+	const val = document.createElement('span');
+	val.id = 'rotation_value';
+	val.textContent = '0°';
+	val.style.minWidth = '60px';
+	val.style.fontFamily = 'monospace';
+	toolbar.appendChild(val);
+
+	const resetBtn = document.createElement('button');
+	resetBtn.type = 'button';
+	resetBtn.textContent = 'Reset';
+	resetBtn.style.marginLeft = '6px';
+	toolbar.appendChild(resetBtn);
+
+	container.parentNode.insertBefore(toolbar, container);
+
+	/* -----------------------------
+	   LOAD INITIAL ROTATION
+	------------------------------ */
+
+	try {
+		const r = await fetch(`get_image_rotation.php?filename=${encodeURIComponent(fn)}`);
+		const j = await r.json();
+		if (j.ok) {
+			rotation_input.value = j.rotation;
+			val.textContent = j.rotation + "°";
+		}
+	} catch (e) {
+		console.warn("Rotation load failed", e);
+	}
+
+	/* -----------------------------
+	   LIVE UPDATE + AUTO SAVE
+	------------------------------ */
+
+	let save_timeout = null;
+
+	rotation_input.addEventListener('input', (ev) => {
+		const rot = parseInt(ev.target.value, 10);
+		val.textContent = rot + "°";
+
+		if (save_timeout) clearTimeout(save_timeout);
+
+		save_timeout = setTimeout(async () => {
+			try {
+				await fetch(
+					`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`
+				);
+				await set_img_from_filename(fn);
+			} catch (e) {
+				console.warn("Rotation save failed", e);
+			}
+		}, 150);
+	});
+
+	resetBtn.onclick = async function () {
+		rotation_input.value = 0;
+		val.textContent = "0°";
+		try {
+			await fetch(
+				`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=0`
+			);
+			await set_img_from_filename(fn);
+		} catch (e) {
+			console.warn("Rotation reset failed", e);
+		}
+	};
 }
