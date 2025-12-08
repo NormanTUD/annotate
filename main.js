@@ -1819,9 +1819,6 @@ async function create_rotation_slider() {
 	const oldToolbar = document.getElementById('rotation_toolbar');
 	if (oldToolbar) oldToolbar.remove();
 
-	const oldCanvas = document.getElementById('rotation_canvas');
-	if (oldCanvas) oldCanvas.remove();
-
 	if (document.getElementById('rotation_toolbar')) return;
 
 	const container = document.getElementById('image_container');
@@ -1871,10 +1868,7 @@ async function create_rotation_slider() {
 
 	const img = document.getElementById('image');
 
-	const canvas = document.createElement('canvas');
-	canvas.id = 'rotation_canvas';
-	canvas.style.display = 'none'; // initial versteckt
-	container.appendChild(canvas);
+	const canvas = document.getElementById('rotation_canvas');
 	const ctx = canvas.getContext('2d');
 
 	// Originalbild für Canvas

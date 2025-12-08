@@ -75,6 +75,7 @@
 
 						</p>
 						<div id="image_container" style="position: relative; display: inline-block; transform-origin: top left;">
+							<canvas id="rotation_canvas" style="display:none;"></canvas>
 							<img id="image" />
 						</div>
 						<br>
