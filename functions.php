@@ -1046,6 +1046,47 @@
 		}
 	}
 
+	function api_get_rotation($fn) {
+		$out = [
+			"ok" => false,
+			"error" => null,
+			"filename" => $fn,
+			"rotation" => null
+		];
+
+		try {
+			if (!$fn) {
+				$out["error"] = "missing_filename";
+				return json_encode($out);
+			}
+
+			if (preg_match("/\.\./", $fn) || !preg_match("/\.jpg$/i", $fn)) {
+				$out["error"] = "invalid_filename";
+				return json_encode($out);
+			}
+
+			$res = rquery(
+				"select rotation from image where filename = ".esc($fn)." limit 1"
+			);
+
+			if (!$res || mysqli_num_rows($res) === 0) {
+				$out["error"] = "image_not_found";
+				return json_encode($out);
+			}
+
+			$row = mysqli_fetch_row($res);
+
+			$out["ok"] = true;
+			$out["rotation"] = intval($row[0]);
+
+		} catch (Throwable $e) {
+			$out["error"] = "exception";
+			$out["exception"] = $e->getMessage();
+		}
+
+		return json_encode($out);
+	}
+
 	function get_base_url () {
 		if(!$_SERVER["REQUEST_SCHEME"]) {
 			die("REQUEST_SCHEME not in request");
