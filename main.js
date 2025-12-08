@@ -1816,128 +1816,123 @@ function blur_chosen_model () {
 }
 
 async function create_rotation_slider() {
-	    const oldToolbar = document.getElementById('rotation_toolbar');
-	    if (oldToolbar) oldToolbar.remove();
+	const oldToolbar = document.getElementById('rotation_toolbar');
+	if (oldToolbar) oldToolbar.remove();
 
-	    const oldCanvas = document.getElementById('rotation_canvas');
-	    if (oldCanvas) oldCanvas.remove();
+	const oldCanvas = document.getElementById('rotation_canvas');
+	if (oldCanvas) oldCanvas.remove();
 
-	    // Wenn die Elemente aus irgendeinem Grund noch existieren (Fallback)
-	    if (document.getElementById('rotation_toolbar')) return;
+	if (document.getElementById('rotation_toolbar')) return;
 
-	    const container = document.getElementById('image_container');
-	    if (!container) return;
+	const container = document.getElementById('image_container');
+	if (!container) return;
 
-	    const params = new URLSearchParams(window.location.search);
-	    const fn = params.get("edit");
-	    if (!fn) return;
+	const params = new URLSearchParams(window.location.search);
+	const fn = params.get("edit");
+	if (!fn) return;
 
-	    const toolbar = document.createElement('div');
-	    toolbar.id = 'rotation_toolbar';
-	    toolbar.style.display = 'flex';
-	    toolbar.style.alignItems = 'center';
-	    toolbar.style.gap = '8px';
-	    toolbar.style.marginBottom = '6px';
-	    toolbar.style.userSelect = 'none';
+	const toolbar = document.createElement('div');
+	toolbar.id = 'rotation_toolbar';
+	toolbar.style.display = 'flex';
+	toolbar.style.alignItems = 'center';
+	toolbar.style.gap = '8px';
+	toolbar.style.marginBottom = '6px';
+	toolbar.style.userSelect = 'none';
 
-	    const label = document.createElement('span');
-	    label.textContent = 'Rotation:';
-	    label.style.fontSize = '0.9em';
-	    toolbar.appendChild(label);
+	const label = document.createElement('span');
+	label.textContent = 'Rotation:';
+	label.style.fontSize = '0.9em';
+	toolbar.appendChild(label);
 
-	    const rotation_input = document.createElement('input');
-	    rotation_input.type = 'range';
-	    rotation_input.min = 0;
-	    rotation_input.max = 360;
-	    rotation_input.step = 1;
-	    rotation_input.id = 'rotation_slider';
-	    rotation_input.style.cursor = 'pointer';
-	    rotation_input.style.width = '260px';
-	    toolbar.appendChild(rotation_input);
+	const rotation_input = document.createElement('input');
+	rotation_input.type = 'range';
+	rotation_input.min = 0;
+	rotation_input.max = 360;
+	rotation_input.step = 1;
+	rotation_input.id = 'rotation_slider';
+	rotation_input.style.cursor = 'pointer';
+	rotation_input.style.width = '260px';
+	toolbar.appendChild(rotation_input);
 
-	    const val = document.createElement('span');
-	    val.id = 'rotation_value';
-	    val.textContent = '0°';
-	    val.style.minWidth = '60px';
-	    val.style.fontFamily = 'monospace';
-	    toolbar.appendChild(val);
+	const val = document.createElement('span');
+	val.id = 'rotation_value';
+	val.textContent = '0°';
+	val.style.minWidth = '60px';
+	val.style.fontFamily = 'monospace';
+	toolbar.appendChild(val);
 
-	    const resetBtn = document.createElement('button');
-	    resetBtn.type = 'button';
-	    resetBtn.textContent = 'Reset';
-	    resetBtn.style.marginLeft = '6px';
-	    toolbar.appendChild(resetBtn);
+	const resetBtn = document.createElement('button');
+	resetBtn.type = 'button';
+	resetBtn.textContent = 'Reset';
+	resetBtn.style.marginLeft = '6px';
+	toolbar.appendChild(resetBtn);
 
-	    container.parentNode.insertBefore(toolbar, container);
+	container.parentNode.insertBefore(toolbar, container);
 
-	    // Originalbild (im DOM)
-	    const img = document.getElementById('image');
+	const img = document.getElementById('image');
 
-	    // Canvas für Live Rotation
-	    const canvas = document.createElement('canvas');
-	    canvas.id = 'rotation_canvas';
-	    canvas.style.display = 'none'; // initial versteckt
-	    container.appendChild(canvas);
-	    const ctx = canvas.getContext('2d');
+	const canvas = document.createElement('canvas');
+	canvas.id = 'rotation_canvas';
+	canvas.style.display = 'none'; // initial versteckt
+	container.appendChild(canvas);
+	const ctx = canvas.getContext('2d');
 
-	    // Originalbild für Canvas
-	    let orig_img = new Image();
+	// Originalbild für Canvas
+	let orig_img = new Image();
 
 	const unrotated_url = `print_image.php?filename=${encodeURIComponent(fn)}&rotation=0&_=${Date.now()}`;
-	    orig_img.src = unrotated_url;
+	orig_img.src = unrotated_url;
 
-	    await new Promise(res => { orig_img.onload = res; });
+	await new Promise(res => { orig_img.onload = res; });
 
-	    function renderRotation(deg) {
-		        const rad = deg * Math.PI / 180;
-		        const w = orig_img.width;
-		        const h = orig_img.height;
+	function renderRotation(deg) {
+		const rad = deg * Math.PI / 180;
+		const w = orig_img.width;
+		const h = orig_img.height;
 
-		        const sin = Math.abs(Math.sin(rad));
-		        const cos = Math.abs(Math.cos(rad));
-		        const newW = Math.ceil(w * cos + h * sin);
-		        const newH = Math.ceil(w * sin + h * cos);
+		const sin = Math.abs(Math.sin(rad));
+		const cos = Math.abs(Math.cos(rad));
+		const newW = Math.ceil(w * cos + h * sin);
+		const newH = Math.ceil(w * sin + h * cos);
 
-		        canvas.width = newW;
-		        canvas.height = newH;
+		canvas.width = newW;
+		canvas.height = newH;
 
-		        ctx.fillStyle = 'rgb(200,200,200)'; // grauer Hintergrund
-		        ctx.fillRect(0, 0, newW, newH);
+		ctx.fillStyle = 'rgb(200,200,200)'; // grauer Hintergrund
+		ctx.fillRect(0, 0, newW, newH);
 
-		        ctx.save();
-		        ctx.translate(newW / 2, newH / 2);
-		        ctx.rotate(rad);
-		        ctx.drawImage(orig_img, -w / 2, -h / 2);
-		        ctx.restore();
-		    }
+		ctx.save();
+		ctx.translate(newW / 2, newH / 2);
+		ctx.rotate(rad);
+		ctx.drawImage(orig_img, -w / 2, -h / 2);
+		ctx.restore();
+	}
 
-	    let current_rotation = 0;
-	    try {
-		        const res = await fetch(`get_image_rotation.php?filename=${encodeURIComponent(fn)}`);
-		        const j = await res.json();
-		        if (j.ok) {
-			            current_rotation = parseInt(j.rotation, 10);
-			            rotation_input.value = current_rotation;
-			            val.textContent = current_rotation + "°";
-			            // Initiales Rendern der gespeicherten Rotation
-			            renderRotation(current_rotation);
-			        }
-		    } catch (e) {
-			        console.warn("Could not load initial rotation", e);
-			    }
+	let current_rotation = 0;
+	try {
+		const res = await fetch(`get_image_rotation.php?filename=${encodeURIComponent(fn)}`);
+		const j = await res.json();
+		if (j.ok) {
+			current_rotation = parseInt(j.rotation, 10);
+			rotation_input.value = current_rotation;
+			val.textContent = current_rotation + "°";
+			renderRotation(current_rotation);
+		}
+	} catch (e) {
+		console.warn("Could not load initial rotation", e);
+	}
 
-	    let save_timeout = null;
+	let save_timeout = null;
 
-	    rotation_input.addEventListener('input', (ev) => {
-		        const rot = parseInt(ev.target.value, 10);
-		        val.textContent = rot + "°";
+	rotation_input.addEventListener('input', (ev) => {
+		const rot = parseInt(ev.target.value, 10);
+		val.textContent = rot + "°";
 
-		        // Live-Vorschau aktivieren
-		        canvas.style.display = 'block';
-		        img.style.display = 'none';
+		canvas.style.display = 'block';
+		img.style.display = 'none';
 
-		        renderRotation(rot); // Rotiert den ABSOLUTEN Wert vom Slider
-		    });
+		renderRotation(rot); // Rotiert den ABSOLUTEN Wert vom Slider
+	});
 
 	async function save_rotation(rot) {
 		let url = `save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`;
@@ -1964,19 +1959,18 @@ async function create_rotation_slider() {
 		}
 	}
 
-	    rotation_input.addEventListener('change', (ev) => {
-		        const rot = parseInt(ev.target.value, 10);
-		        if (save_timeout) clearTimeout(save_timeout);
-		        save_timeout = setTimeout(() => save_rotation(rot), 150);
-		    });
+	rotation_input.addEventListener('change', (ev) => {
+		const rot = parseInt(ev.target.value, 10);
+		if (save_timeout) clearTimeout(save_timeout);
+		save_timeout = setTimeout(() => save_rotation(rot), 150);
+	});
 
-	    resetBtn.onclick = async function () {
-		        // Setzt ABSOLUT auf 0
-		        rotation_input.value = 0;
-		        val.textContent = "0°";
-		        renderRotation(0);
-		        canvas.style.display = 'block';
-		        img.style.display = 'none';
-		        save_rotation(0);
-		    };
+	resetBtn.onclick = async function () {
+		rotation_input.value = 0;
+		val.textContent = "0°";
+		renderRotation(0);
+		canvas.style.display = 'block';
+		img.style.display = 'none';
+		save_rotation(0);
+	};
 }
