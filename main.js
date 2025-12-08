@@ -1812,15 +1812,18 @@ function blur_chosen_model () {
 }
 
 async function create_rotation_slider() {
-    // Wenn ein neues Bild geladen wird, muss die alte Toolbar und der Canvas entfernt werden,
-    // um die Rotation-Logik neu zu initialisieren und das korrekte Bild zu laden.
+    // -----------------------------------------------------------------
+    // 🛠️ KORREKTUR: Alte Toolbar und Canvas entfernen.
+    // Dies stellt sicher, dass beim Laden eines neuen Bildes
+    // die Logik komplett neu initialisiert wird.
+    // -----------------------------------------------------------------
     const oldToolbar = document.getElementById('rotation_toolbar');
     if (oldToolbar) oldToolbar.remove();
 
     const oldCanvas = document.getElementById('rotation_canvas');
     if (oldCanvas) oldCanvas.remove();
 
-    // Vermeidet Doppel-Einfügung, falls die Entfernung fehlschlägt (als zusätzliche Sicherheit)
+    // Wenn die Elemente aus irgendeinem Grund noch existieren (Fallback)
 	if (document.getElementById('rotation_toolbar')) return;
 
 	const container = document.getElementById('image_container');
@@ -1878,11 +1881,12 @@ async function create_rotation_slider() {
 	container.appendChild(canvas);
 	const ctx = canvas.getContext('2d');
 
-	// Aktualisierung der orig_img Quelle
+	// Originalbild für Canvas
 	let orig_img = new Image();
-	orig_img.src = img.src; // WICHTIG: Nutzt den aktuellen src des #image Elements
+    // 🛠️ KORREKTUR: Lädt das Bild vom aktuellen src des DOM-Elements.
+	orig_img.src = img.src;
 
-	await new Promise(res => { orig_img.onload = res; }); // Wartet, bis das Bild geladen ist
+	await new Promise(res => { orig_img.onload = res; });
 
 	function renderRotation(deg) {
 		const rad = deg * Math.PI / 180;
@@ -1910,6 +1914,7 @@ async function create_rotation_slider() {
 	// ------------------------------
 	// Lade aktuellen Rotationwert vom Server
 	// ------------------------------
+    // 🛠️ ABSOLUTE Logik: Der Slider-Wert ist der absolute Winkel
 	let current_rotation = 0;
 	try {
 		const res = await fetch(`get_image_rotation.php?filename=${encodeURIComponent(fn)}`);
@@ -1918,6 +1923,8 @@ async function create_rotation_slider() {
 			current_rotation = parseInt(j.rotation, 10);
 			rotation_input.value = current_rotation;
 			val.textContent = current_rotation + "°";
+            // Initiales Rendern der gespeicherten Rotation
+            renderRotation(current_rotation);
 		}
 	} catch (e) {
 		console.warn("Could not load initial rotation", e);
@@ -1933,17 +1940,18 @@ async function create_rotation_slider() {
 		canvas.style.display = 'block';
 		img.style.display = 'none';
 
-		renderRotation(rot);
+		renderRotation(rot); // Rotiert den ABSOLUTEN Wert vom Slider
 	});
 
 	async function saveRotation(rot) {
 		try {
 			await fetch(`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`);
-			// Nach dem Speichern das Originalbild neu laden, damit es mit der Rotation
-			// vom Server (vermutlich über CSS/Transform) angezeigt wird.
-			await set_img_from_filename(fn, true, true);
 
-			// Canvas wieder verstecken und Originalbild anzeigen
+            // WICHTIG: Die aktuelle Rotation muss aktualisiert werden, damit
+            // der Slider beim nächsten 'load_next_image' den korrekten Startwert hat.
+            current_rotation = rot;
+
+			await set_img_from_filename(fn, true, true); // Original neu laden
 			canvas.style.display = 'none';
 			img.style.display = 'block';
 		} catch (e) {
@@ -1958,6 +1966,7 @@ async function create_rotation_slider() {
 	});
 
 	resetBtn.onclick = async function () {
+        // Setzt ABSOLUT auf 0
 		rotation_input.value = 0;
 		val.textContent = "0°";
 		renderRotation(0);
