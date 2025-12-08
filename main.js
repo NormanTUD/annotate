@@ -523,7 +523,7 @@ function hide_spinner() {
 	}
 }
 
-function get_element() {
+function get_image_element() {
 	const $image = $('#image');
 
 	if($image.length) {
@@ -599,7 +599,7 @@ async function predictImageWithModel() {
 }
 
 async function getValidImageElement() {
-	const elem = get_element();
+	const elem = get_image_element();
 	if (!elem) {
 		warn("#image not found");
 		log("No image element found, aborting.");
@@ -1308,8 +1308,10 @@ function fade_image_transition(fn) {
 	});
 }
 
-async function set_img_from_filename(fn) {
-	reset_zoom();
+async function set_img_from_filename(fn, no_reset_zoom = false, reload = false) {
+	if(!no_reset_zoom) {
+		reset_zoom();
+	}
 
 	set_image_url(fn);
 
@@ -1326,7 +1328,8 @@ async function set_img_from_filename(fn) {
 	if ($("#ki_detected_names").html() !== "") {
 		$("#ki_detected_names").html("");
 	}
-	if ($("#filename").html() !== fn) {
+
+	if ($("#filename").html() !== fn || reload) {
 		$("#filename").html(fn);
 	}
 
@@ -1878,7 +1881,7 @@ async function create_rotation_slider() {
 
 	let save_timeout = null;
 
-	rotation_input.addEventListener('input', (ev) => {
+	rotation_input.addEventListener('change', (ev) => {
 		const rot = parseInt(ev.target.value, 10);
 		val.textContent = rot + "°";
 
@@ -1889,7 +1892,7 @@ async function create_rotation_slider() {
 				await fetch(
 					`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`
 				);
-				await set_img_from_filename(fn);
+				await set_img_from_filename(fn, true, true);
 			} catch (e) {
 				console.warn("Rotation save failed", e);
 			}
@@ -1903,7 +1906,7 @@ async function create_rotation_slider() {
 			await fetch(
 				`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=0`
 			);
-			await set_img_from_filename(fn);
+			await set_img_from_filename(fn, true, true);
 		} catch (e) {
 			console.warn("Rotation reset failed", e);
 		}
