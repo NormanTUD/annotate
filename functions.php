@@ -1043,7 +1043,6 @@
 			rquery(
 				"update image set rotation = ".intval($rotation)." where filename = ".esc($fn)
 			);
-			print "Rotation set to ".intval($rotation);
 		}
 	}
 
