@@ -914,8 +914,7 @@
 		rquery($query);
 	}
 
-	function flag_all_annos_as_deleted ($image_id) {
-		#$query = "update annotation set deleted = 1 where image_id = ".esc($image_id);
+	function delete_all_annos_from_image ($image_id) {
 		$query = "delete from annotation where image_id = ".esc($image_id);
 
 		rquery($query);

@@ -1197,6 +1197,16 @@ async function set_all_current_annotations_from_to (from, name) {
 	await load_dynamic_content();
 }
 
+function remove_current_annos (fn) {
+	const current_annos = anno.getAnnotations();
+
+	for (var i = 0; i < current_annos.length; i++) {
+		anno.removeAnnotation(current_annos[i])
+	}
+
+	delete_all_anno(fn);
+}
+
 async function load_page() {
 	if(typeof(anno) == "object") {
 		await anno.destroy();
@@ -1437,11 +1447,14 @@ function delete_all_anno_new_tab (image) {
 
 function delete_all_anno_current_image() {
 	var image_filename = $("#image").attr("src").replace(/.*filename=/, "");
+
 	if(image_filename) {
 		delete_all_anno(image_filename);
 	} else {
 		error("delete_all_anno:", "Cannot find image");
 	}
+
+	load_dynamic_content();	
 }
 
 function delete_all_anno_and_image(image) {
@@ -1919,6 +1932,8 @@ async function create_rotation_slider() {
 	let save_timeout = null;
 
 	rotation_input.addEventListener('input', (ev) => {
+		remove_current_annos(fn);
+
 		const rot = parseInt(ev.target.value, 10);
 		val.textContent = rot + "°";
 
@@ -1957,6 +1972,8 @@ async function create_rotation_slider() {
 	}
 
 	rotation_input.addEventListener('change', (ev) => {
+		remove_current_annos(fn);
+
 		const rot = parseInt(ev.target.value, 10);
 		if (save_timeout) clearTimeout(save_timeout);
 		save_timeout = setTimeout(() => save_rotation(rot), 150);
