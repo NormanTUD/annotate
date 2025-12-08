@@ -1388,7 +1388,7 @@
 			exit(0);
 		}
 
-		$bg = imagecolorallocate($src, 200, 200, 200);
+		$bg = imagecolorallocate($src, 128, 128, 128);
 		$rotated = imagerotate($src, -intval($rotation), $bg);
 
 		header('Content-Type: image/jpeg');

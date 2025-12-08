@@ -1911,7 +1911,7 @@ async function create_rotation_slider() {
 		canvas.width = newW;
 		canvas.height = newH;
 
-		ctx.fillStyle = 'rgb(200,200,200)'; // grauer Hintergrund
+		ctx.fillStyle = 'rgb(128,128,128)'; // grauer Hintergrund
 		ctx.fillRect(0, 0, newW, newH);
 
 		ctx.save();
