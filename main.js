@@ -1215,6 +1215,10 @@ async function load_page() {
 
 	create_zoom_slider();
 
+	if($("#rotation_slider").length == 0) {
+		create_rotation_slider();
+	}
+
 	await load_dynamic_content();
 
 	await make_image_annotatable();
@@ -1260,10 +1264,6 @@ async function load_dynamic_content () {
 			error("Error loading the current list", "Sorry, there was a problem!");
 		}
 	});
-
-	if($("#rotation_slider").length == 0) {
-		create_rotation_slider();
-	}
 }
 
 function getNewURL(url, param, paramVal){
