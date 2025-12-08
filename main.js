@@ -1839,7 +1839,6 @@ async function create_rotation_slider() {
 	rotation_input.min = 0;
 	rotation_input.max = 360;
 	rotation_input.step = 1;
-	rotation_input.value = 0;
 	rotation_input.id = 'rotation_slider';
 	rotation_input.style.cursor = 'pointer';
 	rotation_input.style.width = '260px';
@@ -1860,55 +1859,96 @@ async function create_rotation_slider() {
 
 	container.parentNode.insertBefore(toolbar, container);
 
-	/* -----------------------------
-	   LOAD INITIAL ROTATION
-	------------------------------ */
+	// Originalbild
+	const img = document.getElementById('image');
 
-	try {
-		const r = await fetch(`get_image_rotation.php?filename=${encodeURIComponent(fn)}`);
-		const j = await r.json();
-		if (j.ok) {
-			rotation_input.value = j.rotation;
-			val.textContent = j.rotation + "°";
-		}
-	} catch (e) {
-		console.warn("Rotation load failed", e);
+	// Canvas für Live Rotation
+	const canvas = document.createElement('canvas');
+	canvas.id = 'rotation_canvas';
+	canvas.style.display = 'none'; // initial versteckt
+	container.appendChild(canvas);
+	const ctx = canvas.getContext('2d');
+
+	let orig_img = new Image();
+	orig_img.src = img.src;
+
+	await new Promise(res => { orig_img.onload = res; });
+
+	function renderRotation(deg) {
+		const rad = deg * Math.PI / 180;
+		const w = orig_img.width;
+		const h = orig_img.height;
+
+		const sin = Math.abs(Math.sin(rad));
+		const cos = Math.abs(Math.cos(rad));
+		const newW = Math.ceil(w * cos + h * sin);
+		const newH = Math.ceil(w * sin + h * cos);
+
+		canvas.width = newW;
+		canvas.height = newH;
+
+		ctx.fillStyle = 'rgb(200,200,200)'; // grauer Hintergrund
+		ctx.fillRect(0, 0, newW, newH);
+
+		ctx.save();
+		ctx.translate(newW / 2, newH / 2);
+		ctx.rotate(rad);
+		ctx.drawImage(orig_img, -w / 2, -h / 2);
+		ctx.restore();
 	}
 
-	/* -----------------------------
-	   LIVE UPDATE + AUTO SAVE
-	------------------------------ */
+	// ------------------------------
+	// Lade aktuellen Rotationwert vom Server
+	// ------------------------------
+	let current_rotation = 0;
+	try {
+		const res = await fetch(`get_image_rotation.php?filename=${encodeURIComponent(fn)}`);
+		const j = await res.json();
+		if (j.ok) {
+			current_rotation = parseInt(j.rotation, 10);
+			rotation_input.value = current_rotation;
+			val.textContent = current_rotation + "°";
+		}
+	} catch (e) {
+		console.warn("Could not load initial rotation", e);
+	}
 
 	let save_timeout = null;
 
-	rotation_input.addEventListener('change', (ev) => {
+	rotation_input.addEventListener('input', (ev) => {
 		const rot = parseInt(ev.target.value, 10);
 		val.textContent = rot + "°";
 
-		if (save_timeout) clearTimeout(save_timeout);
+		// Live-Vorschau aktivieren
+		canvas.style.display = 'block';
+		img.style.display = 'none';
 
-		save_timeout = setTimeout(async () => {
-			try {
-				await fetch(
-					`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`
-				);
-				await set_img_from_filename(fn, true, true);
-			} catch (e) {
-				console.warn("Rotation save failed", e);
-			}
-		}, 150);
+		renderRotation(rot);
+	});
+
+	async function saveRotation(rot) {
+		try {
+			await fetch(`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`);
+			await set_img_from_filename(fn, true, true); // Original neu laden
+			canvas.style.display = 'none';
+			img.style.display = 'block';
+		} catch (e) {
+			console.warn("Rotation save failed", e);
+		}
+	}
+
+	rotation_input.addEventListener('change', (ev) => {
+		const rot = parseInt(ev.target.value, 10);
+		if (save_timeout) clearTimeout(save_timeout);
+		save_timeout = setTimeout(() => saveRotation(rot), 150);
 	});
 
 	resetBtn.onclick = async function () {
 		rotation_input.value = 0;
 		val.textContent = "0°";
-		try {
-			await fetch(
-				`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=0`
-			);
-			await set_img_from_filename(fn, true, true);
-		} catch (e) {
-			console.warn("Rotation reset failed", e);
-		}
+		renderRotation(0);
+		canvas.style.display = 'block';
+		img.style.display = 'none';
+		saveRotation(0);
 	};
 }
