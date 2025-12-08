@@ -1939,24 +1939,35 @@ async function create_rotation_slider() {
 		        renderRotation(rot); // Rotiert den ABSOLUTEN Wert vom Slider
 		    });
 
-	    async function saveRotation(rot) {
-	        try {
-	            await fetch(`save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`);
+	async function save_rotation(rot) {
+		let url = `save_image_rotation.php?filename=${encodeURIComponent(fn)}&rotation=${rot}`;
 
-	            current_rotation = rot;
+		try {
+			let response = await fetch(url, { cache: "no-store" });
+			let result   = await response.json();
 
-	            await set_img_from_filename(fn, true, true); // Original neu laden
-	            canvas.style.display = 'none';
-	            img.style.display = 'block';
-	        } catch (e) {
-	            console.warn("Rotation save failed", e);
-	        }
-	    }
+			if (!response.ok || !result.ok) {
+				throw new Error(result.error || "Unknown server error");
+			}
+
+			current_rotation = result.rotation;
+
+			await set_img_from_filename(fn, true, true);
+
+			canvas.style.display = "none";
+			img.style.display    = "block";
+
+			info(`✔ Rotation saved for ${fn}: ${result.rotation}°`);
+
+		} catch (e) {
+			error(`✖ Rotation failed: ${e.message}`);
+		}
+	}
 
 	    rotation_input.addEventListener('change', (ev) => {
 		        const rot = parseInt(ev.target.value, 10);
 		        if (save_timeout) clearTimeout(save_timeout);
-		        save_timeout = setTimeout(() => saveRotation(rot), 150);
+		        save_timeout = setTimeout(() => save_rotation(rot), 150);
 		    });
 
 	    resetBtn.onclick = async function () {
@@ -1966,6 +1977,6 @@ async function create_rotation_slider() {
 		        renderRotation(0);
 		        canvas.style.display = 'block';
 		        img.style.display = 'none';
-		        saveRotation(0);
+		        save_rotation(0);
 		    };
 }
