@@ -3,6 +3,8 @@
 var zoom_input;
 var zoom_factor = 1.0;
 var used_model = null;
+var disable_spinner = false;
+var debouncing_time_rotation = 150;
 
 (function () {
 	var style = document.createElement('style');
@@ -462,6 +464,10 @@ function getUrlParam(name, default_value) {
 }
 
 function show_spinner(msg) {
+	if(disable_spinner) {
+		return;
+	}
+
 	let overlay = document.getElementById("ai_spinner_overlay");
 	if (!overlay) {
 		overlay = document.createElement("div");
@@ -1885,6 +1891,20 @@ async function create_rotation_slider() {
 
 	container.parentNode.insertBefore(toolbar, container);
 
+	const btnMinus = document.createElement('button');
+	btnMinus.type = 'button';
+	btnMinus.textContent = '−1';
+	btnMinus.style.marginLeft = '6px';
+	btnMinus.onclick = decrement_rotation;
+	toolbar.appendChild(btnMinus);
+
+	const btnPlus = document.createElement('button');
+	btnPlus.type = 'button';
+	btnPlus.textContent = '+1';
+	btnPlus.style.marginLeft = '6px';
+	btnPlus.onclick = increment_rotation;
+	toolbar.appendChild(btnPlus);
+
 	const img = document.getElementById('image');
 
 	const canvas = document.getElementById('rotation_canvas');
@@ -1983,7 +2003,7 @@ async function create_rotation_slider() {
 
 		const rot = parseInt(ev.target.value);
 		if (save_timeout) clearTimeout(save_timeout);
-		save_timeout = setTimeout(() => save_rotation(rot), 150);
+		save_timeout = setTimeout(() => save_rotation(rot), debouncing_time_rotation);
 	});
 
 	resetBtn.onclick = async function () {
@@ -1994,4 +2014,35 @@ async function create_rotation_slider() {
 		img.style.display = 'none';
 		save_rotation(0);
 	};
+}
+
+async function add_or_subtract_rotation(_val = 1) {
+	let slider = document.getElementById("rotation_slider");
+	let current = parseInt(slider.value) || 0;
+
+	let min = parseInt(slider.min);
+	let max = parseInt(slider.max);
+
+	let next = current + _val;
+
+	if (next < min) next = min;
+	if (next > max) next = max;
+
+	slider.value = next;
+
+	disable_spinner = true;
+	slider.dispatchEvent(new Event("input", { bubbles: true }));
+	slider.dispatchEvent(new Event("change", { bubbles: true }));
+
+	await sleep(debouncing_time_rotation + 100);
+
+	disable_spinner = false;
+}
+
+async function increment_rotation() {
+	await add_or_subtract_rotation(1);
+}
+
+async function decrement_rotation () {
+	await add_or_subtract_rotation(-1);
 }
