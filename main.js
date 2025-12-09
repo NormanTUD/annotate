@@ -1203,7 +1203,7 @@ async function set_all_current_annotations_from_to (from, name) {
 	await load_dynamic_content();
 }
 
-function remove_current_annos (fn) {
+async function remove_current_annos (fn) {
 	const current_annos = anno.getAnnotations();
 
 	for (var i = 0; i < current_annos.length; i++) {
@@ -1959,7 +1959,7 @@ async function create_rotation_slider() {
 	let save_timeout = null;
 
 	rotation_input.addEventListener('input', (ev) => {
-		remove_current_annos(fn);
+		remove_current_annos(fn); // await not possible here
 
 		const rot = parseInt(ev.target.value);
 		val.textContent = rot + "°";
@@ -1999,7 +1999,7 @@ async function create_rotation_slider() {
 	}
 
 	rotation_input.addEventListener('change', (ev) => {
-		remove_current_annos(fn);
+		remove_current_annos(fn); // await not possible here
 
 		const rot = parseInt(ev.target.value);
 		if (save_timeout) clearTimeout(save_timeout);
