@@ -1893,14 +1893,14 @@ async function create_rotation_slider() {
 
 	const btnMinus = document.createElement('button');
 	btnMinus.type = 'button';
-	btnMinus.textContent = '−1';
+	btnMinus.textContent = '−1°';
 	btnMinus.style.marginLeft = '6px';
 	btnMinus.onclick = decrement_rotation;
 	toolbar.appendChild(btnMinus);
 
 	const btnPlus = document.createElement('button');
 	btnPlus.type = 'button';
-	btnPlus.textContent = '+1';
+	btnPlus.textContent = '+1°';
 	btnPlus.style.marginLeft = '6px';
 	btnPlus.onclick = increment_rotation;
 	toolbar.appendChild(btnPlus);
