@@ -5,7 +5,7 @@
 		$train_visualization = '#!/bin/bash
 
 # ══════════════════════════════════════════════════════════
-#  YOLOv8 Training Dashboard
+#  YOLO Training Dashboard
 #  Usage:  ./plot_results.sh [path/to/results.csv] [--save]
 # ══════════════════════════════════════════════════════════
 
@@ -87,7 +87,7 @@ raw_alpha = 0.3
 
 # ── Multiplot 3×2 ──
 set multiplot layout 3,2 \
-    title "YOLOv8 Training Dashboard    (${max_epoch} Epochs)\n" font "Arial,15" \
+    title "YOLO Training Dashboard    (${max_epoch} Epochs)\n" font "Arial,15" \
     margins 0.07, 0.96, 0.05, 0.93 \
     spacing 0.10, 0.10
 
@@ -233,7 +233,7 @@ rm -f "$GNUPLOT_SCRIPT"
 # ── Terminal Summary ──
 echo ""
 echo "══════════════════════════════════════════════"
-echo "  📊 YOLOv8 Training Summary"
+echo "  📊 YOLO Training Summary"
 echo "══════════════════════════════════════════════"
 echo "  Source:          $FILE"
 echo "  Total Epochs:    $max_epoch"
