@@ -4,24 +4,48 @@
 	function write_visualization_script($tmp_dir) {
 		$train_visualization = '#!/bin/bash
 
+# ══════════════════════════════════════════════════════════
+#  YOLOv8 Training Dashboard
+#  Usage:  ./plot_results.sh [path/to/results.csv] [--save]
+# ══════════════════════════════════════════════════════════
+
 FILE=${1:-runs/detect/train/results.csv}
+SAVE_PNG=false
+for arg in "$@"; do
+  [[ "$arg" == "--save" ]] && SAVE_PNG=true
+done
 
+# ── Validate file ──
 if [ ! -f "$FILE" ]; then
-  echo "Error: File $FILE not found."
-  echo "Provide a CSV path as first argument or place it at runs/detect/train/results.csv"
+  echo "❌ Error: File \'$FILE\' not found."
+  echo "   Provide a CSV path as first argument or place it at runs/detect/train/results.csv"
   exit 1
 fi
 
+# ── Validate gnuplot ──
 if ! command -v gnuplot >/dev/null 2>&1; then
-  echo "Error: gnuplot is not installed."
-  echo "Install with: sudo apt update && sudo apt install gnuplot"
+  echo "❌ Error: gnuplot is not installed."
+  echo "   Install with: sudo apt update && sudo apt install gnuplot"
   exit 1
 fi
 
-# Extract max epoch number (skip header)
-max_epoch=$(tail -n +2 "$FILE" | cut -d\',\' -f1 | sort -nr | head -n1)
+# ── Extract stats ──
+max_epoch=$(tail -n +2 "$FILE" | awk -F\',\' \'{print $1}\' | tr -d \' \' | sort -nr | head -n1)
 
-# Determine xtic step size dynamically
+# Best epoch by mAP50-95 (column 9)
+best_line=$(tail -n +2 "$FILE" | awk -F\',\' \'{gsub(/ /,"",$1); gsub(/ /,"",$9); print $1, $9}\' | sort -t\' \' -k2 -g -r | head -n1)
+best_epoch=$(echo "$best_line" | awk \'{print $1}\')
+best_map=$(echo "$best_line" | awk \'{printf "%.4f", $2}\')
+
+# Final values (last row)
+final_precision=$(tail -1 "$FILE" | awk -F\',\' \'{gsub(/ /,"",$6); printf "%.4f", $6}\')
+final_recall=$(tail -1 "$FILE" | awk -F\',\' \'{gsub(/ /,"",$7); printf "%.4f", $7}\')
+final_map50=$(tail -1 "$FILE" | awk -F\',\' \'{gsub(/ /,"",$8); printf "%.4f", $8}\')
+final_map5095=$(tail -1 "$FILE" | awk -F\',\' \'{gsub(/ /,"",$9); printf "%.4f", $9}\')
+final_box_train=$(tail -1 "$FILE" | awk -F\',\' \'{gsub(/ /,"",$3); printf "%.4f", $3}\')
+final_box_val=$(tail -1 "$FILE" | awk -F\',\' \'{gsub(/ /,"",$10); printf "%.4f", $10}\')
+
+# ── Dynamic x-tick step ──
 if (( max_epoch <= 20 )); then
   step=2
 elif (( max_epoch <= 50 )); then
@@ -34,70 +58,116 @@ else
   step=50
 fi
 
+# ── Terminal selection ──
+if $SAVE_PNG; then
+  OUT_FILE="${FILE%.csv}_dashboard.png"
+  TERM_LINE="set terminal pngcairo size 1800,1200 font \'Arial,11\' enhanced"
+  OUT_LINE="set output \'${OUT_FILE}\'"
+else
+  TERM_LINE="set terminal qt size 1800,1200 font \'Arial,11\' enhanced"
+  OUT_LINE=""
+fi
+
+# ── Build gnuplot script ──
 GNUPLOT_SCRIPT=$(mktemp)
 
 cat > "$GNUPLOT_SCRIPT" <<EOF
+${TERM_LINE}
+${OUT_LINE}
+
 set datafile separator ","
 
-# ── Terminal: large window so subplots aren\'t cramped ──
-set terminal qt size 1400,900 font "Arial,11" enhanced
-
-# ── Global defaults ──
-set style line 100 lt 1 lc rgb "#e0e0e0" lw 0.5   # light grid lines
+# ── Global styling ──
+set style line 100 lt 1 lc rgb "#e0e0e0" lw 0.5
 set grid ls 100
-set border 3                                         # bottom + left only
+set border 3
 set tics nomirror
-
-# ── Multiplot 2×2 with generous spacing ──
-set multiplot layout 2,2 \
-    title "Training Results Overview\n" font "Arial,14" \
-    margins 0.08, 0.95, 0.08, 0.92 \
-    spacing 0.12, 0.14
-
 line_width = 2
+raw_alpha = 0.3
 
-# ── Common axis settings ──
-set xtics $step rotate by -45 font ",9"
+# ── Multiplot 3×2 ──
+set multiplot layout 3,2 \
+    title "YOLOv8 Training Dashboard    (${max_epoch} Epochs)\n" font "Arial,15" \
+    margins 0.07, 0.96, 0.05, 0.93 \
+    spacing 0.10, 0.10
+
+set xtics ${step} rotate by -35 font ",9"
 set ytics font ",9"
-set xlabel "Epoch" font ",10" offset 0,0
+set xlabel "Epoch" font ",10"
 set key top right inside font ",9" samplen 2 spacing 1.1 box lw 0.4
 
-# ─────────────────────────────────────────────
-# Plot 1: Training Losses
-# ─────────────────────────────────────────────
+# ═════════════════════════════════════════════
+# Plot 1: Training Losses  (smooth + raw)
+# ═════════════════════════════════════════════
 set title "Training Losses  (↓ lower is better)" font ",12"
 set ylabel "Loss" font ",10"
 plot \
-  "$FILE" using 1:3 with lines lw line_width lc rgb "#e74c3c" title " box", \
-  "$FILE" using 1:4 with lines lw line_width lc rgb "#e67e22" title " cls", \
-  "$FILE" using 1:5 with lines lw line_width lc rgb "#f1c40f" title " dfl"
+  "$FILE" using 1:3 with lines lw 0.6 lc rgb "#e74c3c80" notitle, \
+  "$FILE" using 1:3 smooth bezier lw line_width lc rgb "#e74c3c" title " box", \
+  "$FILE" using 1:4 with lines lw 0.6 lc rgb "#e67e2280" notitle, \
+  "$FILE" using 1:4 smooth bezier lw line_width lc rgb "#e67e22" title " cls", \
+  "$FILE" using 1:5 with lines lw 0.6 lc rgb "#f1c40f80" notitle, \
+  "$FILE" using 1:5 smooth bezier lw line_width lc rgb "#f1c40f" title " dfl"
 
-# ─────────────────────────────────────────────
-# Plot 2: Validation Losses
-# ─────────────────────────────────────────────
+# ═════════════════════════════════════════════
+# Plot 2: Validation Losses  (smooth + raw)
+# ═════════════════════════════════════════════
 set title "Validation Losses  (↓ lower is better)" font ",12"
 set ylabel "Loss" font ",10"
 plot \
-  "$FILE" using 1:10 with lines lw line_width lc rgb "#2980b9" title " box", \
-  "$FILE" using 1:11 with lines lw line_width lc rgb "#1abc9c" title " cls", \
-  "$FILE" using 1:12 with lines lw line_width lc rgb "#27ae60" title " dfl"
+  "$FILE" using 1:10 with lines lw 0.6 lc rgb "#2980b980" notitle, \
+  "$FILE" using 1:10 smooth bezier lw line_width lc rgb "#2980b9" title " box", \
+  "$FILE" using 1:11 with lines lw 0.6 lc rgb "#1abc9c80" notitle, \
+  "$FILE" using 1:11 smooth bezier lw line_width lc rgb "#1abc9c" title " cls", \
+  "$FILE" using 1:12 with lines lw 0.6 lc rgb "#27ae6080" notitle, \
+  "$FILE" using 1:12 smooth bezier lw line_width lc rgb "#27ae60" title " dfl"
 
-# ─────────────────────────────────────────────
-# Plot 3: Metrics
-# ─────────────────────────────────────────────
+# ═════════════════════════════════════════════
+# Plot 3: Overfitting Check  (Train vs Val)
+# ═════════════════════════════════════════════
+set title "Overfitting Check  (Train vs Val Loss)" font ",12"
+set ylabel "Loss" font ",10"
+set key top right inside font ",9" samplen 2 spacing 1.1 box lw 0.4
+plot \
+  "$FILE" using 1:3 with lines lw 0.6 lc rgb "#e74c3c60" notitle, \
+  "$FILE" using 1:3 smooth bezier lw line_width lc rgb "#e74c3c" title " train/box", \
+  "$FILE" using 1:10 with lines lw 0.6 lc rgb "#2980b960" notitle, \
+  "$FILE" using 1:10 smooth bezier lw line_width lc rgb "#2980b9" title " val/box", \
+  "$FILE" using 1:4 with lines lw 0.6 lc rgb "#e67e2260" notitle, \
+  "$FILE" using 1:4 smooth bezier lw line_width lc rgb "#e67e22" title " train/cls", \
+  "$FILE" using 1:11 with lines lw 0.6 lc rgb "#1abc9c60" notitle, \
+  "$FILE" using 1:11 smooth bezier lw line_width lc rgb "#1abc9c" title " val/cls"
+
+# ═════════════════════════════════════════════
+# Plot 4: Metrics  (with best-epoch marker)
+# ═════════════════════════════════════════════
 set title "Metrics  (↑ higher is better)" font ",12"
 set ylabel "Value" font ",10"
 set yrange [0:1]
+
+# Best epoch vertical line + label
+set arrow 1 from ${best_epoch}, graph 0 to ${best_epoch}, graph 1 nohead lw 1.5 dt 3 lc rgb "#e74c3c"
+set label 1 sprintf("★ Best Ep ${best_epoch}\nmAP50-95 = ${best_map}") \
+    at ${best_epoch}, graph 0.97 right font ",8" tc rgb "#e74c3c" offset -1,0
+
 plot \
-  "$FILE" using 1:6 with lines lw line_width lc rgb "#8e44ad" title " precision", \
-  "$FILE" using 1:7 with lines lw line_width lc rgb "#c0392b" title " recall", \
-  "$FILE" using 1:8 with lines lw line_width lc rgb "#2c3e50" title " mAP50", \
-  "$FILE" using 1:9 with lines lw line_width lc rgb "#16a085" dt 2 title " mAP50-95"
+  "$FILE" using 1:6 with lines lw 0.6 lc rgb "#8e44ad60" notitle, \
+  "$FILE" using 1:6 smooth bezier lw line_width lc rgb "#8e44ad" title " precision", \
+  "$FILE" using 1:7 with lines lw 0.6 lc rgb "#c0392b60" notitle, \
+  "$FILE" using 1:7 smooth bezier lw line_width lc rgb "#c0392b" title " recall", \
+  "$FILE" using 1:8 with lines lw 0.6 lc rgb "#2c3e5060" notitle, \
+  "$FILE" using 1:8 smooth bezier lw line_width lc rgb "#2c3e50" title " mAP50", \
+  "$FILE" using 1:9 with lines lw 0.6 lc rgb "#16a08560" notitle, \
+  "$FILE" using 1:9 smooth bezier lw line_width lc rgb "#16a085" title " mAP50-95"
+
+# Clean up arrow/label so they don\'t leak into other plots
+unset arrow 1
+unset label 1
 set yrange [*:*]
 
-# ─────────────────────────────────────────────
-# Plot 4: Learning Rates
-# ─────────────────────────────────────────────
+# ═════════════════════════════════════════════
+# Plot 5: Learning Rates
+# ═════════════════════════════════════════════
 set title "Learning Rates" font ",12"
 set ylabel "LR" font ",10"
 set format y "%.1e"
@@ -107,11 +177,84 @@ plot \
   "$FILE" using 1:15 with lines lw line_width lc rgb "#7f8c8d" title " pg2"
 set format y "%g"
 
+# ═════════════════════════════════════════════
+# Plot 6: Summary Stats Panel
+# ═════════════════════════════════════════════
+set title "Summary" font ",12"
+unset xlabel
+unset ylabel
+unset xtics
+unset ytics
+unset grid
+unset border
+set xrange [0:10]
+set yrange [0:10]
+
+set label 10 "{/Arial:Bold=13 Final Results (Epoch ${max_epoch})}" \
+    at 5, 9.2 center tc rgb "#2c3e50"
+
+set label 11 sprintf("Precision:       %s", "${final_precision}") \
+    at 2, 7.8 left font "Courier,11" tc rgb "#2c3e50"
+set label 12 sprintf("Recall:          %s", "${final_recall}") \
+    at 2, 7.0 left font "Courier,11" tc rgb "#2c3e50"
+set label 13 sprintf("mAP50:           %s", "${final_map50}") \
+    at 2, 6.2 left font "Courier,11" tc rgb "#2c3e50"
+set label 14 sprintf("mAP50-95:        %s", "${final_map5095}") \
+    at 2, 5.4 left font "Courier,11" tc rgb "#2c3e50"
+
+set label 20 "─────────────────────────" \
+    at 2, 4.4 left font "Courier,10" tc rgb "#bdc3c7"
+
+set label 15 "{/Arial:Bold=11 Best Epoch}" \
+    at 5, 3.4 center tc rgb "#e74c3c"
+set label 16 sprintf("Epoch:           %s", "${best_epoch}") \
+    at 2, 2.6 left font "Courier,11" tc rgb "#e74c3c"
+set label 17 sprintf("mAP50-95:        %s", "${best_map}") \
+    at 2, 1.8 left font "Courier,11" tc rgb "#e74c3c"
+
+set label 21 sprintf("Train box-loss:  %s", "${final_box_train}") \
+    at 6, 7.8 left font "Courier,11" tc rgb "#7f8c8d"
+set label 22 sprintf("Val   box-loss:  %s", "${final_box_val}") \
+    at 6, 7.0 left font "Courier,11" tc rgb "#7f8c8d"
+
+plot NaN notitle
+
+# Clean up summary labels
+unset label 10; unset label 11; unset label 12; unset label 13; unset label 14
+unset label 15; unset label 16; unset label 17; unset label 20; unset label 21; unset label 22
+
 unset multiplot
 EOF
 
+# ── Run gnuplot ──
 gnuplot -persist "$GNUPLOT_SCRIPT" 2>/dev/null
-rm "$GNUPLOT_SCRIPT"
+rm -f "$GNUPLOT_SCRIPT"
+
+# ── Terminal Summary ──
+echo ""
+echo "══════════════════════════════════════════════"
+echo "  📊 YOLOv8 Training Summary"
+echo "══════════════════════════════════════════════"
+echo "  Source:          $FILE"
+echo "  Total Epochs:    $max_epoch"
+echo "──────────────────────────────────────────────"
+echo "  Final Metrics (Epoch $max_epoch):"
+echo "    Precision:     $final_precision"
+echo "    Recall:        $final_recall"
+echo "    mAP50:         $final_map50"
+echo "    mAP50-95:      $final_map5095"
+echo "──────────────────────────────────────────────"
+echo "  ★ Best mAP50-95: $best_map  (Epoch $best_epoch)"
+echo "──────────────────────────────────────────────"
+echo "  Train box-loss:  $final_box_train"
+echo "  Val   box-loss:  $final_box_val"
+echo "══════════════════════════════════════════════"
+
+if $SAVE_PNG; then
+  echo ""
+  echo "  💾 Dashboard saved to: $OUT_FILE"
+  echo ""
+fi
 ';
 
 		file_put_contents("$tmp_dir/visualize", $train_visualization);
