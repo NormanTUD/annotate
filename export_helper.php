@@ -7,7 +7,7 @@
 FILE=${1:-runs/detect/train/results.csv}
 
 if [ ! -f "$FILE" ]; then
-  echo "Error: File \'$FILE\' not found."
+  echo "Error: File $FILE not found."
   echo "Provide a CSV path as first argument or place it at runs/detect/train/results.csv"
   exit 1
 fi
@@ -29,7 +29,7 @@ elif (( max_epoch <= 50 )); then
 elif (( max_epoch <= 100 )); then
   step=10
 elif (( max_epoch <= 300 )); then
-  step=20
+  step=25
 else
   step=50
 fi
@@ -38,52 +38,74 @@ GNUPLOT_SCRIPT=$(mktemp)
 
 cat > "$GNUPLOT_SCRIPT" <<EOF
 set datafile separator ","
-set multiplot layout 2,2 title "Training Results Overview" font "Arial,10"
 
-set xtics $step
-set grid ytics
-line_width = 1
+# ── Terminal: large window so subplots aren\'t cramped ──
+set terminal qt size 1400,900 font "Arial,11" enhanced
 
-# Plot 1: Training Losses (smaller = better)
-set title "Training Losses (smaller is better)" font ",11"
-set xlabel "Epoch" offset 0,-1
-set ylabel "Loss" offset -2,0
-set key outside right vertical samplen 1 spacing 1.2 font ",9"
-plot \\
-  "$FILE" using 1:3 with lines lw line_width lc rgb "red" title "train/box-loss", \\\\
-  "$FILE" using 1:4 with lines lw line_width lc rgb "orange" title "train/cls-loss", \\\\
-  "$FILE" using 1:5 with lines lw line_width lc rgb "gold" title "train/dfl-loss"
+# ── Global defaults ──
+set style line 100 lt 1 lc rgb "#e0e0e0" lw 0.5   # light grid lines
+set grid ls 100
+set border 3                                         # bottom + left only
+set tics nomirror
 
-# Plot 2: Validation Losses (smaller = better)
-set title "Validation Losses (smaller is better)" font ",11"
-set xlabel "Epoch" offset 0,-1
-set ylabel "Loss" offset -2,0
-set key outside right vertical samplen 1 spacing 1.2 font ",9"
-plot \\
-  "$FILE" using 1:10 with lines lw line_width lc rgb "blue" title "val/box-loss", \\\\
-  "$FILE" using 1:11 with lines lw line_width lc rgb "cyan" title "val/cls-loss", \\\\
-  "$FILE" using 1:12 with lines lw line_width lc rgb "green" title "val/dfl-loss"
+# ── Multiplot 2×2 with generous spacing ──
+set multiplot layout 2,2 \
+    title "Training Results Overview\n" font "Arial,14" \
+    margins 0.08, 0.95, 0.08, 0.92 \
+    spacing 0.12, 0.14
 
-# Plot 3: Metrics (larger = better)
-set title "Metrics (larger is better)" font ",11"
-set xlabel "Epoch" offset 0,-1
-set ylabel "Value" offset -2,0
-set key outside right vertical samplen 1 spacing 1.2 font ",9"
-plot \\
-  "$FILE" using 1:6 with lines lw line_width lc rgb "magenta" title "precision", \\\\
-  "$FILE" using 1:7 with lines lw line_width lc rgb "violet" title "recall", \\\\
-  "$FILE" using 1:8 with lines lw line_width lc rgb "purple" title "mAP50", \\\\
-  "$FILE" using 1:9 with lines lw line_width lc rgb "dark-violet" title "mAP50-95"
+line_width = 2
 
+# ── Common axis settings ──
+set xtics $step rotate by -45 font ",9"
+set ytics font ",9"
+set xlabel "Epoch" font ",10" offset 0,0
+set key top right inside font ",9" samplen 2 spacing 1.1 box lw 0.4
+
+# ─────────────────────────────────────────────
+# Plot 1: Training Losses
+# ─────────────────────────────────────────────
+set title "Training Losses  (↓ lower is better)" font ",12"
+set ylabel "Loss" font ",10"
+plot \
+  "$FILE" using 1:3 with lines lw line_width lc rgb "#e74c3c" title " box", \
+  "$FILE" using 1:4 with lines lw line_width lc rgb "#e67e22" title " cls", \
+  "$FILE" using 1:5 with lines lw line_width lc rgb "#f1c40f" title " dfl"
+
+# ─────────────────────────────────────────────
+# Plot 2: Validation Losses
+# ─────────────────────────────────────────────
+set title "Validation Losses  (↓ lower is better)" font ",12"
+set ylabel "Loss" font ",10"
+plot \
+  "$FILE" using 1:10 with lines lw line_width lc rgb "#2980b9" title " box", \
+  "$FILE" using 1:11 with lines lw line_width lc rgb "#1abc9c" title " cls", \
+  "$FILE" using 1:12 with lines lw line_width lc rgb "#27ae60" title " dfl"
+
+# ─────────────────────────────────────────────
+# Plot 3: Metrics
+# ─────────────────────────────────────────────
+set title "Metrics  (↑ higher is better)" font ",12"
+set ylabel "Value" font ",10"
+set yrange [0:1]
+plot \
+  "$FILE" using 1:6 with lines lw line_width lc rgb "#8e44ad" title " precision", \
+  "$FILE" using 1:7 with lines lw line_width lc rgb "#c0392b" title " recall", \
+  "$FILE" using 1:8 with lines lw line_width lc rgb "#2c3e50" title " mAP50", \
+  "$FILE" using 1:9 with lines lw line_width lc rgb "#16a085" dt 2 title " mAP50-95"
+set yrange [*:*]
+
+# ─────────────────────────────────────────────
 # Plot 4: Learning Rates
-set title "Learning Rates (pg0, pg1, pg2)" font ",11"
-set xlabel "Epoch" offset 0,-1
-set ylabel "LR" offset -2,0
-set key outside right vertical samplen 1 spacing 1.2 font ",9"
-plot \\
-  "$FILE" using 1:13 with lines lw line_width lc rgb "brown" title "lr/pg0", \\\\
-  "$FILE" using 1:14 with lines lw line_width lc rgb "dark-orange" title "lr/pg1", \\\\
-  "$FILE" using 1:15 with lines lw line_width lc rgb "dark-red" title "lr/pg2"
+# ─────────────────────────────────────────────
+set title "Learning Rates" font ",12"
+set ylabel "LR" font ",10"
+set format y "%.1e"
+plot \
+  "$FILE" using 1:13 with lines lw line_width lc rgb "#d35400" title " pg0", \
+  "$FILE" using 1:14 with lines lw line_width lc rgb "#c0392b" title " pg1", \
+  "$FILE" using 1:15 with lines lw line_width lc rgb "#7f8c8d" title " pg2"
+set format y "%g"
 
 unset multiplot
 EOF
