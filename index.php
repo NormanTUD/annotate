@@ -45,8 +45,6 @@
 					    Skip
 					</button>
 
-					<button class="disable_in_autonext" onClick="go_back()">← Back (B)</button>
-
 					<div id="content">
 						<p>
 							<button class="disable_in_autonext" id="next_img_button" onClick="load_next_random_image()">Next image</button>
