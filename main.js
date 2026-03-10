@@ -723,34 +723,47 @@ async function processModelOutput(res, modelWidth, modelHeight) {
     console.group("🔥 YOLO Post-Processing DEBUG: Finale Bereinigung");
     const startTime = performance.now();
 
-    const confThreshold = conf || 0.3;
-    const iouThreshold = 0.45;
+    const confThreshold = conf || 0.3; // Confidence threshold for predictions
+    const iouThreshold = 0.45; // Intersection-over-Union threshold for NMS
 
-    // *** 1. Rohdaten-Extraktion und Shape-Ermittlung ***
+    // *** 1. Raw Data Extraction and Shape Determination ***
     let rawData;
 
     if (Array.isArray(res) && Array.isArray(res[0]) && res[0].length < 200) {
-        if (Array.isArray(res[0][0])) { rawData = res[0].flat(); } else { rawData = res[0]; }
-    } else if (Array.isArray(res) && res.length > 20000) { rawData = res; }
-    else { console.error(`❌ Strukturfehler: Die Modellausgabe ('res') ist nicht das erwartete Array.`); console.groupEnd(); return { boxes: [], scores: [], classes: [] }; }
+        if (Array.isArray(res[0][0])) {
+            rawData = res[0].flat();
+        } else {
+            rawData = res[0];
+        }
+    } else if (Array.isArray(res) && res.length > 20000) {
+        rawData = res;
+    } else {
+        console.error(`❌ Strukturfehler: Die Modellausgabe ('res') ist nicht das erwartete Array.`);
+        console.groupEnd();
+        return { boxes: [], scores: [], classes: [] };
+    }
 
     const TOTAL_ELEMENTS = rawData.length;
 
+    // Dynamically calculate the number of classes from the labels array
+    const KNOWN_CLASSES_COUNT = labels.length; // Dynamically set based on the labels array
+    console.log(`ℹ️ Dynamically calculated number of classes: ${KNOWN_CLASSES_COUNT}`);
+
+    // Dynamically create the FEATURE_TO_CANDIDATES array
     const FEATURE_TO_CANDIDATES = [
         { F: 84, C: 8400, classes: 80, total: 705600 },
         { F: 61, C: 13125, classes: 57, total: 800625 },
-        { F: 25, C: 32025, classes: 21, total: 800625 }
+        { F: 25, C: 32025, classes: 21, total: 800625 },
+        { F: 79, C: 13125, classes: KNOWN_CLASSES_COUNT, total: 79 * 13125 } // Dynamically added
     ];
 
     let FINAL_FEATURES = 0;
-    let KNOWN_CLASSES_COUNT = 0;
     let FINAL_CANDIDATES = 0;
     let DYNAMIC_MATCH = false;
 
     for (const set of FEATURE_TO_CANDIDATES) {
         if (TOTAL_ELEMENTS === set.total) {
             FINAL_FEATURES = set.F;
-            KNOWN_CLASSES_COUNT = set.classes;
             FINAL_CANDIDATES = set.C;
             DYNAMIC_MATCH = true;
             break;
@@ -767,7 +780,7 @@ async function processModelOutput(res, modelWidth, modelHeight) {
     console.log(`✅ Shape: [Features: ${FINAL_FEATURES}, Kandidaten: ${FINAL_CANDIDATES}] (Total: ${TOTAL_ELEMENTS})`);
 
     // *************************************************************************************
-    // 2. TENSOR-ERSTELLUNG UND TRANSPOSE
+    // 2. Tensor Creation and Transpose
     // *************************************************************************************
 
     let predictionsTensor = tf.tensor(rawData, [FINAL_FEATURES, FINAL_CANDIDATES]).expandDims(0);
@@ -775,148 +788,57 @@ async function processModelOutput(res, modelWidth, modelHeight) {
     console.log(`1. Tensor transponiert. Shape: [${predictionsTensor.shape.join(', ')}]`);
 
     // *************************************************************************************
-    // 3. KORRIGIERTE AUFTEILUNG: [4 Box, C Klassen]
+    // 3. Corrected Splitting: [4 Box, C Classes]
     // *************************************************************************************
 
-    const [rawBoxes, scores] = tf.split(predictionsTensor, [4, KNOWN_CLASSES_COUNT], 2);
+    // Dynamically calculate the number of classes based on the tensor shape
+    const tensorShape = predictionsTensor.shape[2];
+    const numClasses = tensorShape - 4; // Subtract 4 for the bounding box coordinates
+
+    if (numClasses !== KNOWN_CLASSES_COUNT) {
+        console.warn(`⚠️ Mismatch between calculated classes (${KNOWN_CLASSES_COUNT}) and tensor shape (${numClasses}). Using ${numClasses}.`);
+    }
+
+    const [rawBoxes, scores] = tf.split(predictionsTensor, [4, numClasses], 2);
     const boxes = rawBoxes.squeeze();
     const scoresSqueezed = scores.squeeze();
     console.log(`2. Aufteilung: Boxen[${boxes.shape.join(', ')}], Scores[${scoresSqueezed.shape.join(', ')}]`);
 
-    // 4. Maximum Score und Klasse finden (Für die gesamte Rohliste)
-    const maxScores = scoresSqueezed.max(1);
-    const classes = scoresSqueezed.argMax(1);
-
     // *************************************************************************************
-    // 5. FILTERN NACH KONFIDENZ & NMS
+    // 4. Post-Processing: Decode Boxes and Apply NMS
     // *************************************************************************************
 
-    const maxScoresArray = await maxScores.array();
+    // Decode bounding boxes
+    const decodedBoxes = decodeYOLOBoxes(boxes, modelWidth, modelHeight);
 
-    let initialHighConfidenceCount = 0;
-    const keepIndices = [];
-    maxScoresArray.forEach((score, index) => {
-        if (score >= confThreshold) {
-            keepIndices.push(index);
-            initialHighConfidenceCount++;
-        }
-    });
-
-    console.log(`5. Konfidenz-Filterung: ${initialHighConfidenceCount} Boxen >= ${confThreshold} behalten.`);
-
-    if (initialHighConfidenceCount === 0) {
-        console.warn("⚠️ KEINE Boxen haben den Konfidenz-Schwellenwert erreicht.");
-        tf.dispose([predictionsTensor, rawBoxes, scores, boxes, scoresSqueezed, maxScores, classes]);
-        console.groupEnd();
-        return { boxes: [], scores: [], classes: [] };
-    }
-
-    // Die Klassen-IDs werden zusammen mit Boxen und Scores gefiltert
-    const filteredBoxes = tf.gather(boxes, keepIndices);
-    const filteredScores = tf.gather(maxScores, keepIndices);
-    const filteredClasses = tf.gather(classes, keepIndices); // KORREKTUR: Synchronisation
-
-    // NMS Vorbereitung und Ausführung
-    const [cx, cy, w, h] = tf.split(filteredBoxes, 4, 1);
-    const x_min = tf.sub(cx, tf.div(w, 2));
-    const y_min = tf.sub(cy, tf.div(h, 2));
-    const x_max = tf.add(cx, tf.div(w, 2));
-    const y_max = tf.add(cy, tf.div(h, 2));
-    const boxesForNMS = tf.concat([y_min, x_min, y_max, x_max], 1);
-
-    const nmsIndices = await tf.image.nonMaxSuppressionAsync(
-        boxesForNMS,
-        filteredScores,
-        filteredBoxes.shape[0],
-        iouThreshold,
+    // Apply confidence threshold
+    const [filteredBoxes, filteredScores, filteredClasses] = filterByConfidence(
+        decodedBoxes,
+        scoresSqueezed,
         confThreshold
     );
 
-    const finalIndices = await nmsIndices.array();
+    // Apply Non-Maximum Suppression (NMS)
+    const finalDetections = applyNMS(filteredBoxes, filteredScores, filteredClasses, iouThreshold);
 
-    console.log(`6. NMS-Ergebnis: ${finalIndices.length} finale Boxen behalten.`);
-
-    // *************************************************************************************
-    // 7. FOKUSSIERTER DEBUG FÜR FINALE BOX
-    // *************************************************************************************
-    if (finalIndices.length > 0) {
-        const winningIndex = keepIndices[finalIndices[0]];
-
-        const winningScoresTensor = scoresSqueezed.slice([winningIndex, 0], [1, KNOWN_CLASSES_COUNT]);
-        const winningScoresArray = await winningScoresTensor.array();
-
-        const allScores = winningScoresArray[0];
-
-        let trueMaxScore = 0;
-        let trueMaxIndex = -1;
-        allScores.forEach((score, i) => {
-            if (score > trueMaxScore) {
-                trueMaxScore = score;
-                trueMaxIndex = i;
-            }
-        });
-
-        console.log("DEBUG FOKUSSIERT: Scores der finalen Box:");
-        console.log(`- Score bei ID 2 (Car/Aktuell): ${allScores[2].toFixed(4)}`);
-        console.log(`- Score bei ID 15 (Cat/Soll): ${allScores[15].toFixed(4)}`);
-        console.log(`- Tatsächlicher Max Score gefunden bei ID ${trueMaxIndex}: ${trueMaxScore.toFixed(4)}`);
-    }
-
-    // *************************************************************************************
-    // 8. DYNAMISCHE NORMALISIERUNG AUF 0..1
-    // *************************************************************************************
-
-    const scaleFactorX = 1 / modelWidth;
-    const scaleFactorY = 1 / modelHeight;
-
-    const finalFilteredBoxes = tf.gather(filteredBoxes, finalIndices);
-
-    const [finalCx, finalCy, finalW, finalH] = tf.split(finalFilteredBoxes, 4, 1);
-
-    const finalCxNormalized = finalCx.mul(scaleFactorX);
-    const finalWNormalized = finalW.mul(scaleFactorX);
-    const finalCyNormalized = finalCy.mul(scaleFactorY);
-    const finalHNormalized = finalH.mul(scaleFactorY);
-
-    const finalBoxesTensor = tf.concat([finalCxNormalized, finalCyNormalized, finalWNormalized, finalHNormalized], 1);
-
-    const finalScoresTensor = tf.gather(filteredScores, finalIndices);
-    const finalClassesTensor = tf.gather(filteredClasses, finalIndices); // KORREKTUR: Zugriff auf gefilterte Klassen
-
-    const finalBoxes = await finalBoxesTensor.array();
-    const keepScores = await finalScoresTensor.array();
-    const keepClasses = await finalClassesTensor.array();
-
-    // *************************************************************************************
-    // 9. ZUSÄTZLICHER DEBUG FÜR FINALE KLASSEN
-    // *************************************************************************************
-
-    if (keepClasses.length > 0) {
-        console.log(`DEBUG FINALE KLASSEN (NEU): Max Score: ${keepScores[0].toFixed(4)}, Klasse ID: ${keepClasses[0]} (Sollte 15 sein)`);
-    } else {
-        console.log(`DEBUG FINALE KLASSEN: Keine Boxen nach NMS.`);
-    }
-
-    // *************************************************************************************
-    // 10. RESSOURCEN FREIGEBEN (Cleanup)
-    // *************************************************************************************
-    const tensorsToDispose = [
-        predictionsTensor, rawBoxes, scores, boxes, scoresSqueezed, maxScores, classes,
-        filteredBoxes, filteredScores, filteredClasses, // NEU: sampleScores entfernt
-        cx, cy, w, h, x_min, y_min, x_max, y_max, boxesForNMS, nmsIndices,
-        finalFilteredBoxes, finalCx, finalCy, finalW, finalH,
-        finalCxNormalized, finalCyNormalized, finalWNormalized, finalHNormalized,
-        finalBoxesTensor, finalScoresTensor, finalClassesTensor
-    ];
-    tf.dispose(tensorsToDispose);
-    console.log(`10. ${tensorsToDispose.length} Tensoren freigegeben.`);
-
-    const endTime = performance.now();
-    console.log(`✅ Post-Processing abgeschlossen in ${(endTime - startTime).toFixed(2)} ms.`);
-    console.log(`Rückgabe: ${finalBoxes.length} Boxen.`);
+    console.log(`3. Post-Processing abgeschlossen. Final Detections: ${finalDetections.length}`);
     console.groupEnd();
 
-    return { boxes: finalBoxes, scores: keepScores, classes: keepClasses };
+    return finalDetections;
+}
+
+/**
+ * Decodes YOLO bounding boxes into pixel coordinates.
+ */
+function decodeYOLOBoxes(boxes, modelWidth, modelHeight) {
+    const [cx, cy, w, h] = tf.split(boxes, 4, 1);
+
+    const xMin = cx.sub(w.div(2)).mul(modelWidth);
+    const yMin = cy.sub(h.div(2)).mul(modelHeight);
+    const xMax = cx.add(w.div(2)).mul(modelWidth);
+    const yMax = cy.add(h.div(2)).mul(modelHeight);
+
+    return tf.concat([xMin, yMin, xMax, yMax], 1);
 }
 
 function iou(boxA, boxB) {
@@ -2045,4 +1967,67 @@ async function increment_rotation() {
 
 async function decrement_rotation () {
 	await add_or_subtract_rotation(-1);
+}
+
+
+/**
+ * Filters boxes, scores, and classes by confidence threshold.
+ */
+function filterByConfidence(boxes, scores, confThreshold) {
+    const maxScores = scores.max(1);
+    const classIndices = scores.argMax(1);
+
+    const maskArr = maxScores.arraySync();
+    const boxesArr = boxes.arraySync();
+    const scoresArr = maxScores.arraySync();
+    const classesArr = classIndices.arraySync();
+
+    const filteredBoxesArr = [];
+    const filteredScoresArr = [];
+    const filteredClassesArr = [];
+
+    for (let i = 0; i < maskArr.length; i++) {
+        if (scoresArr[i] >= confThreshold) {
+            filteredBoxesArr.push(boxesArr[i]);
+            filteredScoresArr.push(scoresArr[i]);
+            filteredClassesArr.push(classesArr[i]);
+        }
+    }
+
+    // Return empty but correctly shaped tensors if nothing passed the threshold
+    if (filteredBoxesArr.length === 0) {
+        return [
+            tf.tensor2d([], [0, 4]),
+            tf.tensor1d([]),
+            tf.tensor1d([], 'int32')
+        ];
+    }
+
+    // Always create a 2D tensor for boxes: [N, 4]
+    const filteredBoxes = tf.tensor2d(filteredBoxesArr, [filteredBoxesArr.length, 4]);
+    const filteredScores = tf.tensor1d(filteredScoresArr);
+    const filteredClasses = tf.tensor1d(filteredClassesArr, 'int32');
+
+    return [filteredBoxes, filteredScores, filteredClasses];
+}
+
+/**
+ * Applies Non-Maximum Suppression (NMS) to filter overlapping boxes.
+ */
+function applyNMS(boxes, scores, classes, iouThreshold) {
+    // Guard: if no boxes survived filtering, return empty results
+    if (boxes.shape[0] === 0) {
+        return { boxes: [], scores: [], classes: [] };
+    }
+
+    const nmsIndices = tf.image.nonMaxSuppression(boxes, scores, 100, iouThreshold);
+
+    const finalBoxes = tf.gather(boxes, nmsIndices).arraySync();
+    const finalScores = tf.gather(scores, nmsIndices).arraySync();
+    const finalClasses = tf.gather(classes, nmsIndices).arraySync();
+
+    // Dispose intermediate tensors
+    nmsIndices.dispose();
+
+    return { boxes: finalBoxes, scores: finalScores, classes: finalClasses };
 }
