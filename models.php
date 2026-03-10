@@ -42,7 +42,7 @@ if(count($available_models)) {
 		foreach ($files as $file) {
 			$filename = htmlspecialchars($file['filename']);
 			$link = "get_model_file.php?uuid=$uuid&filename=" . urlencode($filename);
-			print "<a href='$link'>$filename</a><br>";
+			print "\t<a href='$link'>$filename</a><br>\n";
 		}
 		print "</td>\n";
 
