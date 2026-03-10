@@ -41,7 +41,7 @@
 		<tr>
 			<td style="vertical-align: baseline;">
 				<div id="annotation_area" style="display: <?php print $img_area_display; ?>">
-					<button class="disable_in_autonext" id="skip_img_button" onClick="skip_current_image()">
+					<button class="disable_in_autonext" style="background-color: red;" id="skip_img_button" onClick="skip_current_image()">
 					    Skip
 					</button>
 
