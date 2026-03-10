@@ -85,8 +85,29 @@ if (isset($_FILES['tfjs_model']) && isset($_POST['model_name'])) {
 
     if (isset($model_json["weightsManifest"][0]["paths"])) {
         $paths = $model_json["weightsManifest"][0]["paths"];
-        $missing_files = array_diff($paths, $file_paths);
-        if (count($missing_files)) die("❌Error: Missing files: <tt>" . join("</tt>, <tt>", $missing_files) . "</tt>");
+
+        // Normalize paths: strip get_model_file.php?filename_higher_prio= prefix if present
+        // This happens when model.json was downloaded from the online version where
+        // get_model_file.php rewrites shard paths for browser fetching
+        $normalized_paths = array_map(function($p) {
+            if (preg_match('/get_model_file\.php\?filename_higher_prio=(.+)$/', $p, $m)) {
+                return urldecode($m[1]);
+            }
+            return $p;
+        }, $paths);
+
+        $missing_files = array_diff($normalized_paths, $file_paths);
+        if (count($missing_files)) {
+            die("❌Error: Missing files: <tt>" . join("</tt>, <tt>", $missing_files) . "</tt>");
+        }
+
+        // Rewrite model.json on disk with clean paths so it stores correctly in DB
+        if ($normalized_paths !== $paths) {
+            $model_json["weightsManifest"][0]["paths"] = array_values($normalized_paths);
+            file_put_contents($model_json_path, json_encode($model_json));
+            echo "→ Normalized model.json shard paths (stripped get_model_file.php prefix)<br>";
+            flush();
+        }
     } else {
         die("❌Error: model.json does not contain expected weightsManifest->paths structure.");
     }
