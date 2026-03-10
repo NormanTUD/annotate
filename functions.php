@@ -956,10 +956,20 @@
 		rquery($query);
 	}
 
-	function get_next_random_unannotated_image ($fn = "") {
-		$query = 'select * from (select i.filename from image i left join image_data id on id.filename = i.filename left join annotation a on i.id = a.image_id where a.id is null and i.perception_hash is not null';
-		if($fn) {
-			$query .= " and i.filename like ".esc("%$fn%");
+	function get_next_random_unannotated_image ($fn = "", $skip_list = []) {
+		$query = 'select * from (select i.filename from image i 
+			left join image_data id on id.filename = i.filename 
+			left join annotation a on i.id = a.image_id 
+			where a.id is null and i.perception_hash is not null';
+
+		if ($fn) {
+			$query .= " and i.filename like " . esc("%$fn%");
+		}
+
+		// Übersprungene Bilder ausschließen
+		if (!empty($skip_list)) {
+			$escaped = array_map(function($f) { return esc($f); }, $skip_list);
+			$query .= " and i.filename not in (" . implode(",", $escaped) . ")";
 		}
 
 		$query .= " and id.filename is not null ";
@@ -968,14 +978,9 @@
 		$query .= ' order by rand()) a';
 
 		$res = rquery($query);
-
-		$result = null;
-
 		while ($row = mysqli_fetch_row($res)) {
-			$result = $row[0];
-			return $result;
+			return $row[0];
 		}
-
 		return null;
 	}
 

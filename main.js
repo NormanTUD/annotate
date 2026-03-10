@@ -6,6 +6,16 @@ var used_model = null;
 var disable_spinner = false;
 var debouncing_time_rotation = 150;
 
+var skipped_images = [];
+
+function skip_current_image() {
+    var current_fn = $("#filename").html();
+    if (current_fn && !skipped_images.includes(current_fn)) {
+        skipped_images.push(current_fn);
+    }
+    load_next_random_image();
+}
+
 (function () {
 	var style = document.createElement('style');
 	style.textContent =
@@ -1204,6 +1214,12 @@ async function load_next_random_image(fn = false) {
 		await set_img_from_filename(fn);
 	} else {
 		let ajax_url = "get_random_unannotated_image.php";
+
+		// In load_next_random_image(), den AJAX-Call anpassen:
+		ajax_url += (ajax_url.includes("?") ? "&" : "?")
+			+ "skip=" + encodeURIComponent(JSON.stringify(skipped_images));
+
+
 		let queryString = window.location.search;
 		let urlParams = new URLSearchParams(queryString);
 		let like = urlParams.get('like');
@@ -1260,6 +1276,10 @@ document.onkeydown = function(e) {
 		case 75: // K
 			predictImageWithModel();
 			break;
+		case 83: // S
+		    skip_current_image();
+		    break;
+
 		default:
 			break;
 	}
@@ -1365,7 +1385,7 @@ async function show_or_hide_ai_stuff () {
 function start_like () {
 	var like = $("#like").val();
 	update_url_param("like", like);
-	load_next_random_image()
+	load_next_random_image();
 }
 
 setInterval(create_selects_from_annotation, 1000);
@@ -2114,4 +2134,19 @@ async function handleAnnotations(boxes, scores, classes) {
     }
 
     success("Success", "Image Detection done.");
+}
+
+async function skip_current_image() {
+    // 1. Aktuellen Dateinamen holen
+    var fn = $("#filename").html();
+    if (!fn) {
+        warn("Skip", "Kein Bild geladen");
+        return;
+    }
+
+    // 2. Annotorious-Annotationen entfernen + DB-Annotationen löschen
+    await remove_current_annos(fn);
+
+    // 3. Nächstes Bild laden
+    await load_next_random_image();
 }
