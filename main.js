@@ -827,20 +827,6 @@ async function processModelOutput(res, modelWidth, modelHeight) {
     return finalDetections;
 }
 
-/**
- * Decodes YOLO bounding boxes into pixel coordinates.
- */
-function decodeYOLOBoxes(boxes, modelWidth, modelHeight) {
-    const [cx, cy, w, h] = tf.split(boxes, 4, 1);
-
-    const xMin = cx.sub(w.div(2)).mul(modelWidth);
-    const yMin = cy.sub(h.div(2)).mul(modelHeight);
-    const xMax = cx.add(w.div(2)).mul(modelWidth);
-    const yMax = cy.add(h.div(2)).mul(modelHeight);
-
-    return tf.concat([xMin, yMin, xMax, yMax], 1);
-}
-
 function iou(boxA, boxB) {
 	const [x1a, y1a, x2a, y2a] = boxA;
 	const [x1b, y1b, x2b, y2b] = boxB;
@@ -862,83 +848,6 @@ function clamp(v, a, b) {
 	if (v < a) return a;
 	if (v > b) return b;
 	return v;
-}
-
-async function handleAnnotations(boxes, scores, classes) {
-	if(enable_debug) {
-		log("handleAnnotations:", "boxes:", boxes, "scores:", scores, "classes:", classes);
-	}
-
-	if (boxes.length === 0) {
-		show_nothing_found_animation();
-		warn("Nothing found", "Annotate manually");
-		return;
-	}
-
-	delete_all_anno_current_image();
-
-	const anno_boxes = [];
-	const this_labels = get_labels();
-
-	for (let i = 0; i < boxes.length; i++) {
-		const img_width = $("#image").width();
-		const img_height = $("#image").height();
-
-
-		const [cx, cy, bw, bh] = boxes[i];
-		const x_min = cx - bw / 2;
-		const x_max = cx + bw / 2;
-		const y_min = cy - bh / 2;
-		const y_max = cy + bh / 2;
-
-		const x = Math.round(x_min * img_width);
-		const y = Math.round(y_min * img_height);
-		const w = Math.round((x_max - x_min) * img_width);
-		const h = Math.round((y_max - y_min) * img_height);
-
-		const this_class = classes[i];
-		const this_score = scores[i];
-
-		if (this_class === -1) {
-			continue;
-		}
-
-		if (Object.keys(this_labels).length === 0) {
-			error("ERROR", "has no labels");
-			return;
-		}
-
-		const this_label = this_labels[this_class];
-
-		if(enable_debug) {
-			log(`this_label: ${this_label}, this_class: ${this_class}, x: ${x}, y: ${y}, h: ${h}, w: ${w}`);
-		}
-
-		if(this_label) {
-			var anno_element = get_annotate_element(this_label, x, y, w, h);
-			if(anno_element) {
-				anno_boxes.push(anno_element);
-			}
-		} else {
-			error("ERROR", `this_label was empty: ${this_label}`);
-		}
-	}
-
-	success("Success", "Image Detection ran successfully");
-	if(enable_debug) {
-		log("anno_boxes", anno_boxes);
-	}
-
-	await anno.setAnnotations(anno_boxes);
-
-	watch_svg_auto();
-
-	const new_annos = await anno.getAnnotations();
-	for (const ann of new_annos) {
-		await save_anno(ann);
-	}
-
-	success("Success", "Image Detection done.");
 }
 
 function get_labels() {
@@ -1970,10 +1879,78 @@ async function decrement_rotation () {
 }
 
 
+
+
+/**
+ * Decodes YOLO bounding boxes from model output.
+ * YOLO outputs [cx, cy, w, h] in pixel space (0..modelWidth/Height).
+ * We convert to [xMin, yMin, xMax, yMax] normalized to [0, 1].
+ */
+function decodeYOLOBoxes(boxes, modelWidth, modelHeight) {
+    const [cx, cy, w, h] = tf.split(boxes, 4, 1);
+
+    console.log("=== decodeYOLOBoxes DEBUG ===");
+
+    // Sample first 3 raw values
+    const cxArr = cx.squeeze().arraySync();
+    const cyArr = cy.squeeze().arraySync();
+    const wArr = w.squeeze().arraySync();
+    const hArr = h.squeeze().arraySync();
+
+    for (let i = 0; i < Math.min(3, cxArr.length); i++) {
+        console.log(`  Raw box[${i}]: cx=${cxArr[i].toFixed(4)}, cy=${cyArr[i].toFixed(4)}, w=${wArr[i].toFixed(4)}, h=${hArr[i].toFixed(4)}`);
+    }
+
+    // Check if values are already in pixel space or normalized
+    const maxCx = Math.max(...cxArr.slice(0, 100));
+    const maxCy = Math.max(...cyArr.slice(0, 100));
+    const maxW = Math.max(...wArr.slice(0, 100));
+    const maxH = Math.max(...hArr.slice(0, 100));
+    console.log(`  Max values (first 100): cx=${maxCx.toFixed(4)}, cy=${maxCy.toFixed(4)}, w=${maxW.toFixed(4)}, h=${maxH.toFixed(4)}`);
+    console.log(`  Model dimensions: ${modelWidth}x${modelHeight}`);
+
+    const isPixelSpace = maxCx > 2.0 || maxCy > 2.0; // If values > 2, they're likely pixel coords
+    console.log(`  Values appear to be in ${isPixelSpace ? 'PIXEL' : 'NORMALIZED'} space`);
+
+    let xMin, yMin, xMax, yMax;
+
+    if (isPixelSpace) {
+        // Values are in pixel space (0..modelWidth), normalize to 0..1
+        console.log("  -> Normalizing from pixel space to [0,1]");
+        xMin = cx.sub(w.div(2)).div(modelWidth);
+        yMin = cy.sub(h.div(2)).div(modelHeight);
+        xMax = cx.add(w.div(2)).div(modelWidth);
+        yMax = cy.add(h.div(2)).div(modelHeight);
+    } else {
+        // Values are already normalized (0..1)
+        console.log("  -> Already normalized, converting cx,cy,w,h to xMin,yMin,xMax,yMax");
+        xMin = cx.sub(w.div(2));
+        yMin = cy.sub(h.div(2));
+        xMax = cx.add(w.div(2));
+        yMax = cy.add(h.div(2));
+    }
+
+    const result = tf.concat([xMin, yMin, xMax, yMax], 1);
+
+    // Sample first 3 decoded values
+    const resultArr = result.arraySync();
+    for (let i = 0; i < Math.min(3, resultArr.length); i++) {
+        console.log(`  Decoded box[${i}]: xMin=${resultArr[i][0].toFixed(6)}, yMin=${resultArr[i][1].toFixed(6)}, xMax=${resultArr[i][2].toFixed(6)}, yMax=${resultArr[i][3].toFixed(6)}`);
+    }
+    console.log("=== END decodeYOLOBoxes DEBUG ===");
+
+    return result;
+}
+
 /**
  * Filters boxes, scores, and classes by confidence threshold.
  */
 function filterByConfidence(boxes, scores, confThreshold) {
+    console.log("=== filterByConfidence DEBUG ===");
+    console.log(`  Input boxes shape: [${boxes.shape}]`);
+    console.log(`  Input scores shape: [${scores.shape}]`);
+    console.log(`  Confidence threshold: ${confThreshold}`);
+
     const maxScores = scores.max(1);
     const classIndices = scores.argMax(1);
 
@@ -1981,6 +1958,12 @@ function filterByConfidence(boxes, scores, confThreshold) {
     const boxesArr = boxes.arraySync();
     const scoresArr = maxScores.arraySync();
     const classesArr = classIndices.arraySync();
+
+    // Log score distribution
+    const sortedScores = [...scoresArr].sort((a, b) => b - a);
+    console.log(`  Top 10 scores: ${sortedScores.slice(0, 10).map(s => s.toFixed(4)).join(', ')}`);
+    console.log(`  Total candidates: ${scoresArr.length}`);
+    console.log(`  Candidates above threshold: ${scoresArr.filter(s => s >= confThreshold).length}`);
 
     const filteredBoxesArr = [];
     const filteredScoresArr = [];
@@ -1994,8 +1977,17 @@ function filterByConfidence(boxes, scores, confThreshold) {
         }
     }
 
+    console.log(`  Filtered count: ${filteredBoxesArr.length}`);
+
+    // Log first 5 filtered boxes
+    for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
+        console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], score=${filteredScoresArr[i].toFixed(4)}, class=${filteredClassesArr[i]}`);
+    }
+
     // Return empty but correctly shaped tensors if nothing passed the threshold
     if (filteredBoxesArr.length === 0) {
+        console.log("  No boxes passed threshold!");
+        console.log("=== END filterByConfidence DEBUG ===");
         return [
             tf.tensor2d([], [0, 4]),
             tf.tensor1d([]),
@@ -2003,11 +1995,11 @@ function filterByConfidence(boxes, scores, confThreshold) {
         ];
     }
 
-    // Always create a 2D tensor for boxes: [N, 4]
     const filteredBoxes = tf.tensor2d(filteredBoxesArr, [filteredBoxesArr.length, 4]);
     const filteredScores = tf.tensor1d(filteredScoresArr);
     const filteredClasses = tf.tensor1d(filteredClassesArr, 'int32');
 
+    console.log("=== END filterByConfidence DEBUG ===");
     return [filteredBoxes, filteredScores, filteredClasses];
 }
 
@@ -2015,19 +2007,111 @@ function filterByConfidence(boxes, scores, confThreshold) {
  * Applies Non-Maximum Suppression (NMS) to filter overlapping boxes.
  */
 function applyNMS(boxes, scores, classes, iouThreshold) {
-    // Guard: if no boxes survived filtering, return empty results
+    console.log("=== applyNMS DEBUG ===");
+    console.log(`  Input boxes shape: [${boxes.shape}]`);
+    console.log(`  Input scores shape: [${scores.shape}]`);
+    console.log(`  IoU threshold: ${iouThreshold}`);
+
     if (boxes.shape[0] === 0) {
+        console.log("  No boxes to process, returning empty.");
+        console.log("=== END applyNMS DEBUG ===");
         return { boxes: [], scores: [], classes: [] };
     }
 
     const nmsIndices = tf.image.nonMaxSuppression(boxes, scores, 100, iouThreshold);
+    console.log(`  NMS kept ${nmsIndices.shape[0]} boxes`);
 
     const finalBoxes = tf.gather(boxes, nmsIndices).arraySync();
     const finalScores = tf.gather(scores, nmsIndices).arraySync();
     const finalClasses = tf.gather(classes, nmsIndices).arraySync();
 
-    // Dispose intermediate tensors
     nmsIndices.dispose();
 
+    // Log final detections
+    for (let i = 0; i < Math.min(5, finalBoxes.length); i++) {
+        console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, class=${finalClasses[i]}`);
+    }
+
+    console.log("=== END applyNMS DEBUG ===");
     return { boxes: finalBoxes, scores: finalScores, classes: finalClasses };
+}
+
+async function handleAnnotations(boxes, scores, classes) {
+    console.log("=== handleAnnotations DEBUG ===");
+    console.log(`  Received ${boxes.length} boxes`);
+
+    if (boxes.length === 0) {
+        show_nothing_found_animation();
+        warn("Nothing found", "Annotate manually");
+        return;
+    }
+
+    // Log what we received
+    for (let i = 0; i < Math.min(5, boxes.length); i++) {
+        console.log(`  Input box[${i}]: [${boxes[i].map(v => v.toFixed(6)).join(', ')}], score=${scores[i].toFixed(4)}, class=${classes[i]}`);
+    }
+
+    delete_all_anno_current_image();
+
+    const anno_boxes = [];
+    const this_labels = get_labels();
+    const img_width = $("#image").width();
+    const img_height = $("#image").height();
+
+    console.log(`  Image display size: ${img_width}x${img_height}`);
+
+    for (let i = 0; i < boxes.length; i++) {
+        // boxes[i] is [xMin, yMin, xMax, yMax] normalized to [0, 1]
+        const [xMin, yMin, xMax, yMax] = boxes[i];
+
+        console.log(`  Box[${i}] raw: xMin=${xMin.toFixed(6)}, yMin=${yMin.toFixed(6)}, xMax=${xMax.toFixed(6)}, yMax=${yMax.toFixed(6)}`);
+
+        // Convert normalized coords to pixel coords on the displayed image
+        const x = Math.round(xMin * img_width);
+        const y = Math.round(yMin * img_height);
+        const w = Math.round((xMax - xMin) * img_width);
+        const h = Math.round((yMax - yMin) * img_height);
+
+        console.log(`  Box[${i}] pixel: x=${x}, y=${y}, w=${w}, h=${h}`);
+
+        const this_class = classes[i];
+        const this_score = scores[i];
+
+        if (this_class === -1) {
+            console.log(`  Box[${i}] skipped: class is -1`);
+            continue;
+        }
+
+        if (Object.keys(this_labels).length === 0) {
+            error("ERROR", "has no labels");
+            return;
+        }
+
+        const this_label = this_labels[this_class];
+        console.log(`  Box[${i}] label: "${this_label}" (class=${this_class}, score=${this_score.toFixed(4)})`);
+
+        if (this_label) {
+            var anno_element = get_annotate_element(this_label, x, y, w, h);
+            if (anno_element) {
+                anno_boxes.push(anno_element);
+            }
+        } else {
+            error("ERROR", `this_label was empty for class ${this_class}`);
+        }
+    }
+
+    console.log(`  Created ${anno_boxes.length} annotation elements`);
+    console.log("=== END handleAnnotations DEBUG ===");
+
+    success("Success", "Image Detection ran successfully");
+
+    await anno.setAnnotations(anno_boxes);
+    watch_svg_auto();
+
+    const new_annos = await anno.getAnnotations();
+    for (const ann of new_annos) {
+        await save_anno(ann);
+    }
+
+    success("Success", "Image Detection done.");
 }
