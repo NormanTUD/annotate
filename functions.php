@@ -666,18 +666,23 @@
 			throw new Exception("No 'names' block");
 		}
 
-		// Resolve uuid to model_id
-		$res = rquery("SELECT id FROM models WHERE uuid=" . esc($model_uuid) . " LIMIT 1");
+		// Resolve uuid to model_id + model_name
+		$res = rquery("SELECT id, model_name FROM models WHERE uuid=" . esc($model_uuid) . " LIMIT 1");
 		if (!$res || mysqli_num_rows($res) === 0) {
 			throw new Exception("Model UUID not found in models table");
 		}
 		$row = mysqli_fetch_assoc($res);
 		$model_id = intval($row['id']);
+		$model_name = $row['model_name'];
 
 		echo "Found ".count($data['names'])." labels in YAML.\n";
 
+		// Build ordered labels array from the YAML names block
+		$ordered_labels = [];
+
 		foreach ($data['names'] as $index => $label_name) {
 			$label_name = trim($label_name);
+			$ordered_labels[intval($index)] = $label_name;
 
 			$check_query = "SELECT id FROM model_labels 
 				WHERE model_id=" . $model_id . " 
@@ -698,6 +703,19 @@
 			} else {
 				echo " → Already exists. Skipping.\n";
 			}
+		}
+
+		// Generate labels.json from the YAML names and insert into DB
+		ksort($ordered_labels);
+		$labels_json = json_encode(array_values($ordered_labels), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+		$check = rquery("SELECT id FROM models WHERE uuid=" . esc($model_uuid) . " AND filename='labels.json'");
+		if (mysqli_num_rows($check) === 0) {
+			$labels_tmp = tempnam(sys_get_temp_dir(), 'labels_') . '.json';
+			file_put_contents($labels_tmp, $labels_json);
+			insert_file_into_db($model_name, $labels_tmp, $model_uuid, 'labels.json');
+			unlink($labels_tmp);
+			echo "→ Generated labels.json from metadata.yaml (" . count($ordered_labels) . " labels)\n";
 		}
 
 		echo "✅ Done importing model\n";
