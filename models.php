@@ -34,8 +34,8 @@ if(count($available_models)) {
 		$files = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 		print "<tr>\n";
-		print " <td>$model_name</td>\n";
-		print " <td>$uuid</td>\n";
+		print " <td>".htmlspecialchars($model_name)."</td>\n";
+		print " <td>".htmlspecialchars($uuid)."</td>\n";
 
 		// Dateien als Download-Links
 		print " <td>";
