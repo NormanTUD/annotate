@@ -10,7 +10,6 @@ if ($filename_higher_prio) {
 }
 
 if ($filename === "model.json") {
-    ob_start();
     $json = get_model_file($uuid, $filename);
 
     $json = trim($json);
