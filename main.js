@@ -1279,6 +1279,10 @@ document.onkeydown = function(e) {
 		case 83: // S
 		    skip_current_image();
 		    break;
+		case 191:
+		case e.key === "Escape":
+			if (e.shiftKey) show_shortcut_help();
+			break;
 
 		default:
 			break;
@@ -2135,6 +2139,37 @@ async function handleAnnotations(boxes, scores, classes) {
 
     success("Success", "Image Detection done.");
 }
+
+var image_history = [];
+
+// In set_img_from_filename(), vor dem Bildwechsel:
+var old_fn = $("#filename").html();
+if (old_fn && old_fn !== fn) {
+    image_history.push(old_fn);
+}
+
+function go_back() {
+    if (image_history.length === 0) {
+        warn("History", "Kein vorheriges Bild");
+        return;
+    }
+    var prev_fn = image_history.pop();
+    set_img_from_filename(prev_fn);
+}
+
+function show_shortcut_help() {
+    var help = [
+        "N = Next image",
+        "B = Back (vorheriges Bild)",
+        "S = Skip (ohne Annotation)",
+        "O = Offtopic",
+        "U = Unidentifiable",
+        "K = KI-Labelling",
+        "? = Diese Hilfe"
+    ].join("\n");
+    alert(help);
+}
+
 
 async function skip_current_image() {
     // 1. Aktuellen Dateinamen holen

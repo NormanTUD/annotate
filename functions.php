@@ -455,6 +455,14 @@
 		$export_gui = "";
 		$overview = "";
 
+		$total = $annotated_imgs + $unannotated_imgs;
+		$percent = $total > 0 ? ($annotated_imgs / $total) * 100 : 0;
+
+		$str .= "<div style='margin:4px 0'>
+			<progress value='$annotated_imgs' max='$total' style='width:300px;height:20px'></progress>
+			<span>" . sprintf("%.1f", $percent) . "%</span>
+			</div>";
+
 		if(get_number_of_annotated_imgs() > 0) {
 			$export_gui = '<a href="export_annotations_gui.php">Export annotations</a>';
 			$overview = "<a href='overview.php'>Overview</a>";
