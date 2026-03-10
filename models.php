@@ -75,6 +75,15 @@ if(count($available_models)) {
 <button id="reload-page-btn" style="display:none;">Reload Page</button>
 </div>
 
+<h2>Upload already converted TFJS model</h2>
+
+<p>Select all TFJS files (model.json, group1-shard*.bin, metadata.yaml, etc.) and provide a model name.</p>
+
+<form enctype="multipart/form-data" method="POST" action="upload_model.php" id="tfjs-upload-form">
+    <input type="file" name="tfjs_model[]" multiple accept=".json,.bin,.yaml,.yml" required>
+    <input type="text" name="model_name" placeholder="Model Name" required>
+    <input type="submit" value="Upload TFJS Model">
+</form>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {

@@ -1524,25 +1524,37 @@
 		return $files;
 	}
 
-
-	function insert_model_into_db($model_name, $files_array, $pt_file_path, $pt_file) {
+	function insert_model_into_db($model_name, $files_array, $pt_file_path, $pt_file, $is_tfjs = false) {
 		force_reconnect();
 
 		try {
-			$uuid = uniqid("model_"); // eine UUID pro Model-Gruppe
+			$uuid = uniqid("model_");
 			$all_inserted_ids = [];
 
-			foreach ($files_array as $path) {
-				$path = convert_to_tfjs($path);
-				$filenames_in_path = get_all_filenames($path);
-
-				foreach ($filenames_in_path as $filename) {
-					// prüfen, ob filename+uuid schon existiert
+			if ($is_tfjs) {
+				// Files are already converted TFJS files — insert directly
+				foreach ($files_array as $path) {
+					$filename = basename($path);
 					$check = rquery("SELECT id FROM models WHERE filename=" . esc($filename) . " AND uuid=" . esc($uuid));
 					if (mysqli_num_rows($check) === 0) {
-						$all_inserted_ids[] = insert_file_into_db($model_name, $path . '/' . $filename, $uuid, $filename);
+						$all_inserted_ids[] = insert_file_into_db($model_name, $path, $uuid, $filename);
 					} else {
 						echo " → Skipping duplicate file '$filename' for model '$model_name'\n";
+					}
+				}
+			} else {
+				// .pt files — need conversion
+				foreach ($files_array as $path) {
+					$converted_path = convert_to_tfjs($path);
+					$filenames_in_path = get_all_filenames($converted_path);
+
+					foreach ($filenames_in_path as $filename) {
+						$check = rquery("SELECT id FROM models WHERE filename=" . esc($filename) . " AND uuid=" . esc($uuid));
+						if (mysqli_num_rows($check) === 0) {
+							$all_inserted_ids[] = insert_file_into_db($model_name, $converted_path . '/' . $filename, $uuid, $filename);
+						} else {
+							echo " → Skipping duplicate file '$filename' for model '$model_name'\n";
+						}
 					}
 				}
 			}
