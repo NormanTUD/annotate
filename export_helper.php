@@ -265,6 +265,7 @@ fi
 		$train_bash = '#!/usr/bin/env bash
 set -euo pipefail
 
+exit_after_download=0
 DEFAULT_EPOCHS='.$epochs.'
 DEFAULT_BATCH=16
 DEFAULT_IMGSZ='.$GLOBALS['imgsz'].'
@@ -346,6 +347,7 @@ for arg in "$@"; do
     --lrf=*) lrf="${arg#*=}" ;;
     --momentum=*) momentum="${arg#*=}" ;;
     --weight_decay=*) weight_decay="${arg#*=}" ;;
+    --exit_after_download) exit_after_download=1 ;;
     --warmup_epochs=*) warmup_epochs="${arg#*=}" ;;
     --warmup_momentum=*) warmup_momentum="${arg#*=}" ;;
     --warmup_bias_lr=*) warmup_bias_lr="${arg#*=}" ;;
@@ -409,6 +411,10 @@ for idx in "${!files[@]}"; do
   mv "$tmp_file" "images/$file"
   echo -e " \e[1;32m✔ Done\e[0m"
 done
+
+if [[ $exit_after_download == 1 ]]; then
+  exit 0
+fi
 
 cmd="yolo detect train data=$DATA model=$MODEL epochs=$epochs batch=$batch imgsz=$imgsz"
 

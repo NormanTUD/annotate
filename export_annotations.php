@@ -42,16 +42,24 @@
 		$labels_json = "";
 		$_labels = [];
 
-		$j = 0;
-		sort($categories); // Ensure consistent ID assignment
-
-		$j = 0;
+		// NEU: Stabile IDs aus der DB holen
 		$category_numbers = array();
-		foreach ($categories as $i => $cat) {
-			$category_numbers[$cat] = $j;
-			$dataset_yaml .= "  $j: $cat\n";
-			$_labels[] = $cat;
-			$j++;
+		$_labels = [];
+
+		$cat_query = "SELECT id, name FROM category WHERE name IN (" . esc($categories) . ") ORDER BY id ASC";
+		$cat_res = rquery($cat_query);
+
+		while ($row = mysqli_fetch_row($cat_res)) {
+			$db_id = intval($row[0]);
+			$cat_name = strtolower($row[1]);
+			$category_numbers[$cat_name] = $db_id;
+		}
+
+		// dataset.yaml mit den DB-IDs schreiben
+		ksort($category_numbers); // optional: nach ID sortieren
+		foreach ($category_numbers as $cat => $db_id) {
+			$dataset_yaml .= "  $db_id: $cat\n";
+			$_labels[$db_id] = $cat;
 		}
 
 
