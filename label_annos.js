@@ -277,7 +277,7 @@ function annotate_svg(svg, img) {
 		let rect = g.querySelector('rect.a9s-inner');
 		if (!rect) return;
 
-		let category = get_category_for_annotation(rect, svg, img);
+		let category = g.getAttribute('data-label') || get_category_for_annotation(rect, svg, img);
 
 		if (!category_counts[category]) category_counts[category] = 0;
 
