@@ -1730,6 +1730,14 @@
 		return [$images, $number_of_rows, $format, $categories];
 	}
 
+	function asset($path) {
+		// Prüft, ob die Datei existiert, um Fehler zu vermeiden
+		if (file_exists($path)) {
+			return $path . "?v=" . filemtime($path);
+		}
+		return $path;
+	}
+
 	$GLOBALS["base_url"] = get_base_url();
 
 	rquery("SET GLOBAL max_allowed_packet=1024*1024*1024");

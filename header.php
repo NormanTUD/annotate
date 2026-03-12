@@ -1,6 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-include_once("functions.php");
+	header("Access-Control-Allow-Origin: *");
+	include_once("functions.php");
 ?>
 <!DOCTYPE html>
 <head>
@@ -8,14 +8,16 @@ include_once("functions.php");
 	<link rel="stylesheet" href="libs/annotorious.min.css">
 	<link rel="stylesheet" href="style.css">
 	<link rel="stylesheet" href="auto_animations.css">
-	<script src="libs/plotly-latest.min.js"></script>
-	<script src="libs/annotorious.min.js"></script>
-	<script src="libs/jquery.min.js"></script>
-	<script src="main.js"></script>
-	<script src="label_annos.js"></script>
-	<script src="js_tests.js"></script>
-	<script src='libs/tf.js'></script>
-	<script src='libs/tf-backend-wasm.min.js'></script>
+	<script src="<?= asset('libs/plotly-latest.min.js') ?>"></script>
+	<script src="<?= asset('libs/annotorious.min.js') ?>"></script>
+	<script src="<?= asset('libs/jquery.min.js') ?>"></script>
+
+	<script src="<?= asset('main.js') ?>"></script>
+	<script src="<?= asset('label_annos.js') ?>"></script>
+	<script src="<?= asset('js_tests.js') ?>"></script>
+
+	<script src="<?= asset('libs/tf.js') ?>"></script>
+	<script src="<?= asset('libs/tf-backend-wasm.min.js') ?>"></script>
 	<script>
 		var labels = [];
 		const imgsz = <?php print $GLOBALS["imgsz"]; ?>;
