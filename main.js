@@ -730,109 +730,92 @@ async function predict(modelWidth, modelHeight) {
 }
 
 async function processModelOutput(res, modelWidth, modelHeight) {
-    console.group("🔥 YOLO Post-Processing DEBUG: Finale Bereinigung");
+    console.group("🔥 YOLO Post-Processing DEBUG");
     const startTime = performance.now();
 
-    const confThreshold = conf || 0.3; // Confidence threshold for predictions
-    const iouThreshold = 0.45; // Intersection-over-Union threshold for NMS
+    const confThreshold = conf || 0.3;
+    const iouThreshold = 0.45;
 
-    // *** 1. Raw Data Extraction and Shape Determination ***
-    let rawData;
+    // *** 1. Determine shape directly from the raw model output ***
+    // res is expected to be shaped [1, features, candidates] or [features, candidates]
+    let rawTensor;
 
-    if (Array.isArray(res) && Array.isArray(res[0]) && res[0].length < 200) {
-        if (Array.isArray(res[0][0])) {
-            rawData = res[0].flat();
-        } else {
-            rawData = res[0];
-        }
-    } else if (Array.isArray(res) && res.length > 20000) {
-        rawData = res;
+    if (Array.isArray(res) && Array.isArray(res[0]) && Array.isArray(res[0][0])) {
+        // Shape: [1, F, C] — standard batch output
+        rawTensor = tf.tensor3d(res);
+    } else if (Array.isArray(res) && Array.isArray(res[0]) && !Array.isArray(res[0][0])) {
+        // Shape: [F, C] — no batch dim
+        rawTensor = tf.tensor2d(res).expandDims(0);
+    } else if (res instanceof tf.Tensor) {
+        rawTensor = res.rank === 2 ? res.expandDims(0) : res;
     } else {
-        console.error(`❌ Strukturfehler: Die Modellausgabe ('res') ist nicht das erwartete Array.`);
+        console.error("❌ Unexpected model output structure:", typeof res);
         console.groupEnd();
         return { boxes: [], scores: [], classes: [] };
     }
 
-    const TOTAL_ELEMENTS = rawData.length;
+    // Now rawTensor is [1, F, C]
+    const shape = rawTensor.shape;
+    console.log(`Raw tensor shape: [${shape.join(', ')}]`);
 
-    // Dynamically calculate the number of classes from the labels array
-    const KNOWN_CLASSES_COUNT = labels.length; // Dynamically set based on the labels array
-    console.log(`ℹ️ Dynamically calculated number of classes: ${KNOWN_CLASSES_COUNT}`);
+    let FINAL_FEATURES = shape[1];
+    let FINAL_CANDIDATES = shape[2];
 
-    // Dynamically create the FEATURE_TO_CANDIDATES array
-    const FEATURE_TO_CANDIDATES = [
-        { F: 84, C: 8400, classes: 80, total: 705600 },
-        { F: 61, C: 13125, classes: 57, total: 800625 },
-        { F: 25, C: 32025, classes: 21, total: 800625 },
-        { F: 79, C: 13125, classes: KNOWN_CLASSES_COUNT, total: 79 * 13125 } // Dynamically added
-    ];
-
-    let FINAL_FEATURES = 0;
-    let FINAL_CANDIDATES = 0;
-    let DYNAMIC_MATCH = false;
-
-    for (const set of FEATURE_TO_CANDIDATES) {
-        if (TOTAL_ELEMENTS === set.total) {
-            FINAL_FEATURES = set.F;
-            FINAL_CANDIDATES = set.C;
-            DYNAMIC_MATCH = true;
-            break;
-        }
+    // YOLO outputs [1, 4+num_classes, num_candidates]
+    // If features < candidates, the layout is [1, F, C] which is correct.
+    // If features > candidates, the tensor might already be transposed [1, C, F].
+    // We want the smaller dimension to be features (4 + num_classes).
+    if (FINAL_FEATURES > FINAL_CANDIDATES) {
+        console.log(`Swapping: features(${FINAL_FEATURES}) > candidates(${FINAL_CANDIDATES}), transposing.`);
+        rawTensor = rawTensor.transpose([0, 2, 1]);
+        [FINAL_FEATURES, FINAL_CANDIDATES] = [FINAL_CANDIDATES, FINAL_FEATURES];
     }
 
-    if (!DYNAMIC_MATCH) {
-        console.error(`❌ Kritischer Shape-Fehler: Gesamtanzahl ${TOTAL_ELEMENTS} passt zu keinem bekannten Modell-Output.`);
+    const numClasses = FINAL_FEATURES - 4;
+
+    if (numClasses <= 0) {
+        console.error(`❌ Invalid number of classes: ${numClasses} (features=${FINAL_FEATURES})`);
         console.groupEnd();
         return { boxes: [], scores: [], classes: [] };
     }
 
-    console.log(`ℹ️ Modell-Input: ${modelWidth}x${modelHeight}, Klassen: ${KNOWN_CLASSES_COUNT}`);
-    console.log(`✅ Shape: [Features: ${FINAL_FEATURES}, Kandidaten: ${FINAL_CANDIDATES}] (Total: ${TOTAL_ELEMENTS})`);
+    console.log(`Model-Input: ${modelWidth}x${modelHeight}`);
+    console.log(`Shape: [Features: ${FINAL_FEATURES}, Candidates: ${FINAL_CANDIDATES}]`);
+    console.log(`Detected classes: ${numClasses}, Labels loaded: ${labels.length}`);
 
-    // *************************************************************************************
-    // 2. Tensor Creation and Transpose
-    // *************************************************************************************
-
-    let predictionsTensor = tf.tensor(rawData, [FINAL_FEATURES, FINAL_CANDIDATES]).expandDims(0);
-    predictionsTensor = predictionsTensor.transpose([0, 2, 1]);
-    console.log(`1. Tensor transponiert. Shape: [${predictionsTensor.shape.join(', ')}]`);
-
-    // *************************************************************************************
-    // 3. Corrected Splitting: [4 Box, C Classes]
-    // *************************************************************************************
-
-    // Dynamically calculate the number of classes based on the tensor shape
-    const tensorShape = predictionsTensor.shape[2];
-    const numClasses = tensorShape - 4; // Subtract 4 for the bounding box coordinates
-
-    if (numClasses !== KNOWN_CLASSES_COUNT) {
-        console.warn(`⚠️ Mismatch between calculated classes (${KNOWN_CLASSES_COUNT}) and tensor shape (${numClasses}). Using ${numClasses}.`);
+    if (numClasses !== labels.length) {
+        console.warn(`⚠️ Class count mismatch: model has ${numClasses} classes but ${labels.length} labels loaded. Using model's count.`);
     }
 
+    // *** 2. Transpose to [1, candidates, features] for easier splitting ***
+    let predictionsTensor = rawTensor.transpose([0, 2, 1]);
+    console.log(`Tensor transposed. Shape: [${predictionsTensor.shape.join(', ')}]`);
+
+    // *** 3. Split into boxes [4] and class scores [numClasses] ***
     const [rawBoxes, scores] = tf.split(predictionsTensor, [4, numClasses], 2);
     const boxes = rawBoxes.squeeze();
     const scoresSqueezed = scores.squeeze();
-    console.log(`2. Aufteilung: Boxen[${boxes.shape.join(', ')}], Scores[${scoresSqueezed.shape.join(', ')}]`);
+    console.log(`Split: Boxes[${boxes.shape.join(', ')}], Scores[${scoresSqueezed.shape.join(', ')}]`);
 
-    // *************************************************************************************
-    // 4. Post-Processing: Decode Boxes and Apply NMS
-    // *************************************************************************************
-
-    // Decode bounding boxes
+    // *** 4. Decode boxes and apply NMS ***
     const decodedBoxes = decodeYOLOBoxes(boxes, modelWidth, modelHeight);
 
-    // Apply confidence threshold
     const [filteredBoxes, filteredScores, filteredClasses] = filterByConfidence(
         decodedBoxes,
         scoresSqueezed,
         confThreshold
     );
 
-    // Apply Non-Maximum Suppression (NMS)
     const finalDetections = applyNMS(filteredBoxes, filteredScores, filteredClasses, iouThreshold);
 
-    console.log(`3. Post-Processing abgeschlossen. Final Detections: ${finalDetections.length}`);
+    console.log(`Post-Processing done. Final Detections: ${finalDetections.length || Object.keys(finalDetections).length}`);
     console.groupEnd();
+
+    // Clean up tensors
+    rawTensor.dispose();
+    predictionsTensor.dispose();
+    rawBoxes.dispose();
+    scores.dispose();
 
     return finalDetections;
 }
