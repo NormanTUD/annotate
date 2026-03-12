@@ -1629,14 +1629,15 @@
 		$offset = get_param("offset", $page * $items_per_page);
 		$limit = get_param("limit");
 		$show_categories = isset($_GET["show_categories"]) ? $_GET["show_categories"] : [];
+		$show_files = isset($_GET["show_files"]) ? $_GET["show_files"] : [];  // NEU
 
-		$res = _get_annotated_images($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files);
+		$res = _get_annotated_images($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files, $show_files);
 
 		return $res;
 	}
 
-	function _get_annotated_images ($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files) {
-		$annotated_image_ids_query = get_annotated_image_ids_query($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated);
+	function _get_annotated_images ($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $max_files, $show_files = []) {
+		$annotated_image_ids_query = get_annotated_image_ids_query($max_truncation, $show_categories, $only_uncurated, $format, $limit, $items_per_page, $offset, $only_curated, $show_files);
 		$res = rquery($annotated_image_ids_query);
 
 		$number_of_rows = get_number_of_rows();

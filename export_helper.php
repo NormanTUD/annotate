@@ -589,6 +589,10 @@ fi';
 			$annotated_image_ids_query .= " and c.name in (".esc($show_categories).") ";
 		}
 
+		if($show_files && count($show_files)) {
+			$annotated_image_ids_query .= " and i.filename in (".esc($show_files).") ";
+		}
+
 		if($only_uncurated) {
 			$annotated_image_ids_query .= " and (a.curated is null or a.curated = 0 or a.curated = '0') ";
 		}
