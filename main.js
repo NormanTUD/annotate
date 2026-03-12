@@ -1020,7 +1020,7 @@ async function set_all_current_annotations_from_to (from, name) {
 }
 
 async function remove_current_annos (fn) {
-	const current_annos = anno.getAnnotations();
+	const current_annos = await anno.getAnnotations();
 
 	for (var i = 0; i < current_annos.length; i++) {
 		anno.removeAnnotation(current_annos[i])
@@ -2117,34 +2117,27 @@ async function handleAnnotations(boxes, scores, classes) {
 
 var image_history = [];
 
-// In set_img_from_filename(), vor dem Bildwechsel:
-var old_fn = $("#filename").html();
-if (old_fn && old_fn !== fn) {
-    image_history.push(old_fn);
-}
-
 function go_back() {
-    if (image_history.length === 0) {
-        warn("History", "Kein vorheriges Bild");
-        return;
-    }
-    var prev_fn = image_history.pop();
-    set_img_from_filename(prev_fn);
+	if (image_history.length === 0) {
+		warn("History", "Kein vorheriges Bild");
+		return;
+	}
+	var prev_fn = image_history.pop();
+	set_img_from_filename(prev_fn);
 }
 
 function show_shortcut_help() {
-    var help = [
-        "N = Next image",
-        "B = Back (vorheriges Bild)",
-        "S = Skip (ohne Annotation)",
-        "O = Offtopic",
-        "U = Unidentifiable",
-        "K = KI-Labelling",
-        "? = Diese Hilfe"
-    ].join("\n");
-    alert(help);
+	var help = [
+		"N = Next image",
+		"B = Back (vorheriges Bild)",
+		"S = Skip (ohne Annotation)",
+		"O = Offtopic",
+		"U = Unidentifiable",
+		"K = KI-Labelling",
+		"? = Diese Hilfe"
+	].join("\n");
+	alert(help);
 }
-
 
 async function skip_current_image() {
     // 1. Aktuellen Dateinamen holen
