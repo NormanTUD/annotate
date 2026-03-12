@@ -1,7 +1,5 @@
 "use strict";
 
-let save_debounce_timer = null;
-var cached_detections = null; // { boxes: [], scores: [], classes: [] }
 var zoom_input;
 var zoom_factor = 1.0;
 var used_model = null;
@@ -558,7 +556,6 @@ async function load_model_and_predict () {
 
 	await predictImageWithModel();
 
-	create_ai_threshold_sliders();
 }
 
 async function predictImageWithModel() {
@@ -733,12 +730,11 @@ async function predict(modelWidth, modelHeight) {
 }
 
 async function processModelOutput(res, modelWidth, modelHeight) {
-    console.group("🔍 YOLO Post-Processing DEBUG");
+    console.group("🔥 YOLO Post-Processing DEBUG: Finale Bereinigung");
     const startTime = performance.now();
 
-    // *** USE A VERY LOW THRESHOLD HERE — the slider will filter later ***
-    const confThreshold = 0.01;
-    const iouThreshold = getIouThreshold();
+    const confThreshold = conf || 0.3; // Confidence threshold for predictions
+    const iouThreshold = 0.45; // Intersection-over-Union threshold for NMS
 
     // *** 1. Raw Data Extraction and Shape Determination ***
     let rawData;
@@ -759,14 +755,16 @@ async function processModelOutput(res, modelWidth, modelHeight) {
 
     const TOTAL_ELEMENTS = rawData.length;
 
-    const KNOWN_CLASSES_COUNT = labels.length;
+    // Dynamically calculate the number of classes from the labels array
+    const KNOWN_CLASSES_COUNT = labels.length; // Dynamically set based on the labels array
     console.log(`ℹ️ Dynamically calculated number of classes: ${KNOWN_CLASSES_COUNT}`);
 
+    // Dynamically create the FEATURE_TO_CANDIDATES array
     const FEATURE_TO_CANDIDATES = [
         { F: 84, C: 8400, classes: 80, total: 705600 },
         { F: 61, C: 13125, classes: 57, total: 800625 },
         { F: 25, C: 32025, classes: 21, total: 800625 },
-        { F: 79, C: 13125, classes: KNOWN_CLASSES_COUNT, total: 79 * 13125 }
+        { F: 79, C: 13125, classes: KNOWN_CLASSES_COUNT, total: 79 * 13125 } // Dynamically added
     ];
 
     let FINAL_FEATURES = 0;
@@ -791,14 +789,21 @@ async function processModelOutput(res, modelWidth, modelHeight) {
     console.log(`ℹ️ Modell-Input: ${modelWidth}x${modelHeight}, Klassen: ${KNOWN_CLASSES_COUNT}`);
     console.log(`✅ Shape: [Features: ${FINAL_FEATURES}, Kandidaten: ${FINAL_CANDIDATES}] (Total: ${TOTAL_ELEMENTS})`);
 
+    // *************************************************************************************
     // 2. Tensor Creation and Transpose
+    // *************************************************************************************
+
     let predictionsTensor = tf.tensor(rawData, [FINAL_FEATURES, FINAL_CANDIDATES]).expandDims(0);
     predictionsTensor = predictionsTensor.transpose([0, 2, 1]);
     console.log(`1. Tensor transponiert. Shape: [${predictionsTensor.shape.join(', ')}]`);
 
+    // *************************************************************************************
     // 3. Corrected Splitting: [4 Box, C Classes]
+    // *************************************************************************************
+
+    // Dynamically calculate the number of classes based on the tensor shape
     const tensorShape = predictionsTensor.shape[2];
-    const numClasses = tensorShape - 4;
+    const numClasses = tensorShape - 4; // Subtract 4 for the bounding box coordinates
 
     if (numClasses !== KNOWN_CLASSES_COUNT) {
         console.warn(`⚠️ Mismatch between calculated classes (${KNOWN_CLASSES_COUNT}) and tensor shape (${numClasses}). Using ${numClasses}.`);
@@ -809,19 +814,24 @@ async function processModelOutput(res, modelWidth, modelHeight) {
     const scoresSqueezed = scores.squeeze();
     console.log(`2. Aufteilung: Boxen[${boxes.shape.join(', ')}], Scores[${scoresSqueezed.shape.join(', ')}]`);
 
+    // *************************************************************************************
     // 4. Post-Processing: Decode Boxes and Apply NMS
+    // *************************************************************************************
+
+    // Decode bounding boxes
     const decodedBoxes = decodeYOLOBoxes(boxes, modelWidth, modelHeight);
 
+    // Apply confidence threshold
     const [filteredBoxes, filteredScores, filteredClasses] = filterByConfidence(
         decodedBoxes,
         scoresSqueezed,
-        confThreshold  // <-- uses 0.01, captures almost everything
+        confThreshold
     );
 
+    // Apply Non-Maximum Suppression (NMS)
     const finalDetections = applyNMS(filteredBoxes, filteredScores, filteredClasses, iouThreshold);
 
-    console.log(`3. Post-Processing abgeschlossen. Final Detections: ${finalDetections.boxes.length}`);
-    console.log(`   (Using internal confThreshold=${confThreshold}, slider will filter display)`);
+    console.log(`3. Post-Processing abgeschlossen. Final Detections: ${finalDetections.length}`);
     console.groupEnd();
 
     return finalDetections;
@@ -1162,7 +1172,6 @@ function fade_image_transition(fn) {
 }
 
 async function set_img_from_filename(fn, no_reset_zoom = false, reload = false, no_remove_rotation_toolbar = false) {
-	cached_detections = null;
 	if(!no_remove_rotation_toolbar) {
 		$("#rotation_toolbar").remove();
 	}
@@ -1481,90 +1490,85 @@ function init_image_and_overlay_on_load() {
 }
 
 function create_ai_threshold_sliders() {
-    if (document.getElementById('ai_threshold_toolbar')) return;
+	if (document.getElementById('ai_threshold_toolbar')) return;
 
-    const container = document.getElementById('image_container');
-    if (!container) return;
+	const container = document.getElementById('image_container');
+	if (!container) return;
 
-    const toolbar = document.createElement('div');
-    toolbar.id = 'ai_threshold_toolbar';
-    toolbar.style.display = 'flex';
-    toolbar.style.alignItems = 'center';
-    toolbar.style.gap = '14px';
-    toolbar.style.marginBottom = '6px';
-    toolbar.style.userSelect = 'none';
+	const toolbar = document.createElement('div');
+	toolbar.id = 'ai_threshold_toolbar';
+	toolbar.style.display = 'flex';
+	toolbar.style.alignItems = 'center';
+	toolbar.style.gap = '14px';
+	toolbar.style.marginBottom = '6px';
+	toolbar.style.userSelect = 'none';
 
-    function make_block(label_text, id, default_val) {
-        const block = document.createElement('div');
-        block.style.display = 'flex';
-        block.style.alignItems = 'center';
-        block.style.gap = '6px';
+	function make_block(label_text, id, default_val) {
+		const block = document.createElement('div');
+		block.style.display = 'flex';
+		block.style.alignItems = 'center';
+		block.style.gap = '6px';
 
-        const label = document.createElement('span');
-        label.textContent = label_text;
-        label.style.fontSize = '0.9em';
+		const label = document.createElement('span');
+		label.textContent = label_text;
+		label.style.fontSize = '0.9em';
 
-        const input = document.createElement('input');
-        input.type = 'range';
-        input.min = 0;
-        input.max = 1;
-        input.step = 0.01;
-        input.value = default_val;
-        input.id = id;
-        input.style.cursor = 'pointer';
-        input.style.width = '160px';
+		const input = document.createElement('input');
+		input.type = 'range';
+		input.className = 'ai_stuff';
+		input.min = 0;
+		input.max = 1;
+		input.step = 0.01;
+		input.value = default_val;
+		input.id = id;
+		input.style.cursor = 'pointer';
+		input.style.width = '160px';
 
-        const val = document.createElement('span');
-        val.id = id + '_value';
-        val.style.minWidth = '48px';
-        val.style.fontFamily = 'monospace';
-        val.textContent = Number(default_val).toFixed(2);
+		const val = document.createElement('span');
+		val.id = id + '_value';
+		val.style.minWidth = '48px';
+		val.style.fontFamily = 'monospace';
+		val.textContent = Number(default_val).toFixed(2);
 
-        block.appendChild(label);
-        block.appendChild(input);
-        block.appendChild(val);
+		block.appendChild(label);
+		block.appendChild(input);
+		block.appendChild(val);
 
-        return block;
-    }
+		return block;
+	}
 
-    const conf_block = make_block('Conf:', 'conf_slider', 0.3);
-    const iou_block  = make_block('IoU:',  'iou_slider',  0.5);
+	const conf_block = make_block('Conf:', 'conf_slider', 0.3);
+	const iou_block  = make_block('IoU:',  'iou_slider',  0.5);
 
-    toolbar.appendChild(conf_block);
-    toolbar.appendChild(iou_block);
+	toolbar.appendChild(conf_block);
+	toolbar.appendChild(iou_block);
 
-    container.parentNode.insertBefore(toolbar, container);
+	container.parentNode.insertBefore(toolbar, container);
 
-    function update_display(id) {
-        const slider = document.getElementById(id);
-        const span   = document.getElementById(id + '_value');
-        span.textContent = Number(slider.value).toFixed(2);
-    }
+	function update_display(id) {
+		const slider = document.getElementById(id);
+		const span   = document.getElementById(id + '_value');
+		span.textContent = Number(slider.value).toFixed(2);
+	}
 
-    function attach_events(id) {
-        const slider = document.getElementById(id);
+	function attach_events(id) {
+		const slider = document.getElementById(id);
 
-        slider.addEventListener('input', () => {
-            update_display(id);
-            // Live update annotations when conf slider moves
-            if (id === 'conf_slider' && cached_detections) {
-                applyThresholdFromSlider();
-            }
-        });
+		slider.addEventListener('input', () => update_display(id));
+		slider.addEventListener('change', () => update_display(id));
 
-        slider.addEventListener('change', () => {
-            update_display(id);
-            if (id === 'conf_slider' && cached_detections) {
-                applyThresholdFromSlider();
-            }
-        });
-    }
+		let down = false;
+		slider.addEventListener('pointerdown', () => down = true);
+		window.addEventListener('pointerup', () => {
+			if (down) down = false;
+		});
+	}
 
-    attach_events('conf_slider');
-    attach_events('iou_slider');
+	attach_events('conf_slider');
+	attach_events('iou_slider');
 
-    update_display('conf_slider');
-    update_display('iou_slider');
+	update_display('conf_slider');
+	update_display('iou_slider');
 }
 
 function getConfThreshold() {
@@ -2061,69 +2065,79 @@ async function handleAnnotations(boxes, scores, classes) {
     console.log(`  Received ${boxes.length} boxes`);
 
     if (boxes.length === 0) {
-        cached_detections = null;
         show_nothing_found_animation();
         warn("Nothing found", "Annotate manually");
         return;
     }
 
-    // Cache ALL detections FIRST (unfiltered by conf slider)
-    cached_detections = {
-        boxes: boxes,
-        scores: scores,
-        classes: classes
-    };
+    // Log what we received
+    for (let i = 0; i < Math.min(5, boxes.length); i++) {
+        console.log(`  Input box[${i}]: [${boxes[i].map(v => v.toFixed(6)).join(', ')}], score=${scores[i].toFixed(4)}, class=${classes[i]}`);
+    }
 
-    console.log(`  Cached ${boxes.length} total detections for live threshold filtering`);
+    delete_all_anno_current_image();
 
-    // Now apply the current slider threshold for display
-    await applyThresholdFromSlider();
-}
-
-async function applyThresholdFromSlider() {
-    if (!cached_detections) return;
-
-    const { boxes, scores, classes } = cached_detections;
-    const threshold = getConfThreshold();
+    const anno_boxes = [];
     const this_labels = get_labels();
     const img_width = $("#image").width();
     const img_height = $("#image").height();
 
-    const anno_boxes = [];
+    console.log(`  Image display size: ${img_width}x${img_height}`);
 
     for (let i = 0; i < boxes.length; i++) {
-        if (scores[i] < threshold) continue;
-
+        // boxes[i] is [xMin, yMin, xMax, yMax] normalized to [0, 1]
         const [xMin, yMin, xMax, yMax] = boxes[i];
+
+        console.log(`  Box[${i}] raw: xMin=${xMin.toFixed(6)}, yMin=${yMin.toFixed(6)}, xMax=${xMax.toFixed(6)}, yMax=${yMax.toFixed(6)}`);
+
+        // Convert normalized coords to pixel coords on the displayed image
         const x = Math.round(xMin * img_width);
         const y = Math.round(yMin * img_height);
         const w = Math.round((xMax - xMin) * img_width);
         const h = Math.round((yMax - yMin) * img_height);
 
+        console.log(`  Box[${i}] pixel: x=${x}, y=${y}, w=${w}, h=${h}`);
+
         const this_class = classes[i];
-        if (this_class === -1) continue;
+        const this_score = scores[i];
+
+        if (this_class === -1) {
+            console.log(`  Box[${i}] skipped: class is -1`);
+            continue;
+        }
+
+        if (Object.keys(this_labels).length === 0) {
+            error("ERROR", "has no labels");
+            return;
+        }
 
         const this_label = this_labels[this_class];
-        if (!this_label) continue;
+        console.log(`  Box[${i}] label: "${this_label}" (class=${this_class}, score=${this_score.toFixed(4)})`);
 
-        const anno_element = get_annotate_element(this_label, x, y, w, h);
-        if (anno_element) anno_boxes.push(anno_element);
+        if (this_label) {
+            var anno_element = get_annotate_element(this_label, x, y, w, h);
+            if (anno_element) {
+                anno_boxes.push(anno_element);
+            }
+        } else {
+            error("ERROR", `this_label was empty for class ${this_class}`);
+        }
     }
 
-    // Instant visual update (no DB hit)
+    console.log(`  Created ${anno_boxes.length} annotation elements`);
+    console.log("=== END handleAnnotations DEBUG ===");
+
+    success("Success", "Image Detection ran successfully");
+
     await anno.setAnnotations(anno_boxes);
     watch_svg_auto();
 
-    success("Threshold", `Showing ${anno_boxes.length}/${boxes.length} (conf ≥ ${threshold.toFixed(2)})`);
+    const new_annos = await anno.getAnnotations();
+    for (const ann of new_annos) {
+        await save_anno(ann);
+    }
 
-    // Debounced DB save — only fires 500ms after user stops sliding
-    if (save_debounce_timer) clearTimeout(save_debounce_timer);
-    save_debounce_timer = setTimeout(async () => {
-        delete_all_anno_current_image();
-        const current = await anno.getAnnotations();
-        for (const a of current) await save_anno(a);
-        await load_dynamic_content();
-    }, 500);
+    success("Success", "Image Detection done.");
 }
 
 var image_history = [];
