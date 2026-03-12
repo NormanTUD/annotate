@@ -238,11 +238,6 @@ a:hover {
 	list-style: none;
 }
 
-#list li::before {
-	content: counter(li) " "; /* Nummerierung */
-	counter-increment: li;
-}
-
 #list ul {
 	counter-reset: li;
 }
