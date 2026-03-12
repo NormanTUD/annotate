@@ -76,12 +76,8 @@
 		file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 		file_put_contents("$tmp_dir/labels.json", $labels_json);
 
-		$j = 0;
-
 		foreach ($images as $fn => $img) {
 			$fn_txt = preg_replace("/\.\w+$/", ".txt", $fn);
-
-			$j++;
 
 			$str = "";
 			$str_arr = array();
