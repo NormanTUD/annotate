@@ -8,14 +8,6 @@ var debouncing_time_rotation = 150;
 
 var skipped_images = [];
 
-function skip_current_image() {
-    var current_fn = $("#filename").html();
-    if (current_fn && !skipped_images.includes(current_fn)) {
-        skipped_images.push(current_fn);
-    }
-    load_next_random_image();
-}
-
 (function () {
 	var style = document.createElement('style');
 	style.textContent =
