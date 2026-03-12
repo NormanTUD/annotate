@@ -122,6 +122,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
+      - .:/var/www/html
 
 volumes:
   mariadb_data:
