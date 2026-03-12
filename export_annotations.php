@@ -42,11 +42,11 @@
 		$labels_json = "";
 		$_labels = [];
 
-		// NEU: Stabile IDs aus der DB holen
+		// NEU: Alle Kategorien aus der DB holen (nicht nur die aktuell annotierten)
 		$category_numbers = array();
 		$_labels = [];
 
-		$cat_query = "SELECT id, name FROM category WHERE name IN (" . esc($categories) . ") ORDER BY id ASC";
+		$cat_query = "SELECT id, name FROM category ORDER BY id ASC";
 		$cat_res = rquery($cat_query);
 
 		while ($row = mysqli_fetch_row($cat_res)) {
@@ -56,7 +56,6 @@
 		}
 
 		// dataset.yaml mit den DB-IDs schreiben
-		ksort($category_numbers); // optional: nach ID sortieren
 		foreach ($category_numbers as $cat => $db_id) {
 			$dataset_yaml .= "  $db_id: $cat\n";
 			$_labels[$db_id] = $cat;
