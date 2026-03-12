@@ -43,6 +43,9 @@
 		$_labels = [];
 
 		$j = 0;
+		sort($categories); // Ensure consistent ID assignment
+
+		$j = 0;
 		$category_numbers = array();
 		foreach ($categories as $i => $cat) {
 			$category_numbers[$cat] = $j;
@@ -50,6 +53,7 @@
 			$_labels[] = $cat;
 			$j++;
 		}
+
 
 		$labels_json = json_encode($_labels);
 
