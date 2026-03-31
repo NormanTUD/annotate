@@ -808,6 +808,8 @@ async function processModelOutput(res, modelWidth, modelHeight) {
 	predictionsTensor.dispose();
 	rawBoxes.dispose();
 	scores.dispose();
+	boxes.dispose();
+	scoresSqueezed.dispose();
 
 	return finalDetections;
 }
