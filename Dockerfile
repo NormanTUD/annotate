@@ -12,6 +12,7 @@ RUN apt-get update && \
     && pip install onnx==1.19.1 \
     && apt-get purge -y build-essential libjpeg-dev libpng-dev libfreetype6-dev \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN pip install protobuf==5.29.6
 
 # Apache rewrite module aktivieren
 RUN a2enmod rewrite
