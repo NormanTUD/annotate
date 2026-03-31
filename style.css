@@ -72,22 +72,6 @@ form {
 	border: 1px solid #444;
 }
 
-#status_bar {
-	display: none;
-	user-select: none;
-	height: 1.5em;
-	width: 100%;
-	position: fixed;
-	bottom: 0px;
-	border: 1px groove #626262;
-	background-color: rgba(40,40,40,0.95);
-	left: 0px;
-	z-index: 99999;
-	padding-bottom: 5px;
-	color: #ccc;
-	box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
-}
-
 .ai_stuff {
 	display: none;
 	color: #fff;
@@ -247,16 +231,31 @@ a:hover {
 	text-align: end;
 }
 
-#status_bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 #tensor_monitor {
     color: cyan;
     font-size: 0.85em;
     white-space: nowrap;
     margin-left: auto;
     padding-left: 16px;
+}
+
+#status_bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: nowrap;        /* prevent wrapping to a second line */
+	user-select: none;
+	height: auto;             /* let it size to content instead of fixed 1.5em */
+	min-height: 1.5em;        /* keep a minimum */
+	width: 100%;
+	position: fixed;
+	bottom: 0px;
+	left: 0px;
+	border: 1px groove #626262;
+	background-color: rgba(40, 40, 40, 0.95);
+	z-index: 99999;
+	padding: 4px 8px;         /* consistent padding on all sides */
+	color: #ccc;
+	box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+	box-sizing: border-box;
 }

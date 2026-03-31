@@ -2165,17 +2165,8 @@ async function skip_current_image() {
 	await load_next_random_image();
 }
 
-// Add a dedicated tensor monitor bar (once)
 $(document).ready(function () {
-    if (!document.getElementById("tensor_monitor")) {
-        var monitorEl = $("<div id='tensor_monitor' style='"
-            + "position:fixed; bottom:0; left:0; width:100%; "
-            + "background:rgba(0,0,0,0.85); color:cyan; "
-            + "font-family:monospace; font-size:0.8em; "
-            + "padding:4px 12px; z-index:10000; "
-            + "border-top:1px solid #333;'></div>");
-        $("body").append(monitorEl);
-    }
+    // Don't create a new #tensor_monitor div — it already exists in footer.php
 
     setInterval(function () {
         var mem = tf.memory();
