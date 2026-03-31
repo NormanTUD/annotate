@@ -10,9 +10,9 @@ RUN apt-get update && \
     && pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
     && python3 -m pip install --no-cache-dir --break-system-packages jax tensorflowjs==4.7.0 onnx2tf sng4onnx onnx_graphsurgeon onnxslim onnxruntime ai-edge-litert tf_keras ultralytics imagehash \
     && pip install onnx==1.19.1 \
-    && pip install protobuf==5.29.6 tensorflow_decision_forests==1.8.1 yggdrasil_decision_forests==0.0.9 \
     && apt-get purge -y build-essential libjpeg-dev libpng-dev libfreetype6-dev \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN pip install protobuf>=6.31.1
 
 # Apache rewrite module aktivieren
 RUN a2enmod rewrite
