@@ -1988,6 +1988,8 @@ function filterByConfidence(boxes, scores, confThreshold) {
 
 	// Return empty but correctly shaped tensors if nothing passed the threshold
 	if (filteredBoxesArr.length === 0) {
+		maxScores.dispose();
+
 		console.log("  No boxes passed threshold!");
 		console.log("=== END filterByConfidence DEBUG ===");
 		return [
