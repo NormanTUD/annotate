@@ -246,3 +246,18 @@ a:hover {
 	vertical-align: top;
 	text-align: end;
 }
+
+#status_bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#tensor_monitor {
+    color: cyan;
+    font-family: monospace;
+    font-size: 0.85em;
+    white-space: nowrap;
+    margin-left: auto;
+    padding-left: 16px;
+}

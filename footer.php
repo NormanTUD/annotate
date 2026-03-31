@@ -1,5 +1,6 @@
-	<div id="status_bar">
-		<span id="status_bar_msg"></span>
+	<div id="status_bar" style="display: flex;">
+		<span id="status_bar_msg"><span style="color:white">No AI model chosen</span></span>
+		<span id="tensor_monitor"></span>
 	</div>
 
 	<script>

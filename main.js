@@ -2140,16 +2140,46 @@ function show_shortcut_help() {
 }
 
 async function skip_current_image() {
-    // 1. Aktuellen Dateinamen holen
-    var fn = $("#filename").html();
-    if (!fn) {
-        warn("Skip", "Kein Bild geladen");
-        return;
+	// 1. Aktuellen Dateinamen holen
+	var fn = $("#filename").html();
+	if (!fn) {
+		warn("Skip", "Kein Bild geladen");
+		return;
+	}
+
+	// 2. Annotorious-Annotationen entfernen + DB-Annotationen löschen
+	await remove_current_annos(fn);
+
+	// 3. Nächstes Bild laden
+	await load_next_random_image();
+}
+
+// Add a dedicated tensor monitor bar (once)
+$(document).ready(function () {
+    if (!document.getElementById("tensor_monitor")) {
+        var monitorEl = $("<div id='tensor_monitor' style='"
+            + "position:fixed; bottom:0; left:0; width:100%; "
+            + "background:rgba(0,0,0,0.85); color:cyan; "
+            + "font-family:monospace; font-size:0.8em; "
+            + "padding:4px 12px; z-index:10000; "
+            + "border-top:1px solid #333;'></div>");
+        $("body").append(monitorEl);
     }
 
-    // 2. Annotorious-Annotationen entfernen + DB-Annotationen löschen
-    await remove_current_annos(fn);
+    setInterval(function () {
+        var mem = tf.memory();
+        var info = "Tensors: " + mem.numTensors
+            + " | DataBuffers: " + mem.numDataBuffers
+            + " | Bytes: " + (mem.numBytes / 1024).toFixed(1) + " KB";
 
-    // 3. Nächstes Bild laden
-    await load_next_random_image();
-}
+        if (mem.numBytesInGPU !== undefined && mem.numBytesInGPU > 0) {
+            info += " | GPU: " + (mem.numBytesInGPU / 1024 / 1024).toFixed(2) + " MB";
+        }
+
+        if (mem.unreliable) {
+            info += " | ⚠️ unreliable";
+        }
+
+        $("#tensor_monitor").html(info);
+    }, 500);
+});
