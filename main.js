@@ -1947,61 +1947,61 @@ function decodeYOLOBoxes(boxes, modelWidth, modelHeight) {
  * Filters boxes, scores, and classes by confidence threshold.
  */
 function filterByConfidence(boxes, scores, confThreshold) {
-    console.log("=== filterByConfidence DEBUG ===");
-    console.log(`  Input boxes shape: [${boxes.shape}]`);
-    console.log(`  Input scores shape: [${scores.shape}]`);
-    console.log(`  Confidence threshold: ${confThreshold}`);
+	console.log("=== filterByConfidence DEBUG ===");
+	console.log(`  Input boxes shape: [${boxes.shape}]`);
+	console.log(`  Input scores shape: [${scores.shape}]`);
+	console.log(`  Confidence threshold: ${confThreshold}`);
 
-    const maxScores = scores.max(1);
-    const classIndices = scores.argMax(1);
+	const maxScores = scores.max(1);
+	const classIndices = scores.argMax(1);
 
-    const maskArr = maxScores.arraySync();
-    const boxesArr = boxes.arraySync();
-    const scoresArr = maxScores.arraySync();
-    const classesArr = classIndices.arraySync();
+	const maskArr = maxScores.arraySync();
+	const boxesArr = boxes.arraySync();
+	const scoresArr = maxScores.arraySync();
+	const classesArr = classIndices.arraySync();
 
-    // Log score distribution
-    const sortedScores = [...scoresArr].sort((a, b) => b - a);
-    console.log(`  Top 10 scores: ${sortedScores.slice(0, 10).map(s => s.toFixed(4)).join(', ')}`);
-    console.log(`  Total candidates: ${scoresArr.length}`);
-    console.log(`  Candidates above threshold: ${scoresArr.filter(s => s >= confThreshold).length}`);
+	// Log score distribution
+	const sortedScores = [...scoresArr].sort((a, b) => b - a);
+	console.log(`  Top 10 scores: ${sortedScores.slice(0, 10).map(s => s.toFixed(4)).join(', ')}`);
+	console.log(`  Total candidates: ${scoresArr.length}`);
+	console.log(`  Candidates above threshold: ${scoresArr.filter(s => s >= confThreshold).length}`);
 
-    const filteredBoxesArr = [];
-    const filteredScoresArr = [];
-    const filteredClassesArr = [];
+	const filteredBoxesArr = [];
+	const filteredScoresArr = [];
+	const filteredClassesArr = [];
 
-    for (let i = 0; i < maskArr.length; i++) {
-        if (scoresArr[i] >= confThreshold) {
-            filteredBoxesArr.push(boxesArr[i]);
-            filteredScoresArr.push(scoresArr[i]);
-            filteredClassesArr.push(classesArr[i]);
-        }
-    }
+	for (let i = 0; i < maskArr.length; i++) {
+		if (scoresArr[i] >= confThreshold) {
+			filteredBoxesArr.push(boxesArr[i]);
+			filteredScoresArr.push(scoresArr[i]);
+			filteredClassesArr.push(classesArr[i]);
+		}
+	}
 
-    console.log(`  Filtered count: ${filteredBoxesArr.length}`);
+	console.log(`  Filtered count: ${filteredBoxesArr.length}`);
 
-    // Log first 5 filtered boxes
-    for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
-        console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], score=${filteredScoresArr[i].toFixed(4)}, class=${filteredClassesArr[i]}`);
-    }
+	// Log first 5 filtered boxes
+	for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
+		console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], score=${filteredScoresArr[i].toFixed(4)}, class=${filteredClassesArr[i]}`);
+	}
 
-    // Return empty but correctly shaped tensors if nothing passed the threshold
-    if (filteredBoxesArr.length === 0) {
-        console.log("  No boxes passed threshold!");
-        console.log("=== END filterByConfidence DEBUG ===");
-        return [
-            tf.tensor2d([], [0, 4]),
-            tf.tensor1d([]),
-            tf.tensor1d([], 'int32')
-        ];
-    }
+	// Return empty but correctly shaped tensors if nothing passed the threshold
+	if (filteredBoxesArr.length === 0) {
+		console.log("  No boxes passed threshold!");
+		console.log("=== END filterByConfidence DEBUG ===");
+		return [
+			tf.tensor2d([], [0, 4]),
+			tf.tensor1d([]),
+			tf.tensor1d([], 'int32')
+		];
+	}
 
-    const filteredBoxes = tf.tensor2d(filteredBoxesArr, [filteredBoxesArr.length, 4]);
-    const filteredScores = tf.tensor1d(filteredScoresArr);
-    const filteredClasses = tf.tensor1d(filteredClassesArr, 'int32');
+	const filteredBoxes = tf.tensor2d(filteredBoxesArr, [filteredBoxesArr.length, 4]);
+	const filteredScores = tf.tensor1d(filteredScoresArr);
+	const filteredClasses = tf.tensor1d(filteredClassesArr, 'int32');
 
-    console.log("=== END filterByConfidence DEBUG ===");
-    return [filteredBoxes, filteredScores, filteredClasses];
+	console.log("=== END filterByConfidence DEBUG ===");
+	return [filteredBoxes, filteredScores, filteredClasses];
 }
 
 /**
