@@ -1886,59 +1886,61 @@ async function decrement_rotation () {
  * We convert to [xMin, yMin, xMax, yMax] normalized to [0, 1].
  */
 function decodeYOLOBoxes(boxes, modelWidth, modelHeight) {
-    const [cx, cy, w, h] = tf.split(boxes, 4, 1);
+	return tf.tidy(() => {
+		const [cx, cy, w, h] = tf.split(boxes, 4, 1);
 
-    console.log("=== decodeYOLOBoxes DEBUG ===");
+		console.log("=== decodeYOLOBoxes DEBUG ===");
 
-    // Sample first 3 raw values
-    const cxArr = cx.squeeze().arraySync();
-    const cyArr = cy.squeeze().arraySync();
-    const wArr = w.squeeze().arraySync();
-    const hArr = h.squeeze().arraySync();
+		// Sample first 3 raw values
+		const cxArr = cx.squeeze().arraySync();
+		const cyArr = cy.squeeze().arraySync();
+		const wArr = w.squeeze().arraySync();
+		const hArr = h.squeeze().arraySync();
 
-    for (let i = 0; i < Math.min(3, cxArr.length); i++) {
-        console.log(`  Raw box[${i}]: cx=${cxArr[i].toFixed(4)}, cy=${cyArr[i].toFixed(4)}, w=${wArr[i].toFixed(4)}, h=${hArr[i].toFixed(4)}`);
-    }
+		for (let i = 0; i < Math.min(3, cxArr.length); i++) {
+			console.log(`  Raw box[${i}]: cx=${cxArr[i].toFixed(4)}, cy=${cyArr[i].toFixed(4)}, w=${wArr[i].toFixed(4)}, h=${hArr[i].toFixed(4)}`);
+		}
 
-    // Check if values are already in pixel space or normalized
-    const maxCx = Math.max(...cxArr.slice(0, 100));
-    const maxCy = Math.max(...cyArr.slice(0, 100));
-    const maxW = Math.max(...wArr.slice(0, 100));
-    const maxH = Math.max(...hArr.slice(0, 100));
-    console.log(`  Max values (first 100): cx=${maxCx.toFixed(4)}, cy=${maxCy.toFixed(4)}, w=${maxW.toFixed(4)}, h=${maxH.toFixed(4)}`);
-    console.log(`  Model dimensions: ${modelWidth}x${modelHeight}`);
+		// Check if values are already in pixel space or normalized
+		const maxCx = Math.max(...cxArr.slice(0, 100));
+		const maxCy = Math.max(...cyArr.slice(0, 100));
+		const maxW = Math.max(...wArr.slice(0, 100));
+		const maxH = Math.max(...hArr.slice(0, 100));
+		console.log(`  Max values (first 100): cx=${maxCx.toFixed(4)}, cy=${maxCy.toFixed(4)}, w=${maxW.toFixed(4)}, h=${maxH.toFixed(4)}`);
+		console.log(`  Model dimensions: ${modelWidth}x${modelHeight}`);
 
-    const isPixelSpace = maxCx > 2.0 || maxCy > 2.0; // If values > 2, they're likely pixel coords
-    console.log(`  Values appear to be in ${isPixelSpace ? 'PIXEL' : 'NORMALIZED'} space`);
+		const isPixelSpace = maxCx > 2.0 || maxCy > 2.0; // If values > 2, they're likely pixel coords
+		console.log(`  Values appear to be in ${isPixelSpace ? 'PIXEL' : 'NORMALIZED'} space`);
 
-    let xMin, yMin, xMax, yMax;
+		let xMin, yMin, xMax, yMax;
 
-    if (isPixelSpace) {
-        // Values are in pixel space (0..modelWidth), normalize to 0..1
-        console.log("  -> Normalizing from pixel space to [0,1]");
-        xMin = cx.sub(w.div(2)).div(modelWidth);
-        yMin = cy.sub(h.div(2)).div(modelHeight);
-        xMax = cx.add(w.div(2)).div(modelWidth);
-        yMax = cy.add(h.div(2)).div(modelHeight);
-    } else {
-        // Values are already normalized (0..1)
-        console.log("  -> Already normalized, converting cx,cy,w,h to xMin,yMin,xMax,yMax");
-        xMin = cx.sub(w.div(2));
-        yMin = cy.sub(h.div(2));
-        xMax = cx.add(w.div(2));
-        yMax = cy.add(h.div(2));
-    }
+		if (isPixelSpace) {
+			// Values are in pixel space (0..modelWidth), normalize to 0..1
+			console.log("  -> Normalizing from pixel space to [0,1]");
+			xMin = cx.sub(w.div(2)).div(modelWidth);
+			yMin = cy.sub(h.div(2)).div(modelHeight);
+			xMax = cx.add(w.div(2)).div(modelWidth);
+			yMax = cy.add(h.div(2)).div(modelHeight);
+		} else {
+			// Values are already normalized (0..1)
+			console.log("  -> Already normalized, converting cx,cy,w,h to xMin,yMin,xMax,yMax");
+			xMin = cx.sub(w.div(2));
+			yMin = cy.sub(h.div(2));
+			xMax = cx.add(w.div(2));
+			yMax = cy.add(h.div(2));
+		}
 
-    const result = tf.concat([xMin, yMin, xMax, yMax], 1);
+		const result = tf.concat([xMin, yMin, xMax, yMax], 1);
 
-    // Sample first 3 decoded values
-    const resultArr = result.arraySync();
-    for (let i = 0; i < Math.min(3, resultArr.length); i++) {
-        console.log(`  Decoded box[${i}]: xMin=${resultArr[i][0].toFixed(6)}, yMin=${resultArr[i][1].toFixed(6)}, xMax=${resultArr[i][2].toFixed(6)}, yMax=${resultArr[i][3].toFixed(6)}`);
-    }
-    console.log("=== END decodeYOLOBoxes DEBUG ===");
+		// Sample first 3 decoded values
+		const resultArr = result.arraySync();
+		for (let i = 0; i < Math.min(3, resultArr.length); i++) {
+			console.log(`  Decoded box[${i}]: xMin=${resultArr[i][0].toFixed(6)}, yMin=${resultArr[i][1].toFixed(6)}, xMax=${resultArr[i][2].toFixed(6)}, yMax=${resultArr[i][3].toFixed(6)}`);
+		}
+		console.log("=== END decodeYOLOBoxes DEBUG ===");
 
-    return result;
+		return result;
+	});
 }
 
 /**
