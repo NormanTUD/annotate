@@ -12,7 +12,13 @@ RUN apt-get update && \
     && pip install onnx==1.19.1 \
     && apt-get purge -y build-essential libjpeg-dev libpng-dev libfreetype6-dev \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN pip install protobuf>=6.31.1
+
+# Protobuf Runtime MUSS zur gencode passen - prüfe was installiert ist und erzwinge Konsistenz
+RUN python3 -c "import yggdrasil_decision_forests.dataset.data_spec_pb2" 2>&1 || \
+    pip install --force-reinstall protobuf>=6.31.1
+
+# Verifizierung - bricht den Build ab wenn es nicht passt
+RUN python3 -c "from yggdrasil_decision_forests.dataset import data_spec_pb2; print('Protobuf OK')"
 
 # Apache rewrite module aktivieren
 RUN a2enmod rewrite
