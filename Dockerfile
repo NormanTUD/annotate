@@ -16,8 +16,8 @@ RUN apt-get update && \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Patch: tensorflowjs importiert tensorflow_decision_forests, aber es ist optional
-RUN sed -i 's|import tensorflow_decision_forests|pass  # tensorflow_decision_forests removed|' \
-    /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/tf_saved_model_conversion_v2.py
+RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' \
+    /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/jax_conversion.py
 
 # Apache rewrite module aktivieren
 RUN a2enmod rewrite
