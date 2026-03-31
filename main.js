@@ -120,6 +120,11 @@ async function load_model() {
 		return;
 	}
 
+	if (model) {
+		model.dispose();
+		model = null;
+	}
+
 	const model_uuid = get_chosen_model_uuid();
 
 	const new_model_md5 = model_uuid;
@@ -800,6 +805,10 @@ async function processModelOutput(res, modelWidth, modelHeight) {
 	scores.dispose();
 	boxes.dispose();
 	scoresSqueezed.dispose();
+	filteredBoxes.dispose();
+	filteredScores.dispose();
+	filteredClasses.dispose();
+	decodedBoxes.dispose();
 
 	return finalDetections;
 }
