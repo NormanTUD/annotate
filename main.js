@@ -693,32 +693,22 @@ function getModelInputShape() {
 }
 
 async function predict(modelWidth, modelHeight) {
-	tf.engine().startScope();
+	const image_tensor = tf.tidy(() => {
+		return tf.browser.fromPixels($("#image")[0])
+			.resizeBilinear([modelWidth, modelHeight])
+			.div(255)
+			.expandDims();
+	});
 
-	const img_from_browser = tf.browser.fromPixels($("#image")[0]);
-	const image_tensor = img_from_browser
-		.resizeBilinear([modelWidth, modelHeight])
-		.div(255)
-		.expandDims();
-
-	var res;
-
+	let res;
 	try {
 		res = await model.execute(image_tensor);
-
-		try {
-			res = res.arraySync();
-		} catch (e) {
-			// If cannot be converted is already float32array
-		}
-
-	} catch (e) {
-		error("Exception: e", e)
+		const arr = res instanceof tf.Tensor ? res.arraySync() : res;
+		return arr;
+	} finally {
+		image_tensor.dispose();
+		if (res instanceof tf.Tensor) res.dispose();
 	}
-
-	tf.engine().endScope();
-
-	return res;
 }
 
 async function processModelOutput(res, modelWidth, modelHeight) {
