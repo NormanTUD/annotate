@@ -10,15 +10,14 @@ RUN apt-get update && \
     && pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
     && python3 -m pip install --no-cache-dir --break-system-packages jax tensorflowjs==4.7.0 onnx2tf sng4onnx onnx_graphsurgeon onnxslim onnxruntime ai-edge-litert tf_keras ultralytics imagehash \
     && pip install onnx==1.19.1 \
+    && pip install protobuf==5.29.6 \
+    && pip uninstall -y tensorflow_decision_forests yggdrasil_decision_forests \
     && apt-get purge -y build-essential libjpeg-dev libpng-dev libfreetype6-dev \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Protobuf Runtime MUSS zur gencode passen - prüfe was installiert ist und erzwinge Konsistenz
-RUN python3 -c "import yggdrasil_decision_forests.dataset.data_spec_pb2" 2>&1 || \
-    pip install --force-reinstall protobuf>=6.31.1
-
-# Verifizierung - bricht den Build ab wenn es nicht passt
-RUN python3 -c "from yggdrasil_decision_forests.dataset import data_spec_pb2; print('Protobuf OK')"
+# Patch: tensorflowjs importiert tensorflow_decision_forests, aber es ist optional
+RUN sed -i 's|import tensorflow_decision_forests|pass  # tensorflow_decision_forests removed|' \
+    /usr/local/lib/python3.11/site-packages/tensorflowjs/converters/tf_saved_model_conversion_v2.py
 
 # Apache rewrite module aktivieren
 RUN a2enmod rewrite
