@@ -226,9 +226,7 @@ function move_file (to) {
 function render_status(color, title, msg) {
 	var text = msg ? (title + ": " + msg) : title;
 
-	$("#status_bar_msg")
-		.html("<span style='color:" + color + "'>" + text + "</span>")
-		.parent().css("display", "block");
+	$("#status_bar_msg").html("<span style='color:" + color + "'>" + text + "</span>")
 }
 
 function info(title, msg) {
