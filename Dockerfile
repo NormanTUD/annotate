@@ -10,7 +10,7 @@ RUN apt-get update && \
     && pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
     && python3 -m pip install --no-cache-dir --break-system-packages jax tensorflowjs==4.7.0 onnx2tf sng4onnx onnx_graphsurgeon onnxslim onnxruntime ai-edge-litert tf_keras ultralytics imagehash \
     && pip install onnx==1.19.1 \
-    && pip install protobuf==5.29.6 \
+    && pip install protobuf==5.29.6 "tensorflow>=2.0.0,<=2.19.0" \
     && pip uninstall -y tensorflow_decision_forests yggdrasil_decision_forests \
     && apt-get purge -y build-essential libjpeg-dev libpng-dev libfreetype6-dev \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
