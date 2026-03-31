@@ -11,8 +11,8 @@ RUN apt-get update && \
     && python3 -m pip install --no-cache-dir --break-system-packages jax tensorflowjs==4.7.0 onnx2tf sng4onnx onnx_graphsurgeon onnxslim onnxruntime ai-edge-litert tf_keras ultralytics imagehash \
     && pip install onnx==1.19.1 \
     && apt-get purge -y build-essential libjpeg-dev libpng-dev libfreetype6-dev \
-    && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN pip install protobuf==5.29.6
+    && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && pip install protobuf==5.29.6
 
 # Apache rewrite module aktivieren
 RUN a2enmod rewrite
