@@ -2014,33 +2014,35 @@ function filterByConfidence(boxes, scores, confThreshold) {
  * Applies Non-Maximum Suppression (NMS) to filter overlapping boxes.
  */
 function applyNMS(boxes, scores, classes, iouThreshold) {
-    console.log("=== applyNMS DEBUG ===");
-    console.log(`  Input boxes shape: [${boxes.shape}]`);
-    console.log(`  Input scores shape: [${scores.shape}]`);
-    console.log(`  IoU threshold: ${iouThreshold}`);
+	return tf.tidy(() => {
+		console.log("=== applyNMS DEBUG ===");
+		console.log(`  Input boxes shape: [${boxes.shape}]`);
+		console.log(`  Input scores shape: [${scores.shape}]`);
+		console.log(`  IoU threshold: ${iouThreshold}`);
 
-    if (boxes.shape[0] === 0) {
-        console.log("  No boxes to process, returning empty.");
-        console.log("=== END applyNMS DEBUG ===");
-        return { boxes: [], scores: [], classes: [] };
-    }
+		if (boxes.shape[0] === 0) {
+			console.log("  No boxes to process, returning empty.");
+			console.log("=== END applyNMS DEBUG ===");
+			return { boxes: [], scores: [], classes: [] };
+		}
 
-    const nmsIndices = tf.image.nonMaxSuppression(boxes, scores, 100, iouThreshold);
-    console.log(`  NMS kept ${nmsIndices.shape[0]} boxes`);
+		const nmsIndices = tf.image.nonMaxSuppression(boxes, scores, 100, iouThreshold);
+		console.log(`  NMS kept ${nmsIndices.shape[0]} boxes`);
 
-    const finalBoxes = tf.gather(boxes, nmsIndices).arraySync();
-    const finalScores = tf.gather(scores, nmsIndices).arraySync();
-    const finalClasses = tf.gather(classes, nmsIndices).arraySync();
+		const finalBoxes = tf.gather(boxes, nmsIndices).arraySync();
+		const finalScores = tf.gather(scores, nmsIndices).arraySync();
+		const finalClasses = tf.gather(classes, nmsIndices).arraySync();
 
-    nmsIndices.dispose();
+		nmsIndices.dispose();
 
-    // Log final detections
-    for (let i = 0; i < Math.min(5, finalBoxes.length); i++) {
-        console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, class=${finalClasses[i]}`);
-    }
+		// Log final detections
+		for (let i = 0; i < Math.min(5, finalBoxes.length); i++) {
+			console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, class=${finalClasses[i]}`);
+		}
 
-    console.log("=== END applyNMS DEBUG ===");
-    return { boxes: finalBoxes, scores: finalScores, classes: finalClasses };
+		console.log("=== END applyNMS DEBUG ===");
+		return { boxes: finalBoxes, scores: finalScores, classes: finalClasses };
+	});
 }
 
 async function handleAnnotations(boxes, scores, classes) {
