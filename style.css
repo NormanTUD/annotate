@@ -255,7 +255,6 @@ a:hover {
 
 #tensor_monitor {
     color: cyan;
-    font-family: monospace;
     font-size: 0.85em;
     white-space: nowrap;
     margin-left: auto;
