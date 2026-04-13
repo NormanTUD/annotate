@@ -19,13 +19,22 @@ RUN apt-get update && \
 RUN pip uninstall -y tensorflow_decision_forests yggdrasil_decision_forests
 
 # Patch: tensorflow_decision_forests Import optional machen
-RUN python3 -c "\
-path = '/usr/local/lib/python3.11/site-packages/tensorflowjs/converters/tf_saved_model_conversion_v2.py'; \
-import os; \
-if os.path.exists(path): \
-    with open(path, 'r') as f: content = f.read(); \
-    content = content.replace('import tensorflow_decision_forests', 'try:\n  import tensorflow_decision_forests\nexcept Exception:\n  tensorflow_decision_forests = None'); \
-    with open(path, 'w') as f: f.write(content)"
+RUN <<'EOF'
+python3 -c "
+path = '/usr/local/lib/python3.11/site-packages/tensorflowjs/converters/tf_saved_model_conversion_v2.py'
+with open(path, 'r') as f:
+    content = f.read()
+content = content.replace(
+    'import tensorflow_decision_forests',
+    '''try:
+  import tensorflow_decision_forests
+except Exception:
+  tensorflow_decision_forests = None'''
+)
+with open(path, 'w') as f:
+    f.write(content)
+"
+EOF
 
 # JAX shape_poly Fix
 RUN sed -i 's|from jax.experimental.jax2tf import shape_poly|from jax._src.export import shape_poly|' \
