@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+export DOCKER_BUILDKIT=1
+
 if ! command -v ip 2>/dev/null >/dev/null; then
 	echo "ip not found. Try installing iproute2"
 	exit 6
