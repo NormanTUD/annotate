@@ -415,6 +415,36 @@ const toDataURL = url => fetch(url)
 		reader.readAsDataURL(blob)
 	}));
 
+async function save_annos_batch(annotations) {
+	if (!annotations || annotations.length === 0) return;
+
+	const batch = annotations.map(annotation => ({
+		position: annotation.target.selector.value,
+		body: annotation.body,
+		id: annotation.id,
+		source: annotation.target.source.replace(/.*\//, ""),
+			full: JSON.stringify(annotation),
+			used_model: used_model
+		}));
+
+		if (enable_debug) {
+			log("save_annos_batch data:", batch);
+		}
+
+		try {
+			const response = await $.ajax({
+				url: "submit_batch.php",
+				type: "POST",
+				contentType: "application/json",
+				data: JSON.stringify({ annotations: batch }),
+				dataType: "html"
+			});
+			success("Batch Save: OK", response);
+		} catch (err) {
+			error("Batch Save Failed", err.statusText || err);
+		}
+}
+
 async function save_anno (annotation) {
 	var data = {
 		"position": annotation.target.selector.value,
@@ -1019,10 +1049,7 @@ async function set_all_current_annotations_from_to (from, name) {
 	await anno.setAnnotations(current);
 
 	var new_annos = await anno.getAnnotations();
-	for (var i = 0; i < new_annos.length; i++) {
-		await save_anno(new_annos[i]);
-	}
-
+	await save_annos_batch(new_annos);
 	await load_dynamic_content();
 }
 
@@ -2063,83 +2090,82 @@ function applyNMS(boxes, scores, classes, iouThreshold) {
 }
 
 async function handleAnnotations(boxes, scores, classes) {
-    console.log("=== handleAnnotations DEBUG ===");
-    console.log(`  Received ${boxes.length} boxes`);
+	console.log("=== handleAnnotations DEBUG ===");
+	console.log(`  Received ${boxes.length} boxes`);
 
-    if (boxes.length === 0) {
-        show_nothing_found_animation();
-        warn("Nothing found", "Annotate manually");
-        return;
-    }
+	if (boxes.length === 0) {
+		show_nothing_found_animation();
+		warn("Nothing found", "Annotate manually");
+		return;
+	}
 
-    // Log what we received
-    for (let i = 0; i < Math.min(5, boxes.length); i++) {
-        console.log(`  Input box[${i}]: [${boxes[i].map(v => v.toFixed(6)).join(', ')}], score=${scores[i].toFixed(4)}, class=${classes[i]}`);
-    }
+	// Log what we received
+	for (let i = 0; i < Math.min(5, boxes.length); i++) {
+		console.log(`  Input box[${i}]: [${boxes[i].map(v => v.toFixed(6)).join(', ')}], score=${scores[i].toFixed(4)}, class=${classes[i]}`);
+	}
 
-    delete_all_anno_current_image();
+	delete_all_anno_current_image();
 
-    const anno_boxes = [];
-    const this_labels = get_labels();
-    const img_width = $("#image").width();
-    const img_height = $("#image").height();
+	const anno_boxes = [];
+	const this_labels = get_labels();
+	const img_width = $("#image").width();
+	const img_height = $("#image").height();
 
-    console.log(`  Image display size: ${img_width}x${img_height}`);
+	console.log(`  Image display size: ${img_width}x${img_height}`);
 
-    for (let i = 0; i < boxes.length; i++) {
-        // boxes[i] is [xMin, yMin, xMax, yMax] normalized to [0, 1]
-        const [xMin, yMin, xMax, yMax] = boxes[i];
+	for (let i = 0; i < boxes.length; i++) {
+		// boxes[i] is [xMin, yMin, xMax, yMax] normalized to [0, 1]
+		const [xMin, yMin, xMax, yMax] = boxes[i];
 
-        console.log(`  Box[${i}] raw: xMin=${xMin.toFixed(6)}, yMin=${yMin.toFixed(6)}, xMax=${xMax.toFixed(6)}, yMax=${yMax.toFixed(6)}`);
+		console.log(`  Box[${i}] raw: xMin=${xMin.toFixed(6)}, yMin=${yMin.toFixed(6)}, xMax=${xMax.toFixed(6)}, yMax=${yMax.toFixed(6)}`);
 
-        // Convert normalized coords to pixel coords on the displayed image
-        const x = Math.round(xMin * img_width);
-        const y = Math.round(yMin * img_height);
-        const w = Math.round((xMax - xMin) * img_width);
-        const h = Math.round((yMax - yMin) * img_height);
+		// Convert normalized coords to pixel coords on the displayed image
+		const x = Math.round(xMin * img_width);
+		const y = Math.round(yMin * img_height);
+		const w = Math.round((xMax - xMin) * img_width);
+		const h = Math.round((yMax - yMin) * img_height);
 
-        console.log(`  Box[${i}] pixel: x=${x}, y=${y}, w=${w}, h=${h}`);
+		console.log(`  Box[${i}] pixel: x=${x}, y=${y}, w=${w}, h=${h}`);
 
-        const this_class = classes[i];
-        const this_score = scores[i];
+		const this_class = classes[i];
+		const this_score = scores[i];
 
-        if (this_class === -1) {
-            console.log(`  Box[${i}] skipped: class is -1`);
-            continue;
-        }
+		if (this_class === -1) {
+			console.log(`  Box[${i}] skipped: class is -1`);
+			continue;
+		}
 
-        if (Object.keys(this_labels).length === 0) {
-            error("ERROR", "has no labels");
-            return;
-        }
+		if (Object.keys(this_labels).length === 0) {
+			error("ERROR", "has no labels");
+			return;
+		}
 
-        const this_label = this_labels[this_class];
-        console.log(`  Box[${i}] label: "${this_label}" (class=${this_class}, score=${this_score.toFixed(4)})`);
+		const this_label = this_labels[this_class];
+		console.log(`  Box[${i}] label: "${this_label}" (class=${this_class}, score=${this_score.toFixed(4)})`);
 
-        if (this_label) {
-            var anno_element = get_annotate_element(this_label, x, y, w, h);
-            if (anno_element) {
-                anno_boxes.push(anno_element);
-            }
-        } else {
-            error("ERROR", `this_label was empty for class ${this_class}`);
-        }
-    }
+		if (this_label) {
+			var anno_element = get_annotate_element(this_label, x, y, w, h);
+			if (anno_element) {
+				anno_boxes.push(anno_element);
+			}
+		} else {
+			error("ERROR", `this_label was empty for class ${this_class}`);
+		}
+	}
 
-    console.log(`  Created ${anno_boxes.length} annotation elements`);
-    console.log("=== END handleAnnotations DEBUG ===");
+	console.log(`  Created ${anno_boxes.length} annotation elements`);
+	console.log("=== END handleAnnotations DEBUG ===");
 
-    success("Success", "Image Detection ran successfully");
+	success("Success", "Image Detection ran successfully");
 
-    await anno.setAnnotations(anno_boxes);
-    watch_svg_auto();
+	await anno.setAnnotations(anno_boxes);
+	watch_svg_auto();
 
-    const new_annos = await anno.getAnnotations();
-    for (const ann of new_annos) {
-        await save_anno(ann);
-    }
+	const new_annos = await anno.getAnnotations();
+	await save_annos_batch(new_annos);
+	await load_dynamic_content();
 
-    success("Success", "Image Detection done.");
+	success("Success", "Image Detection done.");
 }
 
 var image_history = [];
