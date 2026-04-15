@@ -7,6 +7,109 @@ var disable_spinner = false;
 var debouncing_time_rotation = 150;
 let _load_dynamic_timeout = null;
 let _load_dynamic_resolve_queue = [];
+// --- Batching & debouncing for manual annotation events ---
+let _annotation_save_queue = [];
+let _annotation_save_timeout = null;
+const _annotation_save_delay = 400; // ms to wait before flushing batch
+
+let _selects_timeout = null;
+const _selects_debounce_delay = 350;
+
+let _annotation_dynamic_content_timeout = null;
+const _annotation_dynamic_content_delay = 500;
+
+async function flush_annotation_queue() {
+    if (_annotation_save_queue.length === 0) return;
+
+    // Grab the current queue and reset
+    const queue = _annotation_save_queue.splice(0);
+
+    // Separate deletes from creates/updates
+    const to_delete = queue.filter(item => item._action === 'delete');
+    const to_save = queue.filter(item => item._action !== 'delete');
+
+    // --- Handle saves (create + update) as a batch ---
+    if (to_save.length > 0) {
+        const batch = to_save.map(item => ({
+            position: item.position,
+            body: item.body,
+            id: item.id,
+            source: item.source,
+            full: item.full,
+            used_model: item.used_model || null
+        }));
+
+        try {
+            const response = await $.ajax({
+                url: "submit_batch.php",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ annotations: batch }),
+                dataType: "html"
+            });
+            success("Batch Save: OK", response);
+        } catch (err) {
+            error("Batch Save Failed", err.statusText || err);
+        }
+    }
+
+    // --- Handle deletes individually (or create a delete_batch.php endpoint) ---
+    for (const item of to_delete) {
+        try {
+            await $.ajax({
+                url: "delete_annotation.php",
+                type: "post",
+                data: {
+                    position: item.position,
+                    body: item.body,
+                    id: item.id,
+                    source: item.source,
+                    full: item.full
+                }
+            });
+        } catch (err) {
+            error("Delete anno failed", err.statusText || err);
+        }
+    }
+
+    // After all saves/deletes are done, refresh UI once
+    await load_dynamic_content();
+    create_selects_from_annotation_debounced(1);
+    watch_svg_auto();
+}
+
+function queue_annotation_event(action, annotation) {
+    _annotation_save_queue.push({
+        _action: action,
+        position: annotation.target.selector.value,
+        body: annotation.body,
+        id: annotation.id,
+        source: annotation.target.source.replace(/.*\//, ""),
+        full: JSON.stringify(annotation),
+        used_model: used_model
+    });
+
+    // Reset the flush timer
+    if (_annotation_save_timeout) {
+        clearTimeout(_annotation_save_timeout);
+    }
+
+    _annotation_save_timeout = setTimeout(async () => {
+        _annotation_save_timeout = null;
+        await flush_annotation_queue();
+    }, _annotation_save_delay);
+}
+
+function create_selects_from_annotation_debounced(force = 0) {
+    if (_selects_timeout) {
+        clearTimeout(_selects_timeout);
+    }
+
+    _selects_timeout = setTimeout(() => {
+        _selects_timeout = null;
+        create_selects_from_annotation(force);
+    }, _selects_debounce_delay);
+}
 
 var skipped_images = [];
 
@@ -249,101 +352,39 @@ function error(title, msg) {
 	render_status("red", title, msg);
 }
 
-async function make_item_anno(elem, widgets={}) {
-	anno = await Annotorious.init({
-		image: elem,
-		widgets: widgets
-	});
+async function make_item_anno(elem, widgets = {}) {
+    anno = await Annotorious.init({
+        image: elem,
+        widgets: widgets
+    });
 
-	await anno.loadAnnotations('get_current_annotations.php?first_other=1&source=' + elem.src.replace(/.*?filename=/, ""));
+    await anno.loadAnnotations(
+        'get_current_annotations.php?first_other=1&source=' +
+        elem.src.replace(/.*?filename=/, "")
+    );
 
-	// Add event handlers using .on
-	anno.on('createAnnotation', function(annotation) {
-		// Do something
-		var data = {
-			"position": annotation.target.selector.value,
-			"body": annotation.body,
-			"id": annotation.id,
-			"source": annotation.target.source.replace(/.*\//, ""),
-			"full": JSON.stringify(annotation),
-			"used_model": used_model
-		};
+    // --- createAnnotation: queue instead of immediate AJAX ---
+    anno.on('createAnnotation', function (annotation) {
+        queue_annotation_event('create', annotation);
+    });
 
-		$.ajax({
-			url: "submit.php",
-			type: "post",
-			data: data,
-			success: async function (response) {
-				success("Create Anno: OK", response);
-				await load_dynamic_content();
-			},
-			error: async function(jqXHR, textStatus, errorThrown) {
-				error("Create anno: " + textStatus, errorThrown);
-				await load_dynamic_content();
-			}
-		});
+    // --- updateAnnotation: queue instead of immediate AJAX ---
+    anno.on('updateAnnotation', function (annotation) {
+        queue_annotation_event('update', annotation);
+    });
 
-		create_selects_from_annotation(1);
-	});
+    // --- deleteAnnotation: queue instead of immediate AJAX ---
+    anno.on('deleteAnnotation', function (annotation) {
+        queue_annotation_event('delete', annotation);
+    });
 
-	anno.on('updateAnnotation', function(annotation) {
-		var data = {
-			"position": annotation.target.selector.value,
-			"body": annotation.body,
-			"id": annotation.id,
-			"source": annotation.target.source.replace(/.*\//, ""),
-			"full": JSON.stringify(annotation)
-		};
-		$.ajax({
-			url: "submit.php",
-			type: "post",
-			data: data,
-			success: async function (response) {
-				success("Update Anno: OK", response)
-				await load_dynamic_content();
-			},
-			error: async function(jqXHR, textStatus, errorThrown) {
-				error("Update anno: " + textStatus, errorThrown);
-				await load_dynamic_content();
-			}
-		});
+    anno.on('cancelSelected', function (selection) {
+        log(selection);
+    });
 
-		create_selects_from_annotation(1);
-	});
-
-
-	anno.on('deleteAnnotation', function(annotation) {
-		var data = {
-			"position": annotation.target.selector.value,
-			"body": annotation.body,
-			"id": annotation.id,
-			"source": annotation.target.source.replace(/.*\//, ""),
-			"full": JSON.stringify(annotation)
-		};
-		$.ajax({
-			url: "delete_annotation.php",
-			type: "post",
-			data: data,
-			success: async function (response) {
-				success("Delete Anno: OK", response)
-				await load_dynamic_content();
-			},
-			error: async function(jqXHR, textStatus, errorThrown) {
-				error("delete Anno: " + textStatus, errorThrown);
-				await load_dynamic_content();
-			}
-		});
-
-		create_selects_from_annotation(1);
-	});
-
-	anno.on('cancelSelected', function(selection) {
-		log(selection);
-	})
-
-	if(!(await anno.getAnnotations().length)) {
-		await predictImageWithModel();
-	}
+    if (!(await anno.getAnnotations().length)) {
+        await predictImageWithModel();
+    }
 }
 
 async function create_annos () {
@@ -958,99 +999,99 @@ function sleep(ms) {
 }
 
 async function create_selects_from_annotation(force = 0) {
-	if ($(":focus").is("select") && !force) {
-		return;
-	}
-	if (typeof anno !== "object") {
-		return;
-	}
+    if ($(":focus").is("select") && !force) {
+        return;
+    }
+    if (typeof anno !== "object") {
+        return;
+    }
 
-	// Hole KI-Annotationen
-	const ki_names = get_names_from_ki_anno(await anno.getAnnotations());
-	const joined_ki_names = JSON.stringify(ki_names);
+    // Get KI annotations
+    const ki_names = get_names_from_ki_anno(await anno.getAnnotations());
+    const joined_ki_names = JSON.stringify(ki_names);
 
-	if (last_detected_names !== joined_ki_names) {
-		last_detected_names = joined_ki_names;
+    if (last_detected_names !== joined_ki_names) {
+        last_detected_names = joined_ki_names;
 
-		if (Object.keys(ki_names).length) {
-			let html = "";
-			const selects = [];
-			const ki_names_keys = Object.keys(ki_names);
+        if (Object.keys(ki_names).length) {
+            let html = "";
+            const selects = [];
+            const ki_names_keys = Object.keys(ki_names);
 
-			for (let i = 0; i < ki_names_keys.length; i++) {
-				previous[i] = ki_names_keys[i];
+            for (let i = 0; i < ki_names_keys.length; i++) {
+                previous[i] = ki_names_keys[i];
 
-				let this_select = `<select data-nr='${i}' class='ki_select_box'>`;
-				let found = false;
+                let this_select = `<select data-nr='${i}' class='ki_select_box'>`;
+                let found = false;
 
-				for (let j = 0; j < tags.length; j++) {
-					if (ki_names_keys[i] === tags[j]) found = true;
-					this_select += `<option ${ki_names_keys[i] === tags[j] ? "selected" : ""} value="${tags[j]}">${tags[j]}</option>`;
-				}
+                for (let j = 0; j < tags.length; j++) {
+                    if (ki_names_keys[i] === tags[j]) found = true;
+                    this_select += `<option ${ki_names_keys[i] === tags[j] ? "selected" : ""} value="${tags[j]}">${tags[j]}</option>`;
+                }
 
-				if (!found) {
-					this_select += `<option selected value="${ki_names_keys[i]}">${ki_names_keys[i]}</option>`;
-				}
+                if (!found) {
+                    this_select += `<option selected value="${ki_names_keys[i]}">${ki_names_keys[i]}</option>`;
+                }
 
-				this_select += `</select> (${ki_names[ki_names_keys[i]]})`;
-				selects.push(this_select);
-			}
+                this_select += `</select> (${ki_names[ki_names_keys[i]]})`;
+                selects.push(this_select);
+            }
 
-			html += selects.join(", ");
+            html += selects.join(", ");
 
-			var box = $("#ki_detected_names");
+            var box = $("#ki_detected_names");
 
-			if (box.html() !== html) {
-				box.stop(true, true);
+            if (box.html() !== html) {
+                box.stop(true, true);
 
-				if (!$.trim(box.html())) {
-					box.css({ width: 0 });
-					box.html(html);
-					box.animate({ width: "100%" }, 10);
-				} else {
-					box.html(html);
-				}
-			}
+                if (!$.trim(box.html())) {
+                    box.css({ width: 0 });
+                    box.html(html);
+                    box.animate({ width: "100%" }, 10);
+                } else {
+                    box.html(html);
+                }
+            }
 
-			$(".ki_select_box").off("change").on("change", async function (e) {
-				const nr = $(this).data("nr");
-				const old_value = previous[nr];
-				const new_value = e.currentTarget.value;
+            $(".ki_select_box").off("change").on("change", async function (e) {
+                const nr = $(this).data("nr");
+                const old_value = previous[nr];
+                const new_value = e.currentTarget.value;
 
-				await set_all_current_annotations_from_to(old_value, new_value);
-				await create_selects_from_annotation(1);
+                await set_all_current_annotations_from_to(old_value, new_value);
+                create_selects_from_annotation_debounced(1);
 
-				previous[nr] = new_value;
-			});
+                previous[nr] = new_value;
+            });
 
-		} else {
-			if (!running_ki) {
-				if ($("#ki_detected_names").html() !== "") {
-					$("#ki_detected_names").html("");
-				}
-			}
-		}
+        } else {
+            if (!running_ki) {
+                if ($("#ki_detected_names").html() !== "") {
+                    $("#ki_detected_names").html("");
+                }
+            }
+        }
 
-		last_detected_names = joined_ki_names;
-	}
+        last_detected_names = joined_ki_names;
+    }
 }
 
-async function set_all_current_annotations_from_to (from, name) {
-	var current = await anno.getAnnotations();
+async function set_all_current_annotations_from_to(from, name) {
+    var current = await anno.getAnnotations();
 
-	for (var i = 0; i < current.length; i++) {
-		var old = current[i]["body"][0]["value"];
-		if(from == old && old != name) {
-			current[i]["body"][0]["value"] = name;
-			success("changed " + old + " to " + name);
-		}
-	}
+    for (var i = 0; i < current.length; i++) {
+        var old = current[i]["body"][0]["value"];
+        if (from == old && old != name) {
+            current[i]["body"][0]["value"] = name;
+            success("changed " + old + " to " + name);
+        }
+    }
 
-	await anno.setAnnotations(current);
+    await anno.setAnnotations(current);
 
-	var new_annos = await anno.getAnnotations();
-	await save_annos_batch(new_annos);
-	await load_dynamic_content();
+    var new_annos = await anno.getAnnotations();
+    await save_annos_batch(new_annos);
+    await load_dynamic_content();
 }
 
 async function remove_current_annos (fn) {
@@ -1231,52 +1272,50 @@ async function set_img_from_filename(fn, no_reset_zoom = false, reload = false, 
 }
 
 async function load_next_random_image(fn = false) {
-	if (fn) {
-		await set_img_from_filename(fn);
-	} else {
-		let ajax_url = "get_random_unannotated_image.php";
+    if (fn) {
+        await set_img_from_filename(fn);
+    } else {
+        let ajax_url = "get_random_unannotated_image.php";
 
-		// In load_next_random_image(), den AJAX-Call anpassen:
-		ajax_url += (ajax_url.includes("?") ? "&" : "?")
-			+ "skip=" + encodeURIComponent(JSON.stringify(skipped_images));
+        ajax_url += (ajax_url.includes("?") ? "&" : "?")
+            + "skip=" + encodeURIComponent(JSON.stringify(skipped_images));
 
+        let queryString = window.location.search;
+        let urlParams = new URLSearchParams(queryString);
+        let like = urlParams.get('like');
 
-		let queryString = window.location.search;
-		let urlParams = new URLSearchParams(queryString);
-		let like = urlParams.get('like');
+        if (like) {
+            ajax_url += "?like=" + encodeURIComponent(like);
+        }
 
-		if (like) {
-			ajax_url += "?like=" + encodeURIComponent(like);
-		}
+        log("Loading next image...");
 
-		log("Loading next image...");
+        try {
+            await $.ajax({
+                url: ajax_url,
+                type: "GET",
+                dataType: "html",
+                success: async function (fn) {
+                    await set_img_from_filename(fn);
+                },
+                error: function (xhr, status) {
+                    error("Error loading the next image", "Sorry, there was a problem!");
+                }
+            });
+        } catch (e) {
+            if (e && typeof e === "object" && "message" in e) {
+                error("Error", e.message);
+            } else {
+                error("Error", "" + e);
+            }
+        }
 
-		try {
-			await $.ajax({
-				url: ajax_url,
-				type: "GET",
-				dataType: "html",
-				success: async function (fn) {
-					await set_img_from_filename(fn);
-				},
-				error: function (xhr, status) {
-					error("Error loading the next image", "Sorry, there was a problem!");
-				}
-			});
-		} catch (e) {
-			if (e && typeof e === "object" && "message" in e) {
-				error("Error", e.message);
-			} else {
-				error("Error", "" + e);
-			}
-		}
+        log("Loaded next image");
+    }
 
-		log("Loaded next image");
-	}
+    await load_dynamic_content();
 
-	await load_dynamic_content();
-
-	await create_selects_from_annotation(1);
+    create_selects_from_annotation_debounced(1);
 }
 
 document.onkeydown = function(e) {
@@ -2092,84 +2131,84 @@ function applyNMS(boxes, scores, classes, iouThreshold) {
 }
 
 async function handleAnnotations(boxes, scores, classes) {
-	console.log("=== handleAnnotations DEBUG ===");
-	console.log(`  Received ${boxes.length} boxes`);
+    console.log("=== handleAnnotations DEBUG ===");
+    console.log(`  Received ${boxes.length} boxes`);
 
-	if (boxes.length === 0) {
-		show_nothing_found_animation();
-		warn("Nothing found", "Annotate manually");
-		return;
-	}
+    if (boxes.length === 0) {
+        show_nothing_found_animation();
+        warn("Nothing found", "Annotate manually");
+        return;
+    }
 
-	// Log what we received
-	for (let i = 0; i < Math.min(5, boxes.length); i++) {
-		console.log(`  Input box[${i}]: [${boxes[i].map(v => v.toFixed(6)).join(', ')}], score=${scores[i].toFixed(4)}, class=${classes[i]}`);
-	}
+    for (let i = 0; i < Math.min(5, boxes.length); i++) {
+        console.log(`  Input box[${i}]: [${boxes[i].map(v => v.toFixed(6)).join(', ')}], score=${scores[i].toFixed(4)}, class=${classes[i]}`);
+    }
 
-	delete_all_anno_current_image();
+    delete_all_anno_current_image();
 
-	const anno_boxes = [];
-	const this_labels = get_labels();
-	const img_width = $("#image").width();
-	const img_height = $("#image").height();
+    const anno_boxes = [];
+    const this_labels = get_labels();
+    const img_width = $("#image").width();
+    const img_height = $("#image").height();
 
-	console.log(`  Image display size: ${img_width}x${img_height}`);
+    console.log(`  Image display size: ${img_width}x${img_height}`);
 
-	for (let i = 0; i < boxes.length; i++) {
-		// boxes[i] is [xMin, yMin, xMax, yMax] normalized to [0, 1]
-		const [xMin, yMin, xMax, yMax] = boxes[i];
+    for (let i = 0; i < boxes.length; i++) {
+        const [xMin, yMin, xMax, yMax] = boxes[i];
 
-		console.log(`  Box[${i}] raw: xMin=${xMin.toFixed(6)}, yMin=${yMin.toFixed(6)}, xMax=${xMax.toFixed(6)}, yMax=${yMax.toFixed(6)}`);
+        console.log(`  Box[${i}] raw: xMin=${xMin.toFixed(6)}, yMin=${yMin.toFixed(6)}, xMax=${xMax.toFixed(6)}, yMax=${yMax.toFixed(6)}`);
 
-		// Convert normalized coords to pixel coords on the displayed image
-		const x = Math.round(xMin * img_width);
-		const y = Math.round(yMin * img_height);
-		const w = Math.round((xMax - xMin) * img_width);
-		const h = Math.round((yMax - yMin) * img_height);
+        const x = Math.round(xMin * img_width);
+        const y = Math.round(yMin * img_height);
+        const w = Math.round((xMax - xMin) * img_width);
+        const h = Math.round((yMax - yMin) * img_height);
 
-		console.log(`  Box[${i}] pixel: x=${x}, y=${y}, w=${w}, h=${h}`);
+        console.log(`  Box[${i}] pixel: x=${x}, y=${y}, w=${w}, h=${h}`);
 
-		const this_class = classes[i];
-		const this_score = scores[i];
+        const this_class = classes[i];
+        const this_score = scores[i];
 
-		if (this_class === -1) {
-			console.log(`  Box[${i}] skipped: class is -1`);
-			continue;
-		}
+        if (this_class === -1) {
+            console.log(`  Box[${i}] skipped: class is -1`);
+            continue;
+        }
 
-		if (Object.keys(this_labels).length === 0) {
-			error("ERROR", "has no labels");
-			return;
-		}
+        if (Object.keys(this_labels).length === 0) {
+            error("ERROR", "has no labels");
+            return;
+        }
 
-		const this_label = this_labels[this_class];
-		console.log(`  Box[${i}] label: "${this_label}" (class=${this_class}, score=${this_score.toFixed(4)})`);
+        const this_label = this_labels[this_class];
+        console.log(`  Box[${i}] label: "${this_label}" (class=${this_class}, score=${this_score.toFixed(4)})`);
 
-		if (this_label) {
-			var anno_element = get_annotate_element(this_label, x, y, w, h);
-			if (anno_element) {
-				anno_boxes.push(anno_element);
-			}
-		} else {
-			error("ERROR", `this_label was empty for class ${this_class}`);
-		}
-	}
+        if (this_label) {
+            var anno_element = get_annotate_element(this_label, x, y, w, h);
+            if (anno_element) {
+                anno_boxes.push(anno_element);
+            }
+        } else {
+            error("ERROR", `this_label was empty for class ${this_class}`);
+        }
+    }
 
-	console.log(`  Created ${anno_boxes.length} annotation elements`);
-	console.log("=== END handleAnnotations DEBUG ===");
+    console.log(`  Created ${anno_boxes.length} annotation elements`);
+    console.log("=== END handleAnnotations DEBUG ===");
 
-	success("Success", "Image Detection ran successfully");
+    success("Success", "Image Detection ran successfully");
 
-	await anno.setAnnotations(anno_boxes);
-	watch_svg_auto();
+    // Set all annotations at once (batch — no individual events fired)
+    await anno.setAnnotations(anno_boxes);
+    watch_svg_auto();
 
-	const new_annos = await anno.getAnnotations();
-	await save_annos_batch(new_annos);
-	await load_dynamic_content();
+    // Save all in one batch call
+    const new_annos = await anno.getAnnotations();
+    await save_annos_batch(new_annos);
 
-	await create_selects_from_annotation(1);
+    // Single UI refresh after everything is done
+    await load_dynamic_content();
+    await create_selects_from_annotation(1);
 
-	success("Success", "Image Detection done.");
+    success("Success", "Image Detection done.");
 }
 
 var image_history = [];
