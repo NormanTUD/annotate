@@ -2197,7 +2197,6 @@ async function handleAnnotations(boxes, scores, classes) {
     success("Success", "Image Detection ran successfully");
 
     // Set all annotations at once (batch — no individual events fired)
-    await anno.setAnnotations(anno_boxes);
     watch_svg_auto();
 
     // Save all in one batch call
