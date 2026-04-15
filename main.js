@@ -280,6 +280,8 @@ async function make_item_anno(elem, widgets={}) {
 				await load_dynamic_content();
 			}
 		});
+
+		create_selects_from_annotation(1);
 	});
 
 	anno.on('updateAnnotation', function(annotation) {
@@ -303,6 +305,8 @@ async function make_item_anno(elem, widgets={}) {
 				await load_dynamic_content();
 			}
 		});
+
+		create_selects_from_annotation(1);
 	});
 
 
@@ -327,6 +331,8 @@ async function make_item_anno(elem, widgets={}) {
 				await load_dynamic_content();
 			}
 		});
+
+		create_selects_from_annotation(1);
 	});
 
 	anno.on('cancelSelected', function(selection) {
@@ -1365,8 +1371,6 @@ function start_like () {
 	update_url_param("like", like);
 	load_next_random_image();
 }
-
-setInterval(create_selects_from_annotation, 1000);
 
 $(document).ready(() => {
 	load_labels();
