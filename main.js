@@ -1,5 +1,7 @@
 "use strict";
 
+// new
+
 var zoom_input;
 var zoom_factor = 1.0;
 var used_model = null;
