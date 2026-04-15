@@ -999,6 +999,7 @@ function sleep(ms) {
 }
 
 async function create_selects_from_annotation(force = 0) {
+    // Don't interrupt user interaction with selects
     if ($(":focus").is("select") && !force) {
         return;
     }
@@ -1006,74 +1007,86 @@ async function create_selects_from_annotation(force = 0) {
         return;
     }
 
-    // Get KI annotations
-    const ki_names = get_names_from_ki_anno(await anno.getAnnotations());
-    const joined_ki_names = JSON.stringify(ki_names);
+    const annotations = await anno.getAnnotations();
 
-    if (last_detected_names !== joined_ki_names) {
-        last_detected_names = joined_ki_names;
+    // Build label counts in a single pass
+    const label_counts = new Map();
+    for (let i = 0; i < annotations.length; i++) {
+        const bodies = annotations[i].body;
+        for (let j = 0; j < bodies.length; j++) {
+            const val = bodies[j].value;
+            label_counts.set(val, (label_counts.get(val) || 0) + 1);
+        }
+    }
 
-        if (Object.keys(ki_names).length) {
-            let html = "";
-            const selects = [];
-            const ki_names_keys = Object.keys(ki_names);
+    // Fast-path: check if anything actually changed
+    const cache_key = JSON.stringify(Array.from(label_counts.entries()).sort());
+    if (cache_key === last_detected_names) {
+        return;
+    }
+    last_detected_names = cache_key;
 
-            for (let i = 0; i < ki_names_keys.length; i++) {
-                previous[i] = ki_names_keys[i];
+    const box = $("#ki_detected_names");
 
-                let this_select = `<select data-nr='${i}' class='ki_select_box'>`;
-                let found = false;
+    if (label_counts.size === 0) {
+        if (!running_ki && box.html() !== "") {
+            box.html("");
+        }
+        return;
+    }
 
-                for (let j = 0; j < tags.length; j++) {
-                    if (ki_names_keys[i] === tags[j]) found = true;
-                    this_select += `<option ${ki_names_keys[i] === tags[j] ? "selected" : ""} value="${tags[j]}">${tags[j]}</option>`;
-                }
+    // Build all options HTML once (shared across selects)
+    const tag_options = tags.map(t => `<option value="${t}">${t}</option>`);
+    const tag_set = new Set(tags);
 
-                if (!found) {
-                    this_select += `<option selected value="${ki_names_keys[i]}">${ki_names_keys[i]}</option>`;
-                }
+    // Build selects using array join (much faster than string concat in loops)
+    const selects = [];
+    let i = 0;
 
-                this_select += `</select> (${ki_names[ki_names_keys[i]]})`;
-                selects.push(this_select);
-            }
+    for (const [label, count] of label_counts) {
+        previous[i] = label;
 
-            html += selects.join(", ");
-
-            var box = $("#ki_detected_names");
-
-            if (box.html() !== html) {
-                box.stop(true, true);
-
-                if (!$.trim(box.html())) {
-                    box.css({ width: 0 });
-                    box.html(html);
-                    box.animate({ width: "100%" }, 10);
-                } else {
-                    box.html(html);
-                }
-            }
-
-            $(".ki_select_box").off("change").on("change", async function (e) {
-                const nr = $(this).data("nr");
-                const old_value = previous[nr];
-                const new_value = e.currentTarget.value;
-
-                await set_all_current_annotations_from_to(old_value, new_value);
-                create_selects_from_annotation_debounced(1);
-
-                previous[nr] = new_value;
-            });
-
+        // Build options: mark the matching one as selected
+        let options;
+        if (tag_set.has(label)) {
+            // Label exists in tags — rebuild with selected attribute
+            options = tags.map(t =>
+                `<option${t === label ? " selected" : ""} value="${t}">${t}</option>`
+            ).join("");
         } else {
-            if (!running_ki) {
-                if ($("#ki_detected_names").html() !== "") {
-                    $("#ki_detected_names").html("");
-                }
-            }
+            // Label not in tags — append it as selected
+            options = tag_options.join("") +
+                `<option selected value="${label}">${label}</option>`;
         }
 
-        last_detected_names = joined_ki_names;
+        selects.push(
+            `<select data-nr='${i}' class='ki_select_box'>${options}</select> (${count})`
+        );
+        i++;
     }
+
+    const html = selects.join(", ");
+
+    // Only touch the DOM if content actually changed
+    if (box.html() === html) {
+        return;
+    }
+
+    box.html(html);
+
+    // Use event delegation instead of binding per-element
+    // Unbind previous delegated handler, rebind once
+    box.off("change", ".ki_select_box").on("change", ".ki_select_box", async function (e) {
+        const nr = $(this).data("nr");
+        const old_value = previous[nr];
+        const new_value = e.currentTarget.value;
+
+        if (old_value !== new_value) {
+            await set_all_current_annotations_from_to(old_value, new_value);
+            create_selects_from_annotation_debounced(1);
+            previous[nr] = new_value;
+        }
+    });
 }
 
 async function set_all_current_annotations_from_to(from, name) {
