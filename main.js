@@ -5,6 +5,8 @@ var zoom_factor = 1.0;
 var used_model = null;
 var disable_spinner = false;
 var debouncing_time_rotation = 150;
+let _load_dynamic_timeout = null;
+let _load_dynamic_resolve_queue = [];
 
 var skipped_images = [];
 
@@ -1060,36 +1062,48 @@ async function make_image_annotatable() {
 	]);
 }
 
-async function load_dynamic_content () {
-	/*
-	if((Date.now() - last_load_dynamic_content) <= 2000) {
-		log("Not reloading dynamic content");
-		return;
-	}
+async function load_dynamic_content() {
+	return new Promise(resolve => {
+		_load_dynamic_resolve_queue.push(resolve);
 
-	log("Reloading dynamic content");
-	last_load_dynamic_content = Date.now()
-	*/
-
-	print_home();
-
-	await $.ajax({
-		url: "get_current_list.php?json=1",
-		type: "GET",
-		dataType: "html",
-		success: function (data) {
-			var d = JSON.parse(data);
-			tags = Object.keys(d.tags);
-			$('#list').html("");
-			if(d.html != "<ul style='list-style: conic-gradient'></ul>") {
-				$('#list').html(d.html);
-			} else {
-				$('#list').html("<i>No tags yet</i>");
-			}
-		},
-		error: function (xhr, status) {
-			error("Error loading the current list", "Sorry, there was a problem!");
+		if (_load_dynamic_timeout) {
+			clearTimeout(_load_dynamic_timeout);
 		}
+
+		_load_dynamic_timeout = setTimeout(async () => {
+			_load_dynamic_timeout = null;
+
+			print_home();
+
+			try {
+				await $.ajax({
+					url: "get_current_list.php?json=1",
+					type: "GET",
+					dataType: "html",
+					success: function (data) {
+						var d = JSON.parse(data);
+						tags = Object.keys(d.tags);
+						$('#list').html("");
+						if (d.html != "<ul style='list-style: conic-gradient'></ul>") {
+							$('#list').html(d.html);
+						} else {
+							$('#list').html("<i>No tags yet</i>");
+						}
+					},
+					error: function (xhr, status) {
+						error("Error loading the current list", "Sorry, there was a problem!");
+					}
+				});
+			} catch (e) {
+				console.error("load_dynamic_content failed:", e);
+			}
+
+			// Resolve all callers that were waiting
+			const queue = _load_dynamic_resolve_queue.splice(0);
+			for (const r of queue) {
+				r();
+			}
+		}, 300);
 	});
 }
 
