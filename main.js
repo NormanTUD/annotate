@@ -11,24 +11,44 @@ let _load_dynamic_resolve_queue = [];
 let _annotation_save_queue = [];
 let _annotation_save_timeout = null;
 const _annotation_save_delay = 400; // ms to wait before flushing batch
-
+let _watch_svg_timeout = null;
+const _watch_svg_delay = 150;
 let _selects_timeout = null;
 const _selects_debounce_delay = 350;
 
 let _annotation_dynamic_content_timeout = null;
 const _annotation_dynamic_content_delay = 500;
 
+// Fixed: Cache annotations with a short TTL
+let _anno_cache = null;
+let _anno_cache_time = 0;
+const _anno_cache_ttl = 200; // ms
+
+async function getCachedAnnotations(force_fresh = false) {
+    const now = Date.now();
+    if (!force_fresh && _anno_cache && (now - _anno_cache_time) < _anno_cache_ttl) {
+        return _anno_cache;
+    }
+    if (typeof anno !== "object") return [];
+    _anno_cache = await anno.getAnnotations();
+    _anno_cache_time = now;
+    return _anno_cache;
+}
+
+function invalidateAnnoCache() {
+    _anno_cache = null;
+    _anno_cache_time = 0;
+}
+
+
 async function flush_annotation_queue() {
     if (_annotation_save_queue.length === 0) return;
 
-    // Grab the current queue and reset
     const queue = _annotation_save_queue.splice(0);
 
-    // Separate deletes from creates/updates
     const to_delete = queue.filter(item => item._action === 'delete');
     const to_save = queue.filter(item => item._action !== 'delete');
 
-    // --- Handle saves (create + update) as a batch ---
     if (to_save.length > 0) {
         const batch = to_save.map(item => ({
             position: item.position,
@@ -53,29 +73,35 @@ async function flush_annotation_queue() {
         }
     }
 
-    // --- Handle deletes individually (or create a delete_batch.php endpoint) ---
-    for (const item of to_delete) {
+    // Batch deletes too instead of one-by-one
+    if (to_delete.length > 0) {
         try {
             await $.ajax({
-                url: "delete_annotation.php",
-                type: "post",
-                data: {
-                    position: item.position,
-                    body: item.body,
-                    id: item.id,
-                    source: item.source,
-                    full: item.full
-                }
+                url: "delete_batch.php",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    annotations: to_delete.map(item => ({
+                        position: item.position,
+                        body: item.body,
+                        id: item.id,
+                        source: item.source,
+                        full: item.full
+                    }))
+                }),
+                dataType: "html"
             });
         } catch (err) {
-            error("Delete anno failed", err.statusText || err);
+            error("Batch Delete Failed", err.statusText || err);
         }
     }
 
-    // After all saves/deletes are done, refresh UI once
-    await load_dynamic_content();
+    invalidateAnnoCache();
+
+    // Single debounced UI refresh — not three separate calls
+    load_dynamic_content_debounced();
     create_selects_from_annotation_debounced(1);
-    watch_svg_auto();
+    // Don't call watch_svg_auto here — it's called by update_overlay_and_image_size already
 }
 
 function queue_annotation_event(action, annotation) {
@@ -1090,21 +1116,40 @@ async function create_selects_from_annotation(force = 0) {
 }
 
 async function set_all_current_annotations_from_to(from, name) {
-    var current = await anno.getAnnotations();
+    const current = await getCachedAnnotations(true);
+    let changed = false;
 
-    for (var i = 0; i < current.length; i++) {
-        var old = current[i]["body"][0]["value"];
-        if (from == old && old != name) {
-            current[i]["body"][0]["value"] = name;
-            success("changed " + old + " to " + name);
+    for (let i = 0; i < current.length; i++) {
+        for (let j = 0; j < current[i].body.length; j++) {
+            if (current[i].body[j].value === from) {
+                current[i].body[j].value = name;
+                changed = true;
+            }
         }
     }
 
-    await anno.setAnnotations(current);
+    if (!changed) return;
 
-    var new_annos = await anno.getAnnotations();
-    await save_annos_batch(new_annos);
-    await load_dynamic_content();
+    // Set annotations once — this is the expensive Annotorious call
+    await anno.setAnnotations(current);
+    invalidateAnnoCache();
+
+    // Save what we already have in memory — don't re-fetch from Annotorious
+    await save_annos_batch(current);
+
+    // Single UI refresh, debounced
+    load_dynamic_content_debounced();
+}
+
+let _load_dynamic_content_debounce_timeout = null;
+function load_dynamic_content_debounced() {
+    if (_load_dynamic_content_debounce_timeout) {
+        clearTimeout(_load_dynamic_content_debounce_timeout);
+    }
+    _load_dynamic_content_debounce_timeout = setTimeout(() => {
+        _load_dynamic_content_debounce_timeout = null;
+        load_dynamic_content();
+    }, 400);
 }
 
 async function remove_current_annos (fn) {
@@ -1260,7 +1305,7 @@ async function set_img_from_filename(fn, no_reset_zoom = false, reload = false, 
 	if (!fn) {
 		$("#annotation_area").hide();
 		$("#no_imgs_left").show();
-		watch_svg_auto();
+		watch_svg_auto_throttled();
 		return;
 	}
 
@@ -1281,7 +1326,7 @@ async function set_img_from_filename(fn, no_reset_zoom = false, reload = false, 
 
 	await load_page();
 
-	watch_svg_auto();
+	watch_svg_auto_throttled();
 }
 
 async function load_next_random_image(fn = false) {
@@ -1501,7 +1546,7 @@ function update_overlay_and_image_size() {
 		el.style.zoom = ""; // reset any previous hacks; keep native size
 	});
 
-	watch_svg_auto();
+	watch_svg_auto_throttled();
 }
 
 function zoom_image(delta, anchor_x = null, anchor_y = null) {
@@ -1559,7 +1604,15 @@ function init_image_and_overlay_on_load() {
 		setTimeout(() => update_overlay_and_image_size(), 50);
 	}
 
-	watch_svg_auto();
+	watch_svg_auto_throttled();
+}
+
+function watch_svg_auto_throttled() {
+    if (_watch_svg_timeout) return; // already scheduled, skip
+    _watch_svg_timeout = setTimeout(() => {
+        _watch_svg_timeout = null;
+        watch_svg_auto();
+    }, _watch_svg_delay);
 }
 
 function create_ai_threshold_sliders() {
@@ -2144,79 +2197,66 @@ function applyNMS(boxes, scores, classes, iouThreshold) {
 }
 
 async function handleAnnotations(boxes, scores, classes) {
-    console.log("=== handleAnnotations DEBUG ===");
-    console.log(`  Received ${boxes.length} boxes`);
-
-    if (boxes.length === 0) {
+    if (!boxes || boxes.length === 0) {
         show_nothing_found_animation();
         warn("Nothing found", "Annotate manually");
         return;
     }
 
-    for (let i = 0; i < Math.min(5, boxes.length); i++) {
-        console.log(`  Input box[${i}]: [${boxes[i].map(v => v.toFixed(6)).join(', ')}], score=${scores[i].toFixed(4)}, class=${classes[i]}`);
+    // Delete without triggering load_dynamic_content
+    const image_filename = $("#image").attr("src").replace(/.*filename=/, "");
+    if (image_filename) {
+        try {
+            await $.ajax({
+                url: "delete_all_anno.php?image=" + encodeURIComponent(image_filename),
+                type: "get"
+            });
+        } catch (err) {
+            error("Delete Anno failed", err.statusText || err);
+        }
     }
-
-    delete_all_anno_current_image();
 
     const anno_boxes = [];
     const this_labels = get_labels();
     const img_width = $("#image").width();
     const img_height = $("#image").height();
 
-    console.log(`  Image display size: ${img_width}x${img_height}`);
+    if (!this_labels || Object.keys(this_labels).length === 0) {
+        error("ERROR", "has no labels");
+        return;
+    }
 
     for (let i = 0; i < boxes.length; i++) {
         const [xMin, yMin, xMax, yMax] = boxes[i];
-
-        console.log(`  Box[${i}] raw: xMin=${xMin.toFixed(6)}, yMin=${yMin.toFixed(6)}, xMax=${xMax.toFixed(6)}, yMax=${yMax.toFixed(6)}`);
-
         const x = Math.round(xMin * img_width);
         const y = Math.round(yMin * img_height);
         const w = Math.round((xMax - xMin) * img_width);
         const h = Math.round((yMax - yMin) * img_height);
 
-        console.log(`  Box[${i}] pixel: x=${x}, y=${y}, w=${w}, h=${h}`);
-
         const this_class = classes[i];
-        const this_score = scores[i];
-
-        if (this_class === -1) {
-            console.log(`  Box[${i}] skipped: class is -1`);
-            continue;
-        }
-
-        if (Object.keys(this_labels).length === 0) {
-            error("ERROR", "has no labels");
-            return;
-        }
+        if (this_class === -1) continue;
 
         const this_label = this_labels[this_class];
-        console.log(`  Box[${i}] label: "${this_label}" (class=${this_class}, score=${this_score.toFixed(4)})`);
-
         if (this_label) {
-            var anno_element = get_annotate_element(this_label, x, y, w, h);
-            if (anno_element) {
-                anno_boxes.push(anno_element);
-            }
-        } else {
-            error("ERROR", `this_label was empty for class ${this_class}`);
+            const anno_element = get_annotate_element(this_label, x, y, w, h);
+            if (anno_element) anno_boxes.push(anno_element);
         }
     }
 
-    console.log(`  Created ${anno_boxes.length} annotation elements`);
-    console.log("=== END handleAnnotations DEBUG ===");
+    if (anno_boxes.length === 0) {
+        show_nothing_found_animation();
+        warn("Nothing found after filtering");
+        return;
+    }
 
-    success("Success", "Image Detection ran successfully");
+    // Set all at once
+    await anno.setAnnotations(anno_boxes);
+    invalidateAnnoCache();
 
-    // Set all annotations at once (batch — no individual events fired)
-    watch_svg_auto();
+    // Save what we built — don't re-fetch from Annotorious
+    await save_annos_batch(anno_boxes);
 
-    // Save all in one batch call
-    const new_annos = await anno.getAnnotations();
-    await save_annos_batch(new_annos);
-
-    // Single UI refresh after everything is done
+    // ONE UI refresh
     await load_dynamic_content();
     await create_selects_from_annotation(1);
 
