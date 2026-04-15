@@ -1275,6 +1275,8 @@ async function load_next_random_image(fn = false) {
 	}
 
 	await load_dynamic_content();
+
+	await create_selects_from_annotation(1);
 }
 
 document.onkeydown = function(e) {
