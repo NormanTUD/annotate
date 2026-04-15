@@ -2165,6 +2165,8 @@ async function handleAnnotations(boxes, scores, classes) {
 	await save_annos_batch(new_annos);
 	await load_dynamic_content();
 
+	await create_selects_from_annotation(1);
+
 	success("Success", "Image Detection done.");
 }
 
