@@ -473,6 +473,7 @@
 				<a href='index.php'>Home</a>
 				<a href='models.php'>Models</a>
 				<a href='upload.php'>Upload Images</a>
+				<a href='batch_upload.php'>Batch Import</a>
 				$overview	
 				$export_gui
 			</nav>
