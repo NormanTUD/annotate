@@ -890,17 +890,18 @@ async function processModelOutput(res, modelWidth, modelHeight) {
 	console.log(`Split: Boxes[${boxes.shape.join(', ')}], Scores[${scoresSqueezed.shape.join(', ')}]`);
 
 	// *** 4. Decode boxes and apply NMS ***
+	// *** 4. Decode boxes and apply NMS ***
 	const decodedBoxes = decodeYOLOBoxes(boxes, modelWidth, modelHeight);
 
-	const [filteredBoxes, filteredScores, filteredClasses] = filterByConfidence(
+	const filtered = filterByConfidence(
 		decodedBoxes,
 		scoresSqueezed,
 		confThreshold
 	);
 
-	const finalDetections = applyNMS(filteredBoxes, filteredScores, filteredClasses, iouThreshold);
+	const finalDetections = applyNMS(filtered, iouThreshold);
 
-	console.log(`Post-Processing done. Final Detections: ${finalDetections.length || Object.keys(finalDetections).length}`);
+	console.log(`Post-Processing done. Final Detections: ${finalDetections.boxes.length}`);
 	console.groupEnd();
 
 	// Clean up tensors
@@ -910,10 +911,8 @@ async function processModelOutput(res, modelWidth, modelHeight) {
 	scores.dispose();
 	boxes.dispose();
 	scoresSqueezed.dispose();
-	filteredBoxes.dispose();
-	filteredScores.dispose();
-	filteredClasses.dispose();
 	decodedBoxes.dispose();
+	// filteredBoxes, filteredScores, filteredClasses sind jetzt keine Tensoren mehr!
 
 	return finalDetections;
 }
@@ -945,62 +944,41 @@ function get_labels() {
 	return labels;
 }
 
-function get_annotate_element(this_label, x_start, y_start, w, h) {
-	if (!Number.isInteger(x_start)) {
-		error("get_annotate_element", `x_start (${x_start}) is not an integer`);
-		return null;
-	}
-	if (!Number.isInteger(y_start)) {
-		error("get_annotate_element", `y_start (${y_start}) is not an integer`);
-		return null;
-	}
-	if (!Number.isInteger(w)) {
-		error("get_annotate_element", `w (${w}) is not an integer`);
-		return null;
-	}
-	if (!Number.isInteger(h)) {
-		error("get_annotate_element", `h (${h}) is not an integer`);
-		return null;
-	}
+function get_annotate_element(label_array, x_start, y_start, w, h) {
+    if (!Number.isInteger(x_start) || !Number.isInteger(y_start) ||
+        !Number.isInteger(w) || !Number.isInteger(h)) {
+        error("get_annotate_element", "Invalid integer parameters");
+        return null;
+    }
+    if (x_start < 0 || y_start < 0 || w <= 0 || h <= 0) {
+        error("get_annotate_element", "Invalid dimensions");
+        return null;
+    }
 
-	if (x_start < 0) {
-		error("get_annotate_element", `x_start (${x_start}) must be >= 0`);
-		return null;
-	}
-	if (y_start < 0) {
-		error("get_annotate_element", `y_start (${y_start}) must be >= 0`);
-		return null;
-	}
-	if (w <= 0) {
-		error("get_annotate_element", `w (${w}) must be > 0`);
-		return null;
-	}
-	if (h <= 0) {
-		error("get_annotate_element", `h (${h}) must be > 0`);
-		return null;
-	}
+    // label_array kann ein String oder ein Array sein
+    const labels_arr = Array.isArray(label_array) ? label_array : [label_array];
 
-	return {
-		"type": "Annotation",
-		"body": [
-			{
-				"type": "TextualBody",
-				"value": this_label,
-				"purpose": "tagging"
-			}
-		],
-		"source": $("#image")[0].src,
-		"target": {
-			"source": $("#image")[0].src,
-			"selector": {
-				"type": "FragmentSelector",
-				"conformsTo": "http://www.w3.org/TR/media-frags/",
-				"value": `xywh=pixel:${x_start},${y_start},${w},${h}`
-			}
-		},
-		"@context": "http://www.w3.org/ns/anno.jsonld",
-		"id": "#" + uuidv4()
-	}
+    const body = labels_arr.map(label => ({
+        "type": "TextualBody",
+        "value": label,
+        "purpose": "tagging"
+    }));
+
+    return {
+        "type": "Annotation",
+        "body": body,
+        "source": $("#image")[0].src,
+        "target": {
+            "source": $("#image")[0].src,
+            "selector": {
+                "type": "FragmentSelector",
+                "conformsTo": "http://www.w3.org/TR/media-frags/",
+                "value": `xywh=pixel:${x_start},${y_start},${w},${h}`
+            }
+        },
+        "@context": "http://www.w3.org/ns/anno.jsonld",
+        "id": "#" + uuidv4()
+    };
 }
 
 async function autonext () {
@@ -2099,132 +2077,111 @@ function decodeYOLOBoxes(boxes, modelWidth, modelHeight) {
 /**
  * Filters boxes, scores, and classes by confidence threshold.
  */
+/**
+ * Filters boxes and returns ALL classes above the confidence threshold per box.
+ * Returns arrays (not tensors) for easier multi-label handling.
+ */
 function filterByConfidence(boxes, scores, confThreshold) {
-	console.log("=== filterByConfidence DEBUG ===");
-	console.log(`  Input boxes shape: [${boxes.shape}]`);
-	console.log(`  Input scores shape: [${scores.shape}]`);
-	console.log(`  Confidence threshold: ${confThreshold}`);
+    console.log("=== filterByConfidence (MULTI-LABEL) DEBUG ===");
+    console.log(`  Input boxes shape: [${boxes.shape}]`);
+    console.log(`  Input scores shape: [${scores.shape}]`);
+    console.log(`  Confidence threshold: ${confThreshold}`);
 
-	const maxScores = scores.max(1);
-	const classIndices = scores.argMax(1);
+    const boxesArr = boxes.arraySync();
+    const scoresArr = scores.arraySync(); // [numCandidates, numClasses]
 
-	const maskArr = maxScores.arraySync();
-	const boxesArr = boxes.arraySync();
-	const scoresArr = maxScores.arraySync();
-	const classesArr = classIndices.arraySync();
+    const filteredBoxesArr = [];
+    const filteredScoresArr = [];
+    const filteredClassesArr = []; // jetzt ein Array von Arrays!
 
-	// Log score distribution
-	const sortedScores = [...scoresArr].sort((a, b) => b - a);
-	console.log(`  Top 10 scores: ${sortedScores.slice(0, 10).map(s => s.toFixed(4)).join(', ')}`);
-	console.log(`  Total candidates: ${scoresArr.length}`);
-	console.log(`  Candidates above threshold: ${scoresArr.filter(s => s >= confThreshold).length}`);
+    for (let i = 0; i < scoresArr.length; i++) {
+        const classScores = scoresArr[i];
+        const matchedClasses = [];
+        let bestScore = 0;
 
-	const filteredBoxesArr = [];
-	const filteredScoresArr = [];
-	const filteredClassesArr = [];
+        for (let c = 0; c < classScores.length; c++) {
+            if (classScores[c] >= confThreshold) {
+                matchedClasses.push(c);
+                if (classScores[c] > bestScore) {
+                    bestScore = classScores[c];
+                }
+            }
+        }
 
-	for (let i = 0; i < maskArr.length; i++) {
-		if (scoresArr[i] >= confThreshold) {
-			filteredBoxesArr.push(boxesArr[i]);
-			filteredScoresArr.push(scoresArr[i]);
-			filteredClassesArr.push(classesArr[i]);
-		}
-	}
+        if (matchedClasses.length > 0) {
+            filteredBoxesArr.push(boxesArr[i]);
+            filteredScoresArr.push(bestScore); // höchster Score für NMS
+            filteredClassesArr.push(matchedClasses); // ALLE passenden Klassen
+        }
+    }
 
-	console.log(`  Filtered count: ${filteredBoxesArr.length}`);
+    console.log(`  Filtered count: ${filteredBoxesArr.length}`);
+    for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
+        console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], score=${filteredScoresArr[i].toFixed(4)}, classes=[${filteredClassesArr[i].join(',')}]`);
+    }
 
-	// Log first 5 filtered boxes
-	for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
-		console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], score=${filteredScoresArr[i].toFixed(4)}, class=${filteredClassesArr[i]}`);
-	}
+    console.log("=== END filterByConfidence (MULTI-LABEL) DEBUG ===");
 
-	// Return empty but correctly shaped tensors if nothing passed the threshold
-	if (filteredBoxesArr.length === 0) {
-		maxScores.dispose();
+    if (filteredBoxesArr.length === 0) {
+        return {
+            boxes: [],
+            scores: [],
+            classes: []
+        };
+    }
 
-		console.log("  No boxes passed threshold!");
-		console.log("=== END filterByConfidence DEBUG ===");
-		return [
-			tf.tensor2d([], [0, 4]),
-			tf.tensor1d([]),
-			tf.tensor1d([], 'int32')
-		];
-	}
-
-	const filteredBoxes = tf.tensor2d(filteredBoxesArr, [filteredBoxesArr.length, 4]);
-	const filteredScores = tf.tensor1d(filteredScoresArr);
-	const filteredClasses = tf.tensor1d(filteredClassesArr, 'int32');
-
-	console.log("=== END filterByConfidence DEBUG ===");
-
-	maxScores.dispose();
-	classIndices.dispose();
-
-	return [filteredBoxes, filteredScores, filteredClasses];
+    return {
+        boxes: filteredBoxesArr,
+        scores: filteredScoresArr,
+        classes: filteredClassesArr
+    };
 }
 
 /**
  * Applies Non-Maximum Suppression (NMS) to filter overlapping boxes.
  */
-function applyNMS(boxes, scores, classes, iouThreshold) {
-    console.log("=== applyNMS (CLASS-AWARE) DEBUG ===");
+/**
+ * Applies NMS on pre-filtered arrays (multi-label aware).
+ */
+function applyNMS(filtered, iouThreshold) {
+    console.log("=== applyNMS (MULTI-LABEL) DEBUG ===");
 
-    if (boxes.shape[0] === 0) {
+    const { boxes, scores, classes } = filtered;
+
+    if (!boxes || boxes.length === 0) {
         console.log("  No boxes to process, returning empty.");
         return { boxes: [], scores: [], classes: [] };
     }
 
-    const boxesArr = boxes.arraySync();
-    const scoresArr = scores.arraySync();
-    const classesArr = classes.arraySync();
+    const boxesTensor = tf.tensor2d(boxes);
+    const scoresTensor = tf.tensor1d(scores);
 
-    // Gruppiere Indizes nach Klasse
-    const classGroups = {};
-    for (let i = 0; i < classesArr.length; i++) {
-        const cls = classesArr[i];
-        if (!classGroups[cls]) classGroups[cls] = [];
-        classGroups[cls].push(i);
-    }
+    const nmsIndices = tf.image.nonMaxSuppression(
+        boxesTensor, scoresTensor, 100, iouThreshold
+    );
+
+    const keptIndices = nmsIndices.arraySync();
 
     const finalBoxes = [];
     const finalScores = [];
     const finalClasses = [];
 
-    // NMS pro Klasse separat
-    for (const cls of Object.keys(classGroups)) {
-        const indices = classGroups[cls];
-
-        const clsBoxes = indices.map(i => boxesArr[i]);
-        const clsScores = indices.map(i => scoresArr[i]);
-
-        const clsBoxesTensor = tf.tensor2d(clsBoxes);
-        const clsScoresTensor = tf.tensor1d(clsScores);
-
-        const nmsIndices = tf.image.nonMaxSuppression(
-            clsBoxesTensor, clsScoresTensor, 100, iouThreshold
-        );
-
-        const keptIndices = nmsIndices.arraySync();
-
-        for (const ki of keptIndices) {
-            finalBoxes.push(clsBoxes[ki]);
-            finalScores.push(clsScores[ki]);
-            finalClasses.push(parseInt(cls));
-        }
-
-        // Aufräumen
-        clsBoxesTensor.dispose();
-        clsScoresTensor.dispose();
-        nmsIndices.dispose();
+    for (const ki of keptIndices) {
+        finalBoxes.push(boxes[ki]);
+        finalScores.push(scores[ki]);
+        finalClasses.push(classes[ki]); // Array von Klassen-Indizes
     }
 
-    console.log(`  NMS kept ${finalBoxes.length} boxes across ${Object.keys(classGroups).length} classes`);
-
+    console.log(`  NMS kept ${finalBoxes.length} boxes`);
     for (let i = 0; i < Math.min(5, finalBoxes.length); i++) {
-        console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, class=${finalClasses[i]}`);
+        console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, classes=[${finalClasses[i].join(',')}]`);
     }
 
-    console.log("=== END applyNMS DEBUG ===");
+    boxesTensor.dispose();
+    scoresTensor.dispose();
+    nmsIndices.dispose();
+
+    console.log("=== END applyNMS (MULTI-LABEL) DEBUG ===");
     return { boxes: finalBoxes, scores: finalScores, classes: finalClasses };
 }
 
@@ -2265,12 +2222,19 @@ async function handleAnnotations(boxes, scores, classes) {
         const w = Math.round((xMax - xMin) * img_width);
         const h = Math.round((yMax - yMin) * img_height);
 
-        const this_class = classes[i];
-        if (this_class === -1) continue;
+        const class_indices = classes[i]; // jetzt ein Array!
+        if (!class_indices || class_indices.length === 0) continue;
 
-        const this_label = this_labels[this_class];
-        if (this_label) {
-            const anno_element = get_annotate_element(this_label, x, y, w, h);
+        // Alle Labels für diese Box sammeln
+        const box_labels = [];
+        for (const cls_idx of class_indices) {
+            if (cls_idx !== -1 && this_labels[cls_idx]) {
+                box_labels.push(this_labels[cls_idx]);
+            }
+        }
+
+        if (box_labels.length > 0) {
+            const anno_element = get_annotate_element(box_labels, x, y, w, h);
             if (anno_element) anno_boxes.push(anno_element);
         }
     }

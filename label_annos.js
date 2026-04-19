@@ -101,32 +101,41 @@ function svg_point_matrix_transform(p, matrix) {
 }
 
 function parse_annos_from_anno(anno_input, img, svg) {
-	let list = Array.isArray(anno_input) ? anno_input : (typeof anno_input === 'string' ? JSON.parse(anno_input) : []);
-	let out = [];
-	let transform = precompute_svg_image_transform(img, svg);
+    let list = Array.isArray(anno_input) ? anno_input : (typeof anno_input === 'string' ? JSON.parse(anno_input) : []);
+    let out = [];
+    let transform = precompute_svg_image_transform(img, svg);
 
-	for (let a of list) {
-		try {
-			let label = 'unknown';
-			if (a.body && Array.isArray(a.body)) {
-				for (let b of a.body) if (b.type === 'TextualBody' && b.value) { label = b.value; break; }
-			}
-			let selector = a.target && a.target.selector;
-			if (!selector) selector = (a.target && a.target.selector) || null;
-			let value = selector && selector.value;
-			if (!value && a.target && a.target.selector && Array.isArray(a.target.selector)) {
-				for (let s of a.target.selector) if (s.value) { value = s.value; break; }
-			}
-			if (!value) continue;
-			let m = value.match(/xywh=pixel:(\d+),(\d+),(\d+),(\d+)/);
-			if (!m) continue;
-			let px = parseInt(m[1],10), py = parseInt(m[2],10), pw = parseInt(m[3],10), ph = parseInt(m[4],10);
+    for (let a of list) {
+        try {
+            // MULTI-LABEL: Alle Labels sammeln statt nur das erste
+            let labels = [];
+            if (a.body && Array.isArray(a.body)) {
+                for (let b of a.body) {
+                    if (b.type === 'TextualBody' && b.value) {
+                        labels.push(b.value);
+                    }
+                }
+            }
+            if (labels.length === 0) labels.push('unknown');
 
-			let box = fast_image_pixels_to_svg_box(px, py, pw, ph, transform);
-			if (box) out.push({ label, box });
-		} catch (e) {}
-	}
-	return out;
+            let label = labels.join(', '); // "1pol, lss, Hersteller"
+
+            let selector = a.target && a.target.selector;
+            if (!selector) selector = (a.target && a.target.selector) || null;
+            let value = selector && selector.value;
+            if (!value && a.target && a.target.selector && Array.isArray(a.target.selector)) {
+                for (let s of a.target.selector) if (s.value) { value = s.value; break; }
+            }
+            if (!value) continue;
+            let m = value.match(/xywh=pixel:(\d+),(\d+),(\d+),(\d+)/);
+            if (!m) continue;
+            let px = parseInt(m[1],10), py = parseInt(m[2],10), pw = parseInt(m[3],10), ph = parseInt(m[4],10);
+
+            let box = fast_image_pixels_to_svg_box(px, py, pw, ph, transform);
+            if (box) out.push({ label, box, labels }); // labels-Array auch mitgeben
+        } catch (e) {}
+    }
+    return out;
 }
 
 function compute_overlap_score(annot_box, p_box, opts) {
@@ -266,61 +275,64 @@ function clear_previous_labels(svg) {
 }
 
 function annotate_svg(svg, img) {
-	if (!svg) return;
-	clear_previous_labels(svg);
+    if (!svg) return;
+    clear_previous_labels(svg);
 
-	const category_counts = {};
+    const category_counts = {};
+    var cnt = 0;
 
-	var cnt = 0;
+    svg.querySelectorAll('g.a9s-annotation').forEach((g) => {
+        let rect = g.querySelector('rect.a9s-inner');
+        if (!rect) return;
 
-	svg.querySelectorAll('g.a9s-annotation').forEach((g) => {
-		let rect = g.querySelector('rect.a9s-inner');
-		if (!rect) return;
+        let category = g.getAttribute('data-label') || get_category_for_annotation(rect, svg, img);
 
-		let category = g.getAttribute('data-label') || get_category_for_annotation(rect, svg, img);
+        if (!category_counts[category]) category_counts[category] = 0;
 
-		if (!category_counts[category]) category_counts[category] = 0;
+        let box = rect_bbox_from_element(rect);
 
-		let box = rect_bbox_from_element(rect);
-		let color = color_from_string(category);
+        // Für Multi-Label: Farbe vom ersten Label nehmen
+        let first_label = category.split(',')[0].trim();
+        let color = color_from_string(first_label);
 
-		let label_height = 20;
-		let label_width = Math.max(30, Math.min(box.width, category.length * 8));
-		let label_x = box.x;
-		let label_y = box.y - label_height;
-		if (label_y < 0) label_y = box.y;
+        let label_height = 20;
+        // Breite an den gesamten Text anpassen
+        let label_width = Math.max(30, Math.min(box.width, category.length * 8 + 8));
+        let label_x = box.x;
+        let label_y = box.y - label_height;
+        if (label_y < 0) label_y = box.y;
 
-		if (category_counts[category] < 30) {
-			let bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-			bg.setAttribute("x", label_x);
-			bg.setAttribute("y", label_y);
-			bg.setAttribute("width", label_width);
-			bg.setAttribute("height", label_height);
-			bg.setAttribute("fill", color);
-			bg.setAttribute("opacity", 0.7);
-			bg.setAttribute("data-annotated", "1");
+        if (category_counts[category] < 30) {
+            let bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            bg.setAttribute("x", label_x);
+            bg.setAttribute("y", label_y);
+            bg.setAttribute("width", label_width);
+            bg.setAttribute("height", label_height);
+            bg.setAttribute("fill", color);
+            bg.setAttribute("opacity", 0.7);
+            bg.setAttribute("data-annotated", "1");
 
-			let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-			text.setAttribute("x", label_x + 4);
-			text.setAttribute("y", label_y + 14);
-			text.setAttribute("fill", "#fff");
-			text.setAttribute("font-size", "14");
-			text.setAttribute("font-family", "Arial, sans-serif");
-			text.textContent = category;
-			text.setAttribute("data-annotated", "1");
+            let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", label_x + 4);
+            text.setAttribute("y", label_y + 14);
+            text.setAttribute("fill", "#fff");
+            text.setAttribute("font-size", "14");
+            text.setAttribute("font-family", "Arial, sans-serif");
+            text.textContent = category;  // zeigt jetzt "aaa, bbb, ccc"
+            text.setAttribute("data-annotated", "1");
 
-			svg.appendChild(bg);
-			svg.appendChild(text);
+            svg.appendChild(bg);
+            svg.appendChild(text);
 
-			category_counts[category]++;
-		}
+            category_counts[category]++;
+        }
 
-		cnt++;
-	});
+        cnt++;
+    });
 
-	if(cnt) {
-		stop_ai_animation();
-	}
+    if(cnt) {
+        stop_ai_animation();
+    }
 }
 
 function throttle(func, limit) {
