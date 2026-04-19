@@ -1476,6 +1476,8 @@ function hide_ai_stuff() {
 function show_ai_stuff () {
 	$(".ai_stuff").show();
 
+	create_ai_threshold_sliders();
+
 }
 
 async function show_or_hide_ai_stuff () {
@@ -2323,22 +2325,24 @@ async function skip_current_image() {
 }
 
 $(document).ready(function () {
-    // Don't create a new #tensor_monitor div — it already exists in footer.php
+	// Don't create a new #tensor_monitor div — it already exists in footer.php
 
-    setInterval(function () {
-        var mem = tf.memory();
-        var info = "Tensors: " + mem.numTensors
-            + " | DataBuffers: " + mem.numDataBuffers
-            + " | Bytes: " + (mem.numBytes / 1024).toFixed(1) + " KB";
+	setInterval(function () {
+		var mem = tf.memory();
+		var info = "Tensors: " + mem.numTensors
+			+ " | DataBuffers: " + mem.numDataBuffers
+			+ " | Bytes: " + (mem.numBytes / 1024).toFixed(1) + " KB";
 
-        if (mem.numBytesInGPU !== undefined && mem.numBytesInGPU > 0) {
-            info += " | GPU: " + (mem.numBytesInGPU / 1024 / 1024).toFixed(2) + " MB";
-        }
+		if (mem.numBytesInGPU !== undefined && mem.numBytesInGPU > 0) {
+			info += " | GPU: " + (mem.numBytesInGPU / 1024 / 1024).toFixed(2) + " MB";
+		}
 
-        if (mem.unreliable) {
-            info += " | ⚠️ unreliable";
-        }
+		if (mem.unreliable) {
+			info += " | ⚠️ unreliable";
+		}
 
-        $("#tensor_monitor").html(info);
-    }, 500);
+		$("#tensor_monitor").html(info);
+	}, 500);
+
+	create_ai_threshold_sliders();
 });
