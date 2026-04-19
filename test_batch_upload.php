@@ -149,10 +149,10 @@ function parse_yolo_label($content) {
  * Returns [x_start, y_start, w_px, h_px]
  */
 function yolo_to_pixel($x_center, $y_center, $w_rel, $h_rel, $img_w, $img_h) {
-    $x_start = max(0, round(($x_center - $w_rel / 2) * $img_w));
-    $y_start = max(0, round(($y_center - $h_rel / 2) * $img_h));
-    $w_px = round($w_rel * $img_w);
-    $h_px = round($h_rel * $img_h);
+    $x_start = (int)max(0, round(($x_center - $w_rel / 2) * $img_w));
+    $y_start = (int)max(0, round(($y_center - $h_rel / 2) * $img_h));
+    $w_px = (int)round($w_rel * $img_w);
+    $h_px = (int)round($h_rel * $img_h);
 
     if ($x_start + $w_px > $img_w) $w_px = $img_w - $x_start;
     if ($y_start + $h_px > $img_h) $h_px = $img_h - $y_start;
