@@ -46,7 +46,7 @@
 		$category_numbers = array();
 		$_labels = [];
 
-		$cat_query = "SELECT id, name FROM category ORDER BY id ASC";
+		$cat_query = "SELECT id - 1, name FROM category ORDER BY id ASC";
 		$cat_res = rquery($cat_query);
 
 		while ($row = mysqli_fetch_row($cat_res)) {
