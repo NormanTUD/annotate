@@ -2167,35 +2167,65 @@ function filterByConfidence(boxes, scores, confThreshold) {
  * Applies Non-Maximum Suppression (NMS) to filter overlapping boxes.
  */
 function applyNMS(boxes, scores, classes, iouThreshold) {
-	return tf.tidy(() => {
-		console.log("=== applyNMS DEBUG ===");
-		console.log(`  Input boxes shape: [${boxes.shape}]`);
-		console.log(`  Input scores shape: [${scores.shape}]`);
-		console.log(`  IoU threshold: ${iouThreshold}`);
+    console.log("=== applyNMS (CLASS-AWARE) DEBUG ===");
 
-		if (boxes.shape[0] === 0) {
-			console.log("  No boxes to process, returning empty.");
-			console.log("=== END applyNMS DEBUG ===");
-			return { boxes: [], scores: [], classes: [] };
-		}
+    if (boxes.shape[0] === 0) {
+        console.log("  No boxes to process, returning empty.");
+        return { boxes: [], scores: [], classes: [] };
+    }
 
-		const nmsIndices = tf.image.nonMaxSuppression(boxes, scores, 100, iouThreshold);
-		console.log(`  NMS kept ${nmsIndices.shape[0]} boxes`);
+    const boxesArr = boxes.arraySync();
+    const scoresArr = scores.arraySync();
+    const classesArr = classes.arraySync();
 
-		const finalBoxes = tf.gather(boxes, nmsIndices).arraySync();
-		const finalScores = tf.gather(scores, nmsIndices).arraySync();
-		const finalClasses = tf.gather(classes, nmsIndices).arraySync();
+    // Gruppiere Indizes nach Klasse
+    const classGroups = {};
+    for (let i = 0; i < classesArr.length; i++) {
+        const cls = classesArr[i];
+        if (!classGroups[cls]) classGroups[cls] = [];
+        classGroups[cls].push(i);
+    }
 
-		nmsIndices.dispose();
+    const finalBoxes = [];
+    const finalScores = [];
+    const finalClasses = [];
 
-		// Log final detections
-		for (let i = 0; i < Math.min(5, finalBoxes.length); i++) {
-			console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, class=${finalClasses[i]}`);
-		}
+    // NMS pro Klasse separat
+    for (const cls of Object.keys(classGroups)) {
+        const indices = classGroups[cls];
 
-		console.log("=== END applyNMS DEBUG ===");
-		return { boxes: finalBoxes, scores: finalScores, classes: finalClasses };
-	});
+        const clsBoxes = indices.map(i => boxesArr[i]);
+        const clsScores = indices.map(i => scoresArr[i]);
+
+        const clsBoxesTensor = tf.tensor2d(clsBoxes);
+        const clsScoresTensor = tf.tensor1d(clsScores);
+
+        const nmsIndices = tf.image.nonMaxSuppression(
+            clsBoxesTensor, clsScoresTensor, 100, iouThreshold
+        );
+
+        const keptIndices = nmsIndices.arraySync();
+
+        for (const ki of keptIndices) {
+            finalBoxes.push(clsBoxes[ki]);
+            finalScores.push(clsScores[ki]);
+            finalClasses.push(parseInt(cls));
+        }
+
+        // Aufräumen
+        clsBoxesTensor.dispose();
+        clsScoresTensor.dispose();
+        nmsIndices.dispose();
+    }
+
+    console.log(`  NMS kept ${finalBoxes.length} boxes across ${Object.keys(classGroups).length} classes`);
+
+    for (let i = 0; i < Math.min(5, finalBoxes.length); i++) {
+        console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, class=${finalClasses[i]}`);
+    }
+
+    console.log("=== END applyNMS DEBUG ===");
+    return { boxes: finalBoxes, scores: finalScores, classes: finalClasses };
 }
 
 async function handleAnnotations(boxes, scores, classes) {
