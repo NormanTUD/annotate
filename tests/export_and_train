@@ -48,9 +48,10 @@ if [[ $(cat labels/example.txt | wc -l) -ne 1 ]]; then
 	exit 6
 fi
 
-if [[ $(cat labels/example.txt | sed -e 's#\s.*##') -ne 0 ]]; then
-	echo "The category of example.txt is not 0"
-	exit 7
+category_id=$(cat labels/example.txt | sed -e 's#\s.*##')
+if ! [[ "$category_id" =~ ^[0-9]+$ ]]; then
+    echo "The category of example.txt is not a valid non-negative integer (got: '$category_id')"
+    exit 7
 fi
 
 if ! bash train; then
