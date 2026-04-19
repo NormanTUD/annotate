@@ -409,7 +409,6 @@ for idx in "${!files[@]}"; do
     fi
   done
   mv "$tmp_file" "images/$file"
-  echo -e " \e[1;32m✔ Done\e[0m"
 done
 
 if [[ $exit_after_download == 1 ]]; then
