@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e
+
+php test_batch_upload.php
+
 source tests/php_syntax_check
 
 source tests/bash_syntax_check
