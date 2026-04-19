@@ -1608,6 +1608,7 @@ function create_ai_threshold_sliders() {
 	toolbar.style.gap = '14px';
 	toolbar.style.marginBottom = '6px';
 	toolbar.style.userSelect = 'none';
+	toolbar.style.flexWrap = 'wrap';
 
 	function make_block(label_text, id, default_val) {
 		const block = document.createElement('div');
@@ -1643,11 +1644,13 @@ function create_ai_threshold_sliders() {
 		return block;
 	}
 
-	const conf_block = make_block('Conf:', 'conf_slider', 0.3);
-	const iou_block  = make_block('IoU:',  'iou_slider',  0.5);
+	const conf_block        = make_block('Conf:',        'conf_slider',        0.3);
+	const iou_block         = make_block('IoU:',         'iou_slider',         0.5);
+	const multilabel_block  = make_block('Multi-Label:', 'multilabel_slider',  0.8);
 
 	toolbar.appendChild(conf_block);
 	toolbar.appendChild(iou_block);
+	toolbar.appendChild(multilabel_block);
 
 	container.parentNode.insertBefore(toolbar, container);
 
@@ -1672,9 +1675,16 @@ function create_ai_threshold_sliders() {
 
 	attach_events('conf_slider');
 	attach_events('iou_slider');
+	attach_events('multilabel_slider');
 
 	update_display('conf_slider');
 	update_display('iou_slider');
+	update_display('multilabel_slider');
+}
+
+function getMultiLabelThreshold() {
+	const el = document.getElementById('multilabel_slider');
+	return el ? parseFloat(el.value) : 0.8;
 }
 
 function getConfThreshold() {
@@ -2082,59 +2092,73 @@ function decodeYOLOBoxes(boxes, modelWidth, modelHeight) {
  * Returns arrays (not tensors) for easier multi-label handling.
  */
 function filterByConfidence(boxes, scores, confThreshold) {
-    console.log("=== filterByConfidence (MULTI-LABEL) DEBUG ===");
-    console.log(`  Input boxes shape: [${boxes.shape}]`);
-    console.log(`  Input scores shape: [${scores.shape}]`);
-    console.log(`  Confidence threshold: ${confThreshold}`);
+	console.log("=== filterByConfidence (MULTI-LABEL) DEBUG ===");
+	console.log(`  Input boxes shape: [${boxes.shape}]`);
+	console.log(`  Input scores shape: [${scores.shape}]`);
+	console.log(`  Confidence threshold: ${confThreshold}`);
 
-    const boxesArr = boxes.arraySync();
-    const scoresArr = scores.arraySync(); // [numCandidates, numClasses]
+	const boxesArr = boxes.arraySync();
+	const scoresArr = scores.arraySync(); // [numCandidates, numClasses]
+	const multiLabelThreshold = getMultiLabelThreshold();
 
-    const filteredBoxesArr = [];
-    const filteredScoresArr = [];
-    const filteredClassesArr = []; // jetzt ein Array von Arrays!
+	const filteredBoxesArr = [];
+	const filteredScoresArr = [];
+	const filteredClassesArr = []; // jetzt ein Array von Arrays!
 
-    for (let i = 0; i < scoresArr.length; i++) {
-        const classScores = scoresArr[i];
-        const matchedClasses = [];
-        let bestScore = 0;
+	for (let i = 0; i < scoresArr.length; i++) {
+		const classScores = scoresArr[i];
 
-        for (let c = 0; c < classScores.length; c++) {
-            if (classScores[c] >= confThreshold) {
-                matchedClasses.push(c);
-                if (classScores[c] > bestScore) {
-                    bestScore = classScores[c];
-                }
-            }
-        }
+		// 1. Beste Klasse finden
+		let bestScore = 0;
+		let bestClass = -1;
+		for (let c = 0; c < classScores.length; c++) {
+			if (classScores[c] > bestScore) {
+				bestScore = classScores[c];
+				bestClass = c;
+			}
+		}
 
-        if (matchedClasses.length > 0) {
-            filteredBoxesArr.push(boxesArr[i]);
-            filteredScoresArr.push(bestScore); // höchster Score für NMS
-            filteredClassesArr.push(matchedClasses); // ALLE passenden Klassen
-        }
-    }
+		// 2. Box nur behalten, wenn beste Klasse über Box-Threshold
+		if (bestScore < confThreshold || bestClass === -1) continue;
 
-    console.log(`  Filtered count: ${filteredBoxesArr.length}`);
-    for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
-        console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], score=${filteredScoresArr[i].toFixed(4)}, classes=[${filteredClassesArr[i].join(',')}]`);
-    }
+		// 3. ALLE Klassen über Multi-Label-Threshold sammeln
+		const matchedClasses = [];
+		for (let c = 0; c < classScores.length; c++) {
+			if (classScores[c] >= multiLabelThreshold) {
+				matchedClasses.push(c);
+			}
+		}
 
-    console.log("=== END filterByConfidence (MULTI-LABEL) DEBUG ===");
+		// Falls keine Klasse über 80% liegt, zumindest die beste nehmen
+		if (matchedClasses.length === 0) {
+			matchedClasses.push(bestClass);
+		}
 
-    if (filteredBoxesArr.length === 0) {
-        return {
-            boxes: [],
-            scores: [],
-            classes: []
-        };
-    }
+		filteredBoxesArr.push(boxesArr[i]);
+		filteredScoresArr.push(bestScore);
+		filteredClassesArr.push(matchedClasses);
+	}
 
-    return {
-        boxes: filteredBoxesArr,
-        scores: filteredScoresArr,
-        classes: filteredClassesArr
-    };
+	console.log(`  Filtered count: ${filteredBoxesArr.length}`);
+	for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
+		console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], score=${filteredScoresArr[i].toFixed(4)}, classes=[${filteredClassesArr[i].join(',')}]`);
+	}
+
+	console.log("=== END filterByConfidence (MULTI-LABEL) DEBUG ===");
+
+	if (filteredBoxesArr.length === 0) {
+		return {
+			boxes: [],
+			scores: [],
+			classes: []
+		};
+	}
+
+	return {
+		boxes: filteredBoxesArr,
+		scores: filteredScoresArr,
+		classes: filteredClassesArr
+	};
 }
 
 /**
