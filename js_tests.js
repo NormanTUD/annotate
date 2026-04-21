@@ -859,6 +859,359 @@ async function run_multi_label_tests() {
     return failed;
 }
 
+async function run_untested_function_tests() {
+    console.log("\n=== RUNNING UNTESTED FUNCTION TESTS ===");
+
+    let passed = 0;
+    let failed = 0;
+
+    function assert(condition, msg) {
+        if (condition) {
+            console.log("✓ PASS:", msg);
+            passed++;
+        } else {
+            console.error("✖ FAIL:", msg);
+            failed++;
+        }
+    }
+
+    // =========================================================================
+    // 1. clamp()
+    // =========================================================================
+    console.log("\n--- clamp ---");
+    assert(clamp(5, 0, 10) === 5, "clamp: value within range returns value");
+    assert(clamp(-3, 0, 10) === 0, "clamp: value below min returns min");
+    assert(clamp(15, 0, 10) === 10, "clamp: value above max returns max");
+    assert(clamp(0, 0, 10) === 0, "clamp: value equal to min returns min");
+    assert(clamp(10, 0, 10) === 10, "clamp: value equal to max returns max");
+    assert(clamp(NaN, 0, 10) === 0, "clamp: NaN returns min (a)");
+    assert(clamp(-Infinity, 0, 10) === 0, "clamp: -Infinity returns min");
+    assert(clamp(Infinity, 0, 10) === 10, "clamp: Infinity returns max");
+    assert(clamp(0.5, 0, 1) === 0.5, "clamp: works with floats in range");
+    assert(clamp(-0.1, 0, 1) === 0, "clamp: works with negative float below min");
+    assert(clamp(1.1, 0, 1) === 1, "clamp: works with float above max");
+
+    // =========================================================================
+    // 2. slider_to_zoom()
+    // =========================================================================
+    console.log("\n--- slider_to_zoom ---");
+    assert(slider_to_zoom(0) === 1.0, "slider_to_zoom: 0 maps to 1.0 (100%)");
+    assert(slider_to_zoom(5) > 1.0, "slider_to_zoom: +5 maps to > 1.0");
+    assert(slider_to_zoom(-5) < 1.0, "slider_to_zoom: -5 maps to < 1.0");
+    assert(slider_to_zoom(-5) >= 0.1, "slider_to_zoom: -5 maps to >= 0.1 (min_zoom)");
+    assert(slider_to_zoom(5) <= 5.0, "slider_to_zoom: +5 maps to <= 5.0 (max_zoom)");
+    // Monotonicity: higher slider value → higher zoom
+    assert(slider_to_zoom(1) > slider_to_zoom(0), "slider_to_zoom: monotonically increasing (1 > 0)");
+    assert(slider_to_zoom(3) > slider_to_zoom(2), "slider_to_zoom: monotonically increasing (3 > 2)");
+    assert(slider_to_zoom(-1) < slider_to_zoom(0), "slider_to_zoom: monotonically increasing (-1 < 0)");
+    assert(slider_to_zoom(-3) < slider_to_zoom(-2), "slider_to_zoom: monotonically increasing (-3 < -2)");
+
+    // =========================================================================
+    // 3. render_status / info / success / warn / error (status bar rendering)
+    // =========================================================================
+    console.log("\n--- render_status / info / success / warn / error ---");
+    if ($("#status_bar_msg").length > 0) {
+        render_status("red", "TestTitle", "TestMsg");
+        const html = $("#status_bar_msg").html();
+        assert(html.includes("red"), "render_status: sets color to red");
+        assert(html.includes("TestTitle"), "render_status: includes title");
+        assert(html.includes("TestMsg"), "render_status: includes message");
+
+        render_status("blue", "OnlyTitle");
+        const html2 = $("#status_bar_msg").html();
+        assert(html2.includes("OnlyTitle"), "render_status: works with title only (no msg)");
+        assert(!html2.includes("undefined"), "render_status: no 'undefined' when msg is omitted");
+    } else {
+        console.log("  (skipped: #status_bar_msg not in DOM)");
+    }
+
+    // =========================================================================
+    // 4. show_spinner / hide_spinner
+    // =========================================================================
+    console.log("\n--- show_spinner / hide_spinner ---");
+    // Make sure disable_spinner is off for this test
+    const orig_disable_spinner = disable_spinner;
+    disable_spinner = false;
+
+    show_spinner("Test spinner message");
+    let overlay = document.getElementById("ai_spinner_overlay");
+    assert(overlay !== null, "show_spinner: creates overlay element");
+    let msgElem = document.getElementById("ai_spinner_msg");
+    assert(msgElem !== null && msgElem.textContent === "Test spinner message", "show_spinner: sets message text");
+
+    // Update message
+    show_spinner("Updated message");
+    msgElem = document.getElementById("ai_spinner_msg");
+    assert(msgElem.textContent === "Updated message", "show_spinner: updates message on second call");
+
+    hide_spinner();
+    overlay = document.getElementById("ai_spinner_overlay");
+    assert(overlay === null, "hide_spinner: removes overlay element");
+
+    // hide_spinner when nothing is shown should not throw
+    hide_spinner();
+    assert(true, "hide_spinner: no error when called with no spinner present");
+
+    // Test disable_spinner flag
+    disable_spinner = true;
+    show_spinner("Should not appear");
+    overlay = document.getElementById("ai_spinner_overlay");
+    assert(overlay === null, "show_spinner: does nothing when disable_spinner is true");
+    disable_spinner = orig_disable_spinner;
+
+    // =========================================================================
+    // 5. getCachedAnnotations / invalidateAnnoCache
+    // =========================================================================
+    console.log("\n--- getCachedAnnotations / invalidateAnnoCache ---");
+    // Test cache invalidation
+    invalidateAnnoCache();
+    assert(_anno_cache === null, "invalidateAnnoCache: sets _anno_cache to null");
+    assert(_anno_cache_time === 0, "invalidateAnnoCache: sets _anno_cache_time to 0");
+
+    // If anno object exists, test caching behavior
+    if (typeof anno === "object" && anno) {
+        const annos1 = await getCachedAnnotations(true); // force fresh
+        assert(Array.isArray(annos1), "getCachedAnnotations: returns array (force_fresh)");
+        assert(_anno_cache !== null, "getCachedAnnotations: populates cache after fresh fetch");
+        assert(_anno_cache_time > 0, "getCachedAnnotations: sets cache time");
+
+        const cachedTime = _anno_cache_time;
+        const annos2 = await getCachedAnnotations(false); // should use cache
+        assert(_anno_cache_time === cachedTime, "getCachedAnnotations: uses cache (time unchanged)");
+        assert(annos2 === _anno_cache, "getCachedAnnotations: returns cached reference");
+
+        invalidateAnnoCache();
+        assert(_anno_cache === null, "invalidateAnnoCache: clears cache after use");
+    } else {
+        // When anno is not an object, should return empty array
+        const result = await getCachedAnnotations();
+        assert(Array.isArray(result) && result.length === 0, "getCachedAnnotations: returns [] when anno is not an object");
+    }
+
+    // =========================================================================
+    // 6. get_labels() — simple getter
+    // =========================================================================
+    console.log("\n--- get_labels ---");
+    // get_labels just returns the global `labels` variable
+    if (typeof labels !== 'undefined') {
+        const result = get_labels();
+        assert(result === labels, "get_labels: returns the global labels variable");
+        assert(Array.isArray(result), "get_labels: returns an array");
+    }
+
+    // =========================================================================
+    // 7. toDataURL — fetch + blob + FileReader pipeline
+    // =========================================================================
+    console.log("\n--- toDataURL ---");
+    // Test with a data URI or small known resource
+    if ($("#image").length > 0 && $("#image")[0].src) {
+        try {
+            const b64 = await toDataURL($("#image")[0].src);
+            assert(typeof b64 === "string", "toDataURL: returns a string");
+            assert(b64.length > 0, "toDataURL: returns non-empty base64 data");
+            // Base64 should only contain valid chars
+            assert(/^[A-Za-z0-9+/=]+$/.test(b64), "toDataURL: output is valid base64");
+        } catch (e) {
+            console.log("  (toDataURL test skipped due to fetch error:", e.message, ")");
+        }
+    } else {
+        console.log("  (skipped: no #image element)");
+    }
+
+    // =========================================================================
+    // 8. queue_annotation_event / flush_annotation_queue — queue mechanics
+    // =========================================================================
+    console.log("\n--- queue_annotation_event queue mechanics ---");
+    // Test that items are added to the queue
+    const origQueue = _annotation_save_queue.splice(0); // save and clear
+    const origTimeout = _annotation_save_timeout;
+    if (_annotation_save_timeout) {
+        clearTimeout(_annotation_save_timeout);
+        _annotation_save_timeout = null;
+    }
+
+    const mockAnnotation = {
+        target: {
+            selector: { value: "xywh=pixel:0,0,10,10" },
+            source: "http://test/filename.jpg"
+        },
+        body: [{ value: "test", purpose: "tagging" }],
+        id: "#test-id-123"
+    };
+
+    queue_annotation_event('create', mockAnnotation);
+    assert(_annotation_save_queue.length === 1, "queue_annotation_event: adds item to queue");
+    assert(_annotation_save_queue[0]._action === 'create', "queue_annotation_event: sets correct action");
+    assert(_annotation_save_queue[0].id === "#test-id-123", "queue_annotation_event: preserves annotation id");
+    assert(_annotation_save_queue[0].source === "filename.jpg", "queue_annotation_event: extracts filename from source");
+    assert(_annotation_save_timeout !== null, "queue_annotation_event: sets flush timeout");
+
+    queue_annotation_event('delete', mockAnnotation);
+    assert(_annotation_save_queue.length === 2, "queue_annotation_event: second item added");
+    assert(_annotation_save_queue[1]._action === 'delete', "queue_annotation_event: second item has delete action");
+
+    // Clean up: clear the queue and timeout so we don't trigger actual AJAX
+    _annotation_save_queue.splice(0);
+    if (_annotation_save_timeout) {
+        clearTimeout(_annotation_save_timeout);
+        _annotation_save_timeout = null;
+    }
+    // Restore original queue
+    _annotation_save_queue.push(...origQueue);
+
+    // =========================================================================
+    // 9. get_image_element
+    // =========================================================================
+    console.log("\n--- get_image_element ---");
+    if ($("#image").length > 0) {
+        const elem = get_image_element();
+        assert(elem !== null, "get_image_element: returns element when #image exists");
+        assert(elem.tagName === "IMG", "get_image_element: returns an IMG element");
+        assert(elem.id === "image", "get_image_element: returns the correct element");
+    } else {
+        const elem = get_image_element();
+        assert(elem === null, "get_image_element: returns null when #image doesn't exist");
+    }
+
+    // =========================================================================
+    // 10. get_chosen_model_uuid
+    // =========================================================================
+    console.log("\n--- get_chosen_model_uuid ---");
+    if ($("#chosen_model").length > 0) {
+        const uuid = get_chosen_model_uuid();
+        assert(typeof uuid === "string" || uuid === undefined || uuid === null,
+            "get_chosen_model_uuid: returns string/null/undefined");
+    }
+
+    // =========================================================================
+    // 12. create_selects_from_annotation_debounced — debounce mechanics
+    // =========================================================================
+    console.log("\n--- create_selects_from_annotation_debounced ---");
+    {
+        // Clear any existing timeout
+        if (_selects_timeout) {
+            clearTimeout(_selects_timeout);
+            _selects_timeout = null;
+        }
+
+        create_selects_from_annotation_debounced(0);
+        assert(_selects_timeout !== null, "create_selects_from_annotation_debounced: sets timeout");
+
+        const firstTimeout = _selects_timeout;
+        create_selects_from_annotation_debounced(0);
+        assert(_selects_timeout !== firstTimeout, "create_selects_from_annotation_debounced: resets timeout on second call");
+
+        // Clean up
+        if (_selects_timeout) {
+            clearTimeout(_selects_timeout);
+            _selects_timeout = null;
+        }
+    }
+
+    // =========================================================================
+    // 13. watch_svg_auto_throttled — throttle mechanics
+    // =========================================================================
+    console.log("\n--- watch_svg_auto_throttled ---");
+    {
+        if (_watch_svg_timeout) {
+            clearTimeout(_watch_svg_timeout);
+            _watch_svg_timeout = null;
+        }
+
+        watch_svg_auto_throttled();
+        assert(_watch_svg_timeout !== null, "watch_svg_auto_throttled: sets timeout on first call");
+
+        const firstTimeout = _watch_svg_timeout;
+        watch_svg_auto_throttled();
+        assert(_watch_svg_timeout === firstTimeout, "watch_svg_auto_throttled: does NOT reset timeout (throttle, not debounce)");
+
+        // Clean up
+        if (_watch_svg_timeout) {
+            clearTimeout(_watch_svg_timeout);
+            _watch_svg_timeout = null;
+        }
+    }
+
+    // =========================================================================
+    // 14. getModelInputShape — when model is null/undefined
+    // =========================================================================
+    console.log("\n--- getModelInputShape ---");
+    {
+        const origModel = model;
+
+        model = null;
+        assert(getModelInputShape() === undefined, "getModelInputShape: returns undefined when model is null");
+
+        model = undefined;
+        assert(getModelInputShape() === undefined, "getModelInputShape: returns undefined when model is undefined");
+
+        // Mock a model with known shape
+        model = { inputs: [{ shape: [1, 640, 640, 3] }] };
+        const shape = getModelInputShape();
+        assert(JSON.stringify(shape) === JSON.stringify([640, 640]), "getModelInputShape: extracts [640,640] from [1,640,640,3]");
+
+        model = { inputs: [{ shape: [1, 320, 320, 3] }] };
+        const shape2 = getModelInputShape();
+        assert(JSON.stringify(shape2) === JSON.stringify([320, 320]), "getModelInputShape: extracts [320,320] from [1,320,320,3]");
+
+        model = origModel;
+    }
+
+    // =========================================================================
+    // 15. AI animation CSS classes
+    // =========================================================================
+    console.log("\n--- start_ai_animation / stop_ai_animation / show_nothing_found_animation ---");
+    {
+        const wrapper = document.querySelector('div[style*="position: relative"]');
+        if (wrapper) {
+            start_ai_animation();
+            assert(wrapper.classList.contains('ai-analyzing'), "start_ai_animation: adds 'ai-analyzing' class");
+
+            stop_ai_animation();
+            assert(!wrapper.classList.contains('ai-analyzing'), "stop_ai_animation: removes 'ai-analyzing' class");
+
+            show_nothing_found_animation();
+            assert(wrapper.classList.contains('nothing-found'), "show_nothing_found_animation: adds 'nothing-found' class");
+
+            // Wait for the animation to auto-remove (1000ms timeout in the code)
+            await sleep(1100);
+            assert(!wrapper.classList.contains('nothing-found'), "show_nothing_found_animation: class auto-removed after ~1s");
+        } else {
+            console.log("  (skipped: no wrapper div with position:relative found)");
+        }
+    }
+
+    // =========================================================================
+    // 16. load_dynamic_content_debounced — debounce mechanics
+    // =========================================================================
+    console.log("\n--- load_dynamic_content_debounced ---");
+    {
+        if (_load_dynamic_content_debounce_timeout) {
+            clearTimeout(_load_dynamic_content_debounce_timeout);
+            _load_dynamic_content_debounce_timeout = null;
+        }
+
+        load_dynamic_content_debounced();
+        assert(_load_dynamic_content_debounce_timeout !== null, "load_dynamic_content_debounced: sets timeout");
+
+        const first = _load_dynamic_content_debounce_timeout;
+        load_dynamic_content_debounced();
+        assert(_load_dynamic_content_debounce_timeout !== first, "load_dynamic_content_debounced: resets timeout on re-call (debounce)");
+
+        // Clean up
+        if (_load_dynamic_content_debounce_timeout) {
+            clearTimeout(_load_dynamic_content_debounce_timeout);
+            _load_dynamic_content_debounce_timeout = null;
+        }
+    }
+
+    // =========================================================================
+    // Summary
+    // =========================================================================
+    console.log(`\n=== UNTESTED FUNCTION TESTS DONE: ${passed} passed, ${failed} failed ===`);
+    return failed;
+}
+
 async function run_tests() {
 	console.log("=== RUNNING TESTS ===");
 
@@ -1219,6 +1572,9 @@ async function run_tests() {
 
 	const multiLabelFailed = await run_multi_label_tests();
 	assert(multiLabelFailed === 0, "multi-label tests all passed");
+
+	const untestedFailed = await run_untested_function_tests();
+	assert(untestedFailed === 0, "untested function tests all passed");
 
 	return failed;
 }
