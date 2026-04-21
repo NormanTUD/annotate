@@ -822,99 +822,88 @@ async function predict(modelWidth, modelHeight) {
 }
 
 async function processModelOutput(res, modelWidth, modelHeight) {
-	console.group("🔥 YOLO Post-Processing DEBUG");
-	const startTime = performance.now();
+    console.group("🔍 YOLO Post-Processing DEBUG");
+    const startTime = performance.now();
 
-	const confThreshold = conf || 0.3;
-	const iouThreshold = 0.45;
+    // FIX #1: Read from sliders instead of hardcoded values
+    const confThreshold = getConfThreshold();
+    const iouThreshold = getIouThreshold();
 
-	// *** 1. Determine shape directly from the raw model output ***
-	// res is expected to be shaped [1, features, candidates] or [features, candidates]
-	let rawTensor;
+    console.log(`Using confThreshold=${confThreshold}, iouThreshold=${iouThreshold} (from sliders)`);
 
-	if (Array.isArray(res) && Array.isArray(res[0]) && Array.isArray(res[0][0])) {
-		// Shape: [1, F, C] — standard batch output
-		rawTensor = tf.tensor3d(res);
-	} else if (Array.isArray(res) && Array.isArray(res[0]) && !Array.isArray(res[0][0])) {
-		// Shape: [F, C] — no batch dim
-		rawTensor = tf.tensor2d(res).expandDims(0);
-	} else if (res instanceof tf.Tensor) {
-		rawTensor = res.rank === 2 ? res.expandDims(0) : res;
-	} else {
-		console.error("❌ Unexpected model output structure:", typeof res);
-		console.groupEnd();
-		return { boxes: [], scores: [], classes: [] };
-	}
+    let rawTensor;
 
-	// Now rawTensor is [1, F, C]
-	const shape = rawTensor.shape;
-	console.log(`Raw tensor shape: [${shape.join(', ')}]`);
+    if (Array.isArray(res) && Array.isArray(res[0]) && Array.isArray(res[0][0])) {
+        rawTensor = tf.tensor3d(res);
+    } else if (Array.isArray(res) && Array.isArray(res[0]) && !Array.isArray(res[0][0])) {
+        rawTensor = tf.tensor2d(res).expandDims(0);
+    } else if (res instanceof tf.Tensor) {
+        rawTensor = res.rank === 2 ? res.expandDims(0) : res;
+    } else {
+        console.error("❌ Unexpected model output structure:", typeof res);
+        console.groupEnd();
+        return { boxes: [], scores: [], classes: [] };
+    }
 
-	let FINAL_FEATURES = shape[1];
-	let FINAL_CANDIDATES = shape[2];
+    const shape = rawTensor.shape;
+    console.log(`Raw tensor shape: [${shape.join(', ')}]`);
 
-	// YOLO outputs [1, 4+num_classes, num_candidates]
-	// If features < candidates, the layout is [1, F, C] which is correct.
-	// If features > candidates, the tensor might already be transposed [1, C, F].
-	// We want the smaller dimension to be features (4 + num_classes).
-	if (FINAL_FEATURES > FINAL_CANDIDATES) {
-		console.log(`Swapping: features(${FINAL_FEATURES}) > candidates(${FINAL_CANDIDATES}), transposing.`);
-		rawTensor = rawTensor.transpose([0, 2, 1]);
-		[FINAL_FEATURES, FINAL_CANDIDATES] = [FINAL_CANDIDATES, FINAL_FEATURES];
-	}
+    let FINAL_FEATURES = shape[1];
+    let FINAL_CANDIDATES = shape[2];
 
-	const numClasses = FINAL_FEATURES - 4;
+    if (FINAL_FEATURES > FINAL_CANDIDATES) {
+        console.log(`Swapping: features(${FINAL_FEATURES}) > candidates(${FINAL_CANDIDATES}), transposing.`);
+        rawTensor = rawTensor.transpose([0, 2, 1]);
+        [FINAL_FEATURES, FINAL_CANDIDATES] = [FINAL_CANDIDATES, FINAL_FEATURES];
+    }
 
-	if (numClasses <= 0) {
-		console.error(`❌ Invalid number of classes: ${numClasses} (features=${FINAL_FEATURES})`);
-		console.groupEnd();
-		return { boxes: [], scores: [], classes: [] };
-	}
+    const numClasses = FINAL_FEATURES - 4;
 
-	console.log(`Model-Input: ${modelWidth}x${modelHeight}`);
-	console.log(`Shape: [Features: ${FINAL_FEATURES}, Candidates: ${FINAL_CANDIDATES}]`);
-	console.log(`Detected classes: ${numClasses}, Labels loaded: ${labels.length}`);
+    if (numClasses <= 0) {
+        console.error(`❌ Invalid number of classes: ${numClasses} (features=${FINAL_FEATURES})`);
+        console.groupEnd();
+        return { boxes: [], scores: [], classes: [] };
+    }
 
-	if (numClasses !== labels.length) {
-		console.warn(`⚠️ Class count mismatch: model has ${numClasses} classes but ${labels.length} labels loaded. Using model's count.`);
-	}
+    console.log(`Model-Input: ${modelWidth}x${modelHeight}`);
+    console.log(`Shape: [Features: ${FINAL_FEATURES}, Candidates: ${FINAL_CANDIDATES}]`);
+    console.log(`Detected classes: ${numClasses}, Labels loaded: ${labels.length}`);
 
-	// *** 2. Transpose to [1, candidates, features] for easier splitting ***
-	let predictionsTensor = rawTensor.transpose([0, 2, 1]);
-	console.log(`Tensor transposed. Shape: [${predictionsTensor.shape.join(', ')}]`);
+    if (numClasses !== labels.length) {
+        console.warn(`⚠️ Class count mismatch: model has ${numClasses} classes but ${labels.length} labels loaded. Using model's count.`);
+    }
 
-	// *** 3. Split into boxes [4] and class scores [numClasses] ***
-	const [rawBoxes, scores] = tf.split(predictionsTensor, [4, numClasses], 2);
-	const boxes = rawBoxes.squeeze();
-	const scoresSqueezed = scores.squeeze();
-	console.log(`Split: Boxes[${boxes.shape.join(', ')}], Scores[${scoresSqueezed.shape.join(', ')}]`);
+    let predictionsTensor = rawTensor.transpose([0, 2, 1]);
+    console.log(`Tensor transposed. Shape: [${predictionsTensor.shape.join(', ')}]`);
 
-	// *** 4. Decode boxes and apply NMS ***
-	// *** 4. Decode boxes and apply NMS ***
-	const decodedBoxes = decodeYOLOBoxes(boxes, modelWidth, modelHeight);
+    const [rawBoxes, scores] = tf.split(predictionsTensor, [4, numClasses], 2);
+    const boxes = rawBoxes.squeeze();
+    const scoresSqueezed = scores.squeeze();
+    console.log(`Split: Boxes[${boxes.shape.join(', ')}], Scores[${scoresSqueezed.shape.join(', ')}]`);
 
-	const filtered = filterByConfidence(
-		decodedBoxes,
-		scoresSqueezed,
-		confThreshold
-	);
+    const decodedBoxes = decodeYOLOBoxes(boxes, modelWidth, modelHeight);
 
-	const finalDetections = applyNMS(filtered, iouThreshold);
+    // FIX #1 continued: pass slider-derived thresholds
+    const filtered = filterByConfidence(
+        decodedBoxes,
+        scoresSqueezed,
+        confThreshold
+    );
 
-	console.log(`Post-Processing done. Final Detections: ${finalDetections.boxes.length}`);
-	console.groupEnd();
+    const finalDetections = applyNMS(filtered, iouThreshold);
 
-	// Clean up tensors
-	rawTensor.dispose();
-	predictionsTensor.dispose();
-	rawBoxes.dispose();
-	scores.dispose();
-	boxes.dispose();
-	scoresSqueezed.dispose();
-	decodedBoxes.dispose();
-	// filteredBoxes, filteredScores, filteredClasses sind jetzt keine Tensoren mehr!
+    console.log(`Post-Processing done in ${(performance.now() - startTime).toFixed(1)}ms. Final Detections: ${finalDetections.boxes.length}`);
+    console.groupEnd();
 
-	return finalDetections;
+    rawTensor.dispose();
+    predictionsTensor.dispose();
+    rawBoxes.dispose();
+    scores.dispose();
+    boxes.dispose();
+    scoresSqueezed.dispose();
+    decodedBoxes.dispose();
+
+    return finalDetections;
 }
 
 function iou(boxA, boxB) {
@@ -1004,8 +993,12 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * FIX #4: Groups labels per annotation box in the UI, so users see
+ * which labels belong to the same box. Previously, all labels were
+ * flattened into a single count map, losing the per-box grouping.
+ */
 async function create_selects_from_annotation(force = 0) {
-    // Don't interrupt user interaction with selects
     if ($(":focus").is("select") && !force) {
         return;
     }
@@ -1015,14 +1008,21 @@ async function create_selects_from_annotation(force = 0) {
 
     const annotations = await anno.getAnnotations();
 
-    // Build label counts in a single pass
+    // Build two views:
+    // 1. Per-box grouping (for UI display)
+    // 2. Global label counts (for the dropdown counts)
     const label_counts = new Map();
+    const box_groups = []; // [{labels: ["cat", "animal"], annotation_index: 0}, ...]
+
     for (let i = 0; i < annotations.length; i++) {
         const bodies = annotations[i].body;
+        const box_labels = [];
         for (let j = 0; j < bodies.length; j++) {
             const val = bodies[j].value;
             label_counts.set(val, (label_counts.get(val) || 0) + 1);
+            box_labels.push(val);
         }
+        box_groups.push({ labels: box_labels, annotation_index: i });
     }
 
     // Fast-path: check if anything actually changed
@@ -1042,46 +1042,57 @@ async function create_selects_from_annotation(force = 0) {
     }
 
     // Build all options HTML once (shared across selects)
-    const tag_options = tags.map(t => `<option value="${t}">${t}</option>`);
     const tag_set = new Set(tags);
 
-    // Build selects using array join (much faster than string concat in loops)
-    const selects = [];
-    let i = 0;
-
-    for (const [label, count] of label_counts) {
-        previous[i] = label;
-
-        // Build options: mark the matching one as selected
+    function build_options(selected_label) {
         let options;
-        if (tag_set.has(label)) {
-            // Label exists in tags — rebuild with selected attribute
+        if (tag_set.has(selected_label)) {
             options = tags.map(t =>
-                `<option${t === label ? " selected" : ""} value="${t}">${t}</option>`
+                `<option${t === selected_label ? " selected" : ""} value="${t}">${t}</option>`
             ).join("");
         } else {
-            // Label not in tags — append it as selected
-            options = tag_options.join("") +
-                `<option selected value="${label}">${label}</option>`;
+            options = tags.map(t => `<option value="${t}">${t}</option>`).join("") +
+                `<option selected value="${selected_label}">${selected_label}</option>`;
         }
-
-        selects.push(
-            `<select data-nr='${i}' class='ki_select_box'>${options}</select> (${count})`
-        );
-        i++;
+        return options;
     }
 
-    const html = selects.join(", ");
+    // Build grouped UI: each box shows its labels as a group
+    const selects = [];
+    let select_index = 0;
 
-    // Only touch the DOM if content actually changed
+    for (let g = 0; g < box_groups.length; g++) {
+        const group = box_groups[g];
+        const group_selects = [];
+
+        for (let l = 0; l < group.labels.length; l++) {
+            const label = group.labels[l];
+            previous[select_index] = label;
+
+            const options = build_options(label);
+            group_selects.push(
+                `<select data-nr='${select_index}' data-box='${g}' class='ki_select_box'>${options}</select>`
+            );
+            select_index++;
+        }
+
+        // Show box number and group its labels together
+        if (box_groups.length > 1) {
+            selects.push(`<span class="ki_box_group" style="display:inline-block; margin:2px 6px 2px 0; padding:2px 4px; border:1px solid #555; border-radius:4px;">Box ${g + 1}: ${group_selects.join(" + ")}</span>`);
+        } else {
+            selects.push(group_selects.join(" + "));
+        }
+    }
+
+    const html = selects.join(" ");
+
     if (box.html() === html) {
         return;
     }
 
     box.html(html);
 
-    // Use event delegation instead of binding per-element
-    // Unbind previous delegated handler, rebind once
+    // Use event delegation
     box.off("change", ".ki_select_box").on("change", ".ki_select_box", async function (e) {
         const nr = $(this).data("nr");
         const old_value = previous[nr];
@@ -2087,87 +2098,94 @@ function decodeYOLOBoxes(boxes, modelWidth, modelHeight) {
 }
 
 /**
- * Filters boxes, scores, and classes by confidence threshold.
- */
-/**
- * Filters boxes and returns ALL classes above the confidence threshold per box.
- * Returns arrays (not tensors) for easier multi-label handling.
+ * Filters boxes and returns ALL classes above the multi-label threshold per box.
+ * 
+ * FIX #2: The multi-label threshold is now RELATIVE to the best score.
+ * E.g., multiLabelThreshold=0.8 means: keep any class with score >= bestScore * 0.8
+ * This way, if bestScore=0.9 and threshold=0.8, classes with score >= 0.72 are included.
+ * 
+ * Previously, the threshold was absolute (0.8), meaning almost no secondary class
+ * could ever pass because model scores rarely exceed 0.8 for non-primary classes.
  */
 function filterByConfidence(boxes, scores, confThreshold) {
-	console.log("=== filterByConfidence (MULTI-LABEL) DEBUG ===");
-	console.log(`  Input boxes shape: [${boxes.shape}]`);
-	console.log(`  Input scores shape: [${scores.shape}]`);
-	console.log(`  Confidence threshold: ${confThreshold}`);
+    console.log("=== filterByConfidence (MULTI-LABEL) DEBUG ===");
+    console.log(`  Input boxes shape: [${boxes.shape}]`);
+    console.log(`  Input scores shape: [${scores.shape}]`);
+    console.log(`  Confidence threshold: ${confThreshold}`);
 
-	const boxesArr = boxes.arraySync();
-	const scoresArr = scores.arraySync(); // [numCandidates, numClasses]
-	const multiLabelThreshold = getMultiLabelThreshold();
+    const boxesArr = boxes.arraySync();
+    const scoresArr = scores.arraySync(); // [numCandidates, numClasses]
+    const multiLabelThreshold = getMultiLabelThreshold();
 
-	const filteredBoxesArr = [];
-	const filteredScoresArr = [];
-	const filteredClassesArr = []; // jetzt ein Array von Arrays!
+    console.log(`  Multi-label threshold (relative): ${multiLabelThreshold}`);
 
-	for (let i = 0; i < scoresArr.length; i++) {
-		const classScores = scoresArr[i];
+    const filteredBoxesArr = [];
+    const filteredScoresArr = [];
+    const filteredClassesArr = [];
 
-		// 1. Beste Klasse finden
-		let bestScore = 0;
-		let bestClass = -1;
-		for (let c = 0; c < classScores.length; c++) {
-			if (classScores[c] > bestScore) {
-				bestScore = classScores[c];
-				bestClass = c;
-			}
-		}
+    for (let i = 0; i < scoresArr.length; i++) {
+        const classScores = scoresArr[i];
 
-		// 2. Box nur behalten, wenn beste Klasse über Box-Threshold
-		if (bestScore < confThreshold || bestClass === -1) continue;
+        // 1. Find best class
+        let bestScore = 0;
+        let bestClass = -1;
+        for (let c = 0; c < classScores.length; c++) {
+            if (classScores[c] > bestScore) {
+                bestScore = classScores[c];
+                bestClass = c;
+            }
+        }
 
-		// 3. ALLE Klassen über Multi-Label-Threshold sammeln
-		const matchedClasses = [];
-		for (let c = 0; c < classScores.length; c++) {
-			if (classScores[c] >= multiLabelThreshold) {
-				matchedClasses.push(c);
-			}
-		}
+        // 2. Only keep box if best class exceeds confidence threshold
+        if (bestScore < confThreshold || bestClass === -1) continue;
 
-		// Falls keine Klasse über 80% liegt, zumindest die beste nehmen
-		if (matchedClasses.length === 0) {
-			matchedClasses.push(bestClass);
-		}
+        // 3. FIX: Use RELATIVE threshold — collect all classes with score >= bestScore * multiLabelThreshold
+        const relativeThreshold = bestScore * multiLabelThreshold;
+        const matchedClasses = [];
+        for (let c = 0; c < classScores.length; c++) {
+            if (classScores[c] >= relativeThreshold) {
+                matchedClasses.push(c);
+            }
+        }
 
-		filteredBoxesArr.push(boxesArr[i]);
-		filteredScoresArr.push(bestScore);
-		filteredClassesArr.push(matchedClasses);
-	}
+        // Safety: if somehow nothing matched (shouldn't happen since bestScore >= relativeThreshold), add best
+        if (matchedClasses.length === 0) {
+            matchedClasses.push(bestClass);
+        }
 
-	console.log(`  Filtered count: ${filteredBoxesArr.length}`);
-	for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
-		console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], score=${filteredScoresArr[i].toFixed(4)}, classes=[${filteredClassesArr[i].join(',')}]`);
-	}
+        filteredBoxesArr.push(boxesArr[i]);
+        filteredScoresArr.push(bestScore);
+        filteredClassesArr.push(matchedClasses);
+    }
 
-	console.log("=== END filterByConfidence (MULTI-LABEL) DEBUG ===");
+    console.log(`  Filtered count: ${filteredBoxesArr.length}`);
+    for (let i = 0; i < Math.min(5, filteredBoxesArr.length); i++) {
+        const classLabels = filteredClassesArr[i].map(c => {
+            const name = (typeof labels !== 'undefined' && labels[c]) ? labels[c] : `cls${c}`;
+            return `${name}(${(scoresArr[filteredBoxesArr.indexOf(filteredBoxesArr[i])] || [])[c]?.toFixed(3) || '?'})`;
+        });
+        console.log(`  Filtered box[${i}]: [${filteredBoxesArr[i].map(v => v.toFixed(6)).join(', ')}], bestScore=${filteredScoresArr[i].toFixed(4)}, classes=[${classLabels.join(', ')}]`);
+    }
 
-	if (filteredBoxesArr.length === 0) {
-		return {
-			boxes: [],
-			scores: [],
-			classes: []
-		};
-	}
+    console.log("=== END filterByConfidence (MULTI-LABEL) DEBUG ===");
 
-	return {
-		boxes: filteredBoxesArr,
-		scores: filteredScoresArr,
-		classes: filteredClassesArr
-	};
+    if (filteredBoxesArr.length === 0) {
+        return { boxes: [], scores: [], classes: [] };
+    }
+
+    return {
+        boxes: filteredBoxesArr,
+        scores: filteredScoresArr,
+        classes: filteredClassesArr
+    };
 }
 
 /**
- * Applies Non-Maximum Suppression (NMS) to filter overlapping boxes.
- */
-/**
  * Applies NMS on pre-filtered arrays (multi-label aware).
+ * 
+ * FIX #3: After NMS, merge class labels from suppressed boxes that overlap
+ * with kept boxes. This prevents losing label information when two nearly-identical
+ * boxes carry different secondary labels.
  */
 function applyNMS(filtered, iouThreshold) {
     console.log("=== applyNMS (MULTI-LABEL) DEBUG ===");
@@ -2186,16 +2204,31 @@ function applyNMS(filtered, iouThreshold) {
         boxesTensor, scoresTensor, 100, iouThreshold
     );
 
-    const keptIndices = nmsIndices.arraySync();
+    const keptIndices = new Set(nmsIndices.arraySync());
+    const keptArray = Array.from(keptIndices);
 
     const finalBoxes = [];
     const finalScores = [];
     const finalClasses = [];
 
-    for (const ki of keptIndices) {
+    for (const ki of keptArray) {
+        const mergedClasses = new Set(classes[ki]);
+
+        // FIX #3: Merge labels from suppressed boxes that heavily overlap with this kept box
+        for (let j = 0; j < boxes.length; j++) {
+            if (keptIndices.has(j)) continue; // skip other kept boxes
+            const overlap = iou(boxes[ki], boxes[j]);
+            if (overlap > iouThreshold * 0.8) { // slightly lower bar for merging
+                for (const c of classes[j]) {
+                    mergedClasses.add(c);
+                }
+                console.log(`  Merged classes from suppressed box[${j}] (IoU=${overlap.toFixed(3)}) into kept box[${ki}]`);
+            }
+        }
+
         finalBoxes.push(boxes[ki]);
         finalScores.push(scores[ki]);
-        finalClasses.push(classes[ki]); // Array von Klassen-Indizes
+        finalClasses.push([...mergedClasses]);
     }
 
     console.log(`  NMS kept ${finalBoxes.length} boxes`);
@@ -2218,7 +2251,6 @@ async function handleAnnotations(boxes, scores, classes) {
         return;
     }
 
-    // Delete without triggering load_dynamic_content
     const image_filename = $("#image").attr("src").replace(/.*filename=/, "");
     if (image_filename) {
         try {
@@ -2248,19 +2280,22 @@ async function handleAnnotations(boxes, scores, classes) {
         const w = Math.round((xMax - xMin) * img_width);
         const h = Math.round((yMax - yMin) * img_height);
 
-        const class_indices = classes[i]; // jetzt ein Array!
+        // FIX: Ensure classes[i] is always an array (defensive)
+        const class_indices = Array.isArray(classes[i]) ? classes[i] : [classes[i]];
         if (!class_indices || class_indices.length === 0) continue;
 
-        // Alle Labels für diese Box sammeln
         const box_labels = [];
         for (const cls_idx of class_indices) {
-            if (cls_idx !== -1 && this_labels[cls_idx]) {
+            if (cls_idx !== -1 && cls_idx !== undefined && this_labels[cls_idx]) {
                 box_labels.push(this_labels[cls_idx]);
             }
         }
 
-        if (box_labels.length > 0) {
-            const anno_element = get_annotate_element(box_labels, x, y, w, h);
+        // Deduplicate labels for this box
+        const unique_labels = [...new Set(box_labels)];
+
+        if (unique_labels.length > 0 && w > 0 && h > 0 && x >= 0 && y >= 0) {
+            const anno_element = get_annotate_element(unique_labels, x, y, w, h);
             if (anno_element) anno_boxes.push(anno_element);
         }
     }
@@ -2271,14 +2306,11 @@ async function handleAnnotations(boxes, scores, classes) {
         return;
     }
 
-    // Set all at once
     await anno.setAnnotations(anno_boxes);
     invalidateAnnoCache();
 
-    // Save what we built — don't re-fetch from Annotorious
     await save_annos_batch(anno_boxes);
 
-    // ONE UI refresh
     await load_dynamic_content();
     await create_selects_from_annotation(1);
 
