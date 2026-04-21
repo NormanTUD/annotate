@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 source tests/php_syntax_check
 
 source tests/bash_syntax_check
@@ -14,4 +12,8 @@ source tests/linkchecker
 
 source tests/playwright
 
-php test_batch_upload.php
+if ! php test_batch_upload.php; then
+	echo "php test_batch_upload.php failed"
+	exit 1
+fi
+
