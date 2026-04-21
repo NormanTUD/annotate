@@ -54,10 +54,22 @@ if ! [[ "$category_id" =~ ^[0-9]+$ ]]; then
     exit 7
 fi
 
+VENV_PATH="${HOME}/.yolov11_venv"
+if [[ -d "$VENV_PATH" ]]; then
+	source "$VENV_PATH/bin/activate"
+	yolo settings runs_dir="$(pwd)/runs"
+	deactivate
+fi
+
 if ! bash train; then
 	echo "bash train failed"
+
+	rm "$HOME/.config/Ultralytics/settings.json"
+
 	exit 8
 fi
+
+rm "$HOME/.config/Ultralytics/settings.json"
 
 if [[ ! -e runs/detect/train/results.csv ]]; then
 	echo "runs/detect/train/results.csv not found"
