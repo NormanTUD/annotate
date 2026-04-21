@@ -153,6 +153,712 @@ async function test_load_model_and_predict() {
 	return true;
 }
 
+async function run_multi_label_tests() {
+    console.log("\n=== RUNNING MULTI-LABEL TESTS ===");
+
+    let passed = 0;
+    let failed = 0;
+
+    function assert(condition, msg) {
+        if (condition) {
+            console.log("✓ PASS:", msg);
+            passed++;
+        } else {
+            console.error("✖ FAIL:", msg);
+            failed++;
+        }
+    }
+
+    // =========================================================================
+    // TEST GROUP 1: filterByConfidence with RELATIVE multi-label threshold
+    // =========================================================================
+    console.log("\n--- filterByConfidence: relative threshold logic ---");
+
+    // Helper: create mock tensors for filterByConfidence
+    function makeFilterInputs(boxesArr, scoresArr) {
+        return {
+            boxes: tf.tensor2d(boxesArr),
+            scores: tf.tensor2d(scoresArr)
+        };
+    }
+
+    // Save and mock slider values
+    const origGetMultiLabel = window.getMultiLabelThreshold;
+    const origGetConf = window.getConfThreshold;
+    const origGetIou = window.getIouThreshold;
+
+    // Test 1.1: With relative threshold 0.8, bestScore=0.9 → relativeThreshold=0.72
+    // Class scores: [0.9, 0.75, 0.5] → classes 0 and 1 should pass (0.75 >= 0.72), class 2 should not (0.5 < 0.72)
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.1, 0.1, 0.5, 0.5]],
+            [[0.9, 0.75, 0.5]]
+        );
+        const result = filterByConfidence(boxes, scores, 0.3);
+        assert(result.classes.length === 1, "1.1: One box kept");
+        assert(result.classes[0].includes(0), "1.1: Best class 0 included");
+        assert(result.classes[0].includes(1), "1.1: Class 1 (0.75 >= 0.72) included");
+        assert(!result.classes[0].includes(2), "1.1: Class 2 (0.5 < 0.72) excluded");
+        assert(result.classes[0].length === 2, "1.1: Exactly 2 classes matched");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 1.2: With relative threshold 0.5, bestScore=0.9 → relativeThreshold=0.45
+    // Class scores: [0.9, 0.75, 0.5] → ALL classes should pass
+    {
+        window.getMultiLabelThreshold = () => 0.5;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.1, 0.1, 0.5, 0.5]],
+            [[0.9, 0.75, 0.5]]
+        );
+        const result = filterByConfidence(boxes, scores, 0.3);
+        assert(result.classes[0].length === 3, "1.2: All 3 classes pass with low relative threshold");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 1.3: With relative threshold 1.0, only the best class should pass
+    {
+        window.getMultiLabelThreshold = () => 1.0;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.1, 0.1, 0.5, 0.5]],
+            [[0.9, 0.75, 0.5]]
+        );
+        const result = filterByConfidence(boxes, scores, 0.3);
+        assert(result.classes[0].length === 1, "1.3: Only best class passes with threshold=1.0");
+        assert(result.classes[0][0] === 0, "1.3: Best class is 0");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 1.4: Box below confidence threshold should be filtered out entirely
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.1, 0.1, 0.5, 0.5]],
+            [[0.2, 0.15, 0.1]]
+        );
+        const result = filterByConfidence(boxes, scores, 0.3);
+        assert(result.boxes.length === 0, "1.4: Box with bestScore=0.2 filtered out (conf=0.3)");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 1.5: Multiple boxes, some pass, some don't
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.1, 0.1, 0.3, 0.3], [0.5, 0.5, 0.8, 0.8], [0.2, 0.2, 0.4, 0.4]],
+            [[0.9, 0.8, 0.1], [0.1, 0.05, 0.02], [0.5, 0.45, 0.3]]
+        );
+        const result = filterByConfidence(boxes, scores, 0.3);
+        assert(result.boxes.length === 2, "1.5: 2 of 3 boxes pass confidence threshold");
+        // First box: bestScore=0.9, relThresh=0.9*0.8=0.72 → classes 0 (0.9 ✓), 1 (0.8 ✓), 2 (0.1 ✗)
+        assert(result.classes[0].length === 2, "1.5: First box has 2 classes");
+        // Third box: bestScore=0.5, relThresh=0.5*0.8=0.40 → classes 0 (0.5 ✓), 1 (0.45 ✓), 2 (0.3 ✗)
+        assert(result.classes[1].length === 2, "1.5: Third box has 2 classes (0.5 and 0.45 >= 0.4, but 0.3 < 0.4)");
+        assert(result.classes[1].includes(0), "1.5: Third box includes class 0 (0.5 >= 0.4)");
+        assert(result.classes[1].includes(1), "1.5: Third box includes class 1 (0.45 >= 0.4)");
+        assert(!result.classes[1].includes(2), "1.5: Third box excludes class 2 (0.3 < 0.4)");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 1.6: Empty input
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const boxes = tf.tensor2d([[0, 0, 0, 0]]).slice([0, 0], [0, 4]); // empty 2D tensor
+        const scores = tf.tensor2d([[0]]).slice([0, 0], [0, 1]); // empty 2D tensor
+        // filterByConfidence should handle empty gracefully
+        try {
+            const result = filterByConfidence(boxes, scores, 0.3);
+            assert(result.boxes.length === 0, "1.6: Empty input returns empty result");
+        } catch (e) {
+            // If it throws on empty, that's also acceptable to note
+            assert(false, "1.6: filterByConfidence threw on empty input: " + e.message);
+        }
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 1.7: Two classes with identical scores
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.1, 0.1, 0.5, 0.5]],
+            [[0.85, 0.85, 0.1]]
+        );
+        const result = filterByConfidence(boxes, scores, 0.3);
+        assert(result.classes[0].includes(0) && result.classes[0].includes(1),
+            "1.7: Two classes with identical scores both included");
+        assert(result.classes[0].length === 2, "1.7: Exactly 2 classes");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // =========================================================================
+    // TEST GROUP 2: applyNMS with label merging
+    // =========================================================================
+    console.log("\n--- applyNMS: label merging from suppressed boxes ---");
+
+    // Test 2.1: Two overlapping boxes with different labels → labels should merge
+    {
+        const filtered = {
+            boxes: [
+                [0.1, 0.1, 0.5, 0.5],  // box A
+                [0.12, 0.12, 0.52, 0.52] // box B (heavily overlaps A)
+            ],
+            scores: [0.9, 0.8],
+            classes: [[0], [1]]  // A has class 0, B has class 1
+        };
+        const result = applyNMS(filtered, 0.5);
+        assert(result.boxes.length === 1, "2.1: NMS keeps 1 box");
+        assert(result.classes[0].includes(0), "2.1: Kept box has class 0");
+        assert(result.classes[0].includes(1), "2.1: Kept box merged class 1 from suppressed box");
+    }
+
+    // Test 2.2: Two non-overlapping boxes → no merging
+    {
+        const filtered = {
+            boxes: [
+                [0.0, 0.0, 0.2, 0.2],
+                [0.8, 0.8, 1.0, 1.0]
+            ],
+            scores: [0.9, 0.85],
+            classes: [[0], [1]]
+        };
+        const result = applyNMS(filtered, 0.5);
+        assert(result.boxes.length === 2, "2.2: Both non-overlapping boxes kept");
+        assert(result.classes[0].length === 1 && result.classes[0][0] === 0, "2.2: First box only has class 0");
+        assert(result.classes[1].length === 1 && result.classes[1][0] === 1, "2.2: Second box only has class 1");
+    }
+
+    // Test 2.3: Three overlapping boxes, labels should all merge into the best one
+    {
+        const filtered = {
+            boxes: [
+                [0.1, 0.1, 0.5, 0.5],
+                [0.11, 0.11, 0.51, 0.51],
+                [0.12, 0.12, 0.52, 0.52]
+            ],
+            scores: [0.95, 0.85, 0.80],
+            classes: [[0], [1, 2], [3]]
+        };
+        const result = applyNMS(filtered, 0.5);
+        assert(result.boxes.length === 1, "2.3: NMS keeps 1 box from 3 overlapping");
+        assert(result.classes[0].includes(0), "2.3: Has class 0 from best box");
+        assert(result.classes[0].includes(1), "2.3: Merged class 1");
+        assert(result.classes[0].includes(2), "2.3: Merged class 2");
+        assert(result.classes[0].includes(3), "2.3: Merged class 3");
+    }
+
+    // Test 2.4: Empty input
+    {
+        const result = applyNMS({ boxes: [], scores: [], classes: [] }, 0.5);
+        assert(result.boxes.length === 0, "2.4: Empty input returns empty");
+    }
+
+    // Test 2.5: Single box passes through unchanged
+    {
+        const filtered = {
+            boxes: [[0.1, 0.1, 0.5, 0.5]],
+            scores: [0.9],
+            classes: [[0, 2, 5]]
+        };
+        const result = applyNMS(filtered, 0.5);
+        assert(result.boxes.length === 1, "2.5: Single box kept");
+        assert(JSON.stringify(result.classes[0].sort()) === JSON.stringify([0, 2, 5]),
+            "2.5: Single box classes unchanged");
+    }
+
+    // Test 2.6: Duplicate classes from merge are deduplicated
+    {
+        const filtered = {
+            boxes: [
+                [0.1, 0.1, 0.5, 0.5],
+                [0.11, 0.11, 0.51, 0.51]
+            ],
+            scores: [0.9, 0.8],
+            classes: [[0, 1], [1, 2]]  // class 1 appears in both
+        };
+        const result = applyNMS(filtered, 0.5);
+        assert(result.boxes.length === 1, "2.6: NMS keeps 1 box");
+        const uniqueClasses = [...new Set(result.classes[0])];
+        assert(uniqueClasses.length === result.classes[0].length,
+            "2.6: No duplicate classes after merge (Set-based dedup works)");
+        assert(result.classes[0].includes(0) && result.classes[0].includes(1) && result.classes[0].includes(2),
+            "2.6: All unique classes present: 0, 1, 2");
+    }
+
+    // =========================================================================
+    // TEST GROUP 3: handleAnnotations with multi-label classes
+    // =========================================================================
+    console.log("\n--- handleAnnotations: multi-label annotation creation ---");
+
+    // Test 3.1: get_annotate_element with multiple labels
+    if ($("#image").length > 0) {
+        {
+            const elem = get_annotate_element(["cat", "animal"], 10, 20, 100, 200);
+            assert(elem !== null, "3.1: get_annotate_element accepts array of labels");
+            assert(elem.body.length === 2, "3.1: Body has 2 entries for 2 labels");
+            assert(elem.body[0].value === "cat", "3.1: First body value is 'cat'");
+            assert(elem.body[1].value === "animal", "3.1: Second body value is 'animal'");
+            assert(elem.body[0].purpose === "tagging", "3.1: First body purpose is 'tagging'");
+            assert(elem.body[1].purpose === "tagging", "3.1: Second body purpose is 'tagging'");
+        }
+
+        // Test 3.2: get_annotate_element with single label (string) still works
+        {
+            const elem = get_annotate_element("dog", 10, 20, 100, 200);
+            assert(elem !== null, "3.2: get_annotate_element accepts single string label");
+            assert(elem.body.length === 1, "3.2: Body has 1 entry for single label");
+            assert(elem.body[0].value === "dog", "3.2: Body value is 'dog'");
+        }
+
+        // Test 3.3: get_annotate_element with single label in array
+        {
+            const elem = get_annotate_element(["bird"], 10, 20, 100, 200);
+            assert(elem !== null, "3.3: get_annotate_element accepts single-element array");
+            assert(elem.body.length === 1, "3.3: Body has 1 entry");
+            assert(elem.body[0].value === "bird", "3.3: Body value is 'bird'");
+        }
+
+        // Test 3.4: get_annotate_element with many labels
+        {
+            const many_labels = ["cat", "animal", "pet", "mammal", "feline"];
+            const elem = get_annotate_element(many_labels, 5, 5, 50, 50);
+            assert(elem !== null, "3.4: get_annotate_element accepts 5 labels");
+            assert(elem.body.length === 5, "3.4: Body has 5 entries");
+            for (let i = 0; i < many_labels.length; i++) {
+                assert(elem.body[i].value === many_labels[i],
+                    `3.4: Body[${i}] value is '${many_labels[i]}'`);
+            }
+        }
+
+        // Test 3.5: get_annotate_element with empty array should still produce valid structure
+        {
+            const elem = get_annotate_element([], 10, 20, 100, 200);
+            assert(elem !== null, "3.5: get_annotate_element accepts empty array");
+            assert(elem.body.length === 0, "3.5: Body is empty array for empty labels");
+        }
+    }
+
+    // =========================================================================
+    // TEST GROUP 4: processModelOutput slider integration
+    // =========================================================================
+    console.log("\n--- processModelOutput: slider integration ---");
+
+    // CRITICAL FIX: Restore original slider functions before testing them.
+    // Tests in Groups 1-3 override these with mocks. We must restore them
+    // so that Group 4 actually tests the real DOM-reading functions.
+    window.getMultiLabelThreshold = origGetMultiLabel;
+    window.getConfThreshold = origGetConf;
+    window.getIouThreshold = origGetIou;
+
+    // Test 4.1: Verify getConfThreshold reads from slider
+    {
+        // Create a mock slider if not present
+        let slider = document.getElementById('conf_slider');
+        const created = !slider;
+        if (!slider) {
+            slider = document.createElement('input');
+            slider.type = 'range';
+            slider.id = 'conf_slider';
+            slider.min = 0;
+            slider.max = 1;
+            slider.step = 0.01;
+            slider.value = 0.55;
+            document.body.appendChild(slider);
+        } else {
+            var oldVal = slider.value;
+            slider.value = 0.55;
+        }
+
+        const confVal = getConfThreshold();
+        assert(Math.abs(confVal - 0.55) < 0.001, "4.1: getConfThreshold reads slider value 0.55");
+
+        if (created) {
+            slider.remove();
+        } else {
+            slider.value = oldVal;
+        }
+    }
+
+    // Test 4.2: Verify getIouThreshold reads from slider
+    {
+        let slider = document.getElementById('iou_slider');
+        const created = !slider;
+        if (!slider) {
+            slider = document.createElement('input');
+            slider.type = 'range';
+            slider.id = 'iou_slider';
+            slider.min = 0;
+            slider.max = 1;
+            slider.step = 0.01;
+            slider.value = 0.65;
+            document.body.appendChild(slider);
+        } else {
+            var oldVal = slider.value;
+            slider.value = 0.65;
+        }
+
+        const iouVal = getIouThreshold();
+        assert(Math.abs(iouVal - 0.65) < 0.001, "4.2: getIouThreshold reads slider value 0.65");
+
+        if (created) {
+            slider.remove();
+        } else {
+            slider.value = oldVal;
+        }
+    }
+
+    // Test 4.3: Verify getMultiLabelThreshold reads from slider
+    {
+        let slider = document.getElementById('multilabel_slider');
+        const created = !slider;
+        if (!slider) {
+            slider = document.createElement('input');
+            slider.type = 'range';
+            slider.id = 'multilabel_slider';
+            slider.min = 0;
+            slider.max = 1;
+            slider.step = 0.01;
+            slider.value = 0.75;
+            document.body.appendChild(slider);
+        } else {
+            var oldVal = slider.value;
+            slider.value = 0.75;
+        }
+
+        const mlVal = getMultiLabelThreshold();
+        assert(Math.abs(mlVal - 0.75) < 0.001, "4.3: getMultiLabelThreshold reads slider value 0.75");
+
+        if (created) {
+            slider.remove();
+        } else {
+            slider.value = oldVal;
+        }
+    }
+
+    // Test 4.4: Verify defaults when sliders don't exist
+    {
+        // Temporarily remove sliders
+        const confSlider = document.getElementById('conf_slider');
+        const iouSlider = document.getElementById('iou_slider');
+        const mlSlider = document.getElementById('multilabel_slider');
+
+        if (confSlider) confSlider.id = 'conf_slider_backup';
+        if (iouSlider) iouSlider.id = 'iou_slider_backup';
+        if (mlSlider) mlSlider.id = 'multilabel_slider_backup';
+
+        assert(getConfThreshold() === 0.3, "4.4a: getConfThreshold defaults to 0.3 without slider");
+        assert(getIouThreshold() === 0.5, "4.4b: getIouThreshold defaults to 0.5 without slider");
+        assert(getMultiLabelThreshold() === 0.8, "4.4c: getMultiLabelThreshold defaults to 0.8 without slider");
+
+        if (confSlider) confSlider.id = 'conf_slider';
+        if (iouSlider) iouSlider.id = 'iou_slider';
+        if (mlSlider) mlSlider.id = 'multilabel_slider';
+    }
+
+    // =========================================================================
+    // TEST GROUP 5: End-to-end filterByConfidence + applyNMS pipeline
+    // =========================================================================
+    console.log("\n--- End-to-end: filterByConfidence → applyNMS pipeline ---");
+
+    // Test 5.1: Full pipeline with multi-label detection
+    {
+        window.getMultiLabelThreshold = () => 0.7;
+        const { boxes, scores } = makeFilterInputs(
+            [
+                [0.1, 0.1, 0.4, 0.4],   // box 0
+                [0.5, 0.5, 0.9, 0.9],   // box 1 (no overlap with box 0)
+                [0.11, 0.11, 0.41, 0.41] // box 2 (overlaps heavily with box 0)
+            ],
+            [
+                [0.9, 0.7, 0.1],  // box 0: classes 0,1 should pass (0.7 >= 0.9*0.7=0.63)
+                [0.3, 0.1, 0.85], // box 1: class 2 best, class 0 at 0.3 < 0.85*0.7=0.595
+                [0.8, 0.1, 0.6]   // box 2: class 0 best, class 2 at 0.6 >= 0.8*0.7=0.56
+            ]
+        );
+
+        const filtered = filterByConfidence(boxes, scores, 0.25);
+        assert(filtered.boxes.length === 3, "5.1a: All 3 boxes pass confidence threshold 0.25");
+
+        // Box 0: bestScore=0.9, relThresh=0.63 → classes 0 (0.9), 1 (0.7) pass
+        assert(filtered.classes[0].includes(0) && filtered.classes[0].includes(1),
+            "5.1b: Box 0 has classes 0 and 1");
+        assert(!filtered.classes[0].includes(2), "5.1c: Box 0 excludes class 2 (0.1 < 0.63)");
+
+        // Box 1: bestScore=0.85, relThresh=0.595 → only class 2 passes
+        assert(filtered.classes[1].includes(2), "5.1d: Box 1 has class 2");
+        assert(filtered.classes[1].length === 1, "5.1e: Box 1 has only 1 class");
+
+        // Box 2: bestScore=0.8, relThresh=0.56 → classes 0 (0.8), 2 (0.6) pass
+        assert(filtered.classes[2].includes(0) && filtered.classes[2].includes(2),
+            "5.1f: Box 2 has classes 0 and 2");
+
+        // Now apply NMS — boxes 0 and 2 overlap, box 0 has higher score
+        const nmsResult = applyNMS(filtered, 0.5);
+
+        // Box 0 should be kept, box 2 suppressed (and its labels merged into box 0)
+        // Box 1 should be kept (no overlap)
+        assert(nmsResult.boxes.length === 2, "5.1g: NMS keeps 2 boxes (0 and 1)");
+
+        // The kept box that was originally box 0 should now also have class 2 merged from box 2
+        const keptBox0 = nmsResult.boxes.findIndex(b =>
+            Math.abs(b[0] - 0.1) < 0.01 && Math.abs(b[1] - 0.1) < 0.01
+        );
+        assert(keptBox0 !== -1, "5.1h: Box 0 is in the NMS result");
+        if (keptBox0 !== -1) {
+            assert(nmsResult.classes[keptBox0].includes(0), "5.1i: Merged box has class 0");
+            assert(nmsResult.classes[keptBox0].includes(1), "5.1j: Merged box has class 1 (from original box 0)");
+            assert(nmsResult.classes[keptBox0].includes(2), "5.1k: Merged box has class 2 (merged from suppressed box 2)");
+        }
+
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 5.2: Pipeline with all boxes below confidence → empty result
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.1, 0.1, 0.5, 0.5], [0.6, 0.6, 0.9, 0.9]],
+            [[0.1, 0.05], [0.15, 0.08]]
+        );
+        const filtered = filterByConfidence(boxes, scores, 0.3);
+        assert(filtered.boxes.length === 0, "5.2a: No boxes pass confidence 0.3");
+        const nmsResult = applyNMS(filtered, 0.5);
+        assert(nmsResult.boxes.length === 0, "5.2b: NMS on empty input returns empty");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 5.3: Pipeline with single box, single class
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.2, 0.2, 0.6, 0.6]],
+            [[0.95, 0.1, 0.05]]
+        );
+        const filtered = filterByConfidence(boxes, scores, 0.3);
+        assert(filtered.boxes.length === 1, "5.3a: Single box passes");
+        assert(filtered.classes[0].length === 1, "5.3b: Only best class passes (0.1 < 0.95*0.8=0.76)");
+        assert(filtered.classes[0][0] === 0, "5.3c: Best class is 0");
+        const nmsResult = applyNMS(filtered, 0.5);
+        assert(nmsResult.boxes.length === 1, "5.3d: Single box survives NMS");
+        assert(nmsResult.classes[0].length === 1, "5.3e: Still single class after NMS");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // =========================================================================
+    // TEST GROUP 6: iou helper function edge cases for NMS merging
+    // =========================================================================
+    console.log("\n--- iou: edge cases for NMS merging ---");
+
+    // Test 6.1: Perfectly overlapping boxes
+    {
+        const overlap = iou([0.1, 0.1, 0.5, 0.5], [0.1, 0.1, 0.5, 0.5]);
+        assert(overlap === 1.0, "6.1: Identical boxes have IoU = 1.0");
+    }
+
+    // Test 6.2: Slightly shifted boxes (high overlap)
+    {
+        const overlap = iou([0.1, 0.1, 0.5, 0.5], [0.12, 0.12, 0.52, 0.52]);
+        assert(overlap > 0.8, "6.2: Slightly shifted boxes have IoU > 0.8");
+    }
+
+    // Test 6.3: Non-overlapping boxes
+    {
+        const overlap = iou([0.0, 0.0, 0.2, 0.2], [0.8, 0.8, 1.0, 1.0]);
+        assert(overlap === 0, "6.3: Non-overlapping boxes have IoU = 0");
+    }
+
+    // Test 6.4: Partial overlap
+    {
+        const overlap = iou([0.0, 0.0, 0.5, 0.5], [0.25, 0.25, 0.75, 0.75]);
+        assert(overlap > 0 && overlap < 0.5, "6.4: Partial overlap IoU is between 0 and 0.5");
+    }
+
+    // =========================================================================
+    // TEST GROUP 7: Relative vs Absolute threshold comparison
+    // =========================================================================
+    console.log("\n--- Relative vs Absolute threshold behavior ---");
+
+    // Test 7.1: Demonstrate the old bug — absolute threshold 0.8 misses valid secondary classes
+    {
+        // Simulate OLD behavior: absolute threshold
+        function filterAbsolute(scoresArr, confThreshold, absThreshold) {
+            const results = [];
+            for (let i = 0; i < scoresArr.length; i++) {
+                const classScores = scoresArr[i];
+                let bestScore = 0, bestClass = -1;
+                for (let c = 0; c < classScores.length; c++) {
+                    if (classScores[c] > bestScore) { bestScore = classScores[c]; bestClass = c; }
+                }
+                if (bestScore < confThreshold) continue;
+                const matched = [];
+                for (let c = 0; c < classScores.length; c++) {
+                    if (classScores[c] >= absThreshold) matched.push(c);
+                }
+                if (matched.length === 0) matched.push(bestClass);
+                results.push(matched);
+            }
+            return results;
+        }
+
+        // Simulate NEW behavior: relative threshold
+        function filterRelative(scoresArr, confThreshold, relThreshold) {
+            const results = [];
+            for (let i = 0; i < scoresArr.length; i++) {
+                const classScores = scoresArr[i];
+                let bestScore = 0, bestClass = -1;
+                for (let c = 0; c < classScores.length; c++) {
+                    if (classScores[c] > bestScore) { bestScore = classScores[c]; bestClass = c; }
+                }
+                if (bestScore < confThreshold) continue;
+                const relativeBar = bestScore * relThreshold;
+                const matched = [];
+                for (let c = 0; c < classScores.length; c++) {
+                    if (classScores[c] >= relativeBar) matched.push(c);
+                }
+                if (matched.length === 0) matched.push(bestClass);
+                results.push(matched);
+            }
+            return results;
+        }
+
+        // Scenario: bestScore=0.75, secondary=0.65. Absolute threshold=0.8 misses BOTH.
+        const scores = [[0.75, 0.65, 0.1]];
+
+        const absResult = filterAbsolute(scores, 0.3, 0.8);
+        assert(absResult[0].length === 1, "7.1a: OLD absolute threshold=0.8 only keeps best class (fallback)");
+
+        const relResult = filterRelative(scores, 0.3, 0.8);
+        // relativeBar = 0.75 * 0.8 = 0.6 → both 0.75 and 0.65 pass
+        assert(relResult[0].length === 2, "7.1b: NEW relative threshold=0.8 keeps 2 classes (0.75 and 0.65 >= 0.6)");
+        assert(relResult[0].includes(0) && relResult[0].includes(1),
+            "7.1c: NEW relative threshold correctly includes classes 0 and 1");
+    }
+
+    // Test 7.2: When bestScore is very high, relative threshold is more permissive
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const { boxes, scores } = makeFilterInputs(
+            [[0.1, 0.1, 0.5, 0.5]],
+            [[0.95, 0.78, 0.76, 0.5]]
+        );
+        // relativeBar = 0.95 * 0.8 = 0.76
+        // Classes: 0 (0.95 ✓), 1 (0.78 ✓), 2 (0.76 ✓), 3 (0.5 ✗)
+        const result = filterByConfidence(boxes, scores, 0.3);
+        assert(result.classes[0].length === 3, "7.2: With bestScore=0.95, 3 classes pass relative threshold 0.76");
+        assert(result.classes[0].includes(0), "7.2a: Class 0 included");
+        assert(result.classes[0].includes(1), "7.2b: Class 1 included");
+        assert(result.classes[0].includes(2), "7.2c: Class 2 included");
+        assert(!result.classes[0].includes(3), "7.2d: Class 3 excluded (0.5 < 0.76)");
+        boxes.dispose(); scores.dispose();
+    }
+
+    // =========================================================================
+    // TEST GROUP 8: get_names_from_ki_anno with multi-label annotations
+    // =========================================================================
+    console.log("\n--- get_names_from_ki_anno: multi-label annotations ---");
+
+    // Test 8.1: Multi-label annotation bodies are counted correctly
+    {
+        const multiAnno = [
+            { body: [{ value: "cat" }, { value: "animal" }] },
+            { body: [{ value: "dog" }, { value: "animal" }] },
+            { body: [{ value: "cat" }] }
+        ];
+        const names = get_names_from_ki_anno(multiAnno);
+        assert(names["cat"] === 2, "8.1a: 'cat' appears 2 times");
+        assert(names["animal"] === 2, "8.1b: 'animal' appears 2 times");
+        assert(names["dog"] === 1, "8.1c: 'dog' appears 1 time");
+    }
+
+    // Test 8.2: Single-label annotations still work
+    {
+        const singleAnno = [
+            { body: [{ value: "bird" }] },
+            { body: [{ value: "bird" }] },
+            { body: [{ value: "fish" }] }
+        ];
+        const names = get_names_from_ki_anno(singleAnno);
+        assert(names["bird"] === 2, "8.2a: 'bird' counted correctly");
+        assert(names["fish"] === 1, "8.2b: 'fish' counted correctly");
+    }
+
+    // =========================================================================
+    // TEST GROUP 9: Stress tests
+    // =========================================================================
+    console.log("\n--- Stress tests ---");
+
+    // Test 9.1: Many boxes through filterByConfidence
+    {
+        window.getMultiLabelThreshold = () => 0.7;
+        const numBoxes = 500;
+        const numClasses = 10;
+        const boxesArr = [];
+        const scoresArr = [];
+        for (let i = 0; i < numBoxes; i++) {
+            boxesArr.push([Math.random() * 0.5, Math.random() * 0.5,
+                           Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5]);
+            const classScores = [];
+            for (let c = 0; c < numClasses; c++) {
+                classScores.push(Math.random());
+            }
+            scoresArr.push(classScores);
+        }
+        const { boxes, scores } = makeFilterInputs(boxesArr, scoresArr);
+        const startTime = performance.now();
+        const result = filterByConfidence(boxes, scores, 0.3);
+        const elapsed = performance.now() - startTime;
+        assert(elapsed < 1000, `9.1: filterByConfidence on 500 boxes completes in ${elapsed.toFixed(1)}ms (< 1000ms)`);
+        assert(result.boxes.length >= 0, "9.1: Returns valid result");
+        // Verify all kept boxes have at least one class
+        for (let i = 0; i < result.classes.length; i++) {
+            assert(result.classes[i].length >= 1,
+                `9.1: Box ${i} has at least 1 class`);
+        }
+        boxes.dispose(); scores.dispose();
+    }
+
+    // Test 9.2: Many boxes through full pipeline
+    {
+        window.getMultiLabelThreshold = () => 0.8;
+        const numBoxes = 200;
+        const boxesArr = [];
+        const scoresArr = [];
+        for (let i = 0; i < numBoxes; i++) {
+            const x = Math.random() * 0.8;
+            const y = Math.random() * 0.8;
+            boxesArr.push([x, y, x + 0.1 + Math.random() * 0.1, y + 0.1 + Math.random() * 0.1]);
+            scoresArr.push([Math.random(), Math.random(), Math.random()]);
+        }
+        const { boxes, scores } = makeFilterInputs(boxesArr, scoresArr);
+        const filtered = filterByConfidence(boxes, scores, 0.3);
+        const startTime = performance.now();
+        const nmsResult = applyNMS(filtered, 0.5);
+        const elapsed = performance.now() - startTime;
+        assert(elapsed < 2000, `9.2: Full pipeline on 200 boxes completes in ${elapsed.toFixed(1)}ms (< 2000ms)`);
+        assert(nmsResult.boxes.length <= filtered.boxes.length,
+            "9.2: NMS reduces or maintains box count");
+        // Verify all NMS results have valid classes
+        for (let i = 0; i < nmsResult.classes.length; i++) {
+            assert(Array.isArray(nmsResult.classes[i]) && nmsResult.classes[i].length >= 1,
+                `9.2: NMS result box ${i} has valid classes array`);
+        }
+        boxes.dispose(); scores.dispose();
+    }
+
+    // =========================================================================
+    // Restore original slider functions
+    // =========================================================================
+    window.getMultiLabelThreshold = origGetMultiLabel;
+    window.getConfThreshold = origGetConf;
+    window.getIouThreshold = origGetIou;
+
+    // =========================================================================
+    // Summary
+    // =========================================================================
+    console.log(`\n=== MULTI-LABEL TESTS DONE: ${passed} passed, ${failed} failed ===`);
+    return failed;
+}
+
 async function run_tests() {
 	console.log("=== RUNNING TESTS ===");
 
@@ -510,6 +1216,9 @@ async function run_tests() {
 	assert(await run_additional_tests() == 0, "additional tests failed");
 
 	assert(await test_load_model_and_predict(), "test_load_model_and_predict tests failed");
+
+	const multiLabelFailed = await run_multi_label_tests();
+	assert(multiLabelFailed === 0, "multi-label tests all passed");
 
 	return failed;
 }
