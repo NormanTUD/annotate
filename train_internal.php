@@ -22,15 +22,12 @@ if (function_exists('apache_setenv')) {
 }
 
 // Send ALL headers BEFORE any output
-header('Content-Type: text/html; charset=utf-8');
+header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');
 header('X-Accel-Buffering: no');
 header('Content-Encoding: none');
 
-echo "<!DOCTYPE html><html><head><title>Internal Training</title>";
-echo "<script>setInterval(function(){ window.scrollTo(0, document.body.scrollHeight); }, 500);</script>";
-echo "</head><body><pre>\n";
 // Larger padding to force browser to start rendering
 echo str_repeat(" ", 4096) . "\n";
 flush();
@@ -162,14 +159,14 @@ echo "   ✅ Extracted $img_count images total.\n";
 flush();
 
 // --- Step 3: Run YOLO training ---
-echo "\n🏋️ Step 3: Starting YOLO training ($epochs epochs, model: $model_yaml)...\n";
+echo "\n🏃️ Step 3: Starting YOLO training ($epochs epochs, model: $model_yaml)...\n";
 flush();
 
 $check_output = [];
 exec("python3 -c \"from ultralytics import YOLO; print('ok')\" 2>&1", $check_output, $check_exit);
 if ($check_exit !== 0) {
     echo "   ❌ ultralytics not importable: " . implode("\n", $check_output) . "\n";
-    die("</pre></body></html>");
+    die("Training aborted.");
 }
 echo "   ✅ ultralytics available.\n";
 flush();
@@ -218,7 +215,7 @@ $descriptorspec = [
 $process = proc_open($train_cmd, $descriptorspec, $pipes);
 
 if (!is_resource($process)) {
-    die("❌ Error: Could not start training process.\n</pre></body></html>");
+    die("❌ Error: Could not start training process.");
 }
 
 fclose($pipes[0]);
@@ -236,13 +233,13 @@ while (true) {
     $stderr_chunk = fread($pipes[2], 8192);
 
     if ($stdout_chunk !== false && $stdout_chunk !== "") {
-        echo htmlspecialchars($stdout_chunk);
+        echo $stdout_chunk;
         flush();
         $last_output_time = time();
     }
 
     if ($stderr_chunk !== false && $stderr_chunk !== "") {
-        echo htmlspecialchars($stderr_chunk);
+        echo $stderr_chunk;
         flush();
         $last_output_time = time();
     }
@@ -252,8 +249,8 @@ while (true) {
         do {
             $r1 = fread($pipes[1], 8192);
             $r2 = fread($pipes[2], 8192);
-            if ($r1) echo htmlspecialchars($r1);
-            if ($r2) echo htmlspecialchars($r2);
+            if ($r1) echo $r1;
+            if ($r2) echo $r2;
         } while ($r1 || $r2);
         flush();
         break;
@@ -276,14 +273,14 @@ $exit_code = proc_close($process);
 if ($exit_code !== 0) {
     echo "\n❌ Training failed with exit code $exit_code\n";
     echo "   Temporary files preserved at: $tmp_dir\n";
-    die("</pre></body></html>");
+    die("Training failed.");
 }
 
 echo "\n✅ Training completed successfully!\n";
 flush();
 
 // --- Step 4: Find best.pt and upload model ---
-echo "\n📤 Step 4: Uploading trained model...\n";
+echo "\n💾 Step 4: Uploading trained model...\n";
 flush();
 
 $best_pt = null;
@@ -309,7 +306,7 @@ if (!$best_pt) {
 if (!$best_pt || !file_exists($best_pt)) {
     echo "   ❌ Could not find best.pt in training output.\n";
     system("find " . escapeshellarg("$tmp_dir/runs") . " -type f 2>&1");
-    die("\n</pre></body></html>");
+    die("\nTraining output missing.");
 }
 
 echo "   Found model: $best_pt (" . round(filesize($best_pt) / 1024 / 1024, 2) . " MB)\n";
@@ -338,6 +335,4 @@ system("rm -rf " . escapeshellarg($tmp_dir));
 echo "   Done.\n";
 
 echo "\n🎉 All done! Model '$model_name' is now available in the models list.\n";
-echo '<a href="index.php">← Back to Index</a> | <a href="models.php">View Models</a>';
-echo "\n</pre></body></html>";
 ?>
