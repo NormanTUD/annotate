@@ -468,106 +468,71 @@ fi';
 	}
 
 	function _create_internal_html ($number_of_rows = 0, $items_per_page = 0, $images = [], $html = "") {
-		$page_str = "";
+	    if($html == "") {
+		$html = file_get_contents("export_base.html");
+	    }
 
-		if($items_per_page == 0) {
-			return $page_str;
+	    // <object-class> <x> <y> <width> <height>
+	    if(count($images)) {
+		$base_structs = [];
+
+		foreach ($images as $fn => $img_data) {
+		    $w = $img_data[0]["width"];
+		    $h = $img_data[0]["height"];
+
+		    $base_structs[] = '<div class="container_div" style="position: relative; display: inline-block;">';
+		    $base_structs[] = '  <img class="images" src="print_image.php?filename='.$fn.'" style="display: block;">';
+
+		    // ein einziges svg für alle Annotations
+		    $annotations = [];
+		    foreach ($img_data as $this_anno_data) {
+			$id = isset($this_anno_data["id"]) ? (string)$this_anno_data["id"] : '';
+			$cat = isset($this_anno_data["category"]) ? (string)$this_anno_data["category"] : "";
+			$x = isset($this_anno_data["x_start"]) ? floatval($this_anno_data["x_start"]) : 0.0;
+			$y = isset($this_anno_data["y_start"]) ? floatval($this_anno_data["y_start"]) : 0.0;
+			$width  = isset($this_anno_data["w"]) ? floatval($this_anno_data["w"]) : 0.0;
+			$height = isset($this_anno_data["h"]) ? floatval($this_anno_data["h"]) : 0.0;
+
+			if ($width < 0) $width = 0;
+			if ($height < 0) $height = 0;
+
+			$esc_label = htmlspecialchars($cat, ENT_QUOTES, 'UTF-8');
+			$esc_id = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+
+			$text_x = $x + ($width / 2.0);
+			$text_y = max(4, $y - 4);
+
+			$annotations[] = '<g class="a9s-annotation" data-id="'.$esc_id.'" data-label="'.$esc_label.'">'
+			    . '<rect class="a9s-inner" x="'.$x.'" y="'.$y.'" width="'.$width.'" height="'.$height.'"></rect>'
+			    . '<text style="display: none" class="a9s-label" x="'.$text_x.'" y="'.$text_y.'" text-anchor="middle" alignment-baseline="baseline" font-size="12" style="pointer-events:auto;">'.$esc_label.'</text>'
+			    . '</g>';
+		    }
+
+		    $annotations_string = implode("\n", $annotations);
+
+		    $base_structs[] = '<svg class="a9s-annotationlayer" width="'.$w.'" height="'.$h.'" viewBox="0 0 '.$w.' '.$h.'" style="position:absolute;left:0;top:0;pointer-events:none;" preserveAspectRatio="xMinYMin meet">'
+			. '<g>'
+			. $annotations_string
+			. '</g>'
+			. '</svg>';
+
+		    $base_structs[] = '</div>';
 		}
 
-		$max_page = $number_of_rows / $items_per_page;
+		$new_html = join("\n", $base_structs);
+		$html = preg_replace("/REPLACEME/", $new_html, $html);
+	    } else {
+		$html = "No images for the chosen category";
+	    }
 
-		if($number_of_rows > $items_per_page) {
-			$links = array();
-			foreach (range(0, $max_page) as $page_nr) {
-				$query = $_GET;
-				$query['page'] = $page_nr;
-				$query_result = http_build_query($query);
-
-				if($page_nr == get_get("page")) {
-					$page_nr = "<b>$page_nr</b>";
-				}
-
-				$links[] = "<a href='export_annotations.php?$query_result'>$page_nr</a>";
-			}
-
-			$page_str = "<span style='font-size: 1vw'>".join(" &mdash; ", $links)."<br></span>";
-			print $page_str;
-		}
-
-		if($page_str) {
-			print "<br>$page_str<br>";
-		}
-
-		if($html == "") {
-			$html .= file_get_contents("export_base.html");
-		}
-
-		// <object-class> <x> <y> <width> <height>
-		if(count($images)) {
-			foreach ($images as $fn => $img_data) {
-				$w = $img_data[0]["width"];
-				$h = $img_data[0]["height"];
-
-				$base_structs[] = '<div class="container_div" style="position: relative; display: inline-block;">';
-				$base_structs[] = '  <img class="images" src="print_image.php?filename='.$fn.'" style="display: block;">';
-
-				// ein einziges svg für alle Annotations
-				$annotations = [];
-				foreach ($img_data as $this_anno_data) {
-					$id = isset($this_anno_data["id"]) ? (string)$this_anno_data["id"] : '';
-					$cat = isset($this_anno_data["category"]) ? (string)$this_anno_data["category"] : "";
-					$x = isset($this_anno_data["x_start"]) ? floatval($this_anno_data["x_start"]) : 0.0;
-					$y = isset($this_anno_data["y_start"]) ? floatval($this_anno_data["y_start"]) : 0.0;
-					$width  = isset($this_anno_data["w"]) ? floatval($this_anno_data["w"]) : 0.0;
-					$height = isset($this_anno_data["h"]) ? floatval($this_anno_data["h"]) : 0.0;
-
-					if ($width < 0) $width = 0;
-					if ($height < 0) $height = 0;
-
-					$esc_label = htmlspecialchars($cat, ENT_QUOTES, 'UTF-8');
-					$esc_id = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
-
-					$text_x = $x + ($width / 2.0);
-					$text_y = max(4, $y - 4);
-
-					$annotations[] = '<g class="a9s-annotation" data-id="'.$esc_id.'" data-label="'.$esc_label.'">'
-						. '<rect class="a9s-inner" x="'.$x.'" y="'.$y.'" width="'.$width.'" height="'.$height.'"></rect>'
-						. '<text style="display: none" class="a9s-label" x="'.$text_x.'" y="'.$text_y.'" text-anchor="middle" alignment-baseline="baseline" font-size="12" style="pointer-events:auto;">'.$esc_label.'</text>'
-						. '</g>';
-				}
-
-				$annotations_string = implode("\n", $annotations);
-
-				$base_structs[] = '<svg class="a9s-annotationlayer" width="'.$w.'" height="'.$h.'" viewBox="0 0 '.$w.' '.$h.'" style="position:absolute;left:0;top:0;pointer-events:none;" preserveAspectRatio="xMinYMin meet">'
-					. '<g>'
-					. $annotations_string
-					. '</g>'
-					. '</svg>';
-
-				$base_structs[] = '</div>';
-
-			}
-
-			$new_html = join("\n", $base_structs);
-
-			$html = preg_replace("/REPLACEME/", $new_html, $html);
-		} else {
-			$html = "No images for the chosen category";
-		}
-
-		return $html;
+	    return $html;
 	}
 
 	function print_export_html_and_exit ($number_of_rows, $items_per_page, $images) {
-		$annos_strings = array();
-
-		$html = _create_internal_html($number_of_rows, $items_per_page, $images);
-
-		print($html);
-
-
-		include("footer.php");
-		exit(0);
+	    $html = _create_internal_html($number_of_rows, $items_per_page, $images);
+	    print($html);
+	    include("footer.php");
+	    exit(0);
 	}
 
 	function write_bash_files ($tmp_dir, $epochs, $model_name) {
