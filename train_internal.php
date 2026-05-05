@@ -76,6 +76,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $epochs = intval($_POST['epochs'] ?? 50);
 $model_yaml = $_POST['model'] ?? 'yolo11s.yaml';
 $model_name = trim($_POST['model_name'] ?? 'auto_trained');
+$fine_tune = isset($_POST['fine_tune']) && $_POST['fine_tune'] == '1';
+
+// Determine the model to load
+if ($fine_tune) {
+    // Use pretrained COCO weights for fine-tuning
+    // yolo11s.pt is the default YOLOv11 small model pretrained on COCO (80 classes)
+    $model_to_load = 'yolo11s.pt';
+    $training_mode = 'fine-tune';
+} else {
+    // Train from scratch using architecture definition
+    $model_to_load = $model_yaml;
+    $training_mode = 'from-scratch';
+}
 
 if (empty($model_name) || strtolower($model_name) === 'none') {
     output("❌ Error: Please provide a valid model name.\n");
@@ -87,13 +100,16 @@ if (!get_number_of_annotated_imgs()) {
     exit;
 }
 
-output("✅ Parameters: model=$model_yaml, epochs=$epochs, name=$model_name\n");
+output("✅ Parameters: model=$model_to_load, epochs=$epochs, name=$model_name, mode=$training_mode\n");
+if ($fine_tune) {
+    output("   ℹ️  Fine-tuning from pretrained COCO weights (80 everyday object classes)\n");
+}
 
 // --- Step 1: Generate the export ---
 output("\n📦 Step 1: Generating training data...\n");
 
 $_GET['epochs'] = $epochs;
-$_GET['model'] = $model_yaml;
+$_GET['model'] = $model_to_load;
 $_GET['validation_split'] = 0;
 $_GET['max_files'] = 0;
 $_GET['empty'] = 0;
@@ -183,7 +199,7 @@ foreach ($images as $fn => $img) {
 output("   ✅ Extracted $img_count images total.\n");
 
 // --- Step 3: Run YOLO training ---
-output("\n🏃️ Step 3: Starting YOLO training ($epochs epochs, model: $model_yaml)...\n");
+output("\n🏃 Step 3: Starting YOLO training ($epochs epochs, model: $model_to_load, mode: $training_mode)...\n");
 
 $check_output = [];
 exec("python3 -c \"from ultralytics import YOLO; print('ok')\" 2>&1", $check_output, $check_exit);
@@ -204,8 +220,8 @@ os.environ["YOLO_CONFIG_DIR"] = "/tmp/Ultralytics"
 
 from ultralytics import YOLO
 
-print("Loading model: $model_yaml", flush=True)
-model = YOLO("$model_yaml")
+print("Loading model: $model_to_load (mode: $training_mode)", flush=True)
+model = YOLO("$model_to_load")
 
 print("Starting training...", flush=True)
 results = model.train(
