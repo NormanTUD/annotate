@@ -210,33 +210,63 @@ $(document).ready(function() {
 
     // --- YAML parsing ---
     function parseYaml(text) {
-        // Minimal parser for dataset.yaml: extract names block
-        const lines = text.split(/\r?\n/);
-        let insideNames = false;
-        const names = {};
+	    const lines = text.split(/\r?\n/);
+	    const names = {};
 
-        for (const line of lines) {
-            const trim = line.trim();
-            if (trim === '' || trim.startsWith('#')) continue;
+	    // --- Format 1: Inline list ---
+	    // names: ['cat', 'dog'] or names: ["cat", "dog"]
+	    const inlineMatch = text.match(/^names\s*:\s*\[([^\]]*)\]/m);
+	    if (inlineMatch) {
+		    const items = inlineMatch[1].split(',');
+		    items.forEach((item, idx) => {
+		    const cleaned = item.trim().replace(/^['"]|['"]$/g, '');
+		    if (cleaned.length > 0) {
+			    names[idx] = cleaned;
+		    }
+		    });
+		    return names;
+	    }
 
-            if (!insideNames) {
-                if (/^names\s*:/.test(trim)) {
-                    insideNames = true;
-                }
-                continue;
-            }
+	    // --- Format 2 & 3: Block styles (list or map) ---
+	    let insideNames = false;
 
-            // Inside names block
-            const m = line.match(/^\s+(\d+)\s*:\s*(.+)$/);
-            if (m) {
-                names[parseInt(m[1])] = m[2].trim();
-            } else if (/^\S/.test(line)) {
-                // New top-level key, end of names
-                break;
-            }
-        }
-        return names;
+	    for (const line of lines) {
+		    const trim = line.trim();
+		    if (trim === '' || trim.startsWith('#')) continue;
+
+		    if (!insideNames) {
+			    if (/^names\s*:/.test(trim)) {
+				    insideNames = true;
+			    }
+			    continue;
+		    }
+
+		    // Format 2: YAML list with dashes
+		    // - cat
+		    const listMatch = line.match(/^\s+-\s+(.+)$/);
+		    if (listMatch) {
+			    const idx = Object.keys(names).length;
+			    names[idx] = listMatch[1].trim().replace(/^['"]|['"]$/g, '');
+			    continue;
+		    }
+
+		    // Format 3: Map with index keys
+		    // 0: cat
+		    const mapMatch = line.match(/^\s+(\d+)\s*:\s*(.+)$/);
+		    if (mapMatch) {
+			    names[parseInt(mapMatch[1])] = mapMatch[2].trim().replace(/^['"]|['"]$/g, '');
+			    continue;
+		    }
+
+		    // If we hit a new top-level key, stop
+		    if (/^\S/.test(line)) {
+			    break;
+		    }
+	    }
+
+	    return names;
     }
+
 
     $('#yamlFile').on('change', function() {
         const file = this.files[0];

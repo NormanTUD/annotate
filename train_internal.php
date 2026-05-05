@@ -2,11 +2,12 @@
 /**
  * train_internal.php — Local YOLO training with robust live streaming output.
  *
- * Key improvements:
- * - Uses `script` (pty) + `stdbuf` + PYTHONUNBUFFERED for guaranteed streaming
- * - Suppresses Rich/ANSI terminal rewriting via TERM=dumb, NO_COLOR=1
- * - Monkey-patches Rich in the training script so output is plain line-by-line
- * - Structured for testability: core logic in functions, minimal top-level code
+ * Supports three training modes:
+ * - from_scratch: Train from a YOLO .yaml architecture definition
+ * - fine_tune_pretrained: Download and fine-tune from pretrained COCO weights
+ * - continue_training: Continue training from an existing .pt model (file or DB)
+ *
+ * Optional hyperparameters are passed through from the form.
  */
 
 // ============================================================
@@ -62,7 +63,6 @@ function configure_php_for_streaming(): void {
     set_time_limit(0);
     ini_set('zlib.output_compression', 'Off');
 
-    // Kill any existing output buffers
     while (ob_get_level() > 0) {
         ob_end_flush();
     }
@@ -78,9 +78,6 @@ function send_streaming_headers(): void {
     header('Pragma: no-cache');
     header('X-Accel-Buffering: no');
     header('Content-Encoding: none');
-    // DO NOT set Transfer-Encoding: chunked manually.
-    // PHP/webserver handles this automatically.
-    // Manually setting it without proper chunk framing causes NetworkError.
 }
 
 function send_browser_flush_padding(): void {
@@ -92,43 +89,19 @@ function send_browser_flush_padding(): void {
 // OUTPUT HELPERS
 // ============================================================
 
-/**
- * Strip ANSI escape codes and terminal rewriting sequences from text.
- * Handles Rich library output, progress bars, cursor movement, etc.
- */
 function strip_ansi(string $text): string {
-    // Remove ESC[K (erase to end of line)
     $text = preg_replace('/\x1b\[K/', '', $text);
-
-    // Remove cursor movement sequences (ESC[nA = up, ESC[nB = down, etc.)
     $text = preg_replace('/\x1b\[\d*[ABCDEFGHJKSTfn]/', '', $text);
-
-    // Remove cursor save/restore
     $text = preg_replace('/\x1b\[su/', '', $text);
     $text = preg_replace('/\x1b[78]/', '', $text);
-
-    // Remove carriage return based overwrites (progress bar redraws)
-    // Keep only the last segment after \r on each line
     $text = preg_replace('/^.*\r(?!\n)/m', '', $text);
-
-    // Remove all remaining ANSI escape sequences (ESC[ ... letter)
     $text = preg_replace('/\x1b\[[0-9;]*[A-Za-z]/', '', $text);
-
-    // Remove orphaned bracket codes where ESC char was lost in transit
     $text = preg_replace('/\[([0-9;]*)[mKHJGsu]/', '', $text);
-
-    // Remove OSC sequences (ESC] ... BEL/ST)
     $text = preg_replace('/\x1b\].*?(\x07|\x1b\\\\)/', '', $text);
-
-    // Collapse multiple blank lines into one
     $text = preg_replace('/\n{3,}/', "\n\n", $text);
-
     return $text;
 }
 
-/**
- * Output text with ANSI codes stripped, immediately flushed.
- */
 function output(string $text): void {
     $cleaned = strip_ansi($text);
     if ($cleaned === '') {
@@ -143,7 +116,6 @@ function output(string $text): void {
 // ============================================================
 
 function run_training_pipeline(array $post_data, string $request_method): void {
-    // --- Validate request ---
     if ($request_method !== 'POST') {
         output("❌ Error: Use the form button to start training.\n");
         exit;
@@ -154,9 +126,20 @@ function run_training_pipeline(array $post_data, string $request_method): void {
         exit;
     }
 
-    output("✅ Parameters: model={$params['model_to_load']}, epochs={$params['epochs']}, name={$params['model_name']}, mode={$params['training_mode']}\n");
-    if ($params['fine_tune']) {
-        output("   ℹ️  Fine-tuning from pretrained COCO weights (80 everyday object classes)\n");
+    output("✔ Parameters: model={$params['model_to_load']}, epochs={$params['epochs']}, name={$params['model_name']}, mode={$params['training_mode']}\n");
+    if ($params['training_mode'] === 'fine_tune_pretrained') {
+        output("   🏋️ Fine-tuning from pretrained COCO weights\n");
+    } elseif ($params['training_mode'] === 'continue_training') {
+        output("   🔄 Continuing training from existing model\n");
+    }
+
+    // Show hyperparams if any were set
+    if (!empty($params['hyperparams'])) {
+        $hp_str = [];
+        foreach ($params['hyperparams'] as $k => $v) {
+            $hp_str[] = "$k=$v";
+        }
+        output("   Hyperparams: " . implode(', ', $hp_str) . "\n");
     }
 
     // --- Step 1: Generate the export ---
@@ -167,9 +150,9 @@ function run_training_pipeline(array $post_data, string $request_method): void {
     }
 
     // --- Step 2: Extract images from DB ---
-    output("\n🖼️  Step 2: Extracting images from database...\n");
+    output("\n🖼️ Step 2: Extracting images from database...\n");
     $img_count = extract_images_to_disk($dataset['images'], $dataset['tmp_dir']);
-    output("   ✅ Extracted $img_count images total.\n");
+    output("   ✔ Extracted $img_count images total.\n");
 
     // --- Step 3: Run YOLO training ---
     output("\n🏃 Step 3: Starting YOLO training ({$params['epochs']} epochs, model: {$params['model_to_load']}, mode: {$params['training_mode']})...\n");
@@ -180,7 +163,7 @@ function run_training_pipeline(array $post_data, string $request_method): void {
         exit;
     }
 
-    output("\n✅ Training completed successfully!\n");
+    output("\n✔ Training completed successfully!\n");
 
     // --- Step 4: Find best.pt and upload model ---
     output("\n💾 Step 4: Uploading trained model...\n");
@@ -194,7 +177,7 @@ function run_training_pipeline(array $post_data, string $request_method): void {
     system("rm -rf " . escapeshellarg($dataset['tmp_dir']));
     output("   Done.\n");
 
-    output("\n🎉 All done! Model '{$params['model_name']}' is now available in the models list.\n");
+    output("\n🎂 All done! Model '{$params['model_name']}' is now available in the models list.\n");
 }
 
 // ============================================================
@@ -205,20 +188,39 @@ function validate_and_extract_params(array $post_data): ?array {
     $epochs = intval($post_data['epochs'] ?? 50);
     $model_yaml = $post_data['model'] ?? 'yolo11s.yaml';
     $model_name = trim($post_data['model_name'] ?? 'auto_trained');
-    $fine_tune = isset($post_data['fine_tune']) && $post_data['fine_tune'] == '1';
+    $training_mode = $post_data['training_mode'] ?? 'from_scratch';
+    $base_model = $post_data['base_model'] ?? '';
 
-    // Determine the model to load
-    if ($fine_tune) {
-        $pt_filename = preg_replace('/\.yaml$/', '.pt', $model_yaml);
-        $model_to_load = "/tmp/$pt_filename";
-        $training_mode = 'fine-tune';
+    // Determine the model to load based on training mode
+    $model_to_load = '';
 
-        if (!ensure_pretrained_model($model_to_load, $pt_filename)) {
-            return null;
-        }
-    } else {
-        $model_to_load = $model_yaml;
-        $training_mode = 'from-scratch';
+    switch ($training_mode) {
+        case 'fine_tune_pretrained':
+            // Download pretrained .pt from ultralytics
+            $pt_filename = preg_replace('/\.yaml$/', '.pt', $model_yaml);
+            $model_to_load = "/tmp/$pt_filename";
+            if (!ensure_pretrained_model($model_to_load, $pt_filename)) {
+                return null;
+            }
+            break;
+
+        case 'continue_training':
+            // Load from file system or DB
+            if (empty($base_model)) {
+                output("❌ Error: No base model selected for continue training.\n");
+                return null;
+            }
+            $model_to_load = resolve_base_model($base_model);
+            if ($model_to_load === null) {
+                return null;
+            }
+            break;
+
+        case 'from_scratch':
+        default:
+            $model_to_load = $model_yaml;
+            $training_mode = 'from_scratch';
+            break;
     }
 
     if (empty($model_name) || strtolower($model_name) === 'none') {
@@ -231,23 +233,91 @@ function validate_and_extract_params(array $post_data): ?array {
         return null;
     }
 
+    // Extract optional hyperparameters (only include if non-empty)
+    $hyperparams = [];
+    $hyperparam_keys = [
+        'batch', 'imgsz', 'lr0', 'lrf', 'momentum', 'weight_decay',
+        'warmup_epochs', 'patience', 'hsv_h', 'hsv_s', 'hsv_v',
+        'degrees', 'translate', 'scale', 'fliplr', 'mosaic', 'mixup', 'copy_paste'
+    ];
+
+    foreach ($hyperparam_keys as $key) {
+        if (isset($post_data[$key]) && $post_data[$key] !== '') {
+            $hyperparams[$key] = floatval($post_data[$key]);
+        }
+    }
+
+    // Checkboxes (present = 1, absent = not set)
+    if (isset($post_data['cos_lr'])) {
+        $hyperparams['cos_lr'] = true;
+    }
+    if (isset($post_data['val'])) {
+        $hyperparams['val'] = true;
+    }
+
     return [
         'epochs' => $epochs,
         'model_yaml' => $model_yaml,
         'model_name' => $model_name,
         'model_to_load' => $model_to_load,
-        'fine_tune' => $fine_tune,
         'training_mode' => $training_mode,
+        'base_model' => $base_model,
+        'hyperparams' => $hyperparams,
     ];
+}
+
+/**
+ * Resolve a base_model value (from the form) to an actual .pt file path.
+ * Supports:
+ *   - "file:models/something.pt" -> direct filesystem path
+ *   - "db:<uuid>" -> extract model.pt from DB to a temp file
+ */
+function resolve_base_model(string $base_model): ?string {
+    if (strpos($base_model, 'file:') === 0) {
+        $path = substr($base_model, 5);
+        if (!file_exists($path)) {
+            output("❌ Error: Base model file not found: $path\n");
+            return null;
+        }
+        output("   ✔ Using filesystem model: $path\n");
+        return $path;
+    }
+
+    if (strpos($base_model, 'db:') === 0) {
+        $uuid = substr($base_model, 3);
+        // Extract model.pt from DB
+        $query = "SELECT file_contents FROM models WHERE uuid = " . esc($uuid) . " AND filename = 'model.pt' LIMIT 1";
+        $res = rquery($query);
+        $row = mysqli_fetch_row($res);
+
+        if (!$row || !$row[0]) {
+            output("❌ Error: Could not find model.pt in database for UUID: $uuid\n");
+            return null;
+        }
+
+        $tmp_pt = "/tmp/base_model_" . md5($uuid) . ".pt";
+        file_put_contents($tmp_pt, $row[0]);
+
+        if (!file_exists($tmp_pt) || filesize($tmp_pt) < MIN_PRETRAINED_MODEL_SIZE) {
+            output("❌ Error: Extracted model file is too small or missing.\n");
+            return null;
+        }
+
+        output("   ✔ Extracted model from DB (" . round(filesize($tmp_pt) / 1024 / 1024, 2) . " MB)\n");
+        return $tmp_pt;
+    }
+
+    output("❌ Error: Unknown base model format: $base_model\n");
+    return null;
 }
 
 function ensure_pretrained_model(string $model_path, string $pt_filename): bool {
     if (file_exists($model_path) && filesize($model_path) >= MIN_PRETRAINED_MODEL_SIZE) {
-        output("   ✅ Pretrained model already cached at $model_path (" . round(filesize($model_path) / 1024 / 1024, 2) . " MB)\n");
+        output("   ✔ Pretrained model already cached at $model_path (" . round(filesize($model_path) / 1024 / 1024, 2) . " MB)\n");
         return true;
     }
 
-    output("   ⬇️  Downloading pretrained model ($pt_filename) to $model_path...\n");
+    output("   ⬇️ Downloading pretrained model ($pt_filename) to $model_path...\n");
     $download_url = PRETRAINED_DOWNLOAD_BASE_URL . $pt_filename;
     $dl_cmd = "curl -L -o " . escapeshellarg($model_path) . " " . escapeshellarg($download_url) . " 2>&1";
     $dl_output = shell_exec($dl_cmd);
@@ -259,7 +329,7 @@ function ensure_pretrained_model(string $model_path, string $pt_filename): bool 
         return false;
     }
 
-    output("   ✅ Downloaded pretrained model (" . round(filesize($model_path) / 1024 / 1024, 2) . " MB)\n");
+    output("   ✔ Downloaded pretrained model (" . round(filesize($model_path) / 1024 / 1024, 2) . " MB)\n");
     return true;
 }
 
@@ -373,9 +443,6 @@ function extract_images_to_disk(array $images, string $tmp_dir): int {
 // YOLO TRAINING EXECUTION
 // ============================================================
 
-/**
- * Check that ultralytics is importable.
- */
 function verify_ultralytics(): bool {
     $check_output = [];
     exec("python3 -c \"from ultralytics import YOLO; print('ok')\" 2>&1", $check_output, $check_exit);
@@ -384,28 +451,47 @@ function verify_ultralytics(): bool {
         output("Training aborted.\n");
         return false;
     }
-    output("   ✅ ultralytics available.\n");
+    output("   ✔ ultralytics available.\n");
     return true;
 }
 
-/**
- * Generate the Python training script content.
- * Rich is monkey-patched to prevent terminal rewriting.
- */
 function generate_training_script(array $params, string $tmp_dir): string {
     $model_to_load = $params['model_to_load'];
     $training_mode = $params['training_mode'];
     $epochs = $params['epochs'];
     $imgsz = $GLOBALS["imgsz"] ?? 800;
+    $hyperparams = $params['hyperparams'] ?? [];
+
+    // Build hyperparameter overrides for the train() call
+    $hp_batch = isset($hyperparams['batch']) ? intval($hyperparams['batch']) : 4;
+    $hp_imgsz = isset($hyperparams['imgsz']) ? intval($hyperparams['imgsz']) : $imgsz;
+    $hp_lr0 = isset($hyperparams['lr0']) ? $hyperparams['lr0'] : 0.01;
+    $hp_lrf = isset($hyperparams['lrf']) ? $hyperparams['lrf'] : 0.01;
+    $hp_momentum = isset($hyperparams['momentum']) ? $hyperparams['momentum'] : 0.937;
+    $hp_weight_decay = isset($hyperparams['weight_decay']) ? $hyperparams['weight_decay'] : 0.0005;
+    $hp_warmup_epochs = isset($hyperparams['warmup_epochs']) ? $hyperparams['warmup_epochs'] : 0;
+    $hp_patience = isset($hyperparams['patience']) ? intval($hyperparams['patience']) : 0;
+    $hp_cos_lr = isset($hyperparams['cos_lr']) ? 'True' : 'False';
+    $hp_val = isset($hyperparams['val']) ? 'True' : 'False';
+
+    // Augmentation
+    $hp_hsv_h = isset($hyperparams['hsv_h']) ? $hyperparams['hsv_h'] : 0.0;
+    $hp_hsv_s = isset($hyperparams['hsv_s']) ? $hyperparams['hsv_s'] : 0.0;
+    $hp_hsv_v = isset($hyperparams['hsv_v']) ? $hyperparams['hsv_v'] : 0.0;
+    $hp_degrees = isset($hyperparams['degrees']) ? $hyperparams['degrees'] : 0.0;
+    $hp_translate = isset($hyperparams['translate']) ? $hyperparams['translate'] : 0.0;
+    $hp_scale = isset($hyperparams['scale']) ? $hyperparams['scale'] : 0.0;
+    $hp_fliplr = isset($hyperparams['fliplr']) ? $hyperparams['fliplr'] : 0.0;
+    $hp_mosaic = isset($hyperparams['mosaic']) ? $hyperparams['mosaic'] : 0.0;
+    $hp_mixup = isset($hyperparams['mixup']) ? $hyperparams['mixup'] : 0.0;
+    $hp_copy_paste = isset($hyperparams['copy_paste']) ? $hyperparams['copy_paste'] : 0.0;
 
     return <<<PYTHON
 import os, sys
 
-# === Force unbuffered, plain output regardless of Rich/YOLO internals ===
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
-# Suppress Rich and fancy terminal output at the environment level
 os.environ["TERM"] = "dumb"
 os.environ["NO_COLOR"] = "1"
 os.environ["COLUMNS"] = "300"
@@ -416,9 +502,6 @@ os.environ["HOME"] = "/tmp"
 
 os.makedirs("/tmp/matplotlib_config", exist_ok=True)
 
-# === Monkey-patch Rich before anything imports it ===
-# This ensures that no matter what Ultralytics or its deps do with Rich,
-# we get plain, flushed, line-by-line output.
 try:
     import rich.console
     import rich.progress
@@ -451,10 +534,8 @@ try:
                 def stop(self): pass
             return _FakeStatus()
 
-    # Patch the module-level Console class
     rich.console.Console = _PlainConsole
 
-    # Disable Rich progress bars entirely
     class _FakeProgress:
         def __init__(self, *args, **kwargs): pass
         def __enter__(self): return self
@@ -467,57 +548,54 @@ try:
     rich.progress.Progress = _FakeProgress
 
 except ImportError:
-    pass  # Rich not installed, no patching needed
+    pass
 
-# === Now import ultralytics (which imports Rich internally) ===
 from ultralytics import YOLO
 
 print("Loading model: $model_to_load (mode: $training_mode)", flush=True)
 model = YOLO("$model_to_load")
 
-print("Image size: $imgsz", flush=True)
+print("Image size: $hp_imgsz", flush=True)
 print("Starting training...", flush=True)
 
 results = model.train(
     data="$tmp_dir/dataset.yaml",
     epochs=$epochs,
-    batch=4,
-    imgsz=$imgsz,
+    batch=$hp_batch,
+    imgsz=$hp_imgsz,
     project="$tmp_dir/runs",
     name="train",
     device="cpu",
     workers=2,
     verbose=True,
-    lr0=0.01,
-    lrf=0.01,
-    warmup_epochs=0,
+    lr0=$hp_lr0,
+    lrf=$hp_lrf,
+    momentum=$hp_momentum,
+    weight_decay=$hp_weight_decay,
+    warmup_epochs=$hp_warmup_epochs,
+    patience=$hp_patience,
+    cos_lr=$hp_cos_lr,
+    val=$hp_val,
     augment=False,
-    hsv_h=0.0,
-    hsv_s=0.0,
-    hsv_v=0.0,
-    degrees=0.0,
-    translate=0.0,
-    scale=0.0,
-    fliplr=0.0,
+    hsv_h=$hp_hsv_h,
+    hsv_s=$hp_hsv_s,
+    hsv_v=$hp_hsv_v,
+    degrees=$hp_degrees,
+    translate=$hp_translate,
+    scale=$hp_scale,
+    fliplr=$hp_fliplr,
     flipud=0.0,
-    mosaic=0.0,
-    mixup=0.0,
-    copy_paste=0.0,
+    mosaic=$hp_mosaic,
+    mixup=$hp_mixup,
+    copy_paste=$hp_copy_paste,
     conf=0.1,
     freeze=None,
-    cos_lr=False,
-    patience=0,
-    val=False
 )
 
 print("TRAINING_COMPLETE", flush=True)
 PYTHON;
 }
 
-/**
- * Build the shell command that wraps the training script with pty + stdbuf.
- * This ensures live output regardless of what Rich/YOLO/Python does internally.
- */
 function build_training_command(string $train_script_path): string {
     $env_vars = implode(' ', [
         'PYTHONUNBUFFERED=1',
@@ -531,67 +609,48 @@ function build_training_command(string $train_script_path): string {
 
     $python_cmd = "env $env_vars python3 " . escapeshellarg($train_script_path);
 
-    // Try to use `script` for pty emulation (most robust for streaming)
-    // Falls back to stdbuf if script is not available
     if (command_exists('script')) {
-        // script -qefc wraps in a pty so Rich thinks it's a terminal
-        // Combined with TERM=dumb and NO_COLOR, it outputs plain text eagerly
         $inner_cmd = "stdbuf -oL -eL $python_cmd";
         $cmd = "script -qefc " . escapeshellarg($inner_cmd) . " /dev/null 2>&1";
     } elseif (command_exists('stdbuf')) {
-        // stdbuf forces line-buffering at the libc level
         $cmd = "stdbuf -oL -eL $python_cmd 2>&1";
     } else {
-        // Fallback: just env vars and hope for the best
         $cmd = "$python_cmd 2>&1";
     }
 
     return $cmd;
 }
 
-/**
- * Check if a command exists on the system.
- */
 function command_exists(string $command): bool {
     $result = shell_exec("which " . escapeshellarg($command) . " 2>/dev/null");
     return !empty(trim($result ?? ''));
 }
 
-/**
- * Execute the YOLO training process with live streaming output.
- */
 function run_yolo_training(array $params, array $dataset): bool {
     if (!verify_ultralytics()) {
         return false;
     }
 
     $tmp_dir = $dataset['tmp_dir'];
-    $imgsz = $GLOBALS["imgsz"] ?? 800;
+    $imgsz = $params['hyperparams']['imgsz'] ?? $GLOBALS["imgsz"] ?? 800;
 
     output("   Image size: $imgsz\n");
 
-    // Generate and write training script
     $train_script = generate_training_script($params, $tmp_dir);
     $train_script_path = "$tmp_dir/train.py";
     file_put_contents($train_script_path, $train_script);
 
-    // Build the wrapped command
     $train_cmd = build_training_command($train_script_path);
     output("   Command: $train_cmd\n\n");
 
-    // Execute with streaming
     return execute_streaming_process($train_cmd);
 }
 
-/**
- * Run a command and stream its output in real-time.
- * Returns true if the process exits with code 0.
- */
 function execute_streaming_process(string $command): bool {
     $descriptorspec = [
-        0 => ["pipe", "r"],  // stdin
-        1 => ["pipe", "w"],  // stdout
-        2 => ["pipe", "w"],  // stderr
+        0 => ["pipe", "r"],
+        1 => ["pipe", "w"],
+        2 => ["pipe", "w"],
     ];
 
     $process = proc_open($command, $descriptorspec, $pipes);
@@ -601,7 +660,7 @@ function execute_streaming_process(string $command): bool {
         return false;
     }
 
-    fclose($pipes[0]); // Close stdin
+    fclose($pipes[0]);
 
     stream_set_blocking($pipes[1], false);
     stream_set_blocking($pipes[2], false);
@@ -625,7 +684,6 @@ function execute_streaming_process(string $command): bool {
         }
 
         if (!$status['running']) {
-            // Drain remaining output
             do {
                 $r1 = fread($pipes[1], PROCESS_READ_CHUNK_SIZE);
                 $r2 = fread($pipes[2], PROCESS_READ_CHUNK_SIZE);
@@ -690,9 +748,6 @@ function find_and_upload_model(string $model_name, string $tmp_dir): bool {
     }
 }
 
-/**
- * Search for best.pt in known locations, then fall back to `find`.
- */
 function find_best_pt(string $tmp_dir): ?string {
     $search_paths = [
         "$tmp_dir/runs/train/weights/best.pt",
@@ -705,7 +760,6 @@ function find_best_pt(string $tmp_dir): ?string {
         }
     }
 
-    // Fallback: use find command
     $find_result = trim(shell_exec("find " . escapeshellarg($tmp_dir) . " -name 'best.pt' -type f 2>/dev/null | head -1") ?? '');
     if ($find_result && file_exists($find_result)) {
         return $find_result;
