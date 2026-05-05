@@ -81,9 +81,27 @@ $fine_tune = isset($_POST['fine_tune']) && $_POST['fine_tune'] == '1';
 // Determine the model to load
 if ($fine_tune) {
     // Use pretrained COCO weights for fine-tuning
-    // yolo11s.pt is the default YOLOv11 small model pretrained on COCO (80 classes)
-    $model_to_load = 'yolo11s.pt';
+    // Download to /tmp if not already present (www-data can't write to /var/www/html)
+    $pt_filename = 'yolo11s.pt';
+    $model_to_load = "/tmp/$pt_filename";
     $training_mode = 'fine-tune';
+    
+    // Pre-download the model if it doesn't exist in /tmp
+    if (!file_exists($model_to_load)) {
+        output("   ⬇️  Downloading pretrained model to $model_to_load...\n");
+        $download_url = "https://github.com/ultralytics/assets/releases/download/v8.4.0/$pt_filename";
+        $dl_cmd = "curl -L -o " . escapeshellarg($model_to_load) . " " . escapeshellarg($download_url) . " 2>&1";
+        $dl_output = shell_exec($dl_cmd);
+        if (!file_exists($model_to_load) || filesize($model_to_load) < 100000) {
+            output("   ❌ Failed to download pretrained model.\n");
+            output("   $dl_output\n");
+            output("   You can manually download it and place it at $model_to_load\n");
+            exit;
+        }
+        output("   ✅ Downloaded pretrained model (" . round(filesize($model_to_load) / 1024 / 1024, 2) . " MB)\n");
+    } else {
+        output("   ✅ Pretrained model already cached at $model_to_load (" . round(filesize($model_to_load) / 1024 / 1024, 2) . " MB)\n");
+    }
 } else {
     // Train from scratch using architecture definition
     $model_to_load = $model_yaml;
