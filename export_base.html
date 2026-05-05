@@ -405,8 +405,9 @@
             display: none;
         }
 
-        .show-labels .a9s-annotation .a9s-label {
-            display: block;
+        /* FIX #2 & #5: Labels visible by default and toggling works */
+        body.show-labels .a9s-annotation .a9s-label {
+            display: block !important;
         }
 
         /* Card info bar */
@@ -458,11 +459,89 @@
 
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-        .lightbox img {
+        .lightbox .lb-image-wrap {
+            position: relative;
+            display: inline-block;
+            max-width: 90vw;
+            max-height: 80vh;
+        }
+
+        .lightbox .lb-image-wrap img {
             max-width: 90vw;
             max-height: 80vh;
             object-fit: contain;
             border-radius: var(--radius);
+            display: block;
+        }
+
+        .lightbox .lb-image-wrap .lb-svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .lightbox .lb-image-wrap .lb-svg-overlay .a9s-annotation .a9s-inner {
+            stroke: var(--accent);
+            stroke-width: 2px;
+            fill: rgba(124, 106, 255, 0.1);
+        }
+
+        .lightbox .lb-image-wrap .lb-svg-overlay .a9s-annotation .a9s-label {
+            fill: white;
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 600;
+            paint-order: stroke;
+            stroke: rgba(0,0,0,0.8);
+            stroke-width: 3px;
+            display: block;
+        }
+
+        /* FIX #6: Individual annotation delete button in lightbox */
+        .lightbox .lb-annotations-list {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            max-width: 90vw;
+        }
+
+        .lightbox .lb-anno-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            color: var(--text);
+        }
+
+        .lightbox .lb-anno-item .lb-anno-label {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .lightbox .lb-anno-item .lb-anno-delete {
+            background: var(--red);
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: var(--transition);
+        }
+
+        .lightbox .lb-anno-item .lb-anno-delete:hover {
+            background: #ef4444;
+            transform: scale(1.1);
         }
 
         .lightbox .lb-close {
@@ -499,6 +578,19 @@
             font-size: 0.85rem;
             color: var(--text-dim);
             text-align: center;
+        }
+
+        /* FIX #3: Delete button always red */
+        .mode-btn.mode-delete {
+            color: var(--red);
+        }
+        .mode-btn.mode-delete:hover {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+        .mode-btn.active.mode-delete {
+            background: var(--red);
+            color: white;
         }
 
         /* ===== PAGINATION ===== */
@@ -633,13 +725,13 @@
         }
     </style>
 </head>
-<body>
+<body class="show-labels">
     <div class="toast-area" id="toasts"></div>
 
     <!-- HEADER -->
     <div class="header">
         <div class="header-top">
-            <span class="logo">📋 Annotations</span>
+            <span class="logo">🔍 Annotations</span>
             <span class="home-info" id="tab_home_top"></span>
         </div>
         <div class="toolbar">
@@ -649,15 +741,15 @@
             </div>
 
             <div class="mode-switcher">
-                <button class="mode-btn mode-browse active" data-mode="browse" title="Browse mode — click to view in lightbox">👁 Browse</button>
+                <button class="mode-btn mode-browse active" data-mode="browse" title="Browse mode — click to view in lightbox">🖅 Browse</button>
                 <button class="mode-btn mode-select" data-mode="select" title="Select mode — click cards to select for bulk actions">☑ Select</button>
                 <button class="mode-btn mode-curate" data-mode="curate" title="Curate mode — click a card to instantly curate it">✓ Curate</button>
-                <button class="mode-btn mode-delete" data-mode="delete" title="Delete mode — click a card to delete its annotations">✕ Delete</button>
+                <button class="mode-btn mode-delete" data-mode="delete" title="Delete mode — click a card to delete its annotations">✗ Delete</button>
             </div>
 
             <div class="toolbar-sep"></div>
 
-            <button class="btn" id="btnLabels" title="Toggle annotation labels (L)">🏷 Labels</button>
+            <button class="btn" id="btnLabels" title="Toggle annotation labels (L)" style="border-color: var(--accent);">🏷 Labels</button>
             <button class="btn" id="btnBoxes" title="Toggle bounding boxes (B)">☐ Boxes</button>
 
             <div class="toolbar-sep"></div>
@@ -678,7 +770,7 @@
         REPLACEME
     </div>
     <div class="no-results" id="noResults">
-        <div class="emoji">🔍</div>
+        <div class="emoji">🔇</div>
         <p>No images match your filter</p>
     </div>
 
@@ -686,7 +778,7 @@
     <div class="selection-bar" id="selectionBar">
         <span class="sel-count"><span id="selCount">0</span> selected</span>
         <button class="btn btn-green" id="btnCurateSelected">✓ Curate</button>
-        <button class="btn btn-red" id="btnDeleteSelected">✕ Delete</button>
+        <button class="btn btn-red" id="btnDeleteSelected">✗ Delete</button>
         <button class="btn" id="btnDeselectAll">Deselect</button>
     </div>
 
@@ -695,7 +787,11 @@
         <span class="lb-close" id="lbClose">×</span>
         <span class="lb-nav lb-prev" id="lbPrev">‹</span>
         <span class="lb-nav lb-next" id="lbNext">›</span>
-        <img id="lbImg" src="" alt="" />
+        <div class="lb-image-wrap" id="lbImageWrap">
+            <img id="lbImg" src="" alt="" />
+            <svg id="lbSvgOverlay" class="lb-svg-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="lb-annotations-list" id="lbAnnotationsList"></div>
         <div class="lb-info" id="lbInfo"></div>
     </div>
 
@@ -714,19 +810,35 @@
         // ===== STATE =====
         let currentMode = 'browse'; // browse | select | curate | delete
         let selectedCards = new Set();
-        let labelsVisible = false;
+        let labelsVisible = true; // FIX #2: Labels visible by default
         let boxesVisible = true;
         let lightboxOpen = false;
         let lightboxIndex = 0;
         let visibleCards = [];
+        let modeToastEl = null; // FIX #4: Track current mode toast
 
         // ===== HELPERS =====
-        function toast(msg, type = 'info') {
+        function toast(msg, type = 'info', isMode = false) {
+            // FIX #4: If this is a mode toast, remove the previous one immediately
+            if (isMode) {
+                if (modeToastEl && modeToastEl.parentNode) {
+                    modeToastEl.remove();
+                }
+            }
+
             const el = document.createElement('div');
             el.className = 'toast ' + type;
             el.textContent = msg;
             document.getElementById('toasts').appendChild(el);
-            setTimeout(() => el.remove(), 3000);
+
+            if (isMode) {
+                modeToastEl = el;
+            }
+
+            setTimeout(() => {
+                if (el.parentNode) el.remove();
+                if (modeToastEl === el) modeToastEl = null;
+            }, 3000);
         }
 
         function getFilenameFromCard(card) {
@@ -735,6 +847,27 @@
             const src = img.dataset.src || img.src || '';
             const match = src.match(/filename=([^&]+)/);
             return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        function getAnnotationsFromCard(card) {
+            // Returns array of {id, label, rect} from the card's SVG annotations
+            const annos = card.querySelectorAll('.a9s-annotation');
+            const result = [];
+            annos.forEach(a => {
+		                    const label = a.getAttribute('data-label') || '';
+                const id = a.getAttribute('data-id') || a.getAttribute('data-annotarius-id') || '';
+                const inner = a.querySelector('.a9s-inner');
+                let rect = null;
+                if (inner) {
+                    const x = inner.getAttribute('x') || '0';
+                    const y = inner.getAttribute('y') || '0';
+                    const w = inner.getAttribute('width') || '0';
+                    const h = inner.getAttribute('height') || '0';
+                    rect = { x: parseFloat(x), y: parseFloat(y), w: parseFloat(w), h: parseFloat(h) };
+                }
+                result.push({ id, label, rect, element: a });
+            });
+            return result;
         }
 
         function updateSelectionBar() {
@@ -858,10 +991,10 @@
 
                 case 'delete':
                     if (!fn) return;
-                    if (!confirm('Delete annotations for ' + fn + '?')) return;
+                    if (!confirm('Delete ALL annotations for ' + fn + '?')) return;
                     deleteAllAnno(fn);
                     card.classList.add('deleted-flash');
-                    toast('Deleted: ' + fn, 'error');
+                    toast('Deleted all annotations: ' + fn, 'error');
                     break;
             }
         }
@@ -892,7 +1025,21 @@
             });
         }
 
-        // ===== LIGHTBOX =====
+        // FIX #6: Delete a single annotation by its annotarius_id
+        function deleteSingleAnno(annotariusId, callback) {
+            $.ajax({
+                url: 'delete_annotation.php',
+                type: 'POST',
+                data: { source: 'export', id: annotariusId },
+                success: function(data) {
+                    if (callback) callback(true);
+                },
+                error: function() {
+                    if (callback) callback(false);
+                }
+            });
+        }
+
         // ===== LIGHTBOX =====
         function openLightbox(card) {
             visibleCards = Array.from(document.querySelectorAll('.container_div'))
@@ -920,7 +1067,78 @@
             const src = img?.dataset?.src || img?.src || '';
             document.getElementById('lbImg').src = src;
 
-            const labels = Array.from(card.querySelectorAll('.tag')).map(t => t.textContent).join(', ');
+            // FIX #1: Clone SVG annotations into lightbox
+            const svgOverlay = document.getElementById('lbSvgOverlay');
+            // Clear previous
+            svgOverlay.innerHTML = '';
+
+            const cardSvg = card.querySelector('.a9s-annotationlayer');
+            if (cardSvg) {
+                // Copy the viewBox from the card SVG
+                const vb = cardSvg.getAttribute('viewBox');
+                if (vb) svgOverlay.setAttribute('viewBox', vb);
+                // Clone all annotation groups
+                Array.from(cardSvg.children).forEach(child => {
+                    svgOverlay.appendChild(child.cloneNode(true));
+                });
+            }
+
+            // FIX #6: Build annotation list with individual delete buttons
+            const annoList = document.getElementById('lbAnnotationsList');
+            annoList.innerHTML = '';
+
+            const annotations = getAnnotationsFromCard(card);
+            annotations.forEach(anno => {
+                const item = document.createElement('div');
+                item.className = 'lb-anno-item';
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'lb-anno-label';
+                labelSpan.textContent = anno.label || '(unlabeled)';
+                item.appendChild(labelSpan);
+
+                if (anno.rect) {
+                    const coordSpan = document.createElement('span');
+                    coordSpan.textContent = `[${Math.round(anno.rect.x)}, ${Math.round(anno.rect.y)}, ${Math.round(anno.rect.w)}×${Math.round(anno.rect.h)}]`;
+                    coordSpan.style.fontSize = '0.65rem';
+                    coordSpan.style.color = 'var(--text-muted)';
+                    item.appendChild(coordSpan);
+                }
+
+                // Individual delete button
+                if (anno.id) {
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'lb-anno-delete';
+                    delBtn.textContent = '✗';
+                    delBtn.title = 'Delete this annotation';
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (!confirm(`Delete annotation "${anno.label}" (ID: ${anno.id})?`)) return;
+                        deleteSingleAnno(anno.id, (success) => {
+                            if (success) {
+                                // Remove from card DOM
+                                if (anno.element && anno.element.parentNode) {
+                                    anno.element.remove();
+                                }
+                                // Remove from lightbox list
+                                item.remove();
+                                // Remove from lightbox SVG overlay
+                                const svgAnnos = svgOverlay.querySelectorAll(`[data-id="${anno.id}"], [data-annotarius-id="${anno.id}"]`);
+                                svgAnnos.forEach(el => el.remove());
+                                toast(`Deleted annotation: ${anno.label}`, 'error');
+                            } else {
+                                toast('Failed to delete annotation', 'error');
+                            }
+                        });
+                    });
+                    item.appendChild(delBtn);
+                }
+
+                annoList.appendChild(item);
+            });
+
+            // Info line
+            const labels = annotations.map(a => a.label).filter(Boolean).join(', ');
             const fn = getFilenameFromCard(card);
             document.getElementById('lbInfo').textContent =
                 `${lightboxIndex + 1} / ${visibleCards.length}` +
@@ -946,6 +1164,7 @@
         });
 
         // ===== MODE SWITCHER =====
+        // FIX #4: Mode toasts don't stack — only one at a time
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const mode = btn.dataset.mode;
@@ -973,7 +1192,8 @@
                     }
                 });
 
-                toast(`Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)}`, 'info');
+                // FIX #4: Pass isMode=true so previous mode toast is removed
+                toast(`Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)}`, 'info', true);
             });
         });
 
@@ -1022,6 +1242,7 @@
         });
 
         // ===== TOGGLE LABELS =====
+        // FIX #2 & #5: Labels visible by default, toggle actually works
         document.getElementById('btnLabels').addEventListener('click', () => {
             labelsVisible = !labelsVisible;
             document.body.classList.toggle('show-labels', labelsVisible);
@@ -1143,6 +1364,10 @@
 
         // ===== INIT =====
         $(document).ready(function() {
+            // FIX #2: Labels visible by default — add class on load
+            document.body.classList.add('show-labels');
+            document.getElementById('btnLabels').style.borderColor = 'var(--accent)';
+
             // Setup lazy loading
             setupLazyLoading();
 
