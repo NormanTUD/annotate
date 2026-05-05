@@ -87,19 +87,16 @@
 		</div>
 
 		<script>
-			// When fine-tune is checked, override the model select to use pretrained .pt weights
+			// When fine-tune is checked, keep model select enabled but update its visual hint
 			document.getElementById('fine_tune_checkbox').addEventListener('change', function() {
 			    var modelSelect = document.getElementById('model_select');
 			    if (this.checked) {
-				modelSelect.disabled = true;
-				modelSelect.style.opacity = '0.5';
-				modelSelect.title = 'Fine-tuning uses pretrained COCO weights automatically';
+				modelSelect.title = 'Selected model size will be used for fine-tuning (e.g. yolo11n.yaml → yolo11n.pt)';
 			    } else {
-				modelSelect.disabled = false;
-				modelSelect.style.opacity = '1';
 				modelSelect.title = '';
 			    }
 			});
+
 
 			document.getElementById('train_form').addEventListener('submit', function(e) {
 			    e.preventDefault();

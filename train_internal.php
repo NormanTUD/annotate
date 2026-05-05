@@ -80,15 +80,15 @@ $fine_tune = isset($_POST['fine_tune']) && $_POST['fine_tune'] == '1';
 
 // Determine the model to load
 if ($fine_tune) {
-    // Use pretrained COCO weights for fine-tuning
-    // Download to /tmp if not already present (www-data can't write to /var/www/html)
-    $pt_filename = 'yolo11s.pt';
+    // Derive the .pt filename from the selected .yaml model size
+    // e.g. yolo11n.yaml -> yolo11n.pt, yolo11s.yaml -> yolo11s.pt, etc.
+    $pt_filename = preg_replace('/\.yaml$/', '.pt', $model_yaml);
     $model_to_load = "/tmp/$pt_filename";
     $training_mode = 'fine-tune';
     
     // Pre-download the model if it doesn't exist in /tmp
     if (!file_exists($model_to_load)) {
-        output("   ⬇️  Downloading pretrained model to $model_to_load...\n");
+        output("   ⬇️  Downloading pretrained model ($pt_filename) to $model_to_load...\n");
         $download_url = "https://github.com/ultralytics/assets/releases/download/v8.4.0/$pt_filename";
         $dl_cmd = "curl -L -o " . escapeshellarg($model_to_load) . " " . escapeshellarg($download_url) . " 2>&1";
         $dl_output = shell_exec($dl_cmd);
@@ -234,7 +234,13 @@ $train_script = <<<PYTHON
 import os, sys
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
+
+# Fix permission errors for matplotlib and other config dirs
+os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib_config"
 os.environ["YOLO_CONFIG_DIR"] = "/tmp/Ultralytics"
+os.environ["HOME"] = "/tmp"
+
+os.makedirs("/tmp/matplotlib_config", exist_ok=True)
 
 from ultralytics import YOLO
 
@@ -259,7 +265,7 @@ PYTHON;
 $train_script_path = "$tmp_dir/train.py";
 file_put_contents($train_script_path, $train_script);
 
-$train_cmd = "PYTHONUNBUFFERED=1 python3 " . escapeshellarg($train_script_path) . " 2>&1";
+$train_cmd = "PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib_config HOME=/tmp python3 " . escapeshellarg($train_script_path) . " 2>&1";
 output("   Command: $train_cmd\n\n");
 
 $descriptorspec = [
