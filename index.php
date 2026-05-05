@@ -59,13 +59,17 @@
 		<div style="margin: 10px 0; padding: 12px 16px; background: #1e1e2e; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; gap: 12px;">
 		    <form id="train_form" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0;">
 			<label style="color: #cdd6f4; font-size: 13px;">Model: 
-			    <select name="model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
+			    <select name="model" id="model_select" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
 				<option>yolo11n.yaml</option>
 				<option>yolo11s.yaml</option>
 				<option>yolo11m.yaml</option>
 				<option>yolo11l.yaml</option>
 				<option>yolo11x.yaml</option>
 			    </select>
+			</label>
+			<label style="color: #cdd6f4; font-size: 13px; display: flex; align-items: center; gap: 4px;">
+			    <input type="checkbox" name="fine_tune" id="fine_tune_checkbox" value="1" style="accent-color: #a6e3a1; width: 15px; height: 15px; cursor: pointer;">
+			    Fine Tune
 			</label>
 			<label style="color: #cdd6f4; font-size: 13px;">Epochs: 
 			    <input type="number" name="epochs" value="50" min="1" style="width: 70px; background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
@@ -83,6 +87,20 @@
 		</div>
 
 		<script>
+			// When fine-tune is checked, override the model select to use pretrained .pt weights
+			document.getElementById('fine_tune_checkbox').addEventListener('change', function() {
+			    var modelSelect = document.getElementById('model_select');
+			    if (this.checked) {
+				modelSelect.disabled = true;
+				modelSelect.style.opacity = '0.5';
+				modelSelect.title = 'Fine-tuning uses pretrained COCO weights automatically';
+			    } else {
+				modelSelect.disabled = false;
+				modelSelect.style.opacity = '1';
+				modelSelect.title = '';
+			    }
+			});
+
 			document.getElementById('train_form').addEventListener('submit', function(e) {
 			    e.preventDefault();
 
@@ -99,6 +117,13 @@
 
 			    var fullText = '';
 			    var formData = new FormData(form);
+
+			    // Re-enable model select temporarily so its value is submitted if needed
+			    var modelSelect = document.getElementById('model_select');
+			    var wasDisabled = modelSelect.disabled;
+			    modelSelect.disabled = false;
+			    formData = new FormData(form);
+			    modelSelect.disabled = wasDisabled;
 
 			    fetch('train_internal.php', {
 				method: 'POST',
@@ -118,7 +143,7 @@
 						    window.location.reload();
 						}, 2000);
 					    } else {
-						btn.textContent = '🔄 Train Model on Server';
+						btn.textContent = '🚀 Train Model on Server';
 						btn.style.background = '#a6e3a1';
 						btn.disabled = false;
 					    }
@@ -147,7 +172,7 @@
 				return read();
 			    }).catch(function(err) {
 				output.innerHTML += '\n\n<span style="color: #f38ba8; font-weight: bold;">❌ Error: ' + err.message + '</span>\n';
-				btn.textContent = '🔄 Train Model on Server';
+				btn.textContent = '🚀 Train Model on Server';
 				btn.style.background = '#a6e3a1';
 				btn.disabled = false;
 			    });
