@@ -22,11 +22,26 @@ if (function_exists('apache_setenv')) {
 }
 
 // Send ALL headers BEFORE any output
-header('Content-Type: text/plain; charset=utf-8');
+header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');
 header('X-Accel-Buffering: no');
 header('Content-Encoding: none');
+
+// HTML preamble with terminal styling
+echo "<!DOCTYPE html><html><head><style>
+body { background: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace; font-size: 14px; padding: 20px; margin: 0; }
+pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; line-height: 1.5; }
+.ansi-bold { font-weight: bold; }
+.ansi-blue { color: #569cd6; }
+.ansi-red { color: #f44747; }
+.ansi-green { color: #6a9955; }
+.ansi-yellow { color: #dcdcaa; }
+.ansi-cyan { color: #4ec9b0; }
+.ansi-magenta { color: #c586c0; }
+.ansi-white { color: #ffffff; }
+.stderr { color: #f44747; }
+</style></head><body><pre>";
 
 // Larger padding to force browser to start rendering
 echo str_repeat(" ", 4096) . "\n";
@@ -38,9 +53,96 @@ include_once("export_helper.php");
 
 ob_implicit_flush(true);
 
+/**
+ * Convert ANSI escape codes to HTML spans
+ */
+function ansi_to_html($text, $is_stderr = false) {
+    // Remove carriage return based overwrites (progress bar redraws)
+    // Keep the last segment after \r on each line
+    $text = preg_replace('/^.*\r(?!\n)/m', '', $text);
+
+    // Remove ESC[K (erase to end of line)
+    $text = preg_replace('/\x1b\[K/', '', $text);
+    // Also handle cases where \x1b is already stripped but [K remains at line start
+    $text = preg_replace('/^\[K/m', '', $text);
+
+    // HTML-escape
+    $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+
+    // Map ANSI codes to CSS classes
+    $map = [
+        '1'  => 'ansi-bold',
+        '30' => 'ansi-black',
+        '31' => 'ansi-red',
+        '32' => 'ansi-green',
+        '33' => 'ansi-yellow',
+        '34' => 'ansi-blue',
+        '35' => 'ansi-magenta',
+        '36' => 'ansi-cyan',
+        '37' => 'ansi-white',
+    ];
+
+    // Track open spans to properly close them
+    $text = preg_replace_callback('/\x1b\[([0-9;]*)m/', function($m) use ($map) {
+        $codes = explode(';', $m[1]);
+        $result = '';
+        foreach ($codes as $code) {
+            $code = trim($code);
+            if ($code === '0' || $code === '') {
+                $result .= '</span>';
+            } else {
+                $class = $map[$code] ?? '';
+                if ($class) {
+                    $result .= "<span class=\"$class\">";
+                }
+            }
+        }
+        return $result;
+    }, $text);
+
+    // Handle the case where escape char was already consumed but bracket codes remain
+    // e.g. [34m[1m patterns without the ESC prefix
+    $text = preg_replace_callback('/\[([0-9;]+)m/', function($m) use ($map) {
+        $codes = explode(';', $m[1]);
+        $result = '';
+        foreach ($codes as $code) {
+            $code = trim($code);
+            if ($code === '0' || $code === '') {
+                $result .= '</span>';
+            } else {
+                $class = $map[$code] ?? '';
+                if ($class) {
+                    $result .= "<span class=\"$class\">";
+                }
+            }
+        }
+        return $result;
+    }, $text);
+
+    // Remove any remaining raw escape sequences
+    $text = preg_replace('/\x1b\[[^A-Za-z]*[A-Za-z]/', '', $text);
+
+    // Wrap stderr in a class
+    if ($is_stderr) {
+        $text = "<span class=\"stderr\">$text</span>";
+    }
+
+    return $text;
+}
+
+/**
+ * Output a line with ANSI conversion
+ */
+function output($text, $is_stderr = false) {
+    echo ansi_to_html($text, $is_stderr);
+    flush();
+}
+
 // --- Validate ---
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    die("❌ Error: Use the form button to start training.");
+    output("❌ Error: Use the form button to start training.\n");
+    echo "</pre></body></html>";
+    exit;
 }
 
 $epochs = intval($_POST['epochs'] ?? 50);
@@ -48,19 +150,21 @@ $model_yaml = $_POST['model'] ?? 'yolo11s.yaml';
 $model_name = trim($_POST['model_name'] ?? 'auto_trained');
 
 if (empty($model_name) || strtolower($model_name) === 'none') {
-    die("❌ Error: Please provide a valid model name.");
+    output("❌ Error: Please provide a valid model name.\n");
+    echo "</pre></body></html>";
+    exit;
 }
 
 if (!get_number_of_annotated_imgs()) {
-    die("❌ Error: No annotated images available for training.");
+    output("❌ Error: No annotated images available for training.\n");
+    echo "</pre></body></html>";
+    exit;
 }
 
-echo "✅ Parameters: model=$model_yaml, epochs=$epochs, name=$model_name\n";
-flush();
+output("✅ Parameters: model=$model_yaml, epochs=$epochs, name=$model_name\n");
 
 // --- Step 1: Generate the export ---
-echo "\n📦 Step 1: Generating training data...\n";
-flush();
+output("\n📦 Step 1: Generating training data...\n");
 
 $_GET['epochs'] = $epochs;
 $_GET['model'] = $model_yaml;
@@ -77,15 +181,15 @@ $images = $images_and_data[0];
 $categories = $images_and_data[3];
 
 if (empty($images)) {
-    die("❌ Error: No annotated images found.");
+    output("❌ Error: No annotated images found.\n");
+    echo "</pre></body></html>";
+    exit;
 }
 
-echo "   Found " . count($images) . " annotated images.\n";
-flush();
+output("   Found " . count($images) . " annotated images.\n");
 
 $tmp_dir = create_tmp_dir();
-echo "   Working directory: $tmp_dir\n";
-flush();
+output("   Working directory: $tmp_dir\n");
 
 // Build dataset.yaml
 $dataset_yaml = "path: $tmp_dir\n";
@@ -115,8 +219,7 @@ mkdir("$tmp_dir/images/", 0777, true);
 file_put_contents("$tmp_dir/dataset.yaml", $dataset_yaml);
 file_put_contents("$tmp_dir/labels.json", json_encode($_labels));
 
-echo "   Created dataset.yaml with " . count($category_numbers) . " categories.\n";
-flush();
+output("   Created dataset.yaml with " . count($category_numbers) . " categories.\n");
 
 // Write label files
 foreach ($images as $fn => $img) {
@@ -133,12 +236,10 @@ foreach ($images as $fn => $img) {
     file_put_contents("$tmp_dir/labels/$fn_txt", join("\n", array_unique($str_arr)) . "\n");
 }
 
-echo "   Written " . count($images) . " label files.\n";
-flush();
+output("   Written " . count($images) . " label files.\n");
 
 // --- Step 2: Extract images from DB ---
-echo "\n🖼️  Step 2: Extracting images from database...\n";
-flush();
+output("\n🖼️  Step 2: Extracting images from database...\n");
 
 $img_count = 0;
 foreach ($images as $fn => $img) {
@@ -149,27 +250,25 @@ foreach ($images as $fn => $img) {
         file_put_contents("$tmp_dir/images/$fn", $row[0]);
         $img_count++;
         if ($img_count % 50 == 0) {
-            echo "   Extracted $img_count images...\n";
-            flush();
+            output("   Extracted $img_count images...\n");
         }
     }
 }
 
-echo "   ✅ Extracted $img_count images total.\n";
-flush();
+output("   ✅ Extracted $img_count images total.\n");
 
 // --- Step 3: Run YOLO training ---
-echo "\n🏃️ Step 3: Starting YOLO training ($epochs epochs, model: $model_yaml)...\n";
-flush();
+output("\n🏃️ Step 3: Starting YOLO training ($epochs epochs, model: $model_yaml)...\n");
 
 $check_output = [];
 exec("python3 -c \"from ultralytics import YOLO; print('ok')\" 2>&1", $check_output, $check_exit);
 if ($check_exit !== 0) {
-    echo "   ❌ ultralytics not importable: " . implode("\n", $check_output) . "\n";
-    die("Training aborted.");
+    output("   ❌ ultralytics not importable: " . implode("\n", $check_output) . "\n");
+    output("Training aborted.\n");
+    echo "</pre></body></html>";
+    exit;
 }
-echo "   ✅ ultralytics available.\n";
-flush();
+output("   ✅ ultralytics available.\n");
 
 $imgsz = $GLOBALS["imgsz"] ?? 400;
 
@@ -203,8 +302,7 @@ $train_script_path = "$tmp_dir/train.py";
 file_put_contents($train_script_path, $train_script);
 
 $train_cmd = "PYTHONUNBUFFERED=1 python3 " . escapeshellarg($train_script_path) . " 2>&1";
-echo "   Command: $train_cmd\n\n";
-flush();
+output("   Command: $train_cmd\n\n");
 
 $descriptorspec = [
     0 => ["pipe", "r"],
@@ -215,7 +313,9 @@ $descriptorspec = [
 $process = proc_open($train_cmd, $descriptorspec, $pipes);
 
 if (!is_resource($process)) {
-    die("❌ Error: Could not start training process.");
+    output("❌ Error: Could not start training process.\n");
+    echo "</pre></body></html>";
+    exit;
 }
 
 fclose($pipes[0]);
@@ -233,14 +333,12 @@ while (true) {
     $stderr_chunk = fread($pipes[2], 8192);
 
     if ($stdout_chunk !== false && $stdout_chunk !== "") {
-        echo $stdout_chunk;
-        flush();
+        output($stdout_chunk, false);
         $last_output_time = time();
     }
 
     if ($stderr_chunk !== false && $stderr_chunk !== "") {
-        echo $stderr_chunk;
-        flush();
+        output($stderr_chunk, true);
         $last_output_time = time();
     }
 
@@ -249,15 +347,15 @@ while (true) {
         do {
             $r1 = fread($pipes[1], 8192);
             $r2 = fread($pipes[2], 8192);
-            if ($r1) echo $r1;
-            if ($r2) echo $r2;
+            if ($r1) output($r1, false);
+            if ($r2) output($r2, true);
         } while ($r1 || $r2);
         flush();
         break;
     }
 
     if ((time() - $last_output_time) > $timeout) {
-        echo "\n⚠️ No output for {$timeout}s, killing process...\n";
+        output("\n⚠️ No output for {$timeout}s, killing process...\n");
         proc_terminate($process);
         break;
     }
@@ -271,17 +369,17 @@ fclose($pipes[2]);
 $exit_code = proc_close($process);
 
 if ($exit_code !== 0) {
-    echo "\n❌ Training failed with exit code $exit_code\n";
-    echo "   Temporary files preserved at: $tmp_dir\n";
-    die("Training failed.");
+    output("\n❌ Training failed with exit code $exit_code\n");
+    output("   Temporary files preserved at: $tmp_dir\n");
+    output("Training failed.\n");
+    echo "</pre></body></html>";
+    exit;
 }
 
-echo "\n✅ Training completed successfully!\n";
-flush();
+output("\n✅ Training completed successfully!\n");
 
 // --- Step 4: Find best.pt and upload model ---
-echo "\n💾 Step 4: Uploading trained model...\n";
-flush();
+output("\n💾 Step 4: Uploading trained model...\n");
 
 $best_pt = null;
 $search_paths = [
@@ -304,35 +402,35 @@ if (!$best_pt) {
 }
 
 if (!$best_pt || !file_exists($best_pt)) {
-    echo "   ❌ Could not find best.pt in training output.\n";
+    output("   ❌ Could not find best.pt in training output.\n");
     system("find " . escapeshellarg("$tmp_dir/runs") . " -type f 2>&1");
-    die("\nTraining output missing.");
+    output("\nTraining output missing.\n");
+    echo "</pre></body></html>";
+    exit;
 }
 
-echo "   Found model: $best_pt (" . round(filesize($best_pt) / 1024 / 1024, 2) . " MB)\n";
-flush();
+output("   Found model: $best_pt (" . round(filesize($best_pt) / 1024 / 1024, 2) . " MB)\n");
 
 try {
     $files_array = [$best_pt];
     $pt_file_path = $best_pt;
     $pt_file = "best.pt";
 
-    echo "   Converting to TFJS and inserting into database...\n";
-    flush();
+    output("   Converting to TFJS and inserting into database...\n");
 
     insert_model_into_db($model_name, $files_array, $pt_file_path, $pt_file, false);
 
-    echo "\n✅ Model '$model_name' successfully trained and uploaded!\n";
-    flush();
+    output("\n✅ Model '$model_name' successfully trained and uploaded!\n");
 } catch (\Throwable $e) {
-    echo "\n❌ Error uploading model: " . $e->getMessage() . "\n";
-    flush();
+    output("\n❌ Error uploading model: " . $e->getMessage() . "\n");
 }
 
 // --- Cleanup ---
-echo "\n🧹 Cleaning up temporary files...\n";
+output("\n🧹 Cleaning up temporary files...\n");
 system("rm -rf " . escapeshellarg($tmp_dir));
-echo "   Done.\n";
+output("   Done.\n");
 
-echo "\n🎉 All done! Model '$model_name' is now available in the models list.\n";
+output("\n🎉 All done! Model '$model_name' is now available in the models list.\n");
+
+echo "</pre></body></html>";
 ?>
