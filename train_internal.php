@@ -78,7 +78,9 @@ function send_streaming_headers(): void {
     header('Pragma: no-cache');
     header('X-Accel-Buffering: no');
     header('Content-Encoding: none');
-    header('Transfer-Encoding: chunked');
+    // DO NOT set Transfer-Encoding: chunked manually.
+    // PHP/webserver handles this automatically.
+    // Manually setting it without proper chunk framing causes NetworkError.
 }
 
 function send_browser_flush_padding(): void {
