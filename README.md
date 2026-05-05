@@ -46,6 +46,10 @@ bash docker.sh --local-port 3431
 
 annotate should now be accessible in your browser at: http://localhost:3431
 
+## Allow local training
+
+Run `touch allow_local_training` inside this folder to allow local training.
+
 ## 🤝 Contribution
 
 We rely on voluntary contributions to enhance and expand features like the curation system. If you are a developer, please check out the issues section or open a pull request!
