@@ -3,6 +3,36 @@ ini_set('memory_limit', '-1');
 ini_set('max_execution_time', '0');
 set_time_limit(0);
 
+// --- CRITICAL: Disable ALL output buffering for real-time streaming ---
+ini_set('output_buffering', 'Off');
+ini_set('zlib.output_compression', 'Off');
+
+// Kill any existing output buffers
+while (ob_get_level() > 0) {
+    ob_end_flush();
+}
+
+// Disable Apache/nginx buffering
+if (function_exists('apache_setenv')) {
+    apache_setenv('no-gzip', '1');
+}
+
+// Send headers that prevent proxy/browser buffering
+header('Content-Type: text/html; charset=utf-8');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('X-Accel-Buffering: no'); // Disables nginx buffering
+header('Content-Encoding: none'); // Prevents gzip buffering
+
+// Start output immediately
+echo "<!DOCTYPE html><html><head><title>Internal Training</title>";
+echo "<style>body { background: #1e1e2e; color: #cdd6f4; font-family: monospace; padding: 20px; } pre { white-space: pre-wrap; word-wrap: break-word; }</style>";
+echo "</head><body><pre>\n";
+
+// Send padding to force browser to start rendering (some browsers wait for ~1KB)
+echo str_repeat(" ", 1024) . "\n";
+flush();
+
 include_once("functions.php");
 include_once("export_helper.php");
 
