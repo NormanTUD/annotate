@@ -28,11 +28,12 @@ header('Pragma: no-cache');
 header('X-Accel-Buffering: no');
 header('Content-Encoding: none');
 
-// NOW start output
 echo "<!DOCTYPE html><html><head><title>Internal Training</title>";
 echo "<style>body { background: #1e1e2e; color: #cdd6f4; font-family: monospace; padding: 20px; } pre { white-space: pre-wrap; word-wrap: break-word; } a { color: #89b4fa; }</style>";
+echo "<script>setInterval(function(){ window.scrollTo(0, document.body.scrollHeight); }, 500);</script>";
 echo "</head><body><pre>\n";
-echo str_repeat(" ", 1024) . "\n";
+// Larger padding to force browser to start rendering
+echo str_repeat(" ", 4096) . "\n";
 flush();
 
 // Include AFTER output has started (no more headers after this point)
@@ -231,26 +232,31 @@ $timeout = 600;
 while (true) {
     $status = proc_get_status($process);
 
-    $stdout_line = fgets($pipes[1]);
-    $stderr_line = fgets($pipes[2]);
+    // Use fread instead of fgets to catch \r progress bars
+    $stdout_chunk = fread($pipes[1], 8192);
+    $stderr_chunk = fread($pipes[2], 8192);
 
-    if ($stdout_line !== false && $stdout_line !== "") {
-        echo htmlspecialchars($stdout_line);
+    if ($stdout_chunk !== false && $stdout_chunk !== "") {
+        echo htmlspecialchars($stdout_chunk);
         flush();
         $last_output_time = time();
     }
 
-    if ($stderr_line !== false && $stderr_line !== "") {
-        echo htmlspecialchars($stderr_line);
+    if ($stderr_chunk !== false && $stderr_chunk !== "") {
+        echo htmlspecialchars($stderr_chunk);
         flush();
         $last_output_time = time();
     }
 
     if (!$status['running']) {
-        $remaining1 = stream_get_contents($pipes[1]);
-        $remaining2 = stream_get_contents($pipes[2]);
-        if ($remaining1) { echo htmlspecialchars($remaining1); flush(); }
-        if ($remaining2) { echo htmlspecialchars($remaining2); flush(); }
+        // Drain remaining output
+        do {
+            $r1 = fread($pipes[1], 8192);
+            $r2 = fread($pipes[2], 8192);
+            if ($r1) echo htmlspecialchars($r1);
+            if ($r2) echo htmlspecialchars($r2);
+        } while ($r1 || $r2);
+        flush();
         break;
     }
 
@@ -260,7 +266,8 @@ while (true) {
         break;
     }
 
-    usleep(100000);
+    // Shorter sleep = more responsive (50ms instead of 100ms)
+    usleep(50000);
 }
 
 fclose($pipes[1]);
