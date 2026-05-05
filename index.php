@@ -36,6 +36,25 @@
 	$available_models = get_list_of_models();
 
 	if(file_exists("allow_local_training")) {
+		// Auto-numerate the suggested model name
+		$base_model_name = "auto_trained";
+		$existing_models_res = rquery("SELECT model_name FROM models WHERE model_name LIKE " . esc($base_model_name . "%") . " GROUP BY model_name ORDER BY model_name ASC");
+		$existing_model_names = [];
+		while ($row = mysqli_fetch_row($existing_models_res)) {
+			$existing_model_names[] = $row[0];
+		}
+
+		$next_number = 1;
+		foreach ($existing_model_names as $existing_name) {
+			if (preg_match('/^' . preg_quote($base_model_name, '/') . '_(\d+)$/', $existing_name, $m)) {
+				$num = intval($m[1]);
+				if ($num >= $next_number) {
+					$next_number = $num + 1;
+				}
+			}
+		}
+
+		$suggested_model_name = $base_model_name . "_" . $next_number;
 ?>
 		<div style="margin: 10px 0; padding: 12px 16px; background: #1e1e2e; border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
 		    <form action="train_internal.php" method="POST" target="_blank" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0;">
@@ -52,7 +71,7 @@
 			    <input type="number" name="epochs" value="50" min="1" style="width: 70px; background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
 			</label>
 			<label style="color: #cdd6f4; font-size: 13px;">Model Name: 
-			    <input type="text" name="model_name" value="auto_trained" placeholder="Name for saved model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
+				<input type="text" name="model_name" value="<?php echo htmlspecialchars($suggested_model_name); ?>" placeholder="Name for saved model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
 			</label>
 			<button type="submit" style="background: #a6e3a1; color: #1e1e2e; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;">
 			    🚀 Train Model on Server
