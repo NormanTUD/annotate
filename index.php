@@ -307,37 +307,42 @@
 							<input class="disable_in_autonext" placeholder="Filename contains..." id="like" onchange="start_like()" />
 <?php
 							if(count($available_models)) {
-							    if(count($available_models) == 1) {
-								print "<span style='visibility: none'>";
-							    }
-							    print "Model: <select class='disable_in_autonext' onchange='on_model_selection_change()' id='chosen_model'>";
-							    print "<option selected value='none'>None</option>";
+								if(count($available_models) == 1) {
+									print "<span style='visibility: none'>";
+								}
+								print "Model: <select class='disable_in_autonext' onchange='on_model_selection_change()' id='chosen_model'>";
+								print "<option selected value='none'>None</option>";
 
-							    $i = 0;
-							    foreach ($available_models as $_model) {
-								$model_name = $_model[0];
-								$model_uid = $_model[1];
+								$i = 0;
+								foreach ($available_models as $_model) {
+									$model_name = $_model[0];
+									$model_uid = $_model[1];
 
-								print "<option value='{$model_uid}||all'>{$model_name} (all)</option>";
-								print "<option value='{$model_uid}||selected'>{$model_name} (selected)</option>";
-								$i++;
-							    }
-							    print "</select>";
-							    if(count($available_models) == 1) {
-								print "</span>";
-							    }
+									print "<option value='{$model_uid}||all'>{$model_name} (all)</option>";
+									print "<option value='{$model_uid}||selected'>{$model_name} (selected)</option>";
+									$i++;
+								}
+								print "</select>";
+								if(count($available_models) == 1) {
+									print "</span>";
+								}
 
-							    // Container für die Klassen-Auswahl (initial versteckt)
-							    print "<div id='model_class_filter_container' style='display:none; margin-top:8px; padding:8px; background:#1e1e2e; border:1px solid #45475a; border-radius:6px;'>";
-							    print "<label style='color:#cdd6f4; font-size:12px; font-weight:bold;'>Select classes to detect:</label><br>";
-							    print "<div id='model_class_filter_list' style='max-height:200px; overflow-y:auto; margin-top:6px;'></div>";
-							    print "<div style='margin-top:6px;'>";
-							    print "<button type='button' onclick='select_all_model_classes(true)' style='font-size:11px; margin-right:4px;'>Select All</button>";
-							    print "<button type='button' onclick='select_all_model_classes(false)' style='font-size:11px;'>Deselect All</button>";
-							    print "</div>";
-							    print "</div>";
+								// Collapsible Container für die Klassen-Auswahl (initial versteckt)
+								print "<div id='model_class_filter_container' style='display:none; margin-top:8px;'>";
+								print "<div onclick='toggle_class_filter_panel()' id='model_class_filter_header' style='padding:6px 10px; background:#313244; border:1px solid #45475a; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;'>";
+								print "<span style='color:#cdd6f4; font-size:12px; font-weight:bold;'>⚙ Class Filter</span>";
+								print "<span id='model_class_filter_toggle_icon' style='color:#a6adc8; font-size:14px; transition:transform 0.2s;'>▼</span>";
+								print "</div>";
+								print "<div id='model_class_filter_body' style='display:none; padding:8px; background:#1e1e2e; border:1px solid #45475a; border-top:none; border-radius:0 0 6px 6px; max-height:180px; overflow-y:auto;'>";
+								print "<div id='model_class_filter_list'></div>";
+								print "<div style='margin-top:6px;'>";
+								print "<button type='button' onclick='select_all_model_classes(true)' style='font-size:11px; margin-right:4px;'>Select All</button>";
+								print "<button type='button' onclick='select_all_model_classes(false)' style='font-size:11px;'>Deselect All</button>";
+								print "</div>";
+								print "</div>";
+								print "</div>";
 
-							    print "<br>";
+								print "<br>";
 							}
 ?>
 

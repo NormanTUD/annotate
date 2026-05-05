@@ -2509,6 +2509,11 @@ function show_class_filter_ui() {
     var list = $("#model_class_filter_list");
     list.html("");
 
+    // Reset collapse state
+    class_filter_panel_open = false;
+    $("#model_class_filter_body").hide();
+    $("#model_class_filter_toggle_icon").css("transform", "rotate(0deg)");
+
     if (!labels || labels.length === 0) {
         list.html("<i style='color:#a6adc8;'>No labels found for this model.</i>");
         container.show();
@@ -2518,16 +2523,16 @@ function show_class_filter_ui() {
     for (var i = 0; i < labels.length; i++) {
         var checkbox_html = `
             <label style="display:inline-block; margin:2px 8px 2px 0; color:#cdd6f4; font-size:12px; cursor:pointer;">
-                <input type="checkbox" class="model_class_checkbox" value="${i}"
+                <input type="checkbox" class="model_class_checkbox" value="${i}" 
                        style="accent-color:#a6e3a1; margin-right:3px;">
                 ${labels[i]}
             </label>`;
         list.append(checkbox_html);
     }
 
-    // Button zum Starten der Prediction mit gewählten Klassen
-    var apply_btn = `<button type="button" onclick="apply_class_filter_and_predict()"
-                      style="margin-top:8px; background:#a6e3a1; color:#1e1e2e; padding:6px 12px;
+    // Button zum Starten der Prediction
+    var apply_btn = `<button type="button" onclick="apply_class_filter_and_predict()" 
+                      style="margin-top:8px; background:#a6e3a1; color:#1e1e2e; padding:6px 12px; 
                              border:none; border-radius:4px; cursor:pointer; font-weight:600; font-size:12px;">
                       ▶ Detect selected classes
                     </button>`;
@@ -2556,6 +2561,22 @@ async function apply_class_filter_and_predict() {
                 selected.map(i => labels[i]));
 
     await predictImageWithModel();
+}
+
+var class_filter_panel_open = false;
+
+function toggle_class_filter_panel() {
+    class_filter_panel_open = !class_filter_panel_open;
+    var body = $("#model_class_filter_body");
+    var icon = $("#model_class_filter_toggle_icon");
+
+    if (class_filter_panel_open) {
+        body.slideDown(200);
+        icon.css("transform", "rotate(180deg)");
+    } else {
+        body.slideUp(200);
+        icon.css("transform", "rotate(0deg)");
+    }
 }
 
 $(document).ready(function () {
