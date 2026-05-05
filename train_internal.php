@@ -160,35 +160,53 @@ flush();
 
 $imgsz = $GLOBALS["imgsz"] ?? 800;
 
-// Write a small Python training script to tmp
+// Write a Python training script that flushes output in real-time
 $train_script = <<<PYTHON
-import os
+import os, sys
+
+# Force unbuffered output so PHP can stream it
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
+
 os.environ["YOLO_CONFIG_DIR"] = "/tmp/Ultralytics"
 
 from ultralytics import YOLO
+from ultralytics.utils import LOGGER
+import logging
 
+# Make sure logging outputs immediately
+LOGGER.setLevel(logging.INFO)
+
+print("🔄 Loading model: $model_yaml", flush=True)
 model = YOLO("$model_yaml")
+
+print("🚀 Starting training...", flush=True)
 results = model.train(
     data="$tmp_dir/dataset.yaml",
     epochs=$epochs,
-    batch=16,
+    batch=4,
     imgsz=$imgsz,
     project="$tmp_dir/runs",
-    name="train"
+    name="train",
+    device="cpu",
+    workers=2,
+    verbose=True
 )
-print("TRAINING_COMPLETE")
+print("TRAINING_COMPLETE", flush=True)
 PYTHON;
 
 $train_script_path = "$tmp_dir/train.py";
 file_put_contents($train_script_path, $train_script);
 
-$train_cmd = "python3 " . escapeshellarg($train_script_path) . " 2>&1";
+// Use PYTHONUNBUFFERED to force real-time output
+$train_cmd = "PYTHONUNBUFFERED=1 python3 " . escapeshellarg($train_script_path) . " 2>&1";
 
 echo "   Command: $train_cmd\n\n";
 flush();
 
-// Stream training output
+// Stream training output line by line
 $descriptorspec = [
+    0 => ["pipe", "r"],
     1 => ["pipe", "w"],
     2 => ["pipe", "w"]
 ];
@@ -196,30 +214,54 @@ $descriptorspec = [
 $process = proc_open($train_cmd, $descriptorspec, $pipes);
 
 if (!is_resource($process)) {
-    die("❌ Error: Could not start training process.");
+    die("❌ Error: Could not start training process.\n</pre></body></html>");
 }
+
+fclose($pipes[0]); // Close stdin
 
 stream_set_blocking($pipes[1], false);
 stream_set_blocking($pipes[2], false);
 
+$last_output_time = time();
+$timeout = 600; // 10 min timeout for no output (training can be slow)
+
 while (true) {
-    $read = [$pipes[1], $pipes[2]];
-    $write = null;
-    $except = null;
-    $changed = @stream_select($read, $write, $except, 1);
-
-    if ($changed === false) break;
-
-    foreach ($read as $r) {
-        $line = fgets($r);
-        if ($line !== false) {
-            echo htmlspecialchars($line);
-            flush();
-        }
-    }
-
     $status = proc_get_status($process);
-    if (!$status['running']) break;
+    
+    $stdout_line = fgets($pipes[1]);
+    $stderr_line = fgets($pipes[2]);
+    
+    if ($stdout_line !== false && $stdout_line !== "") {
+        echo htmlspecialchars($stdout_line);
+        flush();
+        $last_output_time = time();
+    }
+    
+    if ($stderr_line !== false && $stderr_line !== "") {
+        echo htmlspecialchars($stderr_line);
+        flush();
+        $last_output_time = time();
+    }
+    
+    // Check if process ended
+    if (!$status['running']) {
+        // Read any remaining output
+        $remaining1 = stream_get_contents($pipes[1]);
+        $remaining2 = stream_get_contents($pipes[2]);
+        if ($remaining1) { echo htmlspecialchars($remaining1); flush(); }
+        if ($remaining2) { echo htmlspecialchars($remaining2); flush(); }
+        break;
+    }
+    
+    // Timeout check
+    if ((time() - $last_output_time) > $timeout) {
+        echo "\n⚠️ No output for {$timeout}s, killing process...\n";
+        proc_terminate($process);
+        break;
+    }
+    
+    // Small sleep to avoid CPU spinning in this loop
+    usleep(100000); // 100ms
 }
 
 fclose($pipes[1]);
