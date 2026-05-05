@@ -28,3 +28,4 @@ tests/last.onnx
 tests/last.pb
 tests/last_saved_model/
 tests/last_web_model/
+allow_local_training
