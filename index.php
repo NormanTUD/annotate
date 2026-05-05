@@ -34,29 +34,34 @@
 	}
 
 	$available_models = get_list_of_models();
+
+	if(file_exists("allow_local_training")) {
 ?>
-<div style="margin: 10px 0; padding: 12px 16px; background: #1e1e2e; border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-    <form action="train_internal.php" method="POST" target="_blank" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0;">
-        <label style="color: #cdd6f4; font-size: 13px;">Model: 
-            <select name="model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
-                <option>yolo11n.yaml</option>
-                <option>yolo11s.yaml</option>
-                <option>yolo11m.yaml</option>
-                <option>yolo11l.yaml</option>
-                <option>yolo11x.yaml</option>
-            </select>
-        </label>
-        <label style="color: #cdd6f4; font-size: 13px;">Epochs: 
-            <input type="number" name="epochs" value="50" min="1" style="width: 70px; background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
-        </label>
-        <label style="color: #cdd6f4; font-size: 13px;">Model Name: 
-            <input type="text" name="model_name" value="auto_trained" placeholder="Name for saved model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
-        </label>
-        <button type="submit" style="background: #a6e3a1; color: #1e1e2e; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;">
-            🚀 Train Model on Server
-        </button>
-    </form>
-</div>
+		<div style="margin: 10px 0; padding: 12px 16px; background: #1e1e2e; border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+		    <form action="train_internal.php" method="POST" target="_blank" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0;">
+			<label style="color: #cdd6f4; font-size: 13px;">Model: 
+			    <select name="model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
+				<option>yolo11n.yaml</option>
+				<option>yolo11s.yaml</option>
+				<option>yolo11m.yaml</option>
+				<option>yolo11l.yaml</option>
+				<option>yolo11x.yaml</option>
+			    </select>
+			</label>
+			<label style="color: #cdd6f4; font-size: 13px;">Epochs: 
+			    <input type="number" name="epochs" value="50" min="1" style="width: 70px; background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
+			</label>
+			<label style="color: #cdd6f4; font-size: 13px;">Model Name: 
+			    <input type="text" name="model_name" value="auto_trained" placeholder="Name for saved model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
+			</label>
+			<button type="submit" style="background: #a6e3a1; color: #1e1e2e; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;">
+			    🚀 Train Model on Server
+			</button>
+		    </form>
+		</div>
+<?php
+	}
+?>
 
 	<div id="loader"></div>
 	<table>
