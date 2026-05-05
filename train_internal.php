@@ -29,7 +29,6 @@ header('X-Accel-Buffering: no');
 header('Content-Encoding: none');
 
 echo "<!DOCTYPE html><html><head><title>Internal Training</title>";
-echo "<style>body { background: #1e1e2e; color: #cdd6f4; font-family: monospace; padding: 20px; } pre { white-space: pre-wrap; word-wrap: break-word; } a { color: #89b4fa; }</style>";
 echo "<script>setInterval(function(){ window.scrollTo(0, document.body.scrollHeight); }, 500);</script>";
 echo "</head><body><pre>\n";
 // Larger padding to force browser to start rendering
