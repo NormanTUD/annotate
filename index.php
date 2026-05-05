@@ -56,8 +56,8 @@
 
 		$suggested_model_name = $base_model_name . "_" . $next_number;
 ?>
-		<div style="margin: 10px 0; padding: 12px 16px; background: #1e1e2e; border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-		    <form action="train_internal.php" method="POST" target="_blank" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0;">
+		<div style="margin: 10px 0; padding: 12px 16px; background: #1e1e2e; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; gap: 12px;">
+		    <form id="train_form" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0;">
 			<label style="color: #cdd6f4; font-size: 13px;">Model: 
 			    <select name="model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
 				<option>yolo11n.yaml</option>
@@ -73,11 +73,83 @@
 			<label style="color: #cdd6f4; font-size: 13px;">Model Name: 
 				<input type="text" name="model_name" value="<?php echo htmlspecialchars($suggested_model_name); ?>" placeholder="Name for saved model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
 			</label>
-			<button type="submit" style="background: #a6e3a1; color: #1e1e2e; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;">
+			<button type="submit" id="train_submit_btn" style="background: #a6e3a1; color: #1e1e2e; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;">
 			    🚀 Train Model on Server
 			</button>
 		    </form>
+		    <div id="train_output_container" style="display: none; background: #11111b; border: 1px solid #45475a; border-radius: 6px; padding: 12px; max-height: 500px; overflow-y: auto;">
+			<pre id="train_output" style="margin: 0; white-space: pre-wrap; word-wrap: break-word; color: #cdd6f4; font-size: 12px;"></pre>
+		    </div>
 		</div>
+
+		<script>
+		document.getElementById('train_form').addEventListener('submit', function(e) {
+		    e.preventDefault();
+		    
+		    var form = this;
+		    var btn = document.getElementById('train_submit_btn');
+		    var container = document.getElementById('train_output_container');
+		    var output = document.getElementById('train_output');
+		    
+		    // Disable button and show output area
+		    btn.disabled = true;
+		    btn.textContent = '⏳ Training in progress...';
+		    btn.style.background = '#f9e2af';
+		    container.style.display = 'block';
+		    output.textContent = 'Starting training...\n';
+		    
+		    // Build form data
+		    var formData = new FormData(form);
+		    
+		    // Use fetch with streaming response
+		    fetch('train_internal.php', {
+			method: 'POST',
+			body: formData
+		    }).then(function(response) {
+			var reader = response.body.getReader();
+			var decoder = new TextDecoder();
+			
+			function read() {
+			    return reader.read().then(function(result) {
+				if (result.done) {
+				    // Training finished - check if successful
+				    if (output.textContent.indexOf('successfully trained and uploaded') !== -1 ||
+				        output.textContent.indexOf('All done!') !== -1) {
+					output.textContent += '\n\n✅ Training complete! Reloading page...\n';
+					setTimeout(function() {
+					    window.location.reload();
+					}, 2000);
+				    } else {
+					btn.textContent = '🚀 Train Model on Server';
+					btn.style.background = '#a6e3a1';
+					btn.disabled = false;
+				    }
+				    return;
+				}
+				
+				var text = decoder.decode(result.value, {stream: true});
+				// Strip HTML tags but keep the text content
+				var stripped = text.replace(/<[^>]*>/g, '');
+				// Remove the initial padding spaces
+				stripped = stripped.replace(/^\s{100,}/, '');
+				output.textContent += stripped;
+				
+				// Auto-scroll to bottom
+				container.scrollTop = container.scrollHeight;
+				
+				return read();
+			    });
+			}
+			
+			return read();
+		    }).catch(function(err) {
+			output.textContent += '\n\n❌ Error: ' + err.message + '\n';
+			btn.textContent = '🚀 Train Model on Server';
+			btn.style.background = '#a6e3a1';
+			btn.disabled = false;
+		    });
+		});
+		</script>
 <?php
 	}
 ?>
