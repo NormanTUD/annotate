@@ -4,6 +4,8 @@ if(!file_exists("allow_local_training")) {
 	exit(0);
 }
 
+ini_set('output_buffering', 0);
+ini_set('implicit_flush', 1);
 ini_set('memory_limit', '-1');
 ini_set('max_execution_time', '0');
 set_time_limit(0);
