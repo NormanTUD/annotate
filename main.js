@@ -2356,6 +2356,106 @@ async function skip_current_image() {
 	await load_next_random_image();
 }
 
+function ansiToHtml(text) {
+    // Map ANSI color codes to CSS styles
+    const ansiStyles = {
+        '0': 'color: inherit; font-weight: normal; text-decoration: none;', // Reset
+        '1': 'font-weight: bold;',
+        '4': 'text-decoration: underline;',
+        '30': 'color: #45475a;', // Black
+        '31': 'color: #f38ba8;', // Red
+        '32': 'color: #a6e3a1;', // Green
+        '33': 'color: #f9e2af;', // Yellow
+        '34': 'color: #89b4fa;', // Blue
+        '35': 'color: #cba6f7;', // Magenta
+        '36': 'color: #94e2d5;', // Cyan
+        '37': 'color: #cdd6f4;', // White
+        '90': 'color: #585b70;', // Bright Black (Gray)
+        '91': 'color: #f38ba8;', // Bright Red
+        '92': 'color: #a6e3a1;', // Bright Green
+        '93': 'color: #f9e2af;', // Bright Yellow
+        '94': 'color: #89b4fa;', // Bright Blue
+        '95': 'color: #cba6f7;', // Bright Magenta
+        '96': 'color: #94e2d5;', // Bright Cyan
+        '97': 'color: #ffffff;', // Bright White
+    };
+
+    // Escape HTML entities first
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    // Also decode already-escaped HTML entities from the source (like &#039;)
+    // These come from the training output that was already HTML-encoded
+    html = html.replace(/&amp;#039;/g, '&#039;');
+
+    // Handle ANSI escape sequences: \e[...m or \033[...m or \x1b[...m
+    // The raw text may contain literal escape chars or the [34m[1m pattern
+    // Pattern: ESC[ (params) m
+    // Also handle the format seen in the output: [34m[1m text [0m
+    html = html.replace(/\[(\d+(?:;\d+)*)m/g, function(match, codes) {
+        const codeList = codes.split(';');
+        let style = '';
+
+        for (const code of codeList) {
+            if (code === '0') {
+                // Reset - close any open spans and return closing tag
+                return '</span>';
+            }
+            if (ansiStyles[code]) {
+                style += ansiStyles[code];
+            }
+        }
+
+        if (style) {
+            return '<span style="' + style + '">';
+        }
+        return '';
+    });
+
+    // Handle \x1b[ or \033[ or \e[ escape sequences (actual escape character)
+    html = html.replace(/(?:\x1b|\033|\u001b)\[(\d+(?:;\d+)*)m/g, function(match, codes) {
+        const codeList = codes.split(';');
+        let style = '';
+
+        for (const code of codeList) {
+            if (code === '0') {
+                return '</span>';
+            }
+            if (ansiStyles[code]) {
+                style += ansiStyles[code];
+            }
+        }
+
+        if (style) {
+            return '<span style="' + style + '">';
+        }
+        return '';
+    });
+
+    // Handle the \[K escape (erase in line) - just remove it
+    html = html.replace(/\[K/g, '');
+
+    // Handle progress bar characters (━ ─ etc.) - they're already unicode, keep them
+    // Handle the ✅ ❌ 🚀 💡 emojis - already unicode, keep them
+
+    // Convert lines starting with "ERROR:" to red
+    html = html.replace(/^(ERROR:.*)$/gm, '<span style="color: #f38ba8;">$1</span>');
+
+    // Highlight step headers (lines with emoji markers like 📦 🖼️ 🏃 💾)
+    html = html.replace(/^(\s*[📦🖼️🏃💾✅❌🚀💡🔥⚡].*)$/gm, '<span style="color: #89b4fa; font-weight: bold;">$1</span>');
+
+    return html;
+}
+
+function renderTrainingOutput(rawText, containerElement) {
+    const html = ansiToHtml(rawText);
+    containerElement.innerHTML = html;
+}
+
 $(document).ready(function () {
 	// Don't create a new #tensor_monitor div — it already exists in footer.php
 

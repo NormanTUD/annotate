@@ -83,72 +83,75 @@
 		</div>
 
 		<script>
-		document.getElementById('train_form').addEventListener('submit', function(e) {
-		    e.preventDefault();
-		    
-		    var form = this;
-		    var btn = document.getElementById('train_submit_btn');
-		    var container = document.getElementById('train_output_container');
-		    var output = document.getElementById('train_output');
-		    
-		    // Disable button and show output area
-		    btn.disabled = true;
-		    btn.textContent = '⏳ Training in progress...';
-		    btn.style.background = '#f9e2af';
-		    container.style.display = 'block';
-		    output.textContent = 'Starting training...\n';
-		    
-		    // Build form data
-		    var formData = new FormData(form);
-		    
-		    // Use fetch with streaming response
-		    fetch('train_internal.php', {
-			method: 'POST',
-			body: formData
-		    }).then(function(response) {
-			var reader = response.body.getReader();
-			var decoder = new TextDecoder();
-			
-			function read() {
-			    return reader.read().then(function(result) {
-				if (result.done) {
-				    // Training finished - check if successful
-				    if (output.textContent.indexOf('successfully trained and uploaded') !== -1 ||
-				        output.textContent.indexOf('All done!') !== -1) {
-					output.textContent += '\n\n✅ Training complete! Reloading page...\n';
-					setTimeout(function() {
-					    window.location.reload();
-					}, 2000);
-				    } else {
-					btn.textContent = '🚀 Train Model on Server';
-					btn.style.background = '#a6e3a1';
-					btn.disabled = false;
-				    }
-				    return;
+			document.getElementById('train_form').addEventListener('submit', function(e) {
+			    e.preventDefault();
+
+			    var form = this;
+			    var btn = document.getElementById('train_submit_btn');
+			    var container = document.getElementById('train_output_container');
+			    var output = document.getElementById('train_output');
+
+			    btn.disabled = true;
+			    btn.textContent = '⏳ Training in progress...';
+			    btn.style.background = '#f9e2af';
+			    container.style.display = 'block';
+			    output.innerHTML = '<span style="color: #a6e3a1;">Starting training...</span>\n';
+
+			    var fullText = '';
+			    var formData = new FormData(form);
+
+			    fetch('train_internal.php', {
+				method: 'POST',
+				body: formData
+			    }).then(function(response) {
+				var reader = response.body.getReader();
+				var decoder = new TextDecoder();
+
+				function read() {
+				    return reader.read().then(function(result) {
+					if (result.done) {
+					    if (fullText.indexOf('successfully trained and uploaded') !== -1 ||
+						fullText.indexOf('All done!') !== -1 ||
+						fullText.indexOf('TRAINING_COMPLETE') !== -1) {
+						output.innerHTML += '\n\n<span style="color: #a6e3a1; font-weight: bold;">✅ Training complete! Reloading page...</span>\n';
+						setTimeout(function() {
+						    window.location.reload();
+						}, 2000);
+					    } else {
+						btn.textContent = '🔄 Train Model on Server';
+						btn.style.background = '#a6e3a1';
+						btn.disabled = false;
+					    }
+					    return;
+					}
+
+					var text = decoder.decode(result.value, {stream: true});
+					// Strip wrapping HTML tags but keep content
+					var stripped = text.replace(/<br\s*\/?>/gi, '\n');
+					stripped = stripped.replace(/<[^>]*>/g, '');
+					// Remove initial padding
+					stripped = stripped.replace(/^\s{100,}/, '');
+
+					fullText += stripped;
+
+					// Re-render the entire output with ANSI conversion
+					output.innerHTML = ansiToHtml(fullText);
+
+					// Auto-scroll to bottom
+					container.scrollTop = container.scrollHeight;
+
+					return read();
+				    });
 				}
-				
-				var text = decoder.decode(result.value, {stream: true});
-				// Strip HTML tags but keep the text content
-				var stripped = text.replace(/<[^>]*>/g, '');
-				// Remove the initial padding spaces
-				stripped = stripped.replace(/^\s{100,}/, '');
-				output.textContent += stripped;
-				
-				// Auto-scroll to bottom
-				container.scrollTop = container.scrollHeight;
-				
+
 				return read();
+			    }).catch(function(err) {
+				output.innerHTML += '\n\n<span style="color: #f38ba8; font-weight: bold;">❌ Error: ' + err.message + '</span>\n';
+				btn.textContent = '🔄 Train Model on Server';
+				btn.style.background = '#a6e3a1';
+				btn.disabled = false;
 			    });
-			}
-			
-			return read();
-		    }).catch(function(err) {
-			output.textContent += '\n\n❌ Error: ' + err.message + '\n';
-			btn.textContent = '🚀 Train Model on Server';
-			btn.style.background = '#a6e3a1';
-			btn.disabled = false;
-		    });
-		});
+			});
 		</script>
 <?php
 	}
