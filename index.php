@@ -53,7 +53,7 @@
             <input type="text" name="model_name" value="auto_trained" placeholder="Name for saved model" style="background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px 8px; font-size: 13px;">
         </label>
         <button type="submit" style="background: #a6e3a1; color: #1e1e2e; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;">
-            🚀 Train Model Internally
+            🚀 Train Model on Server
         </button>
     </form>
 </div>
