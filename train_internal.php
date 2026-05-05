@@ -228,7 +228,9 @@ if ($check_exit !== 0) {
 }
 output("   ✅ ultralytics available.\n");
 
-$imgsz = $GLOBALS["imgsz"] ?? 400;
+$imgsz = $GLOBALS["imgsz"] ?? 800;
+
+echo "Image-Size: $imgsz\n";
 
 $train_script = <<<PYTHON
 import os, sys
