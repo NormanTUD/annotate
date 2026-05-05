@@ -2280,18 +2280,26 @@ async function handleAnnotations(boxes, scores, classes) {
         const w = Math.round((xMax - xMin) * img_width);
         const h = Math.round((yMax - yMin) * img_height);
 
-        // FIX: Ensure classes[i] is always an array (defensive)
         const class_indices = Array.isArray(classes[i]) ? classes[i] : [classes[i]];
         if (!class_indices || class_indices.length === 0) continue;
 
+        // *** CLASS FILTER: Skip box if none of its classes are in the selected set ***
+        if (model_selected_classes !== null) {
+            const has_selected_class = class_indices.some(idx => model_selected_classes.includes(idx));
+            if (!has_selected_class) continue; // Skip this box entirely
+        }
+
         const box_labels = [];
         for (const cls_idx of class_indices) {
+            // Only include labels that pass the class filter
+            if (model_selected_classes !== null && !model_selected_classes.includes(cls_idx)) {
+                continue;
+            }
             if (cls_idx !== -1 && cls_idx !== undefined && this_labels[cls_idx]) {
                 box_labels.push(this_labels[cls_idx]);
             }
         }
 
-        // Deduplicate labels for this box
         const unique_labels = [...new Set(box_labels)];
 
         if (unique_labels.length > 0 && w > 0 && h > 0 && x >= 0 && y >= 0) {
@@ -2308,12 +2316,9 @@ async function handleAnnotations(boxes, scores, classes) {
 
     await anno.setAnnotations(anno_boxes);
     invalidateAnnoCache();
-
     await save_annos_batch(anno_boxes);
-
     await load_dynamic_content();
     await create_selects_from_annotation(1);
-
     success("Success", "Image Detection done.");
 }
 
@@ -2454,6 +2459,103 @@ function ansiToHtml(text) {
 function renderTrainingOutput(rawText, containerElement) {
     const html = ansiToHtml(rawText);
     containerElement.innerHTML = html;
+}
+
+// --- Model class filter logic ---
+var model_selected_classes = null; // null = all, array = only these class indices
+
+function get_chosen_model_uuid() {
+    var val = $("#chosen_model").val();
+    if (!val || val === "none") return null;
+    // Format: "uuid||all" or "uuid||selected"
+    return val.split("||")[0];
+}
+
+function get_chosen_model_mode() {
+    var val = $("#chosen_model").val();
+    if (!val || val === "none") return "none";
+    var parts = val.split("||");
+    return parts.length > 1 ? parts[1] : "all";
+}
+
+async function on_model_selection_change() {
+    var mode = get_chosen_model_mode();
+    var uuid = get_chosen_model_uuid();
+
+    if (mode === "selected" && uuid) {
+        // Labels laden und Checkboxen anzeigen
+        await load_labels();
+        show_class_filter_ui();
+    } else {
+        // Filter ausblenden, alle Klassen nutzen
+        $("#model_class_filter_container").hide();
+        model_selected_classes = null;
+    }
+
+    if (uuid && mode !== "none") {
+        blur_chosen_model();
+        await load_labels();
+
+        if (mode === "all") {
+            model_selected_classes = null;
+            await predictImageWithModel();
+        }
+        // Bei "selected" warten wir, bis der User die Klassen gewählt hat
+    }
+}
+
+function show_class_filter_ui() {
+    var container = $("#model_class_filter_container");
+    var list = $("#model_class_filter_list");
+    list.html("");
+
+    if (!labels || labels.length === 0) {
+        list.html("<i style='color:#a6adc8;'>No labels found for this model.</i>");
+        container.show();
+        return;
+    }
+
+    for (var i = 0; i < labels.length; i++) {
+        var checkbox_html = `
+            <label style="display:inline-block; margin:2px 8px 2px 0; color:#cdd6f4; font-size:12px; cursor:pointer;">
+                <input type="checkbox" class="model_class_checkbox" value="${i}"
+                       style="accent-color:#a6e3a1; margin-right:3px;">
+                ${labels[i]}
+            </label>`;
+        list.append(checkbox_html);
+    }
+
+    // Button zum Starten der Prediction mit gewählten Klassen
+    var apply_btn = `<button type="button" onclick="apply_class_filter_and_predict()"
+                      style="margin-top:8px; background:#a6e3a1; color:#1e1e2e; padding:6px 12px;
+                             border:none; border-radius:4px; cursor:pointer; font-weight:600; font-size:12px;">
+                      ▶ Detect selected classes
+                    </button>`;
+    list.append(apply_btn);
+
+    container.show();
+}
+
+function select_all_model_classes(select) {
+    $(".model_class_checkbox").prop("checked", select);
+}
+
+async function apply_class_filter_and_predict() {
+    var selected = [];
+    $(".model_class_checkbox:checked").each(function() {
+        selected.push(parseInt($(this).val()));
+    });
+
+    if (selected.length === 0) {
+        warn("No classes selected", "Please select at least one class.");
+        return;
+    }
+
+    model_selected_classes = selected;
+    console.log("Class filter active. Only detecting classes:",
+                selected.map(i => labels[i]));
+
+    await predictImageWithModel();
 }
 
 $(document).ready(function () {
