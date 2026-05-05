@@ -171,7 +171,7 @@ if ($check_exit !== 0) {
 echo "   ✅ ultralytics available.\n";
 flush();
 
-$imgsz = $GLOBALS["imgsz"] ?? 800;
+$imgsz = $GLOBALS["imgsz"] ?? 400;
 
 $train_script = <<<PYTHON
 import os, sys
