@@ -106,6 +106,8 @@
 			    var container = document.getElementById('train_output_container');
 			    var output = document.getElementById('train_output');
 
+			    $("#annotation_area").parent().parent().hide();
+
 			    btn.disabled = true;
 			    btn.textContent = '⏳ Training in progress...';
 			    btn.style.background = '#f9e2af';
