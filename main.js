@@ -251,15 +251,21 @@ async function load_model() {
 		return;
 	}
 
+	const model_uuid = get_chosen_model_uuid();
+	const new_model_md5 = model_uuid;
+
+	// If the model is already loaded and hasn't changed, skip reloading
+	if (model && new_model_md5 === last_model_md5) {
+		console.info("Model already loaded and unchanged. Skipping reload.");
+		return;
+	}
+
+	// Model has changed — dispose the old one
 	if (model) {
 		model.dispose();
 		model = null;
 	}
 
-	const model_uuid = get_chosen_model_uuid();
-
-	const new_model_md5 = model_uuid;
-	if (model && new_model_md5 === last_model_md5) return;
 	last_model_md5 = new_model_md5;
 
 	if (model) {
