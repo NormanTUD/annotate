@@ -221,6 +221,7 @@
 	let webcamModel = null;
 	let webcamLabels = [];
 	let capturedCount = 0;
+	let currentModelUuid = null;
 
 	const video = document.getElementById('webcam_video');
 	const overlayCanvas = document.getElementById('webcam_canvas');
@@ -332,7 +333,7 @@
 		}
 	};
 
-	// Load model for webcam
+	// Load model the same way main.js does - using tf.loadGraphModel with the URL directly
 	async function loadWebcamModel(modelUuid) {
 		document.getElementById('prediction_info').textContent = 'Loading model...';
 
@@ -344,7 +345,8 @@
 			webcamLabels = [];
 		}
 
-		const modelJsonUrl = "get_model_file.php?uuid=" + encodeURIComponent(modelUuid) + "&filename=model.json";
+		// Use the same URL format as main.js
+		const modelJsonUrl = "get_model_file.php?&uuid=" + encodeURIComponent(modelUuid) + "&filename=model.json";
 
 		try {
 			await tf.ready();
@@ -353,102 +355,17 @@
 				webcamModel = null;
 			}
 
-			// Fetch model.json first to inspect and validate
-			const modelJsonResp = await fetch(modelJsonUrl);
-			if (!modelJsonResp.ok) {
-				throw new Error("Failed to fetch model.json: HTTP " + modelJsonResp.status);
-			}
-			const modelJson = await modelJsonResp.json();
+			console.log("Webcam: Loading model from:", modelJsonUrl);
 
-			// Determine if it's a graph model or layers model
-			const isGraphModel = modelJson.modelTopology && modelJson.modelTopology.node;
-
-			// Calculate expected total weight size from the manifest
-			function calcExpectedBytes(weightSpecs) {
-				let total = 0;
-				const dtypeSizes = { 'float32': 4, 'int32': 4, 'float16': 2, 'bool': 1 };
-				for (const spec of weightSpecs) {
-					const elSize = dtypeSizes[spec.dtype] || 4;
-					const numElements = spec.shape.reduce((a, b) => a * b, 1);
-					total += numElements * elSize;
+			// Load exactly like main.js does - let TFJS handle weight file resolution
+			webcamModel = await tf.loadGraphModel(modelJsonUrl, {
+				onProgress: (p) => {
+					const percent = (p * 100).toFixed(0);
+					document.getElementById('prediction_info').textContent = 'Loading model... ' + percent + '%';
 				}
-				return total;
-			}
+			});
 
-			// Custom IOHandler that validates weight data
-			const customIOHandler = {
-				load: async function() {
-					const weightsManifest = modelJson.weightsManifest;
-					const weightSpecs = [];
-					const weightDataArrays = [];
-
-					for (const group of weightsManifest) {
-						for (const spec of group.weights) {
-							weightSpecs.push(spec);
-						}
-						for (const path of group.paths) {
-							const weightUrl = "get_model_file.php?uuid=" + encodeURIComponent(modelUuid) + "&filename=" + encodeURIComponent(path);
-							const weightResp = await fetch(weightUrl);
-							if (!weightResp.ok) {
-								throw new Error("Failed to fetch weight file: " + path + " (HTTP " + weightResp.status + ")");
-							}
-
-							// Check content-type - if it's text/html, the server returned an error page
-							const contentType = weightResp.headers.get('content-type') || '';
-							if (contentType.includes('text/html') || contentType.includes('text/plain')) {
-								const text = await weightResp.text();
-								throw new Error("Weight file '" + path + "' returned text instead of binary data. Server response: " + text.substring(0, 200));
-							}
-
-							const buffer = await weightResp.arrayBuffer();
-
-							// Check if buffer is suspiciously small (likely an error response)
-							if (buffer.byteLength < 100) {
-								// Try to read as text to see if it's an error
-								const decoder = new TextDecoder();
-								const possibleError = decoder.decode(buffer);
-								if (possibleError.includes('Error') || possibleError.includes('<!') || possibleError.includes('<?')) {
-									throw new Error("Weight file '" + path + "' returned error (" + buffer.byteLength + " bytes): " + possibleError);
-								}
-							}
-
-							weightDataArrays.push(buffer);
-						}
-					}
-
-					// Concatenate all weight buffers
-					const totalLength = weightDataArrays.reduce((sum, buf) => sum + buf.byteLength, 0);
-					const expectedBytes = calcExpectedBytes(weightSpecs);
-
-					if (totalLength < expectedBytes) {
-						throw new Error("Weight data too small: got " + totalLength + " bytes but model expects " + expectedBytes + " bytes. Check that get_model_file.php correctly serves .bin files.");
-					}
-
-					const concatenated = new ArrayBuffer(totalLength);
-					const view = new Uint8Array(concatenated);
-					let offset = 0;
-					for (const buf of weightDataArrays) {
-						view.set(new Uint8Array(buf), offset);
-						offset += buf.byteLength;
-					}
-
-					return {
-						modelTopology: modelJson.modelTopology,
-						weightSpecs: weightSpecs,
-						weightData: concatenated,
-						format: modelJson.format,
-						generatedBy: modelJson.generatedBy,
-						convertedBy: modelJson.convertedBy
-					};
-				}
-			};
-
-			if (isGraphModel) {
-				webcamModel = await tf.loadGraphModel(customIOHandler);
-			} else {
-				webcamModel = await tf.loadLayersModel(customIOHandler);
-			}
-
+			currentModelUuid = modelUuid;
 			document.getElementById('prediction_info').textContent = 'Model loaded. Running predictions...';
 			return true;
 		} catch (e) {
@@ -471,8 +388,6 @@
 		let shape;
 		if (webcamModel.inputs && webcamModel.inputs[0]) {
 			shape = webcamModel.inputs[0].shape.slice(1, 3);
-		} else if (webcamModel.input && webcamModel.input.shape) {
-			shape = webcamModel.input.shape.slice(1, 3);
 		}
 
 		if (!shape || shape.length < 2 || !shape[0] || !shape[1]) {
@@ -492,11 +407,7 @@
 
 		let output;
 		try {
-			if (webcamModel.execute) {
-				output = await webcamModel.execute(inputTensor);
-			} else {
-				output = await webcamModel.predict(inputTensor);
-			}
+			output = await webcamModel.execute(inputTensor);
 		} catch (e) {
 			inputTensor.dispose();
 			console.error("Inference error:", e);
@@ -511,7 +422,7 @@
 			output.dispose();
 		} else if (Array.isArray(output)) {
 			res = output[0].arraySync();
-			output.forEach(t => t.dispose());
+			output.forEach(t => { if (t && t.dispose) t.dispose(); });
 		} else {
 			res = output;
 		}
@@ -734,7 +645,7 @@
 				statusEl.textContent = '\u2713 Uploaded';
 				statusEl.className = 'upload-status';
 
-				// Refresh the dynamic content (image list, etc.)
+				// Refresh the dynamic content (image list sidebar, home ribbon, etc.)
 				if (typeof load_dynamic_content === 'function') {
 					load_dynamic_content();
 				}
