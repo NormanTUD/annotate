@@ -1,7 +1,5 @@
 "use strict";
 
-// new
-
 var zoom_input;
 var zoom_factor = 1.0;
 var used_model = null;
@@ -152,7 +150,7 @@ var skipped_images = [];
 
 		'.ai-analyzing::before{' +
 		'content:"";' +
-		'position:absolute; inset:0;' +
+		'position:absolute; top:-2px; left:0; right:0; bottom:0;' +
 		'background:repeating-linear-gradient(0deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 2px,rgba(0,0,0,0) 4px);' +
 		'pointer-events:none;' +
 		'animation:noise 1.2s infinite;' +
@@ -161,7 +159,7 @@ var skipped_images = [];
 		'.ai-analyzing::after{' +
 		'content:"";' +
 		'position:absolute;' +
-		'top:0; left:0; width:150%; height:150%;' +
+		'top:-2px; left:0; width:150%; height:150%;' +
 		'background:linear-gradient(90deg,rgba(0,255,150,0) 0%,rgba(0,255,150,0.35) 50%,rgba(0,255,150,0) 100%);' +
 		'pointer-events:none;' +
 		'transform-origin:center;' +
