@@ -143,20 +143,28 @@
 		cursor: pointer;
 	}
 
-	.bbox-label {
+	.upload-status {
 		position: absolute;
-		background: rgba(0, 255, 100, 0.85);
-		color: #000;
+		top: 4px;
+		right: 4px;
+		background: rgba(0,0,0,0.7);
+		color: #a6e3a1;
 		font-size: 11px;
-		font-weight: bold;
-		padding: 1px 4px;
+		padding: 2px 6px;
 		border-radius: 3px;
-		pointer-events: none;
-		white-space: nowrap;
+		font-weight: bold;
+	}
+
+	.upload-status.error {
+		color: #f38ba8;
+	}
+
+	.upload-status.uploading {
+		color: #f9e2af;
 	}
 </style>
 
-<h1>📷 Live Webcam & Predictions</h1>
+<h1>&#128247; Live Webcam & Predictions</h1>
 
 <div class="webcam-controls">
 	<label>Camera:
@@ -185,10 +193,10 @@
 		<input type="number" id="webcam_fps" min="1" max="30" value="5" style="width: 50px;">
 	</label>
 
-	<button id="btn_start_webcam" onclick="startWebcam()">▶ Start Webcam</button>
-	<button id="btn_stop_webcam" onclick="stopWebcam()" style="display:none;">⏹ Stop</button>
-	<button id="btn_toggle_predict" onclick="togglePrediction()">🤖 Start Predictions</button>
-	<button id="btn_capture" onclick="captureFrame()">📸 Capture Frame</button>
+	<button id="btn_start_webcam" onclick="startWebcam()">&#9654; Start Webcam</button>
+	<button id="btn_stop_webcam" onclick="stopWebcam()" style="display:none;">&#9209; Stop</button>
+	<button id="btn_toggle_predict" onclick="togglePrediction()">&#129302; Start Predictions</button>
+	<button id="btn_capture" onclick="captureFrame()">&#128248; Capture & Upload</button>
 </div>
 
 <div id="webcam_container">
@@ -200,7 +208,7 @@
 <div id="prediction_info">Predictions will appear here...</div>
 
 <h3 style="margin-top: 20px;">Captured Frames</h3>
-<p style="color: #a6adc8; font-size: 12px;">Captured images can be uploaded for annotation.</p>
+<p style="color: #a6adc8; font-size: 12px;">Frames are automatically uploaded for annotation when captured.</p>
 <div id="captured_images"></div>
 
 <script>
@@ -223,7 +231,6 @@
 	// Enumerate cameras
 	async function enumerateCameras() {
 		try {
-			// Need to request permission first to get labels
 			const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
 			tempStream.getTracks().forEach(t => t.stop());
 
@@ -297,7 +304,7 @@
 				clearInterval(predictionLoop);
 				predictionLoop = null;
 			}
-			btn.textContent = '🤖 Start Predictions';
+			btn.innerHTML = '&#129302; Start Predictions';
 			btn.classList.remove('active');
 			overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 			document.getElementById('prediction_info').textContent = 'Predictions stopped.';
@@ -313,7 +320,7 @@
 			}
 
 			isPredicting = true;
-			btn.textContent = '⏹ Stop Predictions';
+			btn.innerHTML = '&#9209; Stop Predictions';
 			btn.classList.add('active');
 
 			loadWebcamModel(modelUuid).then(() => {
@@ -324,7 +331,7 @@
 		}
 	};
 
-	// Load model for webcam
+	// Load model for webcam - with fix for Float32Array error
 	async function loadWebcamModel(modelUuid) {
 		document.getElementById('prediction_info').textContent = 'Loading model...';
 
@@ -336,20 +343,93 @@
 			webcamLabels = [];
 		}
 
-		// Load TFJS model
 		const modelJsonUrl = "get_model_file.php?uuid=" + encodeURIComponent(modelUuid) + "&filename=model.json";
 
 		try {
 			await tf.ready();
 			if (webcamModel) {
 				webcamModel.dispose();
+				webcamModel = null;
 			}
-			webcamModel = await tf.loadGraphModel(modelJsonUrl);
+
+			// Fetch model.json first to check format and validate weight paths
+			const modelJsonResp = await fetch(modelJsonUrl);
+			if (!modelJsonResp.ok) {
+				throw new Error("Failed to fetch model.json: HTTP " + modelJsonResp.status);
+			}
+			const modelJson = await modelJsonResp.json();
+
+			// Determine if it's a graph model or layers model
+			const isGraphModel = modelJson.modelTopology && modelJson.modelTopology.node;
+
+			// Custom IOHandler to ensure binary weight files are fetched correctly
+			// This fixes the Float32Array "byte length should be a multiple of 4" error
+			// which occurs when weight .bin files are served with wrong content-type
+			// or get corrupted by text-mode transfer
+			const customIOHandler = {
+				load: async function() {
+					const weightsManifest = modelJson.weightsManifest;
+					const weightSpecs = [];
+					const weightDataArrays = [];
+
+					for (const group of weightsManifest) {
+						for (const spec of group.weights) {
+							weightSpecs.push(spec);
+						}
+						for (const path of group.paths) {
+							const weightUrl = "get_model_file.php?uuid=" + encodeURIComponent(modelUuid) + "&filename=" + encodeURIComponent(path);
+							const weightResp = await fetch(weightUrl);
+							if (!weightResp.ok) {
+								throw new Error("Failed to fetch weight file: " + path + " (HTTP " + weightResp.status + ")");
+							}
+							const buffer = await weightResp.arrayBuffer();
+
+							// Validate buffer length is multiple of 4
+							if (buffer.byteLength % 4 !== 0) {
+								console.warn("Weight file " + path + " has byte length " + buffer.byteLength + " (not multiple of 4). Padding...");
+								const paddedLength = Math.ceil(buffer.byteLength / 4) * 4;
+								const paddedBuffer = new ArrayBuffer(paddedLength);
+								new Uint8Array(paddedBuffer).set(new Uint8Array(buffer));
+								weightDataArrays.push(paddedBuffer);
+							} else {
+								weightDataArrays.push(buffer);
+							}
+						}
+					}
+
+					// Concatenate all weight buffers
+					const totalLength = weightDataArrays.reduce((sum, buf) => sum + buf.byteLength, 0);
+					const concatenated = new ArrayBuffer(totalLength);
+					const view = new Uint8Array(concatenated);
+					let offset = 0;
+					for (const buf of weightDataArrays) {
+						view.set(new Uint8Array(buf), offset);
+						offset += buf.byteLength;
+					}
+
+					return {
+						modelTopology: modelJson.modelTopology,
+						weightSpecs: weightSpecs,
+						weightData: concatenated,
+						format: modelJson.format,
+						generatedBy: modelJson.generatedBy,
+						convertedBy: modelJson.convertedBy
+					};
+				}
+			};
+
+			if (isGraphModel) {
+				webcamModel = await tf.loadGraphModel(customIOHandler);
+			} else {
+				webcamModel = await tf.loadLayersModel(customIOHandler);
+			}
+
 			document.getElementById('prediction_info').textContent = 'Model loaded. Running predictions...';
 		} catch (e) {
+			console.error("Model loading error:", e);
 			document.getElementById('prediction_info').textContent = 'Error loading model: ' + e.message;
 			isPredicting = false;
-			document.getElementById('btn_toggle_predict').textContent = '🤖 Start Predictions';
+			document.getElementById('btn_toggle_predict').innerHTML = '&#129302; Start Predictions';
 			document.getElementById('btn_toggle_predict').classList.remove('active');
 		}
 	}
@@ -360,8 +440,18 @@
 		if (video.readyState < 2) return;
 
 		const confThreshold = parseFloat(document.getElementById('webcam_conf_slider').value);
-		const shape = webcamModel.inputs[0].shape.slice(1, 3);
-		if (!shape || shape.length < 2) return;
+
+		let shape;
+		if (webcamModel.inputs && webcamModel.inputs[0]) {
+			shape = webcamModel.inputs[0].shape.slice(1, 3);
+		} else if (webcamModel.input && webcamModel.input.shape) {
+			shape = webcamModel.input.shape.slice(1, 3);
+		}
+
+		if (!shape || shape.length < 2 || !shape[0] || !shape[1]) {
+			// Fallback to 640x640
+			shape = [640, 640];
+		}
 
 		const [modelHeight, modelWidth] = shape;
 
@@ -377,20 +467,33 @@
 
 		let output;
 		try {
-			output = await webcamModel.execute(inputTensor);
-		} finally {
+			if (webcamModel.execute) {
+				output = await webcamModel.execute(inputTensor);
+			} else {
+				output = await webcamModel.predict(inputTensor);
+			}
+		} catch (e) {
 			inputTensor.dispose();
+			console.error("Inference error:", e);
+			return;
 		}
 
-		const res = output instanceof tf.Tensor ? output.arraySync() : output;
-		if (output instanceof tf.Tensor) output.dispose();
+		inputTensor.dispose();
 
-		// Process output (same logic as main.js)
+		let res;
+		if (output instanceof tf.Tensor) {
+			res = output.arraySync();
+			output.dispose();
+		} else if (Array.isArray(output)) {
+			res = output[0].arraySync();
+			output.forEach(t => t.dispose());
+		} else {
+			res = output;
+		}
+
 		const detections = processWebcamOutput(res, modelWidth, modelHeight, confThreshold);
-
 		const elapsed = (performance.now() - startTime).toFixed(1);
 
-		// Draw bounding boxes
 		drawDetections(detections, elapsed);
 	}
 
@@ -407,7 +510,9 @@
 		let candidates = shape[2];
 
 		if (features > candidates) {
-			rawTensor = rawTensor.transpose([0, 2, 1]);
+			let transposed = rawTensor.transpose([0, 2, 1]);
+			rawTensor.dispose();
+			rawTensor = transposed;
 			[features, candidates] = [candidates, features];
 		}
 
@@ -422,22 +527,26 @@
 		const boxes = rawBoxes.squeeze();
 		const scoresSqueezed = scores.squeeze();
 
-		// Decode boxes
 		const boxesArr = boxes.arraySync();
 		const scoresArr = scoresSqueezed.arraySync();
 
 		const detections = [];
 
 		for (let i = 0; i < boxesArr.length; i++) {
-			const classScores = scoresArr[i];
+			const classScores = numClasses === 1 ? [scoresArr[i]] : scoresArr[i];
 			let bestScore = 0;
 			let bestClass = -1;
 
-			for (let c = 0; c < classScores.length; c++) {
-				if (classScores[c] > bestScore) {
-					bestScore = classScores[c];
-					bestClass = c;
+			if (Array.isArray(classScores)) {
+				for (let c = 0; c < classScores.length; c++) {
+					if (classScores[c] > bestScore) {
+						bestScore = classScores[c];
+						bestClass = c;
+					}
 				}
+			} else {
+				bestScore = classScores;
+				bestClass = 0;
 			}
 
 			if (bestScore < confThreshold) continue;
@@ -470,7 +579,6 @@
 			});
 		}
 
-		// Simple NMS
 		const nmsDetections = simpleNMS(detections, 0.5);
 
 		rawTensor.dispose();
@@ -523,12 +631,10 @@
 			const bw = (det.xMax - det.xMin) * w;
 			const bh = (det.yMax - det.yMin) * h;
 
-			// Draw box
 			overlayCtx.strokeStyle = '#00ff88';
 			overlayCtx.lineWidth = 2;
 			overlayCtx.strokeRect(x, y, bw, bh);
 
-			// Draw label background
 			const text = `${det.label} ${(det.score * 100).toFixed(0)}%`;
 			overlayCtx.font = 'bold 13px monospace';
 			const textWidth = overlayCtx.measureText(text).width;
@@ -536,18 +642,16 @@
 			overlayCtx.fillStyle = 'rgba(0, 255, 100, 0.85)';
 			overlayCtx.fillRect(x, y - 18, textWidth + 6, 18);
 
-			// Draw label text
 			overlayCtx.fillStyle = '#000';
 			overlayCtx.fillText(text, x + 3, y - 4);
 		}
 
-		// Update info
 		const infoText = `Detections: ${detections.length} | Inference: ${elapsed}ms | ` +
 			detections.map(d => `${d.label}(${(d.score*100).toFixed(0)}%)`).join(', ');
 		document.getElementById('prediction_info').textContent = infoText;
 	}
 
-	// Capture frame
+	// Capture frame and auto-upload
 	window.captureFrame = function() {
 		if (!webcamStream || video.readyState < 2) {
 			alert("Webcam is not running.");
@@ -570,31 +674,22 @@
 			thumb.className = 'captured-thumb';
 			thumb.innerHTML = `
 				<img src="${url}" alt="${filename}">
+				<span class="upload-status uploading">Uploading...</span>
 				<div class="thumb-actions">
-					<button onclick="uploadCaptured(this, '${filename}')" style="background:#a6e3a1; color:#1e1e2e;">⬆ Upload</button>
-					<button onclick="this.closest('.captured-thumb').remove()" style="background:#f38ba8; color:#1e1e2e;">✕</button>
+					<button onclick="this.closest('.captured-thumb').remove()" style="background:#f38ba8; color:#1e1e2e;">&#10005;</button>
 				</div>
 			`;
-			thumb.dataset.blob = '';
-			thumb._blob = blob;
-			thumb._filename = filename;
 			container.prepend(thumb);
+
+			// Auto-upload immediately
+			autoUpload(thumb, blob, filename);
 
 		}, 'image/jpeg', 0.92);
 	};
 
-	// Upload captured frame to annotation system
-	window.uploadCaptured = async function(btn, filename) {
-		const thumb = btn.closest('.captured-thumb');
-		const blob = thumb._blob;
-
-		if (!blob) {
-			alert("No image data found.");
-			return;
-		}
-
-		btn.disabled = true;
-		btn.textContent = '⏳...';
+	// Auto upload function
+	async function autoUpload(thumb, blob, filename) {
+		const statusEl = thumb.querySelector('.upload-status');
 
 		const formData = new FormData();
 		formData.append('image', blob, filename);
@@ -607,25 +702,19 @@
 			const result = await response.text();
 
 			if (result.includes("Error:")) {
-				alert("Upload failed: " + result);
-				btn.disabled = false;
-				btn.textContent = '⬆ Upload';
+				statusEl.textContent = 'Upload failed';
+				statusEl.className = 'upload-status error';
+				console.error("Upload failed:", result);
 			} else {
-				btn.textContent = '✓ Done';
-				btn.style.background = '#585b70';
-				thumb.style.opacity = '0.6';
-
-				// Optionally open in annotation tab
-				if (confirm(`Image "${filename}" uploaded. Open for annotation?`)) {
-					window.open('index.php?edit=' + encodeURIComponent(filename), '_blank');
-				}
+				statusEl.textContent = '✓ Uploaded';
+				statusEl.className = 'upload-status';
 			}
 		} catch (err) {
-			alert("Upload error: " + err.message);
-			btn.disabled = false;
-			btn.textContent = '⬆ Upload';
+			statusEl.textContent = 'Error';
+			statusEl.className = 'upload-status error';
+			console.error("Upload error:", err.message);
 		}
-	};
+	}
 
 	// Confidence slider display
 	document.getElementById('webcam_conf_slider').addEventListener('input', function() {
