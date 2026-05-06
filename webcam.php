@@ -275,25 +275,26 @@
 	const captureCanvas = document.getElementById('capture_canvas');
 	const captureCtx = captureCanvas.getContext('2d');
 
-	// ─── Toast notification (replaces alerts) ───────────────────────────
-	function showToast(message, type, duration) {
-		type = type || 'info';
-		duration = duration || 3000;
-		const toast = document.getElementById('webcam_toast');
-		if (!toast) return;
+	// ─── Toast notification ─────────────────────────────────────────────
+	function clearToastTimeout() {
+		if (toastTimeout) clearTimeout(toastTimeout);
+		toastTimeout = null;
+	}
 
-		if (toastTimeout) {
-			clearTimeout(toastTimeout);
-			toastTimeout = null;
-		}
-
-		toast.textContent = message;
-		toast.className = 'visible ' + type;
-
+	function scheduleToastHide(toast, duration) {
 		toastTimeout = setTimeout(function() {
 			toast.className = '';
 			toastTimeout = null;
 		}, duration);
+	}
+
+	function showToast(message, type, duration) {
+		const toast = document.getElementById('webcam_toast');
+		if (!toast) return;
+		clearToastTimeout();
+		toast.textContent = message;
+		toast.className = 'visible ' + (type || 'info');
+		scheduleToastHide(toast, duration || 3000);
 	}
 
 	// ─── Button state helpers ───────────────────────────────────────────
@@ -301,16 +302,21 @@
 		const btn = document.getElementById(btnId);
 		if (!btn) return;
 		btn.disabled = loading;
-		if (loading && loadingText) {
-			btn.dataset.originalText = btn.innerHTML;
-			btn.innerHTML = loadingText;
-		} else if (!loading && btn.dataset.originalText) {
-			btn.innerHTML = btn.dataset.originalText;
-			delete btn.dataset.originalText;
-		}
+		if (loading && loadingText) saveAndSetBtnText(btn, loadingText);
+		else if (!loading && btn.dataset.originalText) restoreBtnText(btn);
 	}
 
-	// ─── Check if webcam is active and video is ready ───────────────────
+	function saveAndSetBtnText(btn, text) {
+		btn.dataset.originalText = btn.innerHTML;
+		btn.innerHTML = text;
+	}
+
+	function restoreBtnText(btn) {
+		btn.innerHTML = btn.dataset.originalText;
+		delete btn.dataset.originalText;
+	}
+
+	// ─── Webcam state checks ────────────────────────────────────────────
 	function isWebcamReady() {
 		return webcamStream !== null && video.srcObject !== null && video.readyState >= 2;
 	}
@@ -320,913 +326,640 @@
 	}
 
 	// ─── Enumerate cameras ──────────────────────────────────────────────
+	async function requestTempCameraAccess() {
+		const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+		if (tempStream) tempStream.getTracks().forEach(function(t) { t.stop(); });
+	}
+
+	function populateCameraSelect(select, videoDevices) {
+		select.innerHTML = '';
+		videoDevices.forEach(function(device, idx) {
+			const option = document.createElement('option');
+			option.value = device.deviceId;
+			option.textContent = device.label || ('Camera ' + (idx + 1));
+			select.appendChild(option);
+		});
+	}
+
+	function setCameraSelectError(select, msg) {
+		select.innerHTML = '<option value="">' + msg + '</option>';
+	}
+
 	async function enumerateCameras() {
 		const select = document.getElementById('camera_select');
 		try {
-			// Request temporary access to get labels
-			let tempStream = null;
-			try {
-				tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-			} catch (permErr) {
-				// User denied or no camera — handle gracefully
-				select.innerHTML = '<option value="">No camera access</option>';
-				showToast("Camera permission denied. Please allow camera access.", "error", 5000);
-				return;
-			}
-
-			if (tempStream) {
-				tempStream.getTracks().forEach(function(t) { t.stop(); });
-			}
-
+			await requestTempCameraAccess();
+		} catch (permErr) {
+			setCameraSelectError(select, 'No camera access');
+			showToast("Camera permission denied. Please allow camera access.", "error", 5000);
+			return;
+		}
+		try {
 			const devices = await navigator.mediaDevices.enumerateDevices();
 			const videoDevices = devices.filter(function(d) { return d.kind === 'videoinput'; });
-			select.innerHTML = '';
-
-			if (videoDevices.length === 0) {
-				select.innerHTML = '<option value="">No cameras found</option>';
-				showToast("No cameras detected on this device.", "error", 4000);
-				return;
-			}
-
-			videoDevices.forEach(function(device, idx) {
-				const option = document.createElement('option');
-				option.value = device.deviceId;
-				option.textContent = device.label || ('Camera ' + (idx + 1));
-				select.appendChild(option);
-			});
+			if (videoDevices.length === 0) return setCameraSelectError(select, 'No cameras found');
+			populateCameraSelect(select, videoDevices);
 		} catch (err) {
-			console.error("Cannot enumerate cameras:", err);
-			select.innerHTML = '<option value="">Camera error</option>';
+			setCameraSelectError(select, 'Camera error');
 			showToast("Could not detect cameras: " + (err.message || "Unknown error"), "error", 5000);
 		}
 	}
 
 	enumerateCameras();
 
-	// ─── Start webcam (returns a promise so other functions can await it) ─
-	window.startWebcam = async function() {
-		// Prevent double-start
-		if (isStartingWebcam) return true;
-		if (isWebcamActive()) return true;
+	// ─── Start webcam helpers ───────────────────────────────────────────
+	function getWebcamConstraints() {
+		const deviceId = document.getElementById('camera_select').value;
+		return { video: deviceId ? { deviceId: { exact: deviceId } } : true, audio: false };
+	}
 
-		isStartingWebcam = true;
+	function waitForMetadata() {
+		return new Promise(function(resolve) {
+			let resolved = false;
+			video.onloadedmetadata = function() { if (!resolved) { resolved = true; resolve(); } };
+			setTimeout(function() { if (!resolved) { resolved = true; resolve(); } }, 5000);
+		});
+	}
+
+	function waitForCanPlay() {
+		return new Promise(function(resolve) {
+			if (video.readyState >= 2) return resolve();
+			video.oncanplay = function() { resolve(); };
+			setTimeout(resolve, 2000);
+		});
+	}
+
+	function syncOverlaySize() {
+		if (video.videoWidth <= 0 || video.videoHeight <= 0) return;
+		overlayCanvas.width = video.videoWidth;
+		overlayCanvas.height = video.videoHeight;
+		overlayCanvas.style.width = video.clientWidth + 'px';
+		overlayCanvas.style.height = video.clientHeight + 'px';
+	}
+
+	function showWebcamRunningUI() {
+		document.getElementById('btn_start_webcam').style.display = 'none';
+		document.getElementById('btn_stop_webcam').style.display = '';
+		showToast("Webcam started", "success", 2000);
+	}
+
+	function unlockWebcamButtons() {
+		isStartingWebcam = false;
+		setButtonLoading('btn_start_webcam', false);
+		setButtonLoading('btn_toggle_predict', false);
+		setButtonLoading('btn_capture', false);
+	}
+
+	function lockWebcamButtons() {
 		setButtonLoading('btn_start_webcam', true, '&#9654; Starting...');
 		setButtonLoading('btn_toggle_predict', true);
 		setButtonLoading('btn_capture', true);
+	}
 
-		const deviceId = document.getElementById('camera_select').value;
+	function getWebcamErrorMessage(err) {
+		if (err.name === 'NotAllowedError') return "Camera permission was denied.";
+		if (err.name === 'NotFoundError') return "No camera found.";
+		if (err.name === 'NotReadableError') return "Camera is in use by another application.";
+		return "Could not access webcam." + (err.message ? " " + err.message : "");
+	}
 
-		if (!deviceId && document.getElementById('camera_select').options.length > 0) {
-			// No device selected but options exist — just use default
-		}
-
-		const constraints = {
-			video: deviceId ? { deviceId: { exact: deviceId } } : true,
-			audio: false
-		};
-
+	window.startWebcam = async function() {
+		if (isStartingWebcam || isWebcamActive()) return true;
+		isStartingWebcam = true;
+		lockWebcamButtons();
 		try {
-			webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+			webcamStream = await navigator.mediaDevices.getUserMedia(getWebcamConstraints());
 			video.srcObject = webcamStream;
-
-			// Wait for video to actually be ready
-			await new Promise(function(resolve, reject) {
-				let resolved = false;
-
-				video.onloadedmetadata = function() {
-					if (!resolved) {
-						resolved = true;
-						resolve();
-					}
-				};
-
-				// Timeout safety — if metadata never fires
-				setTimeout(function() {
-					if (!resolved) {
-						resolved = true;
-						resolve(); // resolve anyway, we'll check readyState later
-					}
-				}, 5000);
-			});
-
-			// Wait a tiny bit more for readyState to settle
-			await new Promise(function(resolve) {
-				if (video.readyState >= 2) {
-					resolve();
-					return;
-				}
-				video.oncanplay = function() { resolve(); };
-				setTimeout(resolve, 2000); // safety timeout
-			});
-
-			// Set overlay canvas dimensions
-			if (video.videoWidth > 0 && video.videoHeight > 0) {
-				overlayCanvas.width = video.videoWidth;
-				overlayCanvas.height = video.videoHeight;
-				overlayCanvas.style.width = video.clientWidth + 'px';
-				overlayCanvas.style.height = video.clientHeight + 'px';
-			}
-
-			document.getElementById('btn_start_webcam').style.display = 'none';
-			document.getElementById('btn_stop_webcam').style.display = '';
-			showToast("Webcam started", "success", 2000);
-
-			isStartingWebcam = false;
-			setButtonLoading('btn_start_webcam', false);
-			setButtonLoading('btn_toggle_predict', false);
-			setButtonLoading('btn_capture', false);
+			await waitForMetadata();
+			await waitForCanPlay();
+			syncOverlaySize();
+			showWebcamRunningUI();
+			unlockWebcamButtons();
 			return true;
-
 		} catch (err) {
-			console.error("Webcam start error:", err);
 			webcamStream = null;
 			video.srcObject = null;
-
-			let msg = "Could not access webcam.";
-			if (err.name === 'NotAllowedError') {
-				msg = "Camera permission was denied. Please allow access in your browser settings.";
-			} else if (err.name === 'NotFoundError') {
-				msg = "No camera found. Please connect a camera and try again.";
-			} else if (err.name === 'NotReadableError') {
-				msg = "Camera is in use by another application.";
-			} else if (err.message) {
-				msg += " " + err.message;
-			}
-
-			showToast(msg, "error", 6000);
-
-			isStartingWebcam = false;
-			setButtonLoading('btn_start_webcam', false);
-			setButtonLoading('btn_toggle_predict', false);
-			setButtonLoading('btn_capture', false);
+			showToast(getWebcamErrorMessage(err), "error", 6000);
+			unlockWebcamButtons();
 			return false;
 		}
 	};
 
 	// ─── Stop webcam ────────────────────────────────────────────────────
-	window.stopWebcam = function() {
-		// Stop predictions first if running
-		if (isPredicting) {
-			stopPredictionLoop();
-		}
+	function stopStreamTracks() {
+		if (!webcamStream) return;
+		try { webcamStream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
+		webcamStream = null;
+	}
 
-		if (webcamStream) {
-			try {
-				webcamStream.getTracks().forEach(function(t) { t.stop(); });
-			} catch (e) {
-				console.warn("Error stopping tracks:", e);
-			}
-			webcamStream = null;
-		}
+	function clearOverlay() {
+		try { overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height); } catch (e) {}
+	}
 
-		video.srcObject = null;
-
-		try {
-			overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-		} catch (e) { /* ignore */ }
-
+	function showWebcamStoppedUI() {
 		document.getElementById('btn_start_webcam').style.display = '';
 		document.getElementById('btn_stop_webcam').style.display = 'none';
 		document.getElementById('prediction_info').textContent = 'Webcam stopped.';
 		showToast("Webcam stopped", "info", 2000);
+	}
+
+	window.stopWebcam = function() {
+		if (isPredicting) stopPredictionLoop();
+		stopStreamTracks();
+		video.srcObject = null;
+		clearOverlay();
+		showWebcamStoppedUI();
 	};
 
-	// ─── Internal: stop prediction loop cleanly ─────────────────────────
-	function stopPredictionLoop() {
-		isPredicting = false;
-		if (predictionLoop) {
-			clearInterval(predictionLoop);
-			predictionLoop = null;
-		}
+	// ─── Stop prediction loop ───────────────────────────────────────────
+	function clearPredictionInterval() {
+		if (predictionLoop) clearInterval(predictionLoop);
+		predictionLoop = null;
+	}
+
+	function resetPredictButton() {
 		const btn = document.getElementById('btn_toggle_predict');
 		btn.innerHTML = '&#129302; Start Predictions';
 		btn.classList.remove('active');
+	}
 
-		try {
-			overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-		} catch (e) { /* ignore */ }
-
+	function stopPredictionLoop() {
+		isPredicting = false;
+		clearPredictionInterval();
+		resetPredictButton();
+		clearOverlay();
 		document.getElementById('prediction_info').textContent = 'Predictions stopped.';
 	}
 
-	// ─── Toggle prediction loop ─────────────────────────────────────────
-	window.togglePrediction = async function() {
+	// ─── Toggle prediction ──────────────────────────────────────────────
+	function getSelectedModelUuid() {
+		return document.getElementById('webcam_model_select').value;
+	}
+
+	function getPredictionFps() {
+		return Math.max(1, Math.min(30, parseInt(document.getElementById('webcam_fps').value) || 5));
+	}
+
+	function startPredictionInterval() {
+		const fps = getPredictionFps();
+		predictionLoop = setInterval(runWebcamPrediction, Math.round(1000 / fps));
+		showToast("Predictions running at " + fps + " FPS", "success", 2500);
+	}
+
+	function activatePredictButton() {
 		const btn = document.getElementById('btn_toggle_predict');
-
-		// If currently predicting, just stop
-		if (isPredicting) {
-			stopPredictionLoop();
-			showToast("Predictions stopped", "info", 2000);
-			return;
-		}
-
-		// ── Starting predictions ──
-
-		// Check model selection first (fast check, no async needed)
-		const modelUuid = document.getElementById('webcam_model_select').value;
-		if (modelUuid === 'none') {
-			showToast("Please select a model before starting predictions.", "error", 4000);
-			return;
-		}
-
-		// Disable button while we set things up
-		setButtonLoading('btn_toggle_predict', true, '&#129302; Starting...');
-
-		// If webcam is not running, start it automatically
-		if (!isWebcamActive()) {
-			showToast("Starting webcam...", "info", 2000);
-			const webcamOk = await startWebcam();
-			if (!webcamOk) {
-				setButtonLoading('btn_toggle_predict', false);
-				btn.innerHTML = '&#129302; Start Predictions';
-				showToast("Cannot start predictions — webcam failed to start.", "error", 4000);
-				return;
-			}
-		}
-
-		// Double-check webcam is actually streaming
-		if (!webcamStream || !video.srcObject) {
-			setButtonLoading('btn_toggle_predict', false);
-			btn.innerHTML = '&#129302; Start Predictions';
-			showToast("Webcam is not available. Please try starting it manually.", "error", 4000);
-			return;
-		}
-
-		// Wait for video readyState if needed (up to 3 seconds)
-		if (video.readyState < 2) {
-			document.getElementById('prediction_info').textContent = 'Waiting for webcam feed...';
-			const ready = await waitForVideoReady(3000);
-			if (!ready) {
-				setButtonLoading('btn_toggle_predict', false);
-				btn.innerHTML = '&#129302; Start Predictions';
-				showToast("Webcam feed not ready. Please try again.", "error", 4000);
-				return;
-			}
-		}
-
-		// Load model (or reuse if same model already loaded)
-		const modelOk = await loadWebcamModel(modelUuid);
-		if (!modelOk) {
-			setButtonLoading('btn_toggle_predict', false);
-			btn.innerHTML = '&#129302; Start Predictions';
-			return; // Error toast already shown in loadWebcamModel
-		}
-
-		// Everything ready — start the loop
 		isPredicting = true;
 		btn.innerHTML = '&#9209; Stop Predictions';
 		btn.classList.add('active');
 		setButtonLoading('btn_toggle_predict', false);
+	}
 
-		const fps = Math.max(1, Math.min(30, parseInt(document.getElementById('webcam_fps').value) || 5));
-		const interval = Math.round(1000 / fps);
-		predictionLoop = setInterval(runWebcamPrediction, interval);
+	async function ensureWebcamForPrediction() {
+		if (isWebcamActive()) return true;
+		showToast("Starting webcam...", "info", 2000);
+		return await startWebcam();
+	}
 
-		showToast("Predictions running at " + fps + " FPS", "success", 2500);
+	async function ensureVideoReady() {
+		if (video.readyState >= 2) return true;
+		document.getElementById('prediction_info').textContent = 'Waiting for webcam feed...';
+		return await waitForVideoReady(3000);
+	}
+
+	window.togglePrediction = async function() {
+		if (isPredicting) { stopPredictionLoop(); showToast("Predictions stopped", "info", 2000); return; }
+		const modelUuid = getSelectedModelUuid();
+		if (modelUuid === 'none') { showToast("Please select a model.", "error", 4000); return; }
+		setButtonLoading('btn_toggle_predict', true, '&#129302; Starting...');
+		if (!await ensureWebcamForPrediction() || !webcamStream || !video.srcObject) { setButtonLoading('btn_toggle_predict', false); resetPredictButton(); return; }
+		if (!await ensureVideoReady() || !await loadWebcamModel(modelUuid)) { setButtonLoading('btn_toggle_predict', false); resetPredictButton(); return; }
+		activatePredictButton();
+		startPredictionInterval();
 	};
 
-	// ─── Helper: wait for video to be ready ─────────────────────────────
+	// ─── Wait for video ready ───────────────────────────────────────────
 	function waitForVideoReady(timeoutMs) {
 		return new Promise(function(resolve) {
-			if (video.readyState >= 2) {
-				resolve(true);
-				return;
-			}
-
+			if (video.readyState >= 2) return resolve(true);
 			let resolved = false;
-
-			function onReady() {
-				if (!resolved) {
-					resolved = true;
-					video.removeEventListener('canplay', onReady);
-					resolve(true);
-				}
-			}
-
+			const onReady = function() { if (!resolved) { resolved = true; resolve(true); } };
 			video.addEventListener('canplay', onReady);
-
-			setTimeout(function() {
-				if (!resolved) {
-					resolved = true;
-					video.removeEventListener('canplay', onReady);
-					resolve(video.readyState >= 2);
-				}
-			}, timeoutMs || 3000);
+			setTimeout(function() { if (!resolved) { resolved = true; resolve(video.readyState >= 2); } }, timeoutMs || 3000);
 		});
 	}
 
-	// ─── Load model ─────────────────────────────────────────────────────
-	async function loadWebcamModel(modelUuid) {
-		// If same model already loaded, skip
-		if (webcamModel && currentModelUuid === modelUuid) {
-			document.getElementById('prediction_info').textContent = 'Model ready. Running predictions...';
-			return true;
-		}
-
-		if (isLoadingModel) {
-			showToast("Model is already loading, please wait...", "info", 2000);
-			return false;
-		}
-
-		isLoadingModel = true;
-		document.getElementById('prediction_info').textContent = 'Loading model...';
-
-		// Load labels
+	// ─── Load model helpers ─────────────────────────────────────────────
+	async function fetchLabels(modelUuid) {
 		try {
 			const resp = await fetch('labels.php?model_uuid=' + encodeURIComponent(modelUuid));
-			if (resp.ok) {
-				webcamLabels = await resp.json();
-			} else {
-				webcamLabels = [];
-				console.warn("Labels fetch returned status:", resp.status);
-			}
-		} catch (e) {
-			webcamLabels = [];
-			console.warn("Could not load labels:", e);
-		}
+			if (resp.ok) return await resp.json();
+		} catch (e) { console.warn("Could not load labels:", e); }
+		return [];
+	}
 
-		// Ensure labels is always an array
-		if (!Array.isArray(webcamLabels)) {
-			webcamLabels = [];
-		}
+	function getModelJsonUrl(modelUuid) {
+		return "get_model_file.php?&uuid=" + encodeURIComponent(modelUuid) + "&filename=model.json";
+	}
 
-		const modelJsonUrl = "get_model_file.php?&uuid=" + encodeURIComponent(modelUuid) + "&filename=model.json";
+	function disposeCurrentModel() {
+		if (webcamModel) try { webcamModel.dispose(); } catch (e) {}
+		webcamModel = null;
+		currentModelUuid = null;
+	}
 
+	function getModelLoadErrorMessage(e) {
+		if (!e.message) return "Failed to load model.";
+		if (e.message.includes("404")) return "Model file not found.";
+		if (e.message.includes("fetch")) return "Network error loading model.";
+		return "Model error: " + e.message.substring(0, 100);
+	}
+
+	async function loadWebcamModel(modelUuid) {
+		if (webcamModel && currentModelUuid === modelUuid) return true;
+		if (isLoadingModel) { showToast("Model is already loading...", "info", 2000); return false; }
+		isLoadingModel = true;
+		document.getElementById('prediction_info').textContent = 'Loading model...';
+		webcamLabels = await fetchLabels(modelUuid);
+		if (!Array.isArray(webcamLabels)) webcamLabels = [];
 		try {
-			// Check if TensorFlow.js is available
-			if (typeof tf === 'undefined') {
-				throw new Error("TensorFlow.js is not loaded. Please refresh the page.");
-			}
-
+			if (typeof tf === 'undefined') throw new Error("TensorFlow.js is not loaded.");
 			await tf.ready();
-
-			// Dispose old model if exists
-			if (webcamModel) {
-				try {
-					webcamModel.dispose();
-				} catch (e) {
-					console.warn("Error disposing old model:", e);
-				}
-				webcamModel = null;
-				currentModelUuid = null;
-			}
-
-			webcamModel = await tf.loadGraphModel(modelJsonUrl, {
-				onProgress: function(p) {
-					const percent = (p * 100).toFixed(0);
-					document.getElementById('prediction_info').textContent = 'Loading model... ' + percent + '%';
-				}
-			});
-
+			disposeCurrentModel();
+			webcamModel = await tf.loadGraphModel(getModelJsonUrl(modelUuid), { onProgress: function(p) { document.getElementById('prediction_info').textContent = 'Loading model... ' + (p * 100).toFixed(0) + '%'; } });
 			currentModelUuid = modelUuid;
 			document.getElementById('prediction_info').textContent = 'Model loaded. Running predictions...';
 			isLoadingModel = false;
 			return true;
-
 		} catch (e) {
-			console.error("Model loading error:", e);
 			document.getElementById('prediction_info').textContent = 'Error loading model.';
-			webcamModel = null;
-			currentModelUuid = null;
+			disposeCurrentModel();
 			isLoadingModel = false;
-
-			let msg = "Failed to load model.";
-			if (e.message) {
-				if (e.message.includes("404") || e.message.includes("not found")) {
-					msg = "Model file not found. Please check that the model is exported.";
-				} else if (e.message.includes("fetch")) {
-					msg = "Network error loading model. Please check your connection.";
-				} else {
-					msg = "Model error: " + e.message.substring(0, 100);
-				}
-			}
-			showToast(msg, "error", 6000);
+			showToast(getModelLoadErrorMessage(e), "error", 6000);
 			return false;
 		}
 	}
 
-	// ─── Run single prediction frame ────────────────────────────────────
-	async function runWebcamPrediction() {
-		// Guard: bail out if state is invalid
-		if (!isPredicting) return;
-		if (!webcamModel) return;
-		if (!webcamStream) return;
-		if (video.readyState < 2) return;
-
-		const confThreshold = parseFloat(document.getElementById('webcam_conf_slider').value) || 0.3;
-
-		let shape;
-		try {
-			if (webcamModel.inputs && webcamModel.inputs[0] && webcamModel.inputs[0].shape) {
-				shape = webcamModel.inputs[0].shape.slice(1, 3);
-			}
-		} catch (e) {
-			shape = null;
-		}
-
-		if (!shape || shape.length < 2 || !shape[0] || !shape[1]) {
-			shape = [640, 640];
-		}
-
-		const modelHeight = shape[0];
-		const modelWidth = shape[1];
-
-		const startTime = performance.now();
-
-		let inputTensor = null;
-		let output = null;
-
-		try {
-			inputTensor = tf.tidy(function() {
-				return tf.browser.fromPixels(video)
-					.resizeBilinear([modelHeight, modelWidth])
-					.div(255)
-					.expandDims();
-			});
-		} catch (e) {
-			console.error("Frame capture error:", e);
-			if (inputTensor) { try { inputTensor.dispose(); } catch(x){} }
-			return;
-		}
-
-		try {
-			output = await webcamModel.execute(inputTensor);
-		} catch (e) {
-			if (inputTensor) { try { inputTensor.dispose(); } catch(x){} }
-			console.error("Inference error:", e);
-			return;
-		}
-
-		if (inputTensor) { try { inputTensor.dispose(); } catch(x){} }
-
-		let res;
-		try {
-			if (output instanceof tf.Tensor) {
-				res = output.arraySync();
-				output.dispose();
-			} else if (Array.isArray(output)) {
-				res = output[0].arraySync();
-				output.forEach(function(t) { if (t && t.dispose) t.dispose(); });
-			} else {
-				res = output;
-			}
-		} catch (e) {
-			console.error("Output processing error:", e);
-			if (output) {
-				try {
-					if (output instanceof tf.Tensor) output.dispose();
-					else if (Array.isArray(output)) output.forEach(function(t) { if (t && t.dispose) t.dispose(); });
-				} catch(x){}
-			}
-			return;
-		}
-
-		let detections = [];
-		try {
-			detections = processWebcamOutput(res, modelWidth, modelHeight, confThreshold);
-		} catch (e) {
-			console.error("Post-processing error:", e);
-			detections = [];
-		}
-
-		const elapsed = (performance.now() - startTime).toFixed(1);
-		drawDetections(detections, elapsed);
+	// ─── Run prediction frame helpers ───────────────────────────────────
+	function shouldSkipPrediction() {
+		return !isPredicting || !webcamModel || !webcamStream || video.readyState < 2;
 	}
 
-	// ─── Process model output ───────────────────────────────────────────
-	function processWebcamOutput(res, modelWidth, modelHeight, confThreshold) {
-		if (!res || !Array.isArray(res) || !Array.isArray(res[0]) || !Array.isArray(res[0][0])) {
-			return [];
-		}
-
-		let rawTensor = null;
-		let predTensor = null;
-		let rawBoxes = null;
-		let scores = null;
-		let boxes = null;
-		let scoresSqueezed = null;
-
+	function getModelInputShape() {
 		try {
-			rawTensor = tf.tensor3d(res);
+			if (webcamModel.inputs && webcamModel.inputs[0] && webcamModel.inputs[0].shape) return webcamModel.inputs[0].shape.slice(1, 3);
+		} catch (e) {}
+		return [640, 640];
+	}
 
-			let shape = rawTensor.shape;
-			let features = shape[1];
-			let candidates = shape[2];
+	function getConfThreshold() {
+		return parseFloat(document.getElementById('webcam_conf_slider').value) || 0.3;
+	}
 
-			if (features > candidates) {
-				let transposed = rawTensor.transpose([0, 2, 1]);
-				rawTensor.dispose();
-				rawTensor = transposed;
-				features = shape[2];
-				candidates = shape[1];
-			}
+	function createInputTensor(modelHeight, modelWidth) {
+		return tf.tidy(function() {
+			return tf.browser.fromPixels(video).resizeBilinear([modelHeight, modelWidth]).div(255).expandDims();
+		});
+	}
 
-			const numClasses = features - 4;
-			if (numClasses <= 0) {
-				rawTensor.dispose();
-				return [];
-			}
+	function disposeTensor(t) {
+		if (t) try { t.dispose(); } catch(x) {}
+	}
 
+	function extractOutputArray(output) {
+		if (output instanceof tf.Tensor) { const r = output.arraySync(); output.dispose(); return r; }
+		if (Array.isArray(output)) { const r = output[0].arraySync(); output.forEach(function(t) { disposeTensor(t); }); return r; }
+		return output;
+	}
+
+	async function runWebcamPrediction() {
+		if (shouldSkipPrediction()) return;
+		const shape = getModelInputShape();
+		const startTime = performance.now();
+		let inputTensor = null, output = null;
+		try { inputTensor = createInputTensor(shape[0], shape[1]); } catch (e) { disposeTensor(inputTensor); return; }
+		try { output = await webcamModel.execute(inputTensor); } catch (e) { disposeTensor(inputTensor); return; }
+		disposeTensor(inputTensor);
+		let res;
+		try { res = extractOutputArray(output); } catch (e) { return; }
+		const detections = safeProcessOutput(res, shape[1], shape[0], getConfThreshold());
+		drawDetections(detections, (performance.now() - startTime).toFixed(1));
+	}
+
+	function safeProcessOutput(res, modelWidth, modelHeight, confThreshold) {
+		try { return processWebcamOutput(res, modelWidth, modelHeight, confThreshold); }
+		catch (e) { return []; }
+	}
+
+	// ─── Process model output helpers ───────────────────────────────────
+	function isValidOutputShape(res) {
+		return res && Array.isArray(res) && Array.isArray(res[0]) && Array.isArray(res[0][0]);
+	}
+
+	function orientTensor(rawTensor) {
+		const shape = rawTensor.shape;
+		if (shape[1] <= shape[2]) return rawTensor;
+		const transposed = rawTensor.transpose([0, 2, 1]);
+		rawTensor.dispose();
+		return transposed;
+	}
+
+	function computeNormalizedBox(box, modelWidth, modelHeight) {
+		const cx = box[0], cy = box[1], w = box[2], h = box[3];
+		const isPixel = cx > 2.0 || cy > 2.0;
+		if (isPixel) return { xMin: (cx - w/2)/modelWidth, yMin: (cy - h/2)/modelHeight, xMax: (cx + w/2)/modelWidth, yMax: (cy + h/2)/modelHeight };
+		return { xMin: cx - w/2, yMin: cy - h/2, xMax: cx + w/2, yMax: cy + h/2 };
+	}
+
+	function findBestClass(classScores) {
+		if (!Array.isArray(classScores)) return { score: classScores, classIdx: 0 };
+		let bestScore = 0, bestClass = -1;
+		for (let c = 0; c < classScores.length; c++) { if (classScores[c] > bestScore) { bestScore = classScores[c]; bestClass = c; } }
+		return { score: bestScore, classIdx: bestClass };
+	}
+
+	function clampBox(box) {
+		return { xMin: Math.max(0, box.xMin), yMin: Math.max(0, box.yMin), xMax: Math.min(1, box.xMax), yMax: Math.min(1, box.yMax) };
+	}
+
+	function buildDetection(box, best, modelWidth, modelHeight) {
+		const coords = clampBox(computeNormalizedBox(box, modelWidth, modelHeight));
+		const label = (webcamLabels && webcamLabels[best.classIdx]) ? webcamLabels[best.classIdx] : ('class_' + best.classIdx);
+		return { xMin: coords.xMin, yMin: coords.yMin, xMax: coords.xMax, yMax: coords.yMax, score: best.score, label: label };
+	}
+
+	function extractDetections(boxesArr, scoresArr, numClasses, confThreshold, modelWidth, modelHeight) {
+		const detections = [];
+		for (let i = 0; i < boxesArr.length; i++) {
+			const classScores = numClasses === 1 ? [scoresArr[i]] : scoresArr[i];
+			const best = findBestClass(classScores);
+			if (best.score >= confThreshold) detections.push(buildDetection(boxesArr[i], best, modelWidth, modelHeight));
+		}
+		return detections;
+	}
+
+	function processWebcamOutput(res, modelWidth, modelHeight, confThreshold) {
+		if (!isValidOutputShape(res)) return [];
+		let rawTensor = null, predTensor = null, rawBoxes = null, scores = null, boxes = null, scoresSqueezed = null;
+		try {
+			rawTensor = orientTensor(tf.tensor3d(res));
+			const numClasses = rawTensor.shape[2] - 4;
+			if (numClasses <= 0) { rawTensor.dispose(); return []; }
 			predTensor = rawTensor.transpose([0, 2, 1]);
 			const splits = tf.split(predTensor, [4, numClasses], 2);
-			rawBoxes = splits[0];
-			scores = splits[1];
-			boxes = rawBoxes.squeeze();
-			scoresSqueezed = scores.squeeze();
-
-			const boxesArr = boxes.arraySync();
-			const scoresArr = scoresSqueezed.arraySync();
-
-			const detections = [];
-
-			for (let i = 0; i < boxesArr.length; i++) {
-				const classScores = numClasses === 1 ? [scoresArr[i]] : scoresArr[i];
-				let bestScore = 0;
-				let bestClass = -1;
-
-				if (Array.isArray(classScores)) {
-					for (let c = 0; c < classScores.length; c++) {
-						if (classScores[c] > bestScore) {
-							bestScore = classScores[c];
-							bestClass = c;
-						}
-					}
-				} else {
-					bestScore = classScores;
-					bestClass = 0;
-				}
-
-				if (bestScore < confThreshold) continue;
-
-				const cx = boxesArr[i][0];
-				const cy = boxesArr[i][1];
-				const w = boxesArr[i][2];
-				const h = boxesArr[i][3];
-				const isPixel = cx > 2.0 || cy > 2.0;
-
-				let xMin, yMin, xMax, yMax;
-				if (isPixel) {
-					xMin = (cx - w / 2) / modelWidth;
-					yMin = (cy - h / 2) / modelHeight;
-					xMax = (cx + w / 2) / modelWidth;
-					yMax = (cy + h / 2) / modelHeight;
-				} else {
-					xMin = cx - w / 2;
-					yMin = cy - h / 2;
-					xMax = cx + w / 2;
-					yMax = cy + h / 2;
-				}
-
-				const label = (webcamLabels && webcamLabels[bestClass]) ? webcamLabels[bestClass] : ('class_' + bestClass);
-
-				detections.push({
-					xMin: Math.max(0, xMin),
-					yMin: Math.max(0, yMin),
-					xMax: Math.min(1, xMax),
-					yMax: Math.min(1, yMax),
-					score: bestScore,
-					label: label
-				});
-			}
-
-			// Cleanup tensors
-			rawTensor.dispose();
-			predTensor.dispose();
-			rawBoxes.dispose();
-			scores.dispose();
-			boxes.dispose();
-			scoresSqueezed.dispose();
-
-			// Apply NMS
-			const nmsDetections = simpleNMS(detections, 0.5);
-			return nmsDetections;
-
+			rawBoxes = splits[0]; scores = splits[1];
+			boxes = rawBoxes.squeeze(); scoresSqueezed = scores.squeeze();
+			const detections = extractDetections(boxes.arraySync(), scoresSqueezed.arraySync(), numClasses, confThreshold, modelWidth, modelHeight);
+			[rawTensor, predTensor, rawBoxes, scores, boxes, scoresSqueezed].forEach(disposeTensor);
+			return simpleNMS(detections, 0.5);
 		} catch (e) {
-			console.error("processWebcamOutput error:", e);
-			// Cleanup any tensors that might still be alive
-			if (rawTensor) { try { rawTensor.dispose(); } catch(x){} }
-			if (predTensor) { try { predTensor.dispose(); } catch(x){} }
-			if (rawBoxes) { try { rawBoxes.dispose(); } catch(x){} }
-			if (scores) { try { scores.dispose(); } catch(x){} }
-			if (boxes) { try { boxes.dispose(); } catch(x){} }
-			if (scoresSqueezed) { try { scoresSqueezed.dispose(); } catch(x){} }
+			[rawTensor, predTensor, rawBoxes, scores, boxes, scoresSqueezed].forEach(disposeTensor);
 			return [];
 		}
 	}
 
-	// ─── Simple NMS ─────────────────────────────────────────────────────
+	// ─── NMS ────────────────────────────────────────────────────────────
+	function computeIoU(a, b) {
+		const x1 = Math.max(a.xMin, b.xMin), y1 = Math.max(a.yMin, b.yMin);
+		const x2 = Math.min(a.xMax, b.xMax), y2 = Math.min(a.yMax, b.yMax);
+		const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+		const union = (a.xMax - a.xMin) * (a.yMax - a.yMin) + (b.xMax - b.xMin) * (b.yMax - b.yMin) - inter;
+		return union <= 0 ? 0 : inter / union;
+	}
+
+	function isDominated(det, kept, iouThresh) {
+		for (let j = 0; j < kept.length; j++) { if (computeIoU(det, kept[j]) > iouThresh) return true; }
+		return false;
+	}
+
 	function simpleNMS(detections, iouThresh) {
 		if (!detections || detections.length === 0) return [];
-
 		detections.sort(function(a, b) { return b.score - a.score; });
 		const kept = [];
-
-		for (let i = 0; i < detections.length; i++) {
-			let dominated = false;
-			for (let j = 0; j < kept.length; j++) {
-				if (computeIoU(detections[i], kept[j]) > iouThresh) {
-					dominated = true;
-					break;
-				}
-			}
-			if (!dominated) kept.push(detections[i]);
-		}
+		for (let i = 0; i < detections.length; i++) { if (!isDominated(detections[i], kept, iouThresh)) kept.push(detections[i]); }
 		return kept;
 	}
-
-	function computeIoU(a, b) {
-		const x1 = Math.max(a.xMin, b.xMin);
-		const y1 = Math.max(a.yMin, b.yMin);
-		const x2 = Math.min(a.xMax, b.xMax);
-		const y2 = Math.min(a.yMax, b.yMax);
-		const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
-		const areaA = (a.xMax - a.xMin) * (a.yMax - a.yMin);
-		const areaB = (b.xMax - b.xMin) * (b.yMax - b.yMin);
-		const union = areaA + areaB - inter;
-		if (union <= 0) return 0;
-		return inter / union;
-	}
-
 	// ─── Draw detections on overlay canvas ──────────────────────────────
-	function drawDetections(detections, elapsed) {
-		const w = overlayCanvas.width;
-		const h = overlayCanvas.height;
-
-		try {
-			overlayCtx.clearRect(0, 0, w, h);
-		} catch (e) { return; }
-
-		if (!detections || detections.length === 0) {
-			document.getElementById('prediction_info').textContent =
-				'No detections | Inference: ' + elapsed + 'ms';
-			return;
-		}
-
-		for (let i = 0; i < detections.length; i++) {
-			var det = detections[i];
-			var x = det.xMin * w;
-			var y = det.yMin * h;
-			var bw = (det.xMax - det.xMin) * w;
-			var bh = (det.yMax - det.yMin) * h;
-
-			overlayCtx.strokeStyle = '#00ff88';
-			overlayCtx.lineWidth = 2;
-			overlayCtx.strokeRect(x, y, bw, bh);
-
-			var text = det.label + ' ' + (det.score * 100).toFixed(0) + '%';
-			overlayCtx.font = 'bold 13px monospace';
-			var textWidth = overlayCtx.measureText(text).width;
-
-			overlayCtx.fillStyle = 'rgba(0, 255, 100, 0.85)';
-			overlayCtx.fillRect(x, y - 18, textWidth + 6, 18);
-
-			overlayCtx.fillStyle = '#000';
-			overlayCtx.fillText(text, x + 3, y - 4);
-		}
-
-		var infoText = 'Detections: ' + detections.length + ' | Inference: ' + elapsed + 'ms | ' +
-			detections.map(function(d) { return d.label + '(' + (d.score * 100).toFixed(0) + '%)'; }).join(', ');
-		document.getElementById('prediction_info').textContent = infoText;
+	function drawBoxRect(det, w, h) {
+		var x = det.xMin * w, y = det.yMin * h;
+		var bw = (det.xMax - det.xMin) * w;
+		var bh = (det.yMax - det.yMin) * h;
+		overlayCtx.strokeStyle = '#00ff88';
+		overlayCtx.lineWidth = 2;
+		overlayCtx.strokeRect(x, y, bw, bh);
+		return { x: x, y: y };
 	}
 
-	// ─── Capture frame and auto-upload ──────────────────────────────────
-	window.captureFrame = async function() {
-		// If webcam is not running, start it first
-		if (!isWebcamActive()) {
-			showToast("Starting webcam for capture...", "info", 2000);
-			setButtonLoading('btn_capture', true, '&#128248; Starting...');
-			var webcamOk = await startWebcam();
-			if (!webcamOk) {
-				setButtonLoading('btn_capture', false);
-				showToast("Cannot capture — webcam failed to start.", "error", 4000);
-				return;
-			}
-			// Give the camera a moment to produce a real frame
-			await new Promise(function(resolve) { setTimeout(resolve, 500); });
-		}
+	function drawBoxLabel(det, pos) {
+		var text = det.label + ' ' + (det.score * 100).toFixed(0) + '%';
+		overlayCtx.font = 'bold 13px monospace';
+		var textWidth = overlayCtx.measureText(text).width;
+		overlayCtx.fillStyle = 'rgba(0, 255, 100, 0.85)';
+		overlayCtx.fillRect(pos.x, pos.y - 18, textWidth + 6, 18);
+		overlayCtx.fillStyle = '#000';
+		overlayCtx.fillText(text, pos.x + 3, pos.y - 4);
+	}
 
-		// Wait for video to be ready
-		if (video.readyState < 2) {
-			var ready = await waitForVideoReady(3000);
-			if (!ready) {
-				showToast("Webcam feed not ready for capture. Please try again.", "error", 3000);
-				return;
-			}
-		}
+	function buildInfoText(detections, elapsed) {
+		var summary = detections.map(function(d) { return d.label + '(' + (d.score * 100).toFixed(0) + '%)'; }).join(', ');
+		return 'Detections: ' + detections.length + ' | Inference: ' + elapsed + 'ms | ' + summary;
+	}
 
-		// Validate video dimensions
-		if (!video.videoWidth || !video.videoHeight) {
-			showToast("Webcam not producing frames yet. Please wait a moment.", "error", 3000);
-			return;
-		}
+	function drawDetections(detections, elapsed) {
+		var w = overlayCanvas.width, h = overlayCanvas.height;
+		try { overlayCtx.clearRect(0, 0, w, h); } catch (e) { return; }
+		if (!detections || detections.length === 0) { document.getElementById('prediction_info').textContent = 'No detections | Inference: ' + elapsed + 'ms'; return; }
+		for (var i = 0; i < detections.length; i++) { var pos = drawBoxRect(detections[i], w, h); drawBoxLabel(detections[i], pos); }
+		document.getElementById('prediction_info').textContent = buildInfoText(detections, elapsed);
+	}
 
-		setButtonLoading('btn_capture', true, '&#128248; Capturing...');
+	// ─── Capture frame helpers ──────────────────────────────────────────
+	async function ensureWebcamForCapture() {
+		if (isWebcamActive()) return true;
+		showToast("Starting webcam for capture...", "info", 2000);
+		setButtonLoading('btn_capture', true, '&#128248; Starting...');
+		var ok = await startWebcam();
+		if (!ok) { setButtonLoading('btn_capture', false); showToast("Cannot capture — webcam failed to start.", "error", 4000); }
+		return ok;
+	}
 
-		try {
-			captureCanvas.width = video.videoWidth;
-			captureCanvas.height = video.videoHeight;
-			captureCtx.drawImage(video, 0, 0);
-		} catch (e) {
-			console.error("Capture draw error:", e);
-			setButtonLoading('btn_capture', false);
-			showToast("Failed to capture frame from webcam.", "error", 3000);
-			return;
-		}
+	async function waitForCaptureReady() {
+		if (video.readyState >= 2) return true;
+		var ready = await waitForVideoReady(3000);
+		if (!ready) showToast("Webcam feed not ready for capture. Please try again.", "error", 3000);
+		return ready;
+	}
 
+	function validateVideoDimensions() {
+		if (video.videoWidth && video.videoHeight) return true;
+		showToast("Webcam not producing frames yet. Please wait a moment.", "error", 3000);
+		return false;
+	}
+
+	function drawCaptureFrame() {
+		captureCanvas.width = video.videoWidth;
+		captureCanvas.height = video.videoHeight;
+		captureCtx.drawImage(video, 0, 0);
+	}
+
+	function generateFilename() {
 		capturedCount++;
 		var timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-		var filename = 'webcam_' + timestamp + '.jpg';
+		return 'webcam_' + timestamp + '.jpg';
+	}
 
-		try {
-			captureCanvas.toBlob(function(blob) {
-				if (!blob) {
-					setButtonLoading('btn_capture', false);
-					showToast("Failed to encode frame as image.", "error", 3000);
-					return;
-				}
+	function createThumbElement(url, filename) {
+		var thumb = document.createElement('div');
+		thumb.className = 'captured-thumb';
+		thumb.innerHTML = '<img src="' + url + '" alt="' + filename + '">' +
+			'<span class="upload-status uploading">Uploading...</span>' +
+			'<div class="thumb-actions"><button onclick="this.closest(\'.captured-thumb\').remove()" style="background:#f38ba8; color:#1e1e2e;">&#10005;</button></div>';
+		return thumb;
+	}
 
-				var url;
-				try {
-					url = URL.createObjectURL(blob);
-				} catch (e) {
-					setButtonLoading('btn_capture', false);
-					showToast("Failed to create image preview.", "error", 3000);
-					return;
-				}
+	function handleCaptureBlob(blob, filename) {
+		if (!blob) { setButtonLoading('btn_capture', false); showToast("Failed to encode frame as image.", "error", 3000); return; }
+		var url;
+		try { url = URL.createObjectURL(blob); } catch (e) { setButtonLoading('btn_capture', false); showToast("Failed to create image preview.", "error", 3000); return; }
+		var thumb = createThumbElement(url, filename);
+		document.getElementById('captured_images').prepend(thumb);
+		autoUpload(thumb, blob, filename);
+		setButtonLoading('btn_capture', false);
+		showToast("Frame captured and uploading...", "success", 2000);
+	}
 
-				var container = document.getElementById('captured_images');
-				var thumb = document.createElement('div');
-				thumb.className = 'captured-thumb';
-				thumb.innerHTML =
-					'<img src="' + url + '" alt="' + filename + '">' +
-					'<span class="upload-status uploading">Uploading...</span>' +
-					'<div class="thumb-actions">' +
-						'<button onclick="this.closest(\'.captured-thumb\').remove()" style="background:#f38ba8; color:#1e1e2e;">&#10005;</button>' +
-					'</div>';
-				container.prepend(thumb);
-
-				// Auto-upload immediately
-				autoUpload(thumb, blob, filename);
-
-				setButtonLoading('btn_capture', false);
-				showToast("Frame captured and uploading...", "success", 2000);
-
-			}, 'image/jpeg', 0.92);
-		} catch (e) {
-			console.error("toBlob error:", e);
-			setButtonLoading('btn_capture', false);
-			showToast("Failed to process captured frame.", "error", 3000);
-		}
+	window.captureFrame = async function() {
+		if (!await ensureWebcamForCapture()) return;
+		if (!isWebcamActive()) { await new Promise(function(r) { setTimeout(r, 500); }); }
+		if (!await waitForCaptureReady() || !validateVideoDimensions()) return;
+		setButtonLoading('btn_capture', true, '&#128248; Capturing...');
+		try { drawCaptureFrame(); } catch (e) { setButtonLoading('btn_capture', false); showToast("Failed to capture frame from webcam.", "error", 3000); return; }
+		var filename = generateFilename();
+		try { captureCanvas.toBlob(function(blob) { handleCaptureBlob(blob, filename); }, 'image/jpeg', 0.92); } catch (e) { setButtonLoading('btn_capture', false); showToast("Failed to process captured frame.", "error", 3000); }
 	};
 
 	// ─── Auto upload function ───────────────────────────────────────────
+	function buildFormData(blob, filename) {
+		var formData = new FormData();
+		formData.append('image', blob, filename);
+		return formData;
+	}
+
+	function handleUploadSuccess(statusEl, result) {
+		if (result.indexOf("Error:") !== -1) { statusEl.textContent = 'Upload failed'; statusEl.className = 'upload-status error'; showToast("Upload failed: " + result.substring(0, 80), "error", 4000); return; }
+		statusEl.textContent = '\u2713 Uploaded';
+		statusEl.className = 'upload-status';
+		if (typeof load_dynamic_content === 'function') try { load_dynamic_content(); } catch (e) {}
+	}
+
+	function handleUploadError(statusEl, err) {
+		statusEl.textContent = 'Error';
+		statusEl.className = 'upload-status error';
+		showToast("Upload error: " + (err.message || "Network failure"), "error", 4000);
+	}
+
 	async function autoUpload(thumb, blob, filename) {
 		var statusEl = thumb.querySelector('.upload-status');
 		if (!statusEl) return;
-
-		var formData = new FormData();
-		formData.append('image', blob, filename);
-
 		try {
-			var response = await fetch('upload_image.php', {
-				method: 'POST',
-				body: formData
-			});
-
-			if (!response.ok) {
-				throw new Error("Server returned " + response.status);
-			}
-
-			var result = await response.text();
-
-			if (result.indexOf("Error:") !== -1) {
-				statusEl.textContent = 'Upload failed';
-				statusEl.className = 'upload-status error';
-				console.error("Upload failed:", result);
-				showToast("Upload failed: " + result.substring(0, 80), "error", 4000);
-			} else {
-				statusEl.textContent = '\u2713 Uploaded';
-				statusEl.className = 'upload-status';
-
-				// Refresh the dynamic content (image list sidebar, home ribbon, etc.)
-				if (typeof load_dynamic_content === 'function') {
-					try { load_dynamic_content(); } catch (e) { /* ignore */ }
-				}
-			}
-		} catch (err) {
-			statusEl.textContent = 'Error';
-			statusEl.className = 'upload-status error';
-			console.error("Upload error:", err);
-			showToast("Upload error: " + (err.message || "Network failure"), "error", 4000);
-		}
+			var response = await fetch('upload_image.php', { method: 'POST', body: buildFormData(blob, filename) });
+			if (!response.ok) throw new Error("Server returned " + response.status);
+			handleUploadSuccess(statusEl, await response.text());
+		} catch (err) { handleUploadError(statusEl, err); }
 	}
 
 	// ─── Confidence slider display ──────────────────────────────────────
-	var confSlider = document.getElementById('webcam_conf_slider');
-	if (confSlider) {
+	function initConfSlider() {
+		var confSlider = document.getElementById('webcam_conf_slider');
+		if (!confSlider) return;
 		confSlider.addEventListener('input', function() {
 			var display = document.getElementById('webcam_conf_value');
-			if (display) {
-				display.textContent = parseFloat(this.value).toFixed(2);
-			}
+			if (display) display.textContent = parseFloat(this.value).toFixed(2);
 		});
 	}
+
+	initConfSlider();
 
 	// ─── Handle camera change while running ─────────────────────────────
-	var cameraSelect = document.getElementById('camera_select');
-	if (cameraSelect) {
+	function stopCurrentStream() {
+		if (webcamStream) try { webcamStream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
+		webcamStream = null;
+		video.srcObject = null;
+	}
+
+	function resetWebcamButtons() {
+		document.getElementById('btn_start_webcam').style.display = '';
+		document.getElementById('btn_stop_webcam').style.display = 'none';
+	}
+
+	function initCameraSelect() {
+		var cameraSelect = document.getElementById('camera_select');
+		if (!cameraSelect) return;
 		cameraSelect.addEventListener('change', async function() {
-			// If webcam is currently active, restart with new camera
-			if (isWebcamActive()) {
-				var wasPredicting = isPredicting;
-				if (isPredicting) {
-					stopPredictionLoop();
-				}
-
-				// Stop current stream
-				if (webcamStream) {
-					try {
-						webcamStream.getTracks().forEach(function(t) { t.stop(); });
-					} catch (e) { /* ignore */ }
-					webcamStream = null;
-				}
-				video.srcObject = null;
-
-				// Reset button state so startWebcam works
-				document.getElementById('btn_start_webcam').style.display = '';
-				document.getElementById('btn_stop_webcam').style.display = 'none';
-
-				showToast("Switching camera...", "info", 2000);
-
-				var ok = await startWebcam();
-				if (ok && wasPredicting) {
-					// Restart predictions with new camera
-					await togglePrediction();
-				}
-			}
+			if (!isWebcamActive()) return;
+			var wasPredicting = isPredicting;
+			if (isPredicting) stopPredictionLoop();
+			stopCurrentStream();
+			resetWebcamButtons();
+			showToast("Switching camera...", "info", 2000);
+			var ok = await startWebcam();
+			if (ok && wasPredicting) await togglePrediction();
 		});
 	}
+
+	initCameraSelect();
 
 	// ─── Handle model change while predicting ───────────────────────────
-	var modelSelect = document.getElementById('webcam_model_select');
-	if (modelSelect) {
-		modelSelect.addEventListener('change', async function() {
-			if (isPredicting) {
-				// Stop current predictions, user can restart
-				stopPredictionLoop();
-				showToast("Model changed. Press Start Predictions to use the new model.", "info", 3500);
-			}
+	function initModelSelect() {
+		var modelSelect = document.getElementById('webcam_model_select');
+		if (!modelSelect) return;
+		modelSelect.addEventListener('change', function() {
+			if (!isPredicting) return;
+			stopPredictionLoop();
+			showToast("Model changed. Press Start Predictions to use the new model.", "info", 3500);
 		});
 	}
+
+	initModelSelect();
 
 	// ─── Handle FPS change while predicting ─────────────────────────────
-	var fpsInput = document.getElementById('webcam_fps');
-	if (fpsInput) {
+	function initFpsInput() {
+		var fpsInput = document.getElementById('webcam_fps');
+		if (!fpsInput) return;
 		fpsInput.addEventListener('change', function() {
-			if (isPredicting && predictionLoop) {
-				clearInterval(predictionLoop);
-				var fps = Math.max(1, Math.min(30, parseInt(this.value) || 5));
-				var interval = Math.round(1000 / fps);
-				predictionLoop = setInterval(runWebcamPrediction, interval);
-				showToast("FPS updated to " + fps, "info", 1500);
-			}
+			if (!isPredicting || !predictionLoop) return;
+			clearInterval(predictionLoop);
+			var fps = Math.max(1, Math.min(30, parseInt(this.value) || 5));
+			predictionLoop = setInterval(runWebcamPrediction, Math.round(1000 / fps));
+			showToast("FPS updated to " + fps, "info", 1500);
 		});
 	}
+
+	initFpsInput();
 
 	// ─── Resize overlay canvas when video resizes ───────────────────────
-	var resizeObserver = null;
-	try {
-		resizeObserver = new ResizeObserver(function() {
-			if (video.clientWidth > 0 && video.clientHeight > 0) {
-				overlayCanvas.style.width = video.clientWidth + 'px';
-				overlayCanvas.style.height = video.clientHeight + 'px';
-			}
-		});
-		resizeObserver.observe(video);
-	} catch (e) {
-		// ResizeObserver not supported — fallback with window resize
-		window.addEventListener('resize', function() {
-			if (video.clientWidth > 0 && video.clientHeight > 0) {
-				overlayCanvas.style.width = video.clientWidth + 'px';
-				overlayCanvas.style.height = video.clientHeight + 'px';
-			}
-		});
+	function syncOverlayStyle() {
+		if (video.clientWidth <= 0 || video.clientHeight <= 0) return;
+		overlayCanvas.style.width = video.clientWidth + 'px';
+		overlayCanvas.style.height = video.clientHeight + 'px';
 	}
 
+	function initResizeObserver() {
+		try {
+			var ro = new ResizeObserver(syncOverlayStyle);
+			ro.observe(video);
+		} catch (e) { window.addEventListener('resize', syncOverlayStyle); }
+	}
+
+	initResizeObserver();
+
 	// ─── Cleanup on page unload ─────────────────────────────────────────
-	window.addEventListener('beforeunload', function() {
-		if (isPredicting) {
-			stopPredictionLoop();
-		}
-		if (webcamStream) {
-			try {
-				webcamStream.getTracks().forEach(function(t) { t.stop(); });
-			} catch (e) { /* ignore */ }
-		}
-		if (webcamModel) {
-			try { webcamModel.dispose(); } catch (e) { /* ignore */ }
-		}
-	});
+	function cleanupOnUnload() {
+		if (isPredicting) stopPredictionLoop();
+		if (webcamStream) try { webcamStream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
+		if (webcamModel) try { webcamModel.dispose(); } catch (e) {}
+	}
+
+	window.addEventListener('beforeunload', cleanupOnUnload);
 
 })();
 </script>
