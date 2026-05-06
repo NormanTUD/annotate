@@ -323,7 +323,8 @@
 			btn.innerHTML = '&#9209; Stop Predictions';
 			btn.classList.add('active');
 
-			loadWebcamModel(modelUuid).then(() => {
+			loadWebcamModel(modelUuid).then((success) => {
+				if (!success) return;
 				const fps = parseInt(document.getElementById('webcam_fps').value) || 5;
 				const interval = Math.round(1000 / fps);
 				predictionLoop = setInterval(runWebcamPrediction, interval);
@@ -331,7 +332,7 @@
 		}
 	};
 
-	// Load model for webcam - with fix for Float32Array error
+	// Load model for webcam
 	async function loadWebcamModel(modelUuid) {
 		document.getElementById('prediction_info').textContent = 'Loading model...';
 
@@ -352,7 +353,7 @@
 				webcamModel = null;
 			}
 
-			// Fetch model.json first to check format and validate weight paths
+			// Fetch model.json first to inspect and validate
 			const modelJsonResp = await fetch(modelJsonUrl);
 			if (!modelJsonResp.ok) {
 				throw new Error("Failed to fetch model.json: HTTP " + modelJsonResp.status);
@@ -362,10 +363,19 @@
 			// Determine if it's a graph model or layers model
 			const isGraphModel = modelJson.modelTopology && modelJson.modelTopology.node;
 
-			// Custom IOHandler to ensure binary weight files are fetched correctly
-			// This fixes the Float32Array "byte length should be a multiple of 4" error
-			// which occurs when weight .bin files are served with wrong content-type
-			// or get corrupted by text-mode transfer
+			// Calculate expected total weight size from the manifest
+			function calcExpectedBytes(weightSpecs) {
+				let total = 0;
+				const dtypeSizes = { 'float32': 4, 'int32': 4, 'float16': 2, 'bool': 1 };
+				for (const spec of weightSpecs) {
+					const elSize = dtypeSizes[spec.dtype] || 4;
+					const numElements = spec.shape.reduce((a, b) => a * b, 1);
+					total += numElements * elSize;
+				}
+				return total;
+			}
+
+			// Custom IOHandler that validates weight data
 			const customIOHandler = {
 				load: async function() {
 					const weightsManifest = modelJson.weightsManifest;
@@ -382,23 +392,38 @@
 							if (!weightResp.ok) {
 								throw new Error("Failed to fetch weight file: " + path + " (HTTP " + weightResp.status + ")");
 							}
+
+							// Check content-type - if it's text/html, the server returned an error page
+							const contentType = weightResp.headers.get('content-type') || '';
+							if (contentType.includes('text/html') || contentType.includes('text/plain')) {
+								const text = await weightResp.text();
+								throw new Error("Weight file '" + path + "' returned text instead of binary data. Server response: " + text.substring(0, 200));
+							}
+
 							const buffer = await weightResp.arrayBuffer();
 
-							// Validate buffer length is multiple of 4
-							if (buffer.byteLength % 4 !== 0) {
-								console.warn("Weight file " + path + " has byte length " + buffer.byteLength + " (not multiple of 4). Padding...");
-								const paddedLength = Math.ceil(buffer.byteLength / 4) * 4;
-								const paddedBuffer = new ArrayBuffer(paddedLength);
-								new Uint8Array(paddedBuffer).set(new Uint8Array(buffer));
-								weightDataArrays.push(paddedBuffer);
-							} else {
-								weightDataArrays.push(buffer);
+							// Check if buffer is suspiciously small (likely an error response)
+							if (buffer.byteLength < 100) {
+								// Try to read as text to see if it's an error
+								const decoder = new TextDecoder();
+								const possibleError = decoder.decode(buffer);
+								if (possibleError.includes('Error') || possibleError.includes('<!') || possibleError.includes('<?')) {
+									throw new Error("Weight file '" + path + "' returned error (" + buffer.byteLength + " bytes): " + possibleError);
+								}
 							}
+
+							weightDataArrays.push(buffer);
 						}
 					}
 
 					// Concatenate all weight buffers
 					const totalLength = weightDataArrays.reduce((sum, buf) => sum + buf.byteLength, 0);
+					const expectedBytes = calcExpectedBytes(weightSpecs);
+
+					if (totalLength < expectedBytes) {
+						throw new Error("Weight data too small: got " + totalLength + " bytes but model expects " + expectedBytes + " bytes. Check that get_model_file.php correctly serves .bin files.");
+					}
+
 					const concatenated = new ArrayBuffer(totalLength);
 					const view = new Uint8Array(concatenated);
 					let offset = 0;
@@ -425,12 +450,14 @@
 			}
 
 			document.getElementById('prediction_info').textContent = 'Model loaded. Running predictions...';
+			return true;
 		} catch (e) {
 			console.error("Model loading error:", e);
 			document.getElementById('prediction_info').textContent = 'Error loading model: ' + e.message;
 			isPredicting = false;
 			document.getElementById('btn_toggle_predict').innerHTML = '&#129302; Start Predictions';
 			document.getElementById('btn_toggle_predict').classList.remove('active');
+			return false;
 		}
 	}
 
@@ -449,7 +476,6 @@
 		}
 
 		if (!shape || shape.length < 2 || !shape[0] || !shape[1]) {
-			// Fallback to 640x640
 			shape = [640, 640];
 		}
 
@@ -457,7 +483,6 @@
 
 		const startTime = performance.now();
 
-		// Run inference
 		const inputTensor = tf.tidy(() => {
 			return tf.browser.fromPixels(video)
 				.resizeBilinear([modelHeight, modelWidth])
@@ -706,8 +731,13 @@
 				statusEl.className = 'upload-status error';
 				console.error("Upload failed:", result);
 			} else {
-				statusEl.textContent = '✓ Uploaded';
+				statusEl.textContent = '\u2713 Uploaded';
 				statusEl.className = 'upload-status';
+
+				// Refresh the dynamic content (image list, etc.)
+				if (typeof load_dynamic_content === 'function') {
+					load_dynamic_content();
+				}
 			}
 		} catch (err) {
 			statusEl.textContent = 'Error';
