@@ -469,14 +469,15 @@
 		}
 
 		$str .= "
-			<nav class='main-nav'>
-				<a href='index.php'>Home</a>
-				<a href='models.php'>Models</a>
-				<a href='upload.php'>Upload Images</a>
-				<a href='batch_upload.php'>Batch Import</a>
-				$overview	
-				$export_gui
-			</nav>
+		    <nav class='main-nav'>
+			<a href='index.php'>Home</a>
+			<a href='webcam.php'>Webcam</a>
+			<a href='models.php'>Models</a>
+			<a href='upload.php'>Upload Images</a>
+			<a href='batch_upload.php'>Batch Import</a>
+			$overview	
+			$export_gui
+		    </nav>
 		";
 
 		return $str;

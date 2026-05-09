@@ -1,7 +1,5 @@
 "use strict";
 
-// new
-
 var zoom_input;
 var zoom_factor = 1.0;
 var used_model = null;
@@ -152,7 +150,7 @@ var skipped_images = [];
 
 		'.ai-analyzing::before{' +
 		'content:"";' +
-		'position:absolute; inset:0;' +
+		'position:absolute; top:0; left:0; right:0; bottom:2px;' +
 		'background:repeating-linear-gradient(0deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 2px,rgba(0,0,0,0) 4px);' +
 		'pointer-events:none;' +
 		'animation:noise 1.2s infinite;' +
@@ -161,7 +159,7 @@ var skipped_images = [];
 		'.ai-analyzing::after{' +
 		'content:"";' +
 		'position:absolute;' +
-		'top:0; left:0; width:150%; height:150%;' +
+		'top:0; left:0; width:150%; height:calc(100% - 2px);' +
 		'background:linear-gradient(90deg,rgba(0,255,150,0) 0%,rgba(0,255,150,0.35) 50%,rgba(0,255,150,0) 100%);' +
 		'pointer-events:none;' +
 		'transform-origin:center;' +
@@ -253,15 +251,21 @@ async function load_model() {
 		return;
 	}
 
+	const model_uuid = get_chosen_model_uuid();
+	const new_model_md5 = model_uuid;
+
+	// If the model is already loaded and hasn't changed, skip reloading
+	if (model && new_model_md5 === last_model_md5) {
+		console.info("Model already loaded and unchanged. Skipping reload.");
+		return;
+	}
+
+	// Model has changed — dispose the old one
 	if (model) {
 		model.dispose();
 		model = null;
 	}
 
-	const model_uuid = get_chosen_model_uuid();
-
-	const new_model_md5 = model_uuid;
-	if (model && new_model_md5 === last_model_md5) return;
 	last_model_md5 = new_model_md5;
 
 	if (model) {
