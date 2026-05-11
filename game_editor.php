@@ -228,8 +228,8 @@ elif right == "paper" and left == "rock"
     print "Right wins! Paper beats Rock"
 elif left == right and left != "none"
     print "Draw! Both played " + left
-else
-    print "Waiting for two players..."
+#else
+#    print "Waiting for two players..."
 end
 </textarea>
 	</div>
