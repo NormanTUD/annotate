@@ -7,7 +7,16 @@
 	}
 
 	if(array_key_exists("source", $_GET)) {
-		$query = "select a.json, a.annotarius_id from annotation a left join image i on a.image_id = i.id left join user u on u.id = a.user_id where i.filename = ".esc($_GET["source"])." and u.name = ".esc($_COOKIE["annotate_userid"]).' and a.deleted = 0 and i.deleted = 0';
+		$query = "select a.json, a.annotarius_id from annotation a 
+			left join image i on a.image_id = i.id 
+			left join user u on u.id = a.user_id 
+			where i.filename = ".esc($_GET["source"])."
+			and a.deleted = 0 and i.deleted = 0";
+
+		// Only filter by user if first_other is NOT set
+		if(!$first_other) {
+			$query .= " and u.name = ".esc($_COOKIE["annotate_userid"]);
+		}
 
 		$res = rquery($query);
 

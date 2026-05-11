@@ -398,10 +398,33 @@ async function make_item_anno(elem, widgets = {}) {
 	// FIX: Strip cache-buster &_=... from the source before querying annotations
 	const cleanSource = elem.src.replace(/.*?filename=/, "").replace(/&.*$/, "");
 
-	await anno.loadAnnotations(
-		'get_current_annotations.php?first_other=1&source=' +
-		encodeURIComponent(cleanSource)
-	);
+	// Load annotations from server
+	const annoUrl = 'get_current_annotations.php?first_other=1&source=' +
+		encodeURIComponent(cleanSource);
+
+	try {
+		const response = await fetch(annoUrl);
+		const serverAnnotations = await response.json();
+
+		if (serverAnnotations && serverAnnotations.length > 0) {
+			// FIX: Patch target.source to match the current image element's src
+			// Annotorious ignores annotations whose target.source doesn't match the image src
+			const currentSrc = elem.src;
+			for (let i = 0; i < serverAnnotations.length; i++) {
+				if (serverAnnotations[i].target && serverAnnotations[i].target.source) {
+					serverAnnotations[i].target.source = currentSrc;
+				}
+				// Also patch top-level source if present
+				if (serverAnnotations[i].source) {
+					serverAnnotations[i].source = currentSrc;
+				}
+			}
+
+			await anno.setAnnotations(serverAnnotations);
+		}
+	} catch (e) {
+		console.error("Failed to load annotations:", e);
+	}
 
 	// --- createAnnotation: queue instead of immediate AJAX ---
 	anno.on('createAnnotation', function (annotation) {
@@ -422,7 +445,7 @@ async function make_item_anno(elem, widgets = {}) {
 		log(selection);
 	});
 
-	if (!(await anno.getAnnotations().length)) {
+	if (!(await anno.getAnnotations()).length) {
 		await predictImageWithModel();
 	}
 }
