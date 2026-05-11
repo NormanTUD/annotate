@@ -1320,3 +1320,284 @@
 		font-size: 11px;
 	}
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENHANCED VISUAL BLOCKS — Colorful, indented, snap-validated
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Workspace blocks: FULL COLOR backgrounds by category ─────────── */
+.workspace-block.cat-sensing {
+	background: linear-gradient(135deg, #0288d1 0%, #039be5 100%);
+	border: 2px solid #01579b;
+	border-left: 5px solid #01579b;
+	color: #fff;
+}
+
+.workspace-block.cat-control {
+	background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+	border: 2px solid #e65100;
+	border-left: 5px solid #e65100;
+	color: #fff;
+}
+
+.workspace-block.cat-output {
+	background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+	border: 2px solid #4a148c;
+	border-left: 5px solid #4a148c;
+	color: #fff;
+}
+
+.workspace-block.cat-display {
+	background: linear-gradient(135deg, #00838f 0%, #00acc1 100%);
+	border: 2px solid #006064;
+	border-left: 5px solid #006064;
+	color: #fff;
+}
+
+.workspace-block.cat-variables {
+	background: linear-gradient(135deg, #c62828 0%, #e53935 100%);
+	border: 2px solid #b71c1c;
+	border-left: 5px solid #b71c1c;
+	color: #fff;
+}
+
+.workspace-block.cat-labels {
+	background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
+	border: 2px solid #1b5e20;
+	border-left: 5px solid #1b5e20;
+	color: #fff;
+}
+
+/* ─── Block content layout ─────────────────────────────────────────── */
+.workspace-block .block-content {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	flex: 1;
+}
+
+.workspace-block .block-icon {
+	font-size: 16px;
+	flex-shrink: 0;
+}
+
+.workspace-block .block-label {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.workspace-block .block-keyword {
+	font-size: 12px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	background: rgba(0, 0, 0, 0.2);
+	padding: 2px 8px;
+	border-radius: 4px;
+}
+
+/* ─── Select boxes inside blocks (condition dropdowns) ─────────────── */
+.workspace-block select.block-select {
+	background: rgba(255, 255, 255, 0.95);
+	color: #1e1e2e;
+	border: 2px solid rgba(0, 0, 0, 0.3);
+	border-radius: 6px;
+	padding: 3px 8px;
+	font-size: 12px;
+	font-weight: 700;
+	font-family: 'Nunito', sans-serif;
+	cursor: pointer;
+	min-width: 70px;
+	transition: all 0.15s;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.workspace-block select.block-select:hover {
+	border-color: rgba(0, 0, 0, 0.5);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.workspace-block select.block-select:focus {
+	border-color: #1565c0;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.3);
+}
+
+.workspace-block select.block-select option {
+	background: #fff;
+	color: #1e1e2e;
+	font-weight: 600;
+	padding: 4px;
+}
+
+/* Specific select styling by type */
+.workspace-block select.cond-left {
+	background: #e3f2fd;
+	border-color: #1565c0;
+}
+
+.workspace-block select.cond-op {
+	background: #fff3e0;
+	border-color: #e65100;
+	min-width: 110px;
+}
+
+.workspace-block select.cond-value {
+	background: #e8f5e9;
+	border-color: #2e7d32;
+}
+
+.workspace-block select.style-select {
+	background: #f3e5f5;
+	border-color: #7b1fa2;
+}
+
+.workspace-block select.varname-select {
+	background: #ffebee;
+	border-color: #c62828;
+}
+
+/* ─── Text inputs inside blocks ────────────────────────────────────── */
+.workspace-block input.block-input {
+	background: rgba(255, 255, 255, 0.92);
+	color: #1e1e2e;
+	border: 2px solid rgba(0, 0, 0, 0.25);
+	border-radius: 6px;
+	padding: 3px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	font-family: 'Nunito', sans-serif;
+	transition: all 0.15s;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.workspace-block input.block-input:focus {
+	border-color: #1565c0;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.25);
+	background: #fff;
+}
+
+/* ─── Drop indicators: snap validation ─────────────────────────────── */
+.workspace-block.drop-above {
+	border-top: 4px solid #4caf50 !important;
+	margin-top: -2px;
+}
+
+.workspace-block.drop-below {
+	border-bottom: 4px solid #4caf50 !important;
+	margin-bottom: -2px;
+}
+
+.workspace-block.drop-invalid {
+	border-color: #f44336 !important;
+	box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.3) !important;
+	opacity: 0.7;
+}
+
+/* ─── Shake animation for invalid snap ─────────────────────────────── */
+@keyframes shake-block {
+	0%, 100% { transform: translateX(0); }
+	20% { transform: translateX(-5px); }
+	40% { transform: translateX(5px); }
+	60% { transform: translateX(-3px); }
+	80% { transform: translateX(3px); }
+}
+
+.workspace-block.shake {
+	animation: shake-block 0.4s ease-in-out;
+}
+
+/* ─── Indentation visual connector lines ───────────────────────────── */
+.workspace-block[data-indent="1"] {
+	margin-left: 28px;
+	border-left-width: 5px;
+}
+
+.workspace-block[data-indent="2"] {
+	margin-left: 56px;
+	border-left-width: 5px;
+}
+
+.workspace-block[data-indent="3"] {
+	margin-left: 84px;
+	border-left-width: 5px;
+}
+
+/* ─── Palette blocks: more colorful ───────────────────────────────── */
+.palette-block.cat-sensing {
+	background: linear-gradient(90deg, #e1f5fe, #b3e5fc);
+	border-left: 4px solid #0288d1;
+	color: #01579b;
+}
+
+.palette-block.cat-control {
+	background: linear-gradient(90deg, #fff3e0, #ffe0b2);
+	border-left: 4px solid #f57c00;
+	color: #e65100;
+}
+
+.palette-block.cat-output {
+	background: linear-gradient(90deg, #f3e5f5, #e1bee7);
+	border-left: 4px solid #7b1fa2;
+	color: #4a148c;
+}
+
+.palette-block.cat-display {
+	background: linear-gradient(90deg, #e0f7fa, #b2ebf2);
+	border-left: 4px solid #00838f;
+	color: #006064;
+}
+
+.palette-block.cat-variables {
+	background: linear-gradient(90deg, #ffebee, #ffcdd2);
+	border-left: 4px solid #c62828;
+	color: #b71c1c;
+}
+
+.palette-block.cat-labels {
+	background: linear-gradient(90deg, #e8f5e9, #c8e6c9);
+	border-left: 4px solid #2e7d32;
+	color: #1b5e20;
+}
+
+.palette-block:hover {
+	transform: translateX(4px) scale(1.02);
+	box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* ─── Block workspace: better grid background ─────────────────────── */
+#block_workspace {
+	background: #1a1a2e;
+	background-image:
+		linear-gradient(rgba(69, 71, 90, 0.3) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(69, 71, 90, 0.3) 1px, transparent 1px);
+	background-size: 28px 28px;
+}
+
+/* ─── Workspace block hover glow ───────────────────────────────────── */
+.workspace-block.cat-sensing:hover {
+	box-shadow: 0 4px 16px rgba(2, 136, 209, 0.4);
+}
+
+.workspace-block.cat-control:hover {
+	box-shadow: 0 4px 16px rgba(245, 124, 0, 0.4);
+}
+
+.workspace-block.cat-output:hover {
+	box-shadow: 0 4px 16px rgba(123, 31, 162, 0.4);
+}
+
+.workspace-block.cat-display:hover {
+	box-shadow: 0 4px 16px rgba(0, 131, 143, 0.4);
+}
+
+.workspace-block.cat-variables:hover {
+	box-shadow: 0 4px 16px rgba(198, 40, 40, 0.4);
+}
+
+.workspace-block.cat-labels:hover {
+	box-shadow: 0 4px 16px rgba(46, 125, 50, 0.4);
+}
