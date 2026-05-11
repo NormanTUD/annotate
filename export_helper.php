@@ -595,20 +595,24 @@ fi';
 			if ($show_categories && count($show_categories)) {
 				$image_page_subquery .= " AND c2.name IN (" . esc($show_categories) . ")";
 			}
+
 			if ($show_files && count($show_files)) {
 				$image_page_subquery .= " AND i2.filename IN (" . esc($show_files) . ")";
 			}
+
 			if ($only_uncurated) {
-				$image_page_subquery .= " AND (a2.curated IS NULL OR a2.curated = 0)";
+				$image_page_subquery .= " AND (a2.curated IS NULL OR a2.curated = 0 OR a2.curated = '0')";
 			}
+
 			if ($only_curated) {
-				$image_page_subquery .= " AND (a2.curated = 1)";
+				$image_page_subquery .= " AND (a2.curated = 1 OR a2.curated = '1')";
 			}
 
 			$image_page_subquery .= " ORDER BY i2.filename"
 				. " LIMIT " . intval($offset) . ", " . intval($items_per_page);
 
-			$annotated_image_ids_query .= " AND i.id IN (" . $image_page_subquery . ")";
+			// Wrap in a derived table — MySQL requires this for ORDER BY + LIMIT inside IN()
+			$annotated_image_ids_query .= " AND i.id IN (SELECT sub.image_id FROM (" . $image_page_subquery . ") AS sub)";
 			$annotated_image_ids_query .= " ORDER BY i.filename, a.modified";
 		} else if($limit) {
 			$annotated_image_ids_query .= " order by rand()";
