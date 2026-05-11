@@ -281,7 +281,7 @@ end</pre>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js"></script>
-<script src="game_dsl.js"></script>
+<script src="game_editor.js"></script>
 
 <?php
 	include_once("footer.php");
