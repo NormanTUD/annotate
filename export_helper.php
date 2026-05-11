@@ -585,8 +585,18 @@ fi';
 		}
 
 		if ($format == "html") {
-			$annotated_image_ids_query .= " order by i.filename, a.modified ";
-			$annotated_image_ids_query .=  " limit ".intval($offset).", ".intval($items_per_page);
+			// First, get the paginated image filenames
+			$image_ids_subquery = "SELECT DISTINCT i.id FROM annotation a "
+				. "LEFT JOIN image i ON i.id = a.image_id "
+				. "LEFT JOIN category c ON c.id = a.category_id "
+				. "WHERE a.deleted = '0' AND i.deleted = 0 ";
+			// ... apply same filters (show_categories, curated, etc.) ...
+			$image_ids_subquery .= " ORDER BY i.filename "
+				. " LIMIT ".intval($offset).", ".intval($items_per_page);
+
+			// Then fetch all annotations for those images
+			$annotated_image_ids_query .= " AND i.id IN ($image_ids_subquery) ";
+			$annotated_image_ids_query .= " ORDER BY i.filename, a.modified ";
 		} else if($limit) {
 			$annotated_image_ids_query .= " order by rand()";
 			$annotated_image_ids_query .= " limit ".intval(get_get("limit"));
