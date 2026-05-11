@@ -772,21 +772,26 @@
 
 		var modelUuid = document.getElementById('game_model_select').value;
 
-		// Start webcam if a model is selected
-		if (modelUuid !== 'none') {
-			setStatus('Starting webcam...');
-			var webcamOk = await startGameWebcam();
-			if (!webcamOk) {
-				setStatus('Failed to start webcam');
-				return;
-			}
+		// Always start webcam
+		setStatus('Starting webcam...');
+		var webcamOk = await startGameWebcam();
+		if (!webcamOk) {
+			setStatus('Failed to start webcam');
+			appendOutput("ERROR: Could not start webcam. Check camera permissions.");
+			return;
+		}
 
+		// Only load model if one is selected
+		if (modelUuid !== 'none') {
 			setStatus('Loading model...');
 			var modelOk = await loadGameModel(modelUuid);
 			if (!modelOk) {
 				setStatus('Failed to load model');
-				return;
+				appendOutput("ERROR: Could not load model. Game will run without detections.");
+				// Don't return — let the game run without detections so the webcam still shows
 			}
+		} else {
+			appendOutput("INFO: No model selected. Running without detections.");
 		}
 
 		gameRunning = true;
