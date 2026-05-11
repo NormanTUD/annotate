@@ -346,6 +346,47 @@
 
 	// ─── DSL Parser & Interpreter ───────────────────────────────────────
 
+	function parsePrintArgument(line) {
+		// Check if line is a print statement in any form:
+		// print "hello"
+		// print("hello")
+		// print("hello" + var)
+		// print "hello" + var
+
+		if (!line.startsWith('print')) return null;
+
+		var afterPrint = line.substring(5); // everything after 'print'
+
+		// Case 1: print("...") or print(expr)
+		if (afterPrint.startsWith('(')) {
+			// Find the matching closing paren
+			var depth = 0;
+			var inStr = false, strChar = '';
+			for (var i = 0; i < afterPrint.length; i++) {
+				var ch = afterPrint[i];
+				if (!inStr && (ch === '"' || ch === "'")) { inStr = true; strChar = ch; }
+				else if (inStr && ch === strChar) { inStr = false; }
+				else if (!inStr && ch === '(') { depth++; }
+				else if (!inStr && ch === ')') {
+					depth--;
+					if (depth === 0) {
+						// Extract content between outer parens
+						return afterPrint.substring(1, i).trim();
+					}
+				}
+			}
+			// If no matching paren found, treat the rest as the expression
+			return afterPrint.substring(1).trim();
+		}
+
+		// Case 2: print "..." or print expr (space after print)
+		if (afterPrint.startsWith(' ') || afterPrint.startsWith('\t')) {
+			return afterPrint.trim();
+		}
+
+		return null;
+	}
+
 	function tokenizeLine(line) {
 	    // Remove comments
 	    var commentIdx = line.indexOf('#');
@@ -597,10 +638,10 @@
 					return idx;
 				}
 
-				// ─── PRINT ──────────────────────────────────────────
-				if (line.startsWith('print ')) {
-					var printExpr = line.substring(6).trim();
-					var printVal = evaluateExpression(printExpr, context);
+				// ─── PRINT (supports both print "x" and print("x")) ─
+				var printArg = parsePrintArgument(line);
+				if (printArg !== null) {
+					var printVal = evaluateExpression(printArg, context);
 					output.push(String(printVal));
 					idx++;
 					continue;
@@ -701,12 +742,13 @@
 					continue;
 				}
 
-				// Execute the line
-				if (line.startsWith('print ')) {
-					var printExpr = line.substring(6).trim();
-					var printVal = evaluateExpression(printExpr, context);
+				// ─── PRINT (supports both print "x" and print("x")) ─
+				var printArg = parsePrintArgument(line);
+				if (printArg !== null) {
+					var printVal = evaluateExpression(printArg, context);
 					output.push(String(printVal));
 				} else {
+					// ─── VARIABLE ASSIGNMENT ────────────────────────
 					var assignMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/);
 					if (assignMatch) {
 						context.vars[assignMatch[1]] = evaluateExpression(assignMatch[2].trim(), context);

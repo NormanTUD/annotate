@@ -262,7 +262,7 @@ end
 		<li><code>if</code> / <code>elif</code> / <code>else</code> / <code>end</code> — conditionals (use <code>end</code> to close blocks)</li>
 		<li><code>and</code>, <code>or</code>, <code>not</code> — logical operators</li>
 		<li><code>==</code>, <code>!=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code> — comparisons</li>
-		<li><code>print "message"</code> — output a line</li>
+		<li><code>print "message"</code> or <code>print("message")</code> — output a line (parentheses optional)</li>
 		<li><code>print "text" + variable</code> — concatenation</li>
 		<li><code># comment</code> — comments (ignored)</li>
 		<li>Variables: <code>x = "value"</code> or <code>x = leftmost_detection</code></li>
