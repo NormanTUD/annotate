@@ -1212,50 +1212,224 @@
         });
     }
 
-    var btnLoadExample = document.getElementById('btn_load_example');
-    if (btnLoadExample) {
-        btnLoadExample.addEventListener('click', function() {
-            var exampleCode = '';
-            if (gameLabels && gameLabels.length >= 2) {
-                var l1 = gameLabels[0], l2 = gameLabels[1];
-                exampleCode += '# Variablen initialisieren\n';
-                exampleCode += 'links = leftmost_detection\n';
-                exampleCode += 'rechts = rightmost_detection\n';
-                exampleCode += '\n';
-                exampleCode += '# Punkte zählen (persistent!)\n';
-                exampleCode += 'if links == "' + l1 + '" and rechts == "' + l2 + '"\n';
-                exampleCode += '  punkte += 1\n';
-                exampleCode += '  show_text "' + l1 + ' vs ' + l2 + ' — Punkt! Score: " + punkte winner\n';
-                exampleCode += 'elif links == rechts\n';
-                exampleCode += '  show_text "Gleichstand! 🤝 Score: " + punkte draw\n';
-                exampleCode += 'else\n';
-                exampleCode += '  show_text "Zeigt eure Hände! ✊✌️✋" normal\n';
-                exampleCode += 'end\n';
-                exampleCode += '\n';
-                exampleCode += '# While-Loop Beispiel:\n';
-                exampleCode += '# countdown = 5\n';
-                exampleCode += '# while countdown > 0\n';
-                exampleCode += '#   print "Countdown: " + countdown\n';
-                exampleCode += '#   countdown -= 1\n';
-                exampleCode += '# end\n';
-            } else {
-                exampleCode += 'links = leftmost_detection\n';
-                exampleCode += 'rechts = rightmost_detection\n';
-                exampleCode += 'if detection_count >= 2\n';
-                exampleCode += '  show_text "Links: " + links + " | Rechts: " + rechts winner\n';
-                exampleCode += 'else\n';
-                exampleCode += '  show_text "Zeige etwas in die Kamera!" normal\n';
-                exampleCode += 'end\n';
-            }
+	var btnLoadExample = document.getElementById('btn_load_example');
+	if (btnLoadExample) {
+	    // Zähler, um bei jedem Klick das nächste Beispiel zu laden
+	    var exampleIndex = 0;
 
-            if (typeof window.loadCodeToBlocks === 'function') {
-                window.loadCodeToBlocks(exampleCode);
-            } else {
-                editor.value = exampleCode;
-            }
-            appendOutput("💡 Beispiel-Programm geladen!");
-        });
-    }
+	    btnLoadExample.addEventListener('click', function() {
+		var examples = [];
+		var l1 = (gameLabels && gameLabels.length >= 1) ? gameLabels[0] : 'ObjektA';
+		var l2 = (gameLabels && gameLabels.length >= 2) ? gameLabels[1] : 'ObjektB';
+		var l3 = (gameLabels && gameLabels.length >= 3) ? gameLabels[2] : 'ObjektC';
+
+		// ═══════════════════════════════════════════════════════════════
+		// BEISPIEL 1: Schere-Stein-Papier
+		// Braucht ein Modell mit Labels: Schere, Stein, Papier
+		// ═══════════════════════════════════════════════════════════════
+		examples.push({
+		    name: '✊✌️✋ Schere-Stein-Papier',
+		    code:
+			'# ══ SCHERE STEIN PAPIER ══\n' +
+			'# Zeige links deine Hand, rechts die des Gegners\n' +
+			'\n' +
+			'spieler = leftmost_detection\n' +
+			'gegner = rightmost_detection\n' +
+			'\n' +
+			'if detection_count < 2\n' +
+			'  show_text "Zeigt beide eure Hände! ✊✌️✋" normal\n' +
+			'elif spieler == gegner\n' +
+			'  show_text "UNENTSCHIEDEN! Beide: " + spieler draw\n' +
+			'elif spieler == "' + l1 + '" and gegner == "' + l2 + '"\n' +
+			'  siege += 1\n' +
+			'  show_text "DU GEWINNST! 🎉 Siege: " + siege winner\n' +
+			'elif spieler == "' + l2 + '" and gegner == "' + l3 + '"\n' +
+			'  siege += 1\n' +
+			'  show_text "DU GEWINNST! 🎉 Siege: " + siege winner\n' +
+			'elif spieler == "' + l3 + '" and gegner == "' + l1 + '"\n' +
+			'  siege += 1\n' +
+			'  show_text "DU GEWINNST! 🎉 Siege: " + siege winner\n' +
+			'else\n' +
+			'  niederlagen += 1\n' +
+			'  show_text "VERLOREN! 😢 Niederlagen: " + niederlagen loser\n' +
+			'end\n'
+		});
+
+		// ═══════════════════════════════════════════════════════════════
+		// BEISPIEL 2: YOLO Objekt-Zähler mit Statistik
+		// Funktioniert mit jedem Modell
+		// ═══════════════════════════════════════════════════════════════
+		examples.push({
+		    name: '📊 Objekt-Zähler & Statistik',
+		    code:
+			'# ══ OBJEKT-ZÄHLER MIT STATISTIK ══\n' +
+			'# Zählt Erkennungen über Zeit und zeigt Rekord\n' +
+			'\n' +
+			'aktuell = detection_count\n' +
+			'\n' +
+			'# Gesamtzähler hochzählen\n' +
+			'if aktuell > 0\n' +
+			'  gesamt += aktuell\n' +
+			'  frames += 1\n' +
+			'end\n' +
+			'\n' +
+			'# Rekord tracken\n' +
+			'if aktuell > rekord\n' +
+			'  rekord = aktuell\n' +
+			'end\n' +
+			'\n' +
+			'# Anzeige\n' +
+			'if aktuell == 0\n' +
+			'  show_text "Nichts erkannt... Rekord: " + rekord normal\n' +
+			'elif aktuell == rekord\n' +
+			'  show_text "🏆 NEUER REKORD! " + rekord + " Objekte!" winner\n' +
+			'else\n' +
+			'  show_text "Erkannt: " + aktuell + " | Rekord: " + rekord + " | Gesamt: " + gesamt normal\n' +
+			'end\n' +
+			'\n' +
+			'print "Aktuell: " + aktuell + " | Bestes: " + largest_detection + " (" + highest_conf_detection.probability + ")"\n'
+		});
+
+		// ═══════════════════════════════════════════════════════════════
+		// BEISPIEL 3: Links-Rechts-Duell (2 Spieler)
+		// Wer hat das größere / konfidentere Objekt?
+		// ═══════════════════════════════════════════════════════════════
+		examples.push({
+		    name: '⚔️ Links-Rechts-Duell',
+		    code:
+			'# ══ LINKS vs RECHTS DUELL ══\n' +
+			'# Zwei Spieler halten Objekte in die Kamera\n' +
+			'# Wer das konfidentere Objekt hat, gewinnt!\n' +
+			'\n' +
+			'links = leftmost_detection\n' +
+			'rechts = rightmost_detection\n' +
+			'links_conf = leftmost_detection.probability\n' +
+			'rechts_conf = rightmost_detection.probability\n' +
+			'\n' +
+			'if detection_count < 2\n' +
+			'  runden += 1\n' +
+			'  show_text "⏳ Runde " + runden + " — Beide Spieler bereit?" normal\n' +
+			'elif links_conf > rechts_conf\n' +
+			'  score_links += 1\n' +
+			'  show_text "⬅️ LINKS gewinnt! " + links + " (" + links_conf + ") | Stand: " + score_links + " - " + score_rechts winner\n' +
+			'elif rechts_conf > links_conf\n' +
+			'  score_rechts += 1\n' +
+			'  show_text "➡️ RECHTS gewinnt! " + rechts + " (" + rechts_conf + ") | Stand: " + score_links + " - " + score_rechts winner\n' +
+			'else\n' +
+			'  show_text "GLEICHSTAND! Beide gleich stark 💪" draw\n' +
+			'end\n' +
+			'\n' +
+			'# Endspiel-Check\n' +
+			'if score_links >= 10\n' +
+			'  show_text "🏆🏆🏆 LINKS GEWINNT DAS SPIEL! 🏆🏆🏆" winner\n' +
+			'end\n' +
+			'if score_rechts >= 10\n' +
+			'  show_text "🏆🏆🏆 RECHTS GEWINNT DAS SPIEL! 🏆🏆🏆" winner\n' +
+			'end\n'
+		});
+
+		// ═══════════════════════════════════════════════════════════════
+		// BEISPIEL 4: Sammelspiel / Catch-Game
+		// Sammle so viele verschiedene Objekte wie möglich
+		// ═══════════════════════════════════════════════════════════════
+		examples.push({
+		    name: '🎯 Sammelspiel',
+		    code:
+			'# ══ SAMMELSPIEL ══\n' +
+			'# Zeige verschiedene Objekte, um Punkte zu sammeln!\n' +
+			'# Gleiches Objekt zweimal hintereinander = keine Punkte\n' +
+			'\n' +
+			'aktuell = highest_conf_detection\n' +
+			'\n' +
+			'if aktuell == "none"\n' +
+			'  show_text "🎯 Zeige ein Objekt! Punkte: " + punkte normal\n' +
+			'elif aktuell != letztes_objekt\n' +
+			'  # Neues Objekt erkannt!\n' +
+			'  punkte += 10\n' +
+			'  streak += 1\n' +
+			'  bonus = streak * 5\n' +
+			'  punkte += bonus\n' +
+			'  letztes_objekt = aktuell\n' +
+			'  show_text "✅ " + aktuell + "! +" + (10 + bonus) + " Pkt | Streak: " + streak + "x | Total: " + punkte winner\n' +
+			'else\n' +
+			'  # Gleiches Objekt nochmal\n' +
+			'  streak = 0\n' +
+			'  show_text "🔄 " + aktuell + " schon gezeigt! Wechsle! Punkte: " + punkte draw\n' +
+			'end\n' +
+			'\n' +
+			'# Highscore\n' +
+			'if punkte > highscore\n' +
+			'  highscore = punkte\n' +
+			'end\n' +
+			'print "Punkte: " + punkte + " | Highscore: " + highscore + " | Streak: " + streak\n'
+		});
+
+		// ═══════════════════════════════════════════════════════════════
+		// BEISPIEL 5: Reaktionsspiel / Simon Says
+		// Das Spiel sagt, welches Objekt gezeigt werden soll
+		// ═══════════════════════════════════════════════════════════════
+		examples.push({
+		    name: '🧠 Reaktionsspiel',
+		    code:
+			'# ══ REAKTIONSSPIEL ══\n' +
+			'# Zeige das geforderte Objekt so schnell wie möglich!\n' +
+			'\n' +
+			'# Ziel wechseln alle paar Frames\n' +
+			'timer += 1\n' +
+			'\n' +
+			'# Neues Ziel setzen (wechselt zwischen Labels)\n' +
+			'if ziel == "none" or ziel == 0\n' +
+			'  ziel = "' + l1 + '"\n' +
+			'  timer = 0\n' +
+			'end\n' +
+			'\n' +
+			'# Timeout: Ziel wechseln nach 30 Frames (~10 Sek bei 3fps)\n' +
+			'if timer > 30\n' +
+			'  verpasst += 1\n' +
+			'  timer = 0\n' +
+			'  if ziel == "' + l1 + '"\n' +
+			'    ziel = "' + l2 + '"\n' +
+			'  else\n' +
+			'    ziel = "' + l1 + '"\n' +
+			'  end\n' +
+			'  show_text "⏰ Zu langsam! Verpasst: " + verpasst loser\n' +
+			'end\n' +
+			'\n' +
+			'# Prüfen ob richtiges Objekt gezeigt wird\n' +
+			'erkannt = highest_conf_detection\n' +
+			'\n' +
+			'if erkannt == ziel\n' +
+			'  treffer += 1\n' +
+			'  timer = 0\n' +
+			'  # Ziel wechseln\n' +
+			'  if ziel == "' + l1 + '"\n' +
+			'    ziel = "' + l2 + '"\n' +
+			'  else\n' +
+			'    ziel = "' + l1 + '"\n' +
+			'  end\n' +
+			'  show_text "✅ RICHTIG! Treffer: " + treffer winner\n' +
+			'elif erkannt != "none"\n' +
+			'  show_text "❌ Falsch! Zeige: " + ziel + " (nicht " + erkannt + ")" loser\n' +
+			'else\n' +
+			'  rest = 30 - timer\n' +
+			'  show_text "🎯 Zeige: " + ziel + " | Zeit: " + rest + " | Treffer: " + treffer normal\n' +
+			'end\n'
+		});
+
+		// ─── Beispiel laden (rotierend) ─────────────────────────
+		var example = examples[exampleIndex % examples.length];
+		exampleIndex++;
+
+		if (typeof window.loadCodeToBlocks === 'function') {
+		    window.loadCodeToBlocks(example.code);
+		} else {
+		    editor.value = example.code;
+		}
+		appendOutput("💡 Beispiel " + exampleIndex + "/5 geladen: " + example.name);
+		appendOutput("   (Nochmal klicken für nächstes Beispiel)");
+	    });
+	}
+
 
     // ─── Cleanup on unload ──────────────────────────────────────────────
     window.addEventListener('beforeunload', function() {
