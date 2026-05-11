@@ -347,29 +347,76 @@
 	// ─── DSL Parser & Interpreter ───────────────────────────────────────
 
 	function tokenizeLine(line) {
-		// Remove comments
-		var commentIdx = line.indexOf('#');
-		if (commentIdx !== -1) {
-			// Make sure # is not inside a string
-			var inStr = false, strChar = '';
-			for (var i = 0; i < commentIdx; i++) {
-				if (!inStr && (line[i] === '"' || line[i] === "'")) { inStr = true; strChar = line[i]; }
-				else if (inStr && line[i] === strChar) { inStr = false; }
-			}
-			if (!inStr) line = line.substring(0, commentIdx);
+	    // Remove comments
+	    var commentIdx = line.indexOf('#');
+	    if (commentIdx !== -1) {
+		// Make sure # is not inside a string
+		var inStr = false, strChar = '';
+		for (var i = 0; i < commentIdx; i++) {
+		    if (!inStr && (line[i] === '"' || line[i] === "'")) { inStr = true; strChar = line[i]; }
+		    else if (inStr && line[i] === strChar) { inStr = false; }
 		}
-		return line.trim();
+		if (!inStr) line = line.substring(0, commentIdx);
+	    }
+	    return line.trim();
 	}
 
 	function parseScript(code) {
-		var lines = code.split('\n');
-		var parsed = [];
-		for (var i = 0; i < lines.length; i++) {
-			var trimmed = tokenizeLine(lines[i]);
-			if (trimmed === '') continue;
-			parsed.push({ lineNum: i + 1, text: trimmed });
+	    var lines = code.split('\n');
+	    var parsed = [];
+	    for (var i = 0; i < lines.length; i++) {
+		var trimmed = tokenizeLine(lines[i]);
+		if (trimmed === '') continue;
+
+		// Handle braces: split a line that contains { or } into multiple logical lines
+		// e.g., "if x == 1 {" becomes "if x == 1" and "{"
+		// e.g., "} elif x == 2 {" becomes "}" and "elif x == 2" and "{"
+		// e.g., "}" becomes "}"
+		var expandedLines = expandBraces(trimmed);
+		for (var j = 0; j < expandedLines.length; j++) {
+		    var el = expandedLines[j].trim();
+		    if (el === '') continue;
+		    parsed.push({ lineNum: i + 1, text: el });
 		}
-		return parsed;
+	    }
+	    return parsed;
+	}
+
+	function expandBraces(line) {
+	    // We need to split on { and } but not inside strings
+	    var results = [];
+	    var current = '';
+	    var inStr = false, strChar = '';
+
+	    for (var i = 0; i < line.length; i++) {
+		var ch = line[i];
+		if (!inStr && (ch === '"' || ch === "'")) {
+		    inStr = true; strChar = ch; current += ch;
+		} else if (inStr && ch === strChar) {
+		    inStr = false; current += ch;
+		} else if (!inStr && ch === '{') {
+		    // Everything before '{' is one segment
+		    var before = current.trim();
+		    if (before !== '') results.push(before);
+		    current = '';
+		    // '{' is treated as a no-op (block opener), we just skip it
+		    // It signals that the block starts on the next line/statement
+		} else if (!inStr && ch === '}') {
+		    // Everything before '}' is one segment
+		    var before = current.trim();
+		    if (before !== '') results.push(before);
+		    current = '';
+		    // '}' is equivalent to 'end'
+		    results.push('end');
+		} else {
+		    current += ch;
+		}
+	    }
+
+	    var remaining = current.trim();
+	    if (remaining !== '') results.push(remaining);
+
+	    return results;
 	}
 
 	function evaluateExpression(expr, context) {

@@ -266,6 +266,8 @@ end
 		<li><code>print "text" + variable</code> — concatenation</li>
 		<li><code># comment</code> — comments (ignored)</li>
 		<li>Variables: <code>x = "value"</code> or <code>x = leftmost_detection</code></li>
+		<li><code>if</code> / <code>elif</code> / <code>else</code> / <code>end</code> — conditionals (use <code>end</code> or <code>}</code> to close blocks)</li>
+		<li><code>{</code> and <code>}</code> — optional C-style block delimiters (can be mixed with <code>end</code>)</li>
 	</ul>
 	<pre># Example: Count detections
 count = detection_count
