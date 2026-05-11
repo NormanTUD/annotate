@@ -529,10 +529,23 @@ fi';
 	}
 
 	function print_export_html_and_exit ($number_of_rows, $items_per_page, $images) {
-	    $html = _create_internal_html($number_of_rows, $items_per_page, $images);
-	    print($html);
-	    include("footer.php");
-	    exit(0);
+		$html = _create_internal_html($number_of_rows, $items_per_page, $images);
+
+		// Inject all categories for the label filter bar
+		$all_cats_for_js = [];
+		$cat_query = "SELECT id, name FROM category ORDER BY name";
+		$cat_res = rquery($cat_query);
+		while ($row = mysqli_fetch_assoc($cat_res)) {
+			$all_cats_for_js[] = ['id' => intval($row['id']), 'name' => $row['name']];
+		}
+		$all_categories_json = json_encode($all_cats_for_js);
+		$html = str_replace('</body>',
+			'<script>window.__ALL_CATEGORIES = ' . $all_categories_json . ';</script></body>',
+			$html);
+
+		print($html);
+		include("footer.php");
+		exit(0);
 	}
 
 	function write_bash_files ($tmp_dir, $epochs, $model_name) {
