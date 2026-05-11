@@ -105,12 +105,17 @@ async function flush_annotation_queue() {
 }
 
 function queue_annotation_event(action, annotation) {
+    // FIX: Strip both path prefix AND cache-buster from source
+    const cleanSource = annotation.target.source
+        .replace(/.*?filename=/, "")
+        .replace(/&.*$/, "");
+
     _annotation_save_queue.push({
         _action: action,
         position: annotation.target.selector.value,
         body: annotation.body,
         id: annotation.id,
-        source: annotation.target.source.replace(/.*\//, ""),
+        source: cleanSource,
         full: JSON.stringify(annotation),
         used_model: used_model
     });
@@ -127,14 +132,14 @@ function queue_annotation_event(action, annotation) {
 }
 
 function create_selects_from_annotation_debounced(force = 0) {
-    if (_selects_timeout) {
-        clearTimeout(_selects_timeout);
-    }
+	if (_selects_timeout) {
+		clearTimeout(_selects_timeout);
+	}
 
-    _selects_timeout = setTimeout(() => {
-        _selects_timeout = null;
-        create_selects_from_annotation(force);
-    }, _selects_debounce_delay);
+	_selects_timeout = setTimeout(() => {
+		_selects_timeout = null;
+		create_selects_from_annotation(force);
+	}, _selects_debounce_delay);
 }
 
 var skipped_images = [];
@@ -275,7 +280,7 @@ async function load_model() {
 	}
 
 	const model_json_url = "get_model_file.php?&uuid=" + encodeURIComponent(model_uuid) + "&filename=model.json";
-	
+
 	console.log(`Loading model_json_url: ${model_json_url}`);
 
 	try {
@@ -385,38 +390,41 @@ function error(title, msg) {
 }
 
 async function make_item_anno(elem, widgets = {}) {
-    anno = await Annotorious.init({
-        image: elem,
-        widgets: widgets
-    });
+	anno = await Annotorious.init({
+		image: elem,
+		widgets: widgets
+	});
 
-    await anno.loadAnnotations(
-        'get_current_annotations.php?first_other=1&source=' +
-        elem.src.replace(/.*?filename=/, "")
-    );
+	// FIX: Strip cache-buster &_=... from the source before querying annotations
+	const cleanSource = elem.src.replace(/.*?filename=/, "").replace(/&.*$/, "");
 
-    // --- createAnnotation: queue instead of immediate AJAX ---
-    anno.on('createAnnotation', function (annotation) {
-        queue_annotation_event('create', annotation);
-    });
+	await anno.loadAnnotations(
+		'get_current_annotations.php?first_other=1&source=' +
+		encodeURIComponent(cleanSource)
+	);
 
-    // --- updateAnnotation: queue instead of immediate AJAX ---
-    anno.on('updateAnnotation', function (annotation) {
-        queue_annotation_event('update', annotation);
-    });
+	// --- createAnnotation: queue instead of immediate AJAX ---
+	anno.on('createAnnotation', function (annotation) {
+		queue_annotation_event('create', annotation);
+	});
 
-    // --- deleteAnnotation: queue instead of immediate AJAX ---
-    anno.on('deleteAnnotation', function (annotation) {
-        queue_annotation_event('delete', annotation);
-    });
+	// --- updateAnnotation: queue instead of immediate AJAX ---
+	anno.on('updateAnnotation', function (annotation) {
+		queue_annotation_event('update', annotation);
+	});
 
-    anno.on('cancelSelected', function (selection) {
-        log(selection);
-    });
+	// --- deleteAnnotation: queue instead of immediate AJAX ---
+	anno.on('deleteAnnotation', function (annotation) {
+		queue_annotation_event('delete', annotation);
+	});
 
-    if (!(await anno.getAnnotations().length)) {
-        await predictImageWithModel();
-    }
+	anno.on('cancelSelected', function (selection) {
+		log(selection);
+	});
+
+	if (!(await anno.getAnnotations().length)) {
+		await predictImageWithModel();
+	}
 }
 
 async function create_annos () {
@@ -489,62 +497,68 @@ const toDataURL = url => fetch(url)
 	}));
 
 async function save_annos_batch(annotations) {
-	if (!annotations || annotations.length === 0) return;
+    if (!annotations || annotations.length === 0) return;
 
-	const batch = annotations.map(annotation => ({
-		position: annotation.target.selector.value,
-		body: annotation.body,
-		id: annotation.id,
-		source: annotation.target.source.replace(/.*\//, ""),
-			full: JSON.stringify(annotation),
-			used_model: used_model
-		}));
+    const batch = annotations.map(annotation => ({
+        position: annotation.target.selector.value,
+        body: annotation.body,
+        id: annotation.id,
+        // FIX: Strip cache-buster from source
+        source: annotation.target.source
+            .replace(/.*?filename=/, "")
+            .replace(/&.*$/, ""),
+        full: JSON.stringify(annotation),
+        used_model: used_model
+    }));
 
-		if (enable_debug) {
-			log("save_annos_batch data:", batch);
-		}
+    if (enable_debug) {
+        log("save_annos_batch data:", batch);
+    }
 
-		try {
-			const response = await $.ajax({
-				url: "submit_batch.php",
-				type: "POST",
-				contentType: "application/json",
-				data: JSON.stringify({ annotations: batch }),
-				dataType: "html"
-			});
-			success("Batch Save: OK", response);
-		} catch (err) {
-			error("Batch Save Failed", err.statusText || err);
-		}
+    try {
+        const response = await $.ajax({
+            url: "submit_batch.php",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ annotations: batch }),
+            dataType: "html"
+        });
+        success("Batch Save: OK", response);
+    } catch (err) {
+        error("Batch Save Failed", err.statusText || err);
+    }
 }
 
-async function save_anno (annotation) {
-	var data = {
-		"position": annotation.target.selector.value,
-		"body": annotation.body,
-		"id": annotation.id,
-		"source": annotation.target.source.replace(/.*\//, ""),
-		"full": JSON.stringify(annotation),
-		"used_model": used_model
-	};
+async function save_anno(annotation) {
+    var data = {
+        "position": annotation.target.selector.value,
+        "body": annotation.body,
+        "id": annotation.id,
+        // FIX: Strip cache-buster from source
+        "source": annotation.target.source
+            .replace(/.*?filename=/, "")
+            .replace(/&.*$/, ""),
+        "full": JSON.stringify(annotation),
+        "used_model": used_model
+    };
 
-	if(enable_debug) {
-		log("save anno data:", data);
-	}
+    if (enable_debug) {
+        log("save anno data:", data);
+    }
 
-	$.ajax({
-		url: "submit.php",
-		type: "post",
-		data: data,
-		success: async function (response) {
-			success("Save Anno: OK", response);
-			await load_dynamic_content();
-		},
-		error: async function(jqXHR, textStatus, errorThrown) {
-			error(textStatus, errorThrown);
-			await load_dynamic_content();
-		}
-	});
+    $.ajax({
+        url: "submit.php",
+        type: "post",
+        data: data,
+        success: async function (response) {
+            success("Save Anno: OK", response);
+            await load_dynamic_content();
+        },
+        error: async function (jqXHR, textStatus, errorThrown) {
+            error(textStatus, errorThrown);
+            await load_dynamic_content();
+        }
+    });
 }
 
 function get_names_from_ki_anno (anno) {
@@ -1428,15 +1442,18 @@ function delete_all_anno_new_tab (image) {
 }
 
 function delete_all_anno_current_image() {
-	var image_filename = $("#image").attr("src").replace(/.*filename=/, "");
+    // FIX: Strip cache-buster from filename extraction
+    var image_filename = $("#image").attr("src")
+        .replace(/.*?filename=/, "")
+        .replace(/&.*$/, "");
 
-	if(image_filename) {
-		delete_all_anno(image_filename);
-	} else {
-		error("delete_all_anno:", "Cannot find image");
-	}
+    if (image_filename) {
+        delete_all_anno(image_filename);
+    } else {
+        error("delete_all_anno:", "Cannot find image");
+    }
 
-	load_dynamic_content();	
+    load_dynamic_content();
 }
 
 function delete_all_anno_and_image(image) {
