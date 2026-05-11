@@ -12,26 +12,12 @@
 <h1>✊✌️✋ Stein Schere Papier – KI-Spiel Baukasten</h1>
 <p class="subtitle">Trainiere dein KI-Modell und programmiere dein eigenes Spiel – ganz ohne Vorkenntnisse!</p>
 
-<!-- Step Wizard -->
-<div class="step-bar">
-	<div class="step-item active" id="step1_indicator">
-		<span class="step-num">1</span> Modell wählen
-	</div>
-	<div class="step-item" id="step2_indicator">
-		<span class="step-num">2</span> Programm bauen
-	</div>
-	<div class="step-item" id="step3_indicator">
-		<span class="step-num">3</span> Spielen! 🎉
-	</div>
-</div>
-
-<!-- Setup Card -->
-<div class="setup-card">
-	<h3>⚡ Schnell-Setup</h3>
-	<div class="setup-row">
-		<label>🤖 KI-Modell:</label>
+<!-- Compact top bar: model + camera + confidence in one row -->
+<div class="topbar-controls">
+	<div class="topbar-item">
+		<label>🤖 Modell:</label>
 		<select id="game_model_select">
-			<option value="none">— Bitte wählen —</option>
+			<option value="none">— Kein Modell —</option>
 			<?php foreach ($available_models as $_model): ?>
 				<option value="<?php echo htmlspecialchars($_model[1]); ?>">
 					<?php echo htmlspecialchars($_model[0]); ?>
@@ -39,48 +25,38 @@
 			<?php endforeach; ?>
 		</select>
 	</div>
-	<div class="setup-row">
-		<label>📷 Kamera:</label>
+	<div class="topbar-item">
+		<label>📷</label>
 		<select id="game_camera_select">
 			<option value="">Kameras werden geladen...</option>
 		</select>
 	</div>
-	<div class="setup-row">
-		<label>🎚️ Sicherheit:</label>
+	<div class="topbar-item">
+		<label>🎚️</label>
 		<input type="range" id="game_conf_slider" min="0" max="1" step="0.01" value="0.3">
-		<span id="game_conf_value" style="color:#cdd6f4; font-size:13px; min-width:35px;">0.30</span>
-		<span style="color:#6c7086; font-size:11px;">(höher = strenger)</span>
+		<span id="game_conf_value">0.30</span>
 	</div>
-	<div class="setup-row" style="display:none;">
-		<label>⏱️ FPS:</label>
-		<input type="number" id="game_fps" min="1" max="10" value="2" style="width: 50px;">
+	<div class="topbar-item" style="display:none;">
+		<input type="number" id="game_fps" min="1" max="10" value="3">
 	</div>
-
-	<div class="help-bubble" id="setup_help">
-		<span class="emoji-big">💡</span>
-		<strong>Tipp:</strong> Wähle zuerst dein trainiertes Modell aus. Dann siehst du die Kategorien (z.B. Stein, Schere, Papier) und kannst dein Spiel programmieren!
+	<div class="topbar-item" id="model_labels_info" style="display:none;">
+		<span id="model_labels_chips"></span>
 	</div>
 </div>
 
-<div id="model_labels_info">
-	<strong>🏷️ Dein Modell erkennt:</strong> <span id="model_labels_chips"></span>
-</div>
+<!-- Main layout: everything visible at once -->
+<div id="game_editor_container" class="always-visible">
 
-<!-- Action Bar -->
-<div class="action-bar">
-	<button id="btn_run_game">▶️ Spiel starten!</button>
-	<button id="btn_stop_game">⏹ Stopp</button>
-	<button id="btn_load_example">💡 Beispiel laden</button>
-	<button id="btn_show_code">👁 Code anzeigen</button>
-	<button id="btn_clear_output">🗑 Ausgabe löschen</button>
-</div>
-
-<div id="game_editor_container">
-	<!-- Editor Panel -->
+	<!-- Left: Block Editor -->
 	<div id="editor_panel">
-		<h3 style="color: #cdd6f4; margin: 0 0 8px 0; font-size: 14px;">
-			🧩 Ziehe Blöcke hierher um dein Spiel zu bauen
-		</h3>
+		<div class="panel-header">
+			<h3>🧩 Dein Programm</h3>
+			<div class="editor-actions">
+				<button id="btn_load_example" title="Beispiel laden">💡</button>
+				<button id="btn_show_code" title="Code anzeigen">👁</button>
+				<button id="btn_clear_output" title="Ausgabe löschen">🗑</button>
+			</div>
+		</div>
 		<div id="visual_editor_wrapper">
 			<!-- Palette -->
 			<div id="block_palette">
@@ -97,6 +73,26 @@
 					<div class="palette-block cat-sensing" data-block-type="get_count" draggable="true">
 						🔢 anzahl = wie viele?
 						<span class="block-hint">Zählt wie viele Objekte sichtbar sind</span>
+					</div>
+					<div class="palette-block cat-sensing" data-block-type="get_top" draggable="true">
+						🎯 oben = was oben ist
+						<span class="block-hint">Speichert was die Kamera oben sieht</span>
+					</div>
+					<div class="palette-block cat-sensing" data-block-type="get_bottom" draggable="true">
+						🎯 unten = was unten ist
+						<span class="block-hint">Speichert was die Kamera unten sieht</span>
+					</div>
+					<div class="palette-block cat-sensing" data-block-type="get_largest" draggable="true">
+						🎯 größtes = größte Erkennung
+						<span class="block-hint">Das größte erkannte Objekt</span>
+					</div>
+					<div class="palette-block cat-sensing" data-block-type="get_smallest" draggable="true">
+						🎯 kleinstes = kleinste Erkennung
+						<span class="block-hint">Das kleinste erkannte Objekt</span>
+					</div>
+					<div class="palette-block cat-sensing" data-block-type="get_best" draggable="true">
+						🎯 bestes = sicherste Erkennung
+						<span class="block-hint">Die Erkennung mit höchster Sicherheit</span>
 					</div>
 				</div>
 
@@ -145,28 +141,6 @@
 					<div class="palette-category-title" style="background:#66bb6a;">🏷️ KATEGORIEN</div>
 					<div id="palette_labels_container"></div>
 				</div>
-
-				<div class="palette-block cat-sensing" data-block-type="get_top" draggable="true">
-				    🎯 oben = was oben ist
-				    <span class="block-hint">Speichert was die Kamera oben sieht</span>
-				</div>
-				<div class="palette-block cat-sensing" data-block-type="get_bottom" draggable="true">
-				    🎯 unten = was unten ist
-				    <span class="block-hint">Speichert was die Kamera unten sieht</span>
-				</div>
-				<div class="palette-block cat-sensing" data-block-type="get_largest" draggable="true">
-				    🎯 größtes = größte Erkennung
-				    <span class="block-hint">Das größte erkannte Objekt</span>
-				</div>
-				<div class="palette-block cat-sensing" data-block-type="get_smallest" draggable="true">
-				    🎯 kleinstes = kleinste Erkennung
-				    <span class="block-hint">Das kleinste erkannte Objekt</span>
-				</div>
-				<div class="palette-block cat-sensing" data-block-type="get_best" draggable="true">
-				    🎯 bestes = sicherste Erkennung
-				    <span class="block-hint">Die Erkennung mit höchster Sicherheit</span>
-				</div>
-
 			</div>
 
 			<!-- Workspace -->
@@ -175,7 +149,7 @@
 					<span class="big-arrow">⬅️</span>
 					Ziehe Blöcke von links hierher!<br><br>
 					<span style="font-size: 12px; color: #585b70;">
-						💡 Klicke auf "Beispiel laden" für einen Schnellstart!
+						💡 Klicke auf 💡 oben für einen Schnellstart!
 					</span>
 				</div>
 				<div id="trash_zone">🗑️</div>
@@ -183,24 +157,27 @@
 		</div>
 	</div>
 
-	<!-- Preview Panel -->
+	<!-- Right: Camera + Output (always visible) -->
 	<div id="preview_panel">
-		<div class="preview-card">
-			<h3>📺 Kamera & Ergebnis</h3>
+		<div class="preview-card cam-card">
 			<div id="game_webcam_container">
 				<video id="game_video" autoplay playsinline muted></video>
 				<canvas id="game_overlay_canvas"></canvas>
 				<div id="game_text_overlay"></div>
+				<div id="cam_placeholder">
+					<span>📷</span>
+					<p>Wähle ein Modell um die Kamera zu starten</p>
+				</div>
 			</div>
 		</div>
 
-		<div class="preview-card">
+		<div class="preview-card output-card">
 			<h3>📋 Protokoll</h3>
-			<div id="game_output">Hier erscheint die Ausgabe deines Spiels...
+			<div id="game_output">Wähle ein Modell oben – die Kamera startet automatisch! 🚀
 </div>
 		</div>
 
-		<div id="game_status">Status: Bereit</div>
+		<div id="game_status">Status: Wähle ein Modell zum Starten</div>
 	</div>
 </div>
 

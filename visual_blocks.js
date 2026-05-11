@@ -1,811 +1,472 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// VISUAL BLOCKS ENGINE (inline, enhanced for new UI)
+// VISUAL BLOCK EDITOR — Drag & drop blocks, auto-sync to DSL
 // ═══════════════════════════════════════════════════════════════════════════
+
 (function() {
 	"use strict";
 
-	// ─── Model Labels ───────────────────────────────────────────────────
-	var modelLabels = [];
-
-	function formatValueForDSL(val) {
-		if (val === undefined || val === null || val === '') return '"none"';
-		val = String(val);
-		if ((val.startsWith('"') && val.endsWith('"')) ||
-			(val.startsWith("'") && val.endsWith("'"))) return val;
-		if (!isNaN(val) && val.trim() !== '') return val;
-		if (modelLabels.indexOf(val) !== -1) return '"' + val + '"';
-		if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(val)) return val;
-		return '"' + val + '"';
-	}
-
-	// ─── Block Definitions ──────────────────────────────────────────────
-	var BLOCK_DEFS = {
-		get_left: {
-			category: 'sensing', color: '#4fc3f7', label: '🎯',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'links', placeholder: 'Variablenname' }
-			],
-			labelAfter: '= was links ist',
-			toDSL: function(f) { return (f.varname || 'links') + ' = leftmost_detection'; }
-		},
-		get_right: {
-			category: 'sensing', color: '#4fc3f7', label: '🎯',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'rechts', placeholder: 'Variablenname' }
-			],
-			labelAfter: '= was rechts ist',
-			toDSL: function(f) { return (f.varname || 'rechts') + ' = rightmost_detection'; }
-		},
-		get_count: {
-			category: 'sensing', color: '#4fc3f7', label: '🔢',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'anzahl', placeholder: 'Variablenname' }
-			],
-			labelAfter: '= wie viele Hände?',
-			toDSL: function(f) { return (f.varname || 'anzahl') + ' = detection_count'; }
-		},
-		'if': {
-			category: 'control', color: '#ffb74d', label: '🔶 wenn',
-			fields: [
-				{ type: 'label_or_var', key: 'left_val', default: 'links', placeholder: 'Variable' },
-				{ type: 'select', key: 'operator', options: ['==','!=','>','<','>=','<='], default: '==' },
-				{ type: 'label_or_input', key: 'right_val', default: '', placeholder: 'Wert' }
-			],
-			labelAfter: 'dann',
-			canHaveSecondCondition: true,
-			toDSL: function(f) {
-				var c = (f.left_val||'links') + ' ' + (f.operator||'==') + ' ' + formatValueForDSL(f.right_val);
-				if (f.logic && f.left_val2) {
-					c += ' ' + f.logic + ' ' + (f.left_val2||'rechts') + ' ' + (f.operator2||'==') + ' ' + formatValueForDSL(f.right_val2);
-				}
-				return 'if ' + c;
-			}
-		},
-		'elif': {
-			category: 'control', color: '#ffa726', label: '🔷 sonst wenn',
-			fields: [
-				{ type: 'label_or_var', key: 'left_val', default: 'links', placeholder: 'Variable' },
-				{ type: 'select', key: 'operator', options: ['==','!=','>','<','>=','<='], default: '==' },
-				{ type: 'label_or_input', key: 'right_val', default: '', placeholder: 'Wert' }
-			],
-			labelAfter: 'dann',
-			canHaveSecondCondition: true,
-			toDSL: function(f) {
-				var c = (f.left_val||'links') + ' ' + (f.operator||'==') + ' ' + formatValueForDSL(f.right_val);
-				if (f.logic && f.left_val2) {
-					c += ' ' + f.logic + ' ' + (f.left_val2||'rechts') + ' ' + (f.operator2||'==') + ' ' + formatValueForDSL(f.right_val2);
-				}
-				return 'elif ' + c;
-			}
-		},
-		'else': {
-			category: 'control', color: '#78909c', label: '⬜ sonst',
-			fields: [],
-			toDSL: function() { return 'else'; }
-		},
-		'end': {
-			category: 'control', color: '#90a4ae', label: '🔚 ende',
-			fields: [],
-			toDSL: function() { return 'end'; }
-		},
-		'print': {
-			category: 'output', color: '#ba68c8', label: '💬 sag',
-			fields: [
-				{ type: 'input', key: 'message', default: '"Hallo!"', placeholder: '"Nachricht" oder Variable', wide: true }
-			],
-			toDSL: function(f) { return 'print ' + (f.message || '""'); }
-		},
-		'show_text': {
-			category: 'display', color: '#4dd0e1', label: '📺 zeige auf Bild',
-			fields: [
-				{ type: 'input', key: 'message', default: '"Bereit!"', placeholder: '"Text" oder Variable', wide: true },
-				{ type: 'select', key: 'style', options: ['normal','winner','loser','draw'], default: 'normal' }
-			],
-			toDSL: function(f) { return 'show_text ' + (f.message || '""') + ' ' + (f.style || 'normal'); }
-		},
-		'set_var': {
-			category: 'variables', color: '#e57373', label: '📦 setze',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'x', placeholder: 'Name' }
-			],
-			labelMid: '=',
-			fields2: [
-				{ type: 'label_or_input', key: 'value', default: '', placeholder: 'Wert', wide: true }
-			],
-			toDSL: function(f) {
-				return (f.varname || 'x') + ' = ' + formatValueForDSL(f.value);
-			}
-		}
-	};
-
-	// ─── State ──────────────────────────────────────────────────────────
-	var workspaceBlocks = [];
-	var blockIdCounter = 0;
-	var draggedBlockType = null;
-	var draggedWorkspaceIdx = null;
-
-	var workspace   = document.getElementById('block_workspace');
+	var workspace = document.getElementById('block_workspace');
+	var palette = document.getElementById('block_palette');
 	var placeholder = document.getElementById('workspace_placeholder');
-	var trashZone   = document.getElementById('trash_zone');
-	var dslEditor   = document.getElementById('dsl_editor');
+	var trashZone = document.getElementById('trash_zone');
+	var dslEditor = document.getElementById('dsl_editor');
 
-	function newBlockId() { return 'block_' + (++blockIdCounter); }
+	var draggedBlock = null;
+	var draggedFromWorkspace = false;
+	var dragGhost = null;
 
-	// ─── Collect variable names ─────────────────────────────────────────
-	function collectVariableNames() {
-		var names = [], seen = {};
-		for (var i = 0; i < workspaceBlocks.length; i++) {
-			var b = workspaceBlocks[i], vn = null;
-			if (b.type === 'get_left' || b.type === 'get_right' || b.type === 'get_count') {
-				vn = b.fields.varname;
-			} else if (b.type === 'set_var') {
-				vn = b.fields.varname;
-			}
-			if (vn && !seen[vn]) { seen[vn] = true; names.push(vn); }
+	// ─── Sync blocks to DSL code ────────────────────────────────────────
+	function syncBlocksToDSL() {
+		var blocks = workspace.querySelectorAll('.workspace-block');
+		var lines = [];
+		for (var i = 0; i < blocks.length; i++) {
+			var code = getBlockCode(blocks[i]);
+			if (code !== null) lines.push(code);
 		}
-		['links', 'rechts', 'anzahl'].forEach(function(d) {
-			if (!seen[d]) names.push(d);
-		});
-		return names;
-	}
+		dslEditor.value = lines.join('\n');
 
-	// ─── Fetch model labels ─────────────────────────────────────────────
-	function fetchModelLabels(modelUuid) {
-		if (!modelUuid || modelUuid === 'none') {
-			modelLabels = [];
-			updateLabelUI();
-			updateStepIndicators();
-			return;
-		}
-		fetch('labels.php?model_uuid=' + encodeURIComponent(modelUuid))
-			.then(function(r) { return r.ok ? r.json() : []; })
-			.then(function(labels) {
-				modelLabels = Array.isArray(labels) ? labels : [];
-				updateLabelUI();
-				updateStepIndicators();
-			})
-			.catch(function() {
-				modelLabels = [];
-				updateLabelUI();
-				updateStepIndicators();
-			});
-	}
-
-	// ─── Update label UI ────────────────────────────────────────────────
-	function updateLabelUI() {
-		var infoBar = document.getElementById('model_labels_info');
-		var chips   = document.getElementById('model_labels_chips');
-		if (infoBar && chips) {
-			if (modelLabels.length > 0) {
-				infoBar.classList.add('visible');
-				chips.innerHTML = '';
-				modelLabels.forEach(function(label) {
-					var chip = document.createElement('span');
-					chip.className = 'label-chip';
-					chip.textContent = label;
-					chips.appendChild(chip);
-				});
-			} else {
-				infoBar.classList.remove('visible');
-				chips.innerHTML = '';
-			}
-		}
-
-		var paletteCat = document.getElementById('palette_labels_category');
-		var paletteCon = document.getElementById('palette_labels_container');
-		if (paletteCat && paletteCon) {
-			if (modelLabels.length > 0) {
-				paletteCat.style.display = 'block';
-				paletteCon.innerHTML = '';
-				modelLabels.forEach(function(label) {
-					var block = document.createElement('div');
-					block.className = 'palette-block cat-labels';
-					block.setAttribute('data-block-type', 'label_value');
-					block.setAttribute('data-label-value', label);
-					block.setAttribute('draggable', 'true');
-					block.textContent = '🏷️ "' + label + '"';
-					block.addEventListener('dragstart', function(e) {
-						draggedBlockType = 'label_value:' + label;
-						draggedWorkspaceIdx = null;
-						trashZone.classList.add('visible');
-						e.dataTransfer.effectAllowed = 'copy';
-						e.dataTransfer.setData('text/plain', 'palette:label_value:' + label);
-					});
-					block.addEventListener('dragend', function() {
-						draggedBlockType = null;
-						trashZone.classList.remove('visible');
-						trashZone.classList.remove('hover');
-					});
-					paletteCon.appendChild(block);
-				});
-			} else {
-				paletteCat.style.display = 'none';
-				paletteCon.innerHTML = '';
-			}
-		}
-		renderWorkspace();
-	}
-
-	// ─── Step indicators ────────────────────────────────────────────────
-	function updateStepIndicators() {
-		var step1 = document.getElementById('step1_indicator');
-		var step2 = document.getElementById('step2_indicator');
-		var step3 = document.getElementById('step3_indicator');
-
-		var modelSelected = document.getElementById('game_model_select').value !== 'none';
-		var hasBlocks = workspaceBlocks.length > 0;
-
-		if (step1) {
-			step1.className = 'step-item' + (modelSelected ? ' done' : ' active');
-		}
-		if (step2) {
-			step2.className = 'step-item' + (hasBlocks ? ' done' : (modelSelected ? ' active' : ''));
-		}
-		if (step3) {
-			step3.className = 'step-item' + (hasBlocks && modelSelected ? ' active' : '');
+		// Show/hide placeholder
+		if (placeholder) {
+			placeholder.style.display = blocks.length === 0 ? 'block' : 'none';
 		}
 	}
 
-	// Listen for model changes
-	var modelSelect = document.getElementById('game_model_select');
-	if (modelSelect) {
-		modelSelect.addEventListener('change', function() {
-			fetchModelLabels(this.value);
-			// Update help text
-			var help = document.getElementById('setup_help');
-			if (help && this.value !== 'none') {
-				help.innerHTML = '<span class="emoji-big">🎉</span> <strong>Super!</strong> Modell gewählt! Jetzt ziehe Blöcke in den Arbeitsbereich oder klicke "Beispiel laden" für einen Schnellstart.';
-			}
-		});
-		if (modelSelect.value && modelSelect.value !== 'none') {
-			fetchModelLabels(modelSelect.value);
+	function getBlockCode(block) {
+		var type = block.getAttribute('data-block-type');
+		var inputs = block.querySelectorAll('input, select');
+
+		switch (type) {
+			case 'get_left':
+				return 'links = leftmost_detection';
+			case 'get_right':
+				return 'rechts = rightmost_detection';
+			case 'get_count':
+				return 'anzahl = detection_count';
+			case 'get_top':
+				return 'oben = topmost_detection';
+			case 'get_bottom':
+				return 'unten = bottommost_detection';
+			case 'get_largest':
+				return 'groesstes = largest_detection';
+			case 'get_smallest':
+				return 'kleinstes = smallest_detection';
+			case 'get_best':
+				return 'bestes = highest_conf_detection';
+			case 'if':
+				return 'if ' + (getInputValue(inputs, 0) || 'links == "none"');
+			case 'elif':
+				return 'elif ' + (getInputValue(inputs, 0) || 'rechts == "none"');
+			case 'else':
+				return 'else';
+			case 'end':
+				return 'end';
+			case 'print':
+				return 'print ' + (getInputValue(inputs, 0) || '"Hallo!"');
+			case 'show_text':
+				var msg = getInputValue(inputs, 0) || '"Hallo!"';
+				var style = getInputValue(inputs, 1) || 'normal';
+				return 'show_text ' + msg + ' ' + style;
+			case 'set_var':
+				var vname = getInputValue(inputs, 0) || 'x';
+				var vval = getInputValue(inputs, 1) || '0';
+				return vname + ' = ' + vval;
+			case 'label_value':
+				return null; // Labels are values, not standalone lines
+			default:
+				return '# unknown block: ' + type;
 		}
 	}
 
-	// ─── Render workspace ───────────────────────────────────────────────
-	function renderWorkspace() {
-		var existing = workspace.querySelectorAll('.workspace-block, .drop-indicator');
-		existing.forEach(function(el) { el.remove(); });
-
-		placeholder.style.display = workspaceBlocks.length === 0 ? 'block' : 'none';
-
-		var indent = 0;
-		for (var i = 0; i < workspaceBlocks.length; i++) {
-			var block = workspaceBlocks[i];
-			var def = BLOCK_DEFS[block.type];
-			if (!def) continue;
-
-			if (block.type === 'elif' || block.type === 'else' || block.type === 'end') {
-				indent = Math.max(0, indent - 1);
-			}
-
-			var el = createBlockElement(block, i, indent);
-			workspace.insertBefore(el, trashZone);
-
-			if (block.type === 'if' || block.type === 'elif' || block.type === 'else') {
-				indent++;
-			}
-		}
-		generateDSL();
-		updateStepIndicators();
+	function getInputValue(inputs, index) {
+		if (inputs && inputs.length > index) return inputs[index].value;
+		return null;
 	}
 
-	// ─── Create block element ───────────────────────────────────────────
-	function createBlockElement(block, index, indentLevel) {
-		var def = BLOCK_DEFS[block.type];
-		var el = document.createElement('div');
-		el.className = 'workspace-block';
-		if (indentLevel > 0) el.classList.add('indent-' + Math.min(indentLevel, 3));
-		el.style.background = def.color;
-		el.setAttribute('data-index', index);
-		el.setAttribute('draggable', 'true');
+	// ─── Create workspace block from type ───────────────────────────────
+	function createWorkspaceBlock(type, data) {
+		var block = document.createElement('div');
+		block.className = 'workspace-block';
+		block.setAttribute('data-block-type', type);
+		block.setAttribute('draggable', 'true');
+
+		var cat = getCategoryClass(type);
+		if (cat) block.classList.add(cat);
+
+		var content = buildBlockContent(type, data);
+		block.innerHTML = content;
 
 		// Delete button
-		var delBtn = document.createElement('div');
+		var delBtn = document.createElement('button');
 		delBtn.className = 'block-delete';
 		delBtn.textContent = '✕';
+		delBtn.title = 'Block löschen';
 		delBtn.addEventListener('click', function(e) {
 			e.stopPropagation();
-			workspaceBlocks.splice(index, 1);
-			renderWorkspace();
+			block.remove();
+			syncBlocksToDSL();
 		});
-		el.appendChild(delBtn);
+		block.appendChild(delBtn);
 
-		// Label
-		var labelSpan = document.createElement('span');
-		labelSpan.textContent = def.label + ' ';
-		el.appendChild(labelSpan);
-
-		// Fields
-		if (def.fields) {
-			def.fields.forEach(function(fd) { el.appendChild(createFieldElement(block, fd)); });
-		}
-
-		if (def.labelAfter) {
-			var s = document.createElement('span');
-			s.textContent = ' ' + def.labelAfter;
-			el.appendChild(s);
-		}
-
-		if (def.labelMid) {
-			var m = document.createElement('span');
-			m.textContent = ' ' + def.labelMid + ' ';
-			el.appendChild(m);
-		}
-
-		if (def.fields2) {
-			def.fields2.forEach(function(fd) { el.appendChild(createFieldElement(block, fd)); });
-		}
-
-		// Second condition toggle for if/elif
-		if (def.canHaveSecondCondition) {
-			var addBtn = document.createElement('button');
-			addBtn.textContent = block.fields.logic ? '➖' : '➕';
-			addBtn.style.cssText = 'background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:50%;width:22px;height:22px;color:#fff;cursor:pointer;font-size:11px;margin-left:4px;padding:0;';
-			addBtn.title = block.fields.logic ? 'Zweite Bedingung entfernen' : 'Zweite Bedingung hinzufügen';
-			addBtn.addEventListener('click', function(e) {
-				e.stopPropagation();
-				if (block.fields.logic) {
-					delete block.fields.logic;
-					delete block.fields.left_val2;
-					delete block.fields.operator2;
-					delete block.fields.right_val2;
-				} else {
-					block.fields.logic = 'and';
-					block.fields.left_val2 = 'rechts';
-					block.fields.operator2 = '==';
-					block.fields.right_val2 = modelLabels.length > 0 ? modelLabels[0] : '';
-				}
-				renderWorkspace();
-			});
-			el.appendChild(addBtn);
-
-			if (block.fields.logic) {
-				var logicSel = document.createElement('select');
-				logicSel.className = 'block-select';
-				logicSel.style.marginLeft = '4px';
-				['and', 'or'].forEach(function(opt) {
-					var o = document.createElement('option');
-					o.value = opt; o.textContent = opt === 'and' ? 'UND' : 'ODER';
-					if (block.fields.logic === opt) o.selected = true;
-					logicSel.appendChild(o);
-				});
-				logicSel.addEventListener('change', function() {
-					block.fields.logic = this.value;
-					generateDSL();
-				});
-				logicSel.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-				el.appendChild(logicSel);
-
-				var c2 = [
-					{ type: 'label_or_var', key: 'left_val2', default: 'rechts', placeholder: 'Variable' },
-					{ type: 'select', key: 'operator2', options: ['==','!=','>','<','>=','<='], default: '==' },
-					{ type: 'label_or_input', key: 'right_val2', default: modelLabels.length > 0 ? modelLabels[0] : '', placeholder: 'Wert' }
-				];
-				c2.forEach(function(fd) { el.appendChild(createFieldElement(block, fd)); });
-			}
+		// Input change listeners
+		var inputs = block.querySelectorAll('input, select');
+		for (var i = 0; i < inputs.length; i++) {
+			inputs[i].addEventListener('input', syncBlocksToDSL);
+			inputs[i].addEventListener('change', syncBlocksToDSL);
 		}
 
 		// Drag events for reordering
-		el.addEventListener('dragstart', function(e) {
-			draggedWorkspaceIdx = index;
-			draggedBlockType = null;
-			el.classList.add('dragging');
-			trashZone.classList.add('visible');
+		block.addEventListener('dragstart', function(e) {
+			draggedBlock = this;
+			draggedFromWorkspace = true;
+			this.classList.add('dragging');
+			if (trashZone) trashZone.classList.add('visible');
 			e.dataTransfer.effectAllowed = 'move';
-			e.dataTransfer.setData('text/plain', 'workspace:' + index);
+			e.dataTransfer.setData('text/plain', '');
 		});
-		el.addEventListener('dragend', function() {
-			el.classList.remove('dragging');
-			trashZone.classList.remove('visible');
-			trashZone.classList.remove('hover');
-			draggedWorkspaceIdx = null;
-			workspace.querySelectorAll('.drop-indicator').forEach(function(ind) { ind.remove(); });
+
+		block.addEventListener('dragend', function() {
+			this.classList.remove('dragging');
+			if (trashZone) trashZone.classList.remove('visible');
+			clearDropIndicators();
+			draggedBlock = null;
+			draggedFromWorkspace = false;
 		});
-		el.addEventListener('dragover', function(e) {
+
+		block.addEventListener('dragover', function(e) {
 			e.preventDefault();
-			e.dataTransfer.dropEffect = 'move';
+			if (!draggedBlock) return;
+			clearDropIndicators();
+			var rect = this.getBoundingClientRect();
+			var midY = rect.top + rect.height / 2;
+			if (e.clientY < midY) {
+				this.classList.add('drop-above');
+			} else {
+				this.classList.add('drop-below');
+			}
 		});
-		el.addEventListener('drop', function(e) {
+
+		block.addEventListener('dragleave', function() {
+			this.classList.remove('drop-above', 'drop-below');
+		});
+
+		block.addEventListener('drop', function(e) {
 			e.preventDefault();
 			e.stopPropagation();
-			handleDrop(parseInt(el.getAttribute('data-index')), e);
-		});
-
-		return el;
-	}
-
-	// ─── Create field element ───────────────────────────────────────────
-	function createFieldElement(block, fieldDef) {
-		if (fieldDef.type === 'label_or_input') {
-			if (modelLabels.length > 0) {
-				var wrapper = document.createElement('span');
-				wrapper.style.cssText = 'display:inline-flex;align-items:center;gap:2px;';
-				var cur = block.fields[fieldDef.key] !== undefined ? block.fields[fieldDef.key] : (fieldDef.default || '');
-				if (block.fields[fieldDef.key] === undefined) block.fields[fieldDef.key] = fieldDef.default || '';
-				var isKnown = (modelLabels.indexOf(cur) !== -1) || cur === 'none' || cur === '';
-				var isCustom = !isKnown && cur !== '';
-
-				var sel = document.createElement('select');
-				sel.className = 'block-select';
-				var noneOpt = document.createElement('option');
-				noneOpt.value = 'none'; noneOpt.textContent = '— keine —';
-				if (cur === '' || cur === 'none') noneOpt.selected = true;
-				sel.appendChild(noneOpt);
-				modelLabels.forEach(function(label) {
-					var o = document.createElement('option');
-					o.value = label; o.textContent = '🏷️ ' + label;
-					if (cur === label) o.selected = true;
-					sel.appendChild(o);
-				});
-				var custOpt = document.createElement('option');
-				custOpt.value = '__custom__'; custOpt.textContent = '✏️ eigener Wert...';
-				if (isCustom) custOpt.selected = true;
-				sel.appendChild(custOpt);
-
-				var custIn = document.createElement('input');
-				custIn.type = 'text';
-				custIn.className = 'block-input';
-				custIn.placeholder = 'Wert eingeben...';
-				custIn.value = isCustom ? cur : '';
-				custIn.style.display = isCustom ? 'inline-block' : 'none';
-				custIn.style.minWidth = fieldDef.wide ? '120px' : '80px';
-
-				sel.addEventListener('change', function() {
-					if (this.value === '__custom__') {
-						custIn.style.display = 'inline-block';
-						custIn.focus();
-						block.fields[fieldDef.key] = custIn.value || '';
-					} else {
-						custIn.style.display = 'none';
-						block.fields[fieldDef.key] = this.value;
-					}
-					generateDSL();
-				});
-				custIn.addEventListener('input', function() {
-					block.fields[fieldDef.key] = this.value;
-					generateDSL();
-				});
-				sel.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-				custIn.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-				custIn.addEventListener('dragstart', function(e) { e.preventDefault(); e.stopPropagation(); });
-				wrapper.appendChild(sel);
-				wrapper.appendChild(custIn);
-				return wrapper;
+			if (!draggedBlock || draggedBlock === this) {
+				clearDropIndicators();
+				return;
 			}
-			return createPlainInput(block, fieldDef);
-		}
 
-		if (fieldDef.type === 'label_or_var') {
-			var wrapper = document.createElement('span');
-			wrapper.style.cssText = 'display:inline-flex;align-items:center;gap:2px;';
-			var cur = block.fields[fieldDef.key] !== undefined ? block.fields[fieldDef.key] : (fieldDef.default || '');
-			if (block.fields[fieldDef.key] === undefined) block.fields[fieldDef.key] = fieldDef.default || '';
-			var varNames = collectVariableNames();
-			var isKnown = varNames.indexOf(cur) !== -1;
-			var isCustom = !isKnown && cur !== '';
+			var rect = this.getBoundingClientRect();
+			var midY = rect.top + rect.height / 2;
+			var insertBefore = e.clientY < midY;
 
-			var sel = document.createElement('select');
-			sel.className = 'block-select';
-			if (varNames.length === 0) {
-				var emptyOpt = document.createElement('option');
-				emptyOpt.value = ''; emptyOpt.textContent = '(keine Variablen)';
-				sel.appendChild(emptyOpt);
+			if (draggedFromWorkspace) {
+				// Reorder
+				if (insertBefore) {
+					workspace.insertBefore(draggedBlock, this);
+				} else {
+					workspace.insertBefore(draggedBlock, this.nextSibling);
+				}
 			} else {
-				varNames.forEach(function(vn) {
-					var o = document.createElement('option');
-					o.value = vn; o.textContent = '📦 ' + vn;
-					if (cur === vn) o.selected = true;
-					sel.appendChild(o);
-				});
-			}
-			var custOpt = document.createElement('option');
-			custOpt.value = '__custom__'; custOpt.textContent = '✏️ eigener...';
-			if (isCustom) custOpt.selected = true;
-			sel.appendChild(custOpt);
-
-			var custIn = document.createElement('input');
-			custIn.type = 'text';
-			custIn.className = 'block-input';
-			custIn.placeholder = 'Name...';
-			custIn.value = isCustom ? cur : '';
-			custIn.style.display = isCustom ? 'inline-block' : 'none';
-			custIn.style.minWidth = '70px';
-
-			sel.addEventListener('change', function() {
-				if (this.value === '__custom__') {
-					custIn.style.display = 'inline-block';
-					custIn.focus();
-					block.fields[fieldDef.key] = custIn.value || '';
+				// New block from palette
+				var newBlock = createWorkspaceBlock(
+					draggedBlock.getAttribute('data-block-type'),
+					{ label: draggedBlock.getAttribute('data-label') }
+				);
+				if (insertBefore) {
+					workspace.insertBefore(newBlock, this);
 				} else {
-					custIn.style.display = 'none';
-					block.fields[fieldDef.key] = this.value;
+					workspace.insertBefore(newBlock, this.nextSibling);
 				}
-				generateDSL();
-			});
-			custIn.addEventListener('input', function() {
-				block.fields[fieldDef.key] = this.value;
-				generateDSL();
-			});
-			sel.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-			custIn.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-			custIn.addEventListener('dragstart', function(e) { e.preventDefault(); e.stopPropagation(); });
-			wrapper.appendChild(sel);
-			wrapper.appendChild(custIn);
-			return wrapper;
-		}
-
-		if (fieldDef.type === 'input' || fieldDef.type === 'condition') {
-			return createPlainInput(block, fieldDef);
-		}
-
-		if (fieldDef.type === 'select') {
-			var sel = document.createElement('select');
-			sel.className = 'block-select';
-			if (block.fields[fieldDef.key] === undefined) {
-				block.fields[fieldDef.key] = fieldDef.default || fieldDef.options[0];
 			}
-			fieldDef.options.forEach(function(opt) {
-				var o = document.createElement('option');
-				o.value = opt; o.textContent = opt;
-				if (block.fields[fieldDef.key] === opt) o.selected = true;
-				sel.appendChild(o);
-			});
-			sel.addEventListener('change', function() {
-				block.fields[fieldDef.key] = this.value;
-				generateDSL();
-			});
-			sel.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-			return sel;
-		}
 
-		var span = document.createElement('span');
-		span.textContent = fieldDef.default || '';
-		return span;
-	}
-
-	function createPlainInput(block, fieldDef) {
-		var input = document.createElement('input');
-		input.type = 'text';
-		input.className = 'block-input';
-		input.placeholder = fieldDef.placeholder || '';
-		input.value = block.fields[fieldDef.key] !== undefined ? block.fields[fieldDef.key] : (fieldDef.default || '');
-		if (fieldDef.wide) input.style.minWidth = '140px';
-		if (block.fields[fieldDef.key] === undefined) block.fields[fieldDef.key] = fieldDef.default || '';
-		input.addEventListener('input', function() {
-			block.fields[fieldDef.key] = this.value;
-			generateDSL();
+			clearDropIndicators();
+			syncBlocksToDSL();
 		});
-		input.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-		input.addEventListener('dragstart', function(e) { e.preventDefault(); e.stopPropagation(); });
-		return input;
+
+		return block;
 	}
 
-	// ─── Handle drop ────────────────────────────────────────────────────
-	function handleDrop(targetIndex, e) {
-		workspace.querySelectorAll('.drop-indicator').forEach(function(ind) { ind.remove(); });
-		if (draggedWorkspaceIdx !== null) {
-			if (draggedWorkspaceIdx === targetIndex) return;
-			var moved = workspaceBlocks.splice(draggedWorkspaceIdx, 1)[0];
-			var ins = targetIndex;
-			if (draggedWorkspaceIdx < targetIndex) ins--;
-			var rect = e.currentTarget ? e.currentTarget.getBoundingClientRect() : null;
-			if (rect && e.clientY > rect.top + rect.height / 2) ins++;
-			ins = Math.max(0, Math.min(ins, workspaceBlocks.length));
-			workspaceBlocks.splice(ins, 0, moved);
-			draggedWorkspaceIdx = null;
-			renderWorkspace();
-			return;
-		}
-		if (draggedBlockType) {
-			var nb = createNewBlock(draggedBlockType);
-			if (nb) {
-				var ins = targetIndex;
-				var rect = e.currentTarget ? e.currentTarget.getBoundingClientRect() : null;
-				if (rect && e.clientY > rect.top + rect.height / 2) ins++;
-				workspaceBlocks.splice(ins, 0, nb);
-				renderWorkspace();
-			}
-			draggedBlockType = null;
-		}
-	}
-
-	// ─── Create new block ───────────────────────────────────────────────
-	function createNewBlock(type) {
-		if (type && type.startsWith('label_value:')) {
-			var labelName = type.substring('label_value:'.length);
-			return { id: newBlockId(), type: 'set_var', fields: { varname: 'label', value: labelName } };
-		}
-		var def = BLOCK_DEFS[type];
-		if (!def) return null;
-		var fields = {};
-		if (def.fields) {
-			def.fields.forEach(function(f) {
-				if (f.type === 'label_or_input' && modelLabels.length > 0) {
-					fields[f.key] = f.default || modelLabels[0];
-				} else {
-					fields[f.key] = f.default || '';
-				}
-			});
-		}
-		if (def.fields2) {
-			def.fields2.forEach(function(f) {
-				if (f.type === 'label_or_input' && modelLabels.length > 0) {
-					fields[f.key] = f.default || modelLabels[0];
-				} else {
-					fields[f.key] = f.default || '';
-				}
-			});
-		}
-
-		return {
-			id: newBlockId(),
-			type: type,
-			fields: fields
+	function getCategoryClass(type) {
+		var map = {
+			'get_left': 'cat-sensing', 'get_right': 'cat-sensing',
+			'get_count': 'cat-sensing', 'get_top': 'cat-sensing',
+			'get_bottom': 'cat-sensing', 'get_largest': 'cat-sensing',
+			'get_smallest': 'cat-sensing', 'get_best': 'cat-sensing',
+			'if': 'cat-control', 'elif': 'cat-control',
+			'else': 'cat-control', 'end': 'cat-control',
+			'print': 'cat-output', 'show_text': 'cat-display',
+			'set_var': 'cat-variables', 'label_value': 'cat-labels'
 		};
+		return map[type] || '';
 	}
 
-	// ─── Generate DSL code from blocks ──────────────────────────────────
-	function generateDSL() {
-		var lines = [];
-		for (var i = 0; i < workspaceBlocks.length; i++) {
-			var block = workspaceBlocks[i];
-			var def = BLOCK_DEFS[block.type];
-			if (!def || !def.toDSL) continue;
-			lines.push(def.toDSL(block.fields));
+	function buildBlockContent(type, data) {
+		switch (type) {
+			case 'get_left':
+				return '🎯 <strong>links</strong> = was links ist';
+			case 'get_right':
+				return '🎯 <strong>rechts</strong> = was rechts ist';
+			case 'get_count':
+				return '🔢 <strong>anzahl</strong> = wie viele?';
+			case 'get_top':
+				return '🎯 <strong>oben</strong> = was oben ist';
+			case 'get_bottom':
+				return '🎯 <strong>unten</strong> = was unten ist';
+			case 'get_largest':
+				return '🎯 <strong>größtes</strong> = größte Erkennung';
+			case 'get_smallest':
+				return '🎯 <strong>kleinstes</strong> = kleinste Erkennung';
+			case 'get_best':
+				return '🎯 <strong>bestes</strong> = sicherste Erkennung';
+			case 'if':
+				return '🔶 wenn <input type="text" value=\'links == "none"\' placeholder="Bedingung" style="width:180px;"> dann';
+			case 'elif':
+				return '🔷 sonst wenn <input type="text" value=\'rechts == "none"\' placeholder="Bedingung" style="width:150px;"> dann';
+			case 'else':
+				return '⬜ sonst';
+			case 'end':
+				return '🔚 ende';
+			case 'print':
+				return '💬 sag <input type="text" value=\'"Hallo!"\' placeholder="Text / Variable" style="width:180px;">';
+			case 'show_text':
+				return '📺 zeige <input type="text" value=\'"Hallo!"\' placeholder="Text / Variable" style="width:140px;"> '
+					+ '<select><option value="normal">normal</option><option value="winner">🎉 Gewinner</option>'
+					+ '<option value="loser">😢 Verlierer</option><option value="draw">🤝 Gleich</option></select>';
+			case 'set_var':
+				return '📦 setze <input type="text" value="x" placeholder="Name" style="width:60px;"> = '
+					+ '<input type="text" value="0" placeholder="Wert" style="width:100px;">';
+			case 'label_value':
+				var label = (data && data.label) || '???';
+				return '🏷️ <strong>"' + label + '"</strong>';
+			default:
+				return '❓ Unbekannt';
 		}
-		var code = lines.join('\n');
-		dslEditor.value = code;
-		return code;
 	}
 
-	// ─── Palette drag events ────────────────────────────────────────────
-	function bindPaletteDragEvents() {
-		var paletteBlocks = document.querySelectorAll('#block_palette .palette-block');
-		paletteBlocks.forEach(function(paletteEl) {
-			if (paletteEl.getAttribute('data-block-type') === 'label_value') return;
-			paletteEl.addEventListener('dragstart', function(e) {
-				draggedBlockType = paletteEl.getAttribute('data-block-type');
-				draggedWorkspaceIdx = null;
-				trashZone.classList.add('visible');
-				e.dataTransfer.effectAllowed = 'copy';
-				e.dataTransfer.setData('text/plain', 'palette:' + draggedBlockType);
-			});
-			paletteEl.addEventListener('dragend', function() {
-				draggedBlockType = null;
-				trashZone.classList.remove('visible');
-				trashZone.classList.remove('hover');
-			});
-		});
-	}
-	bindPaletteDragEvents();
-
-	// ─── Workspace drag/drop events ─────────────────────────────────────
+	// ─── Workspace drop zone ────────────────────────────────────────────
 	workspace.addEventListener('dragover', function(e) {
 		e.preventDefault();
 		workspace.classList.add('drag-over');
-		e.dataTransfer.dropEffect = (draggedWorkspaceIdx !== null) ? 'move' : 'copy';
 	});
 
-	workspace.addEventListener('dragleave', function() {
-		workspace.classList.remove('drag-over');
+	workspace.addEventListener('dragleave', function(e) {
+		if (!workspace.contains(e.relatedTarget)) {
+			workspace.classList.remove('drag-over');
+		}
 	});
 
 	workspace.addEventListener('drop', function(e) {
 		e.preventDefault();
 		workspace.classList.remove('drag-over');
-		if (e.target === workspace || e.target === placeholder) {
-			if (draggedBlockType) {
-				var newBlock = createNewBlock(draggedBlockType);
-				if (newBlock) {
-					workspaceBlocks.push(newBlock);
-					renderWorkspace();
-				}
-				draggedBlockType = null;
-			} else if (draggedWorkspaceIdx !== null) {
-				var movedBlock = workspaceBlocks.splice(draggedWorkspaceIdx, 1)[0];
-				workspaceBlocks.push(movedBlock);
-				draggedWorkspaceIdx = null;
-				renderWorkspace();
-			}
+
+		if (!draggedBlock) return;
+
+		if (draggedFromWorkspace) {
+			// Already handled by block-level drop
+			syncBlocksToDSL();
+			return;
 		}
+
+		// New block from palette
+		var type = draggedBlock.getAttribute('data-block-type');
+		var newBlock = createWorkspaceBlock(type, {
+			label: draggedBlock.getAttribute('data-label')
+		});
+		workspace.appendChild(newBlock);
+		syncBlocksToDSL();
 	});
+
+	// ─── Palette drag events ────────────────────────────────────────────
+	function initPaletteDrag() {
+		var paletteBlocks = palette.querySelectorAll('.palette-block');
+		for (var i = 0; i < paletteBlocks.length; i++) {
+			attachPaletteDrag(paletteBlocks[i]);
+		}
+	}
+
+	function attachPaletteDrag(block) {
+		block.addEventListener('dragstart', function(e) {
+			draggedBlock = this;
+			draggedFromWorkspace = false;
+			if (trashZone) trashZone.classList.remove('visible');
+			e.dataTransfer.effectAllowed = 'copy';
+			e.dataTransfer.setData('text/plain', '');
+		});
+
+		block.addEventListener('dragend', function() {
+			draggedBlock = null;
+			draggedFromWorkspace = false;
+			workspace.classList.remove('drag-over');
+		});
+
+		// Double-click to add quickly
+		block.addEventListener('dblclick', function() {
+			var type = this.getAttribute('data-block-type');
+			var newBlock = createWorkspaceBlock(type, {
+				label: this.getAttribute('data-label')
+			});
+			workspace.appendChild(newBlock);
+			syncBlocksToDSL();
+		});
+	}
+
+	initPaletteDrag();
+
+	// Re-init when labels are dynamically added
+	var observer = new MutationObserver(function(mutations) {
+		mutations.forEach(function(mutation) {
+			if (mutation.addedNodes.length > 0) {
+				mutation.addedNodes.forEach(function(node) {
+					if (node.classList && node.classList.contains('palette-block')) {
+						attachPaletteDrag(node);
+					}
+				});
+			}
+		});
+	});
+
+	var labelsContainer = document.getElementById('palette_labels_container');
+	if (labelsContainer) {
+		observer.observe(labelsContainer, { childList: true });
+	}
 
 	// ─── Trash zone ─────────────────────────────────────────────────────
-	trashZone.addEventListener('dragover', function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		trashZone.classList.add('hover');
-		e.dataTransfer.dropEffect = 'move';
-	});
+	if (trashZone) {
+		trashZone.addEventListener('dragover', function(e) {
+			e.preventDefault();
+			trashZone.classList.add('drag-over');
+		});
 
-	trashZone.addEventListener('dragleave', function() {
-		trashZone.classList.remove('hover');
-	});
+		trashZone.addEventListener('dragleave', function() {
+			trashZone.classList.remove('drag-over');
+		});
 
-	trashZone.addEventListener('drop', function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		trashZone.classList.remove('hover');
-		trashZone.classList.remove('visible');
-		if (draggedWorkspaceIdx !== null) {
-			workspaceBlocks.splice(draggedWorkspaceIdx, 1);
-			draggedWorkspaceIdx = null;
-			renderWorkspace();
+		trashZone.addEventListener('drop', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			trashZone.classList.remove('drag-over');
+
+			if (draggedBlock && draggedFromWorkspace) {
+				draggedBlock.remove();
+				syncBlocksToDSL();
+			}
+
+			draggedBlock = null;
+			draggedFromWorkspace = false;
+		});
+	}
+
+	// ─── Clear drop indicators ──────────────────────────────────────────
+	function clearDropIndicators() {
+		var blocks = workspace.querySelectorAll('.workspace-block');
+		for (var i = 0; i < blocks.length; i++) {
+			blocks[i].classList.remove('drop-above', 'drop-below');
 		}
-		draggedBlockType = null;
-	});
-
-	// ─── Show code button ───────────────────────────────────────────────
-	var showCodeBtn = document.getElementById('btn_show_code');
-	if (showCodeBtn) {
-		showCodeBtn.addEventListener('click', function() {
-			var code = generateDSL();
-			document.getElementById('code_preview_content').textContent = code || '(noch keine Blöcke)';
-			document.getElementById('code_preview_modal').classList.add('visible');
-		});
 	}
 
-	// ─── Close modal on background click ────────────────────────────────
-	var modal = document.getElementById('code_preview_modal');
-	if (modal) {
-		modal.addEventListener('click', function(e) {
-			if (e.target === modal) modal.classList.remove('visible');
-		});
+	// ─── Load code string into visual blocks ────────────────────────────
+	function loadCodeToBlocks(code) {
+		// Clear workspace
+		var existingBlocks = workspace.querySelectorAll('.workspace-block');
+		for (var i = 0; i < existingBlocks.length; i++) {
+			existingBlocks[i].remove();
+		}
+
+		var lines = code.split('\n');
+		for (var i = 0; i < lines.length; i++) {
+			var line = lines[i].trim();
+			if (line === '' || line.startsWith('#')) continue;
+
+			var blockInfo = lineToBlock(line);
+			if (blockInfo) {
+				var newBlock = createWorkspaceBlock(blockInfo.type, blockInfo.data);
+				// Set input values if provided
+				if (blockInfo.inputs) {
+					var inputs = newBlock.querySelectorAll('input, select');
+					for (var j = 0; j < blockInfo.inputs.length && j < inputs.length; j++) {
+						inputs[j].value = blockInfo.inputs[j];
+					}
+				}
+				workspace.appendChild(newBlock);
+			}
+		}
+
+		syncBlocksToDSL();
 	}
 
-	// ─── Load Example Button ────────────────────────────────────────────
-	var loadExampleBtn = document.getElementById('btn_load_example');
-	if (loadExampleBtn) {
-		loadExampleBtn.addEventListener('click', function() {
-			loadDefaultExample();
-		});
-	}
-
-	function loadDefaultExample() {
-		workspaceBlocks = [];
-
-		var l1 = modelLabels.length > 0 ? modelLabels[0] : 'KategorieA';
-		var l2 = modelLabels.length > 1 ? modelLabels[1] : 'KategorieB';
-
+	function lineToBlock(line) {
 		// Sensing blocks
-		workspaceBlocks.push({ id: newBlockId(), type: 'get_count', fields: { varname: 'anzahl' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'get_left', fields: { varname: 'links' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'get_right', fields: { varname: 'rechts' } });
+		if (line === 'links = leftmost_detection') return { type: 'get_left', data: {} };
+		if (line === 'rechts = rightmost_detection') return { type: 'get_right', data: {} };
+		if (line === 'anzahl = detection_count') return { type: 'get_count', data: {} };
+		if (line === 'oben = topmost_detection') return { type: 'get_top', data: {} };
+		if (line === 'unten = bottommost_detection') return { type: 'get_bottom', data: {} };
+		if (line === 'groesstes = largest_detection') return { type: 'get_largest', data: {} };
+		if (line === 'kleinstes = smallest_detection') return { type: 'get_smallest', data: {} };
+		if (line === 'bestes = highest_conf_detection') return { type: 'get_best', data: {} };
 
-		// if anzahl == 0 → nothing detected
-		workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: { left_val: 'anzahl', operator: '==', right_val: '0' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Nichts erkannt – halte etwas in die Kamera!"', style: 'normal' } });
+		// Control flow
+		if (line.startsWith('if ')) return { type: 'if', data: {}, inputs: [line.substring(3).trim()] };
+		if (line.startsWith('elif ')) return { type: 'elif', data: {}, inputs: [line.substring(5).trim()] };
+		if (line === 'else') return { type: 'else', data: {} };
+		if (line === 'end') return { type: 'end', data: {} };
 
-		// elif anzahl == 1 → one detection
-		workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'anzahl', operator: '==', right_val: '1' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Ich sehe: " + links', style: 'winner' } });
+		// Show text
+		if (line.startsWith('show_text ')) {
+			var afterCmd = line.substring('show_text '.length).trim();
+			var styles = ['normal', 'winner', 'loser', 'draw'];
+			var style = 'normal';
+			var message = afterCmd;
 
-		// elif anzahl == 2 → two detections, compare
-		workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'anzahl', operator: '==', right_val: '2' } });
+			// Try to extract style from end
+			var lastSpace = -1;
+			var inStr = false, strChar = '';
+			for (var i = 0; i < afterCmd.length; i++) {
+				var ch = afterCmd[i];
+				if (!inStr && (ch === '"' || ch === "'")) { inStr = true; strChar = ch; }
+				else if (inStr && ch === strChar) { inStr = false; }
+				else if (!inStr && ch === ' ') { lastSpace = i; }
+			}
+			if (!inStr && lastSpace !== -1) {
+				var candidate = afterCmd.substring(lastSpace + 1);
+				if (styles.indexOf(candidate) !== -1) {
+					style = candidate;
+					message = afterCmd.substring(0, lastSpace).trim();
+				}
+			}
+			return { type: 'show_text', data: {}, inputs: [message, style] };
+		}
 
-		// inner if: same label?
-		workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: { left_val: 'links', operator: '==', right_val: 'rechts' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Beide gleich: " + links', style: 'draw' } });
+		// Print
+		if (line.startsWith('print ') || line.startsWith('print(')) {
+			var arg = '';
+			if (line.startsWith('print(')) {
+				var depth = 0;
+				for (var i = 5; i < line.length; i++) {
+					if (line[i] === '(') depth++;
+					else if (line[i] === ')') { depth--; if (depth === 0) { arg = line.substring(6, i); break; } }
+				}
+			} else {
+				arg = line.substring(6).trim();
+			}
+			return { type: 'print', data: {}, inputs: [arg] };
+		}
 
-		workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Links: " + links + " | Rechts: " + rechts', style: 'normal' } });
+		// Variable assignment (generic)
+		var assignMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/);
+		if (assignMatch) {
+			return { type: 'set_var', data: {}, inputs: [assignMatch[1], assignMatch[2].trim()] };
+		}
 
-		workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} }); // end inner if
-
-		// else → many detections
-		workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Ich sehe " + anzahl + " Objekte!"', style: 'normal' } });
-
-		// end outer if
-		workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} });
-
-		renderWorkspace();
+		return null;
 	}
 
-	// ─── Initialize ─────────────────────────────────────────────────────
-	workspaceBlocks = [];
-	renderWorkspace();
+	// ─── Expose loadCodeToBlocks globally ───────────────────────────────
+	window.loadCodeToBlocks = loadCodeToBlocks;
+
+	// ─── Initial sync ───────────────────────────────────────────────────
+	syncBlocksToDSL();
 
 })();
-

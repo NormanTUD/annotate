@@ -621,3 +621,702 @@
 #game_text_overlay:not(:empty) {
     display: block;
 }
+
+
+
+
+
+
+
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GAME EDITOR — Always-visible, smooth, fun layout
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#game_editor_page {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 10px 15px;
+	font-family: 'Nunito', sans-serif;
+}
+
+#game_editor_page h1 {
+	color: #cdd6f4;
+	font-size: 22px;
+	margin: 0 0 2px 0;
+	text-align: center;
+}
+
+#game_editor_page .subtitle {
+	color: #a6adc8;
+	font-size: 13px;
+	text-align: center;
+	margin: 0 0 10px 0;
+}
+
+/* ─── Topbar Controls ──────────────────────────────────────────────── */
+.topbar-controls {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	background: #1e1e2e;
+	border: 1px solid #45475a;
+	border-radius: 10px;
+	padding: 8px 14px;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+
+.topbar-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: #cdd6f4;
+}
+
+.topbar-item label {
+	font-weight: 700;
+	white-space: nowrap;
+	font-size: 13px;
+	color: #bac2de;
+}
+
+.topbar-item select,
+.topbar-item input[type="number"] {
+	background: #313244;
+	border: 1px solid #585b70;
+	border-radius: 6px;
+	color: #cdd6f4;
+	padding: 4px 8px;
+	font-size: 12px;
+	font-family: 'Nunito', sans-serif;
+}
+
+.topbar-item select {
+	max-width: 200px;
+}
+
+.topbar-item input[type="range"] {
+	width: 80px;
+	accent-color: #89b4fa;
+}
+
+#game_conf_value {
+	color: #a6adc8;
+	font-size: 12px;
+	min-width: 30px;
+}
+
+/* Label chips */
+.label-chip {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #1e1e2e;
+	margin-right: 4px;
+}
+
+#model_labels_info {
+	display: none;
+	align-items: center;
+	gap: 6px;
+}
+
+/* ─── Main Container: always visible, side by side ─────────────────── */
+#game_editor_container.always-visible {
+	display: grid;
+	grid-template-columns: 1fr 380px;
+	gap: 10px;
+	min-height: 500px;
+}
+
+/* ─── Editor Panel ─────────────────────────────────────────────────── */
+#editor_panel {
+	background: #1e1e2e;
+	border: 1px solid #45475a;
+	border-radius: 12px;
+	padding: 10px;
+	display: flex;
+	flex-direction: column;
+	min-height: 500px;
+}
+
+#editor_panel .panel-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+#editor_panel .panel-header h3 {
+	color: #cdd6f4;
+	font-size: 14px;
+	margin: 0;
+}
+
+.editor-actions {
+	display: flex;
+	gap: 4px;
+}
+
+.editor-actions button {
+	background: #313244;
+	border: 1px solid #585b70;
+	border-radius: 6px;
+	color: #cdd6f4;
+	padding: 4px 8px;
+	font-size: 14px;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.editor-actions button:hover {
+	background: #45475a;
+	transform: scale(1.05);
+}
+
+/* ─── Visual Editor ────────────────────────────────────────────────── */
+#visual_editor_wrapper {
+	display: flex;
+	gap: 8px;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+/* ─── Block Palette ────────────────────────────────────────────────── */
+#block_palette {
+	width: 220px;
+	min-width: 220px;
+	background: #181825;
+	border: 1px solid #45475a;
+	border-radius: 8px;
+	padding: 6px;
+	overflow-y: auto;
+	max-height: 100%;
+}
+
+.palette-category {
+	margin-bottom: 8px;
+}
+
+.palette-category-title {
+	font-size: 10px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	padding: 3px 8px;
+	border-radius: 5px;
+	color: #1e1e2e;
+	margin-bottom: 4px;
+}
+
+.palette-block {
+	background: #313244;
+	border: 1px solid #585b70;
+	border-radius: 6px;
+	padding: 6px 8px;
+	margin-bottom: 3px;
+	font-size: 12px;
+	color: #cdd6f4;
+	cursor: grab;
+	transition: all 0.15s;
+	position: relative;
+	user-select: none;
+}
+
+.palette-block:hover {
+	background: #45475a;
+	transform: translateX(3px);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.palette-block:active {
+	cursor: grabbing;
+	transform: scale(0.97);
+}
+
+.palette-block .block-hint {
+	display: block;
+	font-size: 9px;
+	color: #6c7086;
+	margin-top: 2px;
+	line-height: 1.2;
+}
+
+/* Category colors for palette blocks */
+.palette-block.cat-sensing { border-left: 3px solid #4fc3f7; }
+.palette-block.cat-control { border-left: 3px solid #ffb74d; }
+.palette-block.cat-output { border-left: 3px solid #ba68c8; }
+.palette-block.cat-display { border-left: 3px solid #ce93d8; }
+.palette-block.cat-variables { border-left: 3px solid #e57373; }
+.palette-block.cat-labels { border-left: 3px solid #66bb6a; }
+
+/* ─── Block Workspace ──────────────────────────────────────────────── */
+#block_workspace {
+	flex: 1;
+	background: #11111b;
+	border: 2px dashed #45475a;
+	border-radius: 8px;
+	padding: 8px;
+	min-height: 200px;
+	overflow-y: auto;
+	position: relative;
+	transition: border-color 0.2s, background 0.2s;
+}
+
+#block_workspace.drag-over {
+	border-color: #89b4fa;
+	background: rgba(137, 180, 250, 0.05);
+}
+
+#workspace_placeholder {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+	color: #6c7086;
+	font-size: 14px;
+	pointer-events: none;
+	line-height: 1.6;
+}
+
+#workspace_placeholder .big-arrow {
+	font-size: 28px;
+	display: block;
+	margin-bottom: 6px;
+}
+
+/* Workspace blocks (dropped) */
+.workspace-block {
+	background: #313244;
+	border: 1px solid #585b70;
+	border-radius: 6px;
+	padding: 6px 10px;
+	margin-bottom: 3px;
+	font-size: 12px;
+	color: #cdd6f4;
+	cursor: grab;
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	transition: all 0.15s;
+	user-select: none;
+}
+
+.workspace-block:hover {
+	background: #45475a;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.workspace-block:active {
+	cursor: grabbing;
+}
+
+.workspace-block.dragging {
+	opacity: 0.4;
+}
+
+.workspace-block.drop-above {
+	border-top: 3px solid #89b4fa;
+}
+
+.workspace-block.drop-below {
+	border-bottom: 3px solid #89b4fa;
+}
+
+/* Category colors for workspace blocks */
+.workspace-block.cat-sensing { border-left: 4px solid #4fc3f7; }
+.workspace-block.cat-control { border-left: 4px solid #ffb74d; }
+.workspace-block.cat-output { border-left: 4px solid #ba68c8; }
+.workspace-block.cat-display { border-left: 4px solid #ce93d8; }
+.workspace-block.cat-variables { border-left: 4px solid #e57373; }
+.workspace-block.cat-labels { border-left: 4px solid #66bb6a; }
+
+/* Indentation for nested blocks */
+.workspace-block[data-indent="1"] { margin-left: 24px; }
+.workspace-block[data-indent="2"] { margin-left: 48px; }
+.workspace-block[data-indent="3"] { margin-left: 72px; }
+
+/* Block inputs */
+.workspace-block input[type="text"],
+.workspace-block select {
+	background: #1e1e2e;
+	border: 1px solid #585b70;
+	border-radius: 4px;
+	color: #cdd6f4;
+	padding: 2px 6px;
+	font-size: 12px;
+	font-family: 'Nunito', monospace;
+	min-width: 60px;
+}
+
+.workspace-block input[type="text"]:focus,
+.workspace-block select:focus {
+	border-color: #89b4fa;
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.2);
+}
+
+.workspace-block .block-delete {
+	position: absolute;
+	right: 4px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	color: #f38ba8;
+	font-size: 13px;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s;
+	padding: 2px 4px;
+}
+
+.workspace-block:hover .block-delete {
+	opacity: 1;
+}
+
+.workspace-block .block-delete:hover {
+	color: #ff5555;
+	transform: translateY(-50%) scale(1.2);
+}
+
+/* Trash zone */
+#trash_zone {
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	background: rgba(243, 139, 168, 0.1);
+	border: 2px dashed #f38ba8;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 22px;
+	opacity: 0;
+	transition: all 0.2s;
+	pointer-events: none;
+}
+
+#trash_zone.visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+#trash_zone.drag-over {
+	background: rgba(243, 139, 168, 0.3);
+	transform: scale(1.15);
+}
+
+/* ─── Preview Panel ────────────────────────────────────────────────── */
+#preview_panel {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+}
+
+.preview-card {
+	background: #1e1e2e;
+	border: 1px solid #45475a;
+	border-radius: 10px;
+	padding: 8px;
+}
+
+.preview-card h3 {
+	color: #cdd6f4;
+	font-size: 13px;
+	margin: 0 0 6px 0;
+}
+
+.preview-card.cam-card {
+	flex-shrink: 0;
+}
+
+.preview-card.output-card {
+	flex: 1;
+	min-height: 100px;
+	display: flex;
+	flex-direction: column;
+}
+
+/* ─── Webcam Container ─────────────────────────────────────────────── */
+#game_webcam_container {
+	position: relative;
+	width: 100%;
+	background: #11111b;
+	border-radius: 8px;
+	overflow: hidden;
+	aspect-ratio: 4 / 3;
+}
+
+#game_video {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: none;
+	border-radius: 8px;
+}
+
+#game_overlay_canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	border-radius: 8px;
+}
+
+/* Camera placeholder */
+#cam_placeholder {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	color: #6c7086;
+	font-size: 13px;
+	text-align: center;
+	gap: 8px;
+}
+
+#cam_placeholder span {
+	font-size: 40px;
+	opacity: 0.4;
+}
+
+#cam_placeholder p {
+	margin: 0;
+	max-width: 200px;
+	line-height: 1.4;
+}
+
+/* ─── Text Overlay on Video ────────────────────────────────────────── */
+#game_text_overlay {
+	position: absolute;
+	bottom: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(30, 30, 46, 0.88);
+	color: #cdd6f4;
+	padding: 8px 18px;
+	border-radius: 10px;
+	font-size: 16px;
+	font-weight: 700;
+	text-align: center;
+	pointer-events: none;
+	z-index: 10;
+	max-width: 90%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	transition: all 0.25s ease;
+	opacity: 0;
+}
+
+#game_text_overlay:not(:empty) {
+	opacity: 1;
+}
+
+#game_text_overlay.winner {
+	background: rgba(166, 227, 161, 0.92);
+	color: #1e1e2e;
+	font-size: 20px;
+	animation: pulse-winner 0.6s ease-in-out;
+}
+
+#game_text_overlay.loser {
+	background: rgba(243, 139, 168, 0.92);
+	color: #1e1e2e;
+	font-size: 18px;
+	animation: shake 0.4s ease-in-out;
+}
+
+#game_text_overlay.draw {
+	background: rgba(249, 226, 175, 0.92);
+	color: #1e1e2e;
+	font-size: 18px;
+}
+
+@keyframes pulse-winner {
+	0% { transform: translateX(-50%) scale(0.8); }
+	50% { transform: translateX(-50%) scale(1.1); }
+	100% { transform: translateX(-50%) scale(1.0); }
+}
+
+@keyframes shake {
+	0%, 100% { transform: translateX(-50%); }
+	25% { transform: translateX(calc(-50% - 6px)); }
+	75% { transform: translateX(calc(-50% + 6px)); }
+}
+
+/* ─── Output / Protocol ────────────────────────────────────────────── */
+#game_output {
+	background: #11111b;
+	border: 1px solid #313244;
+	border-radius: 6px;
+	padding: 8px;
+	font-family: 'JetBrains Mono', 'Fira Code', monospace;
+	font-size: 11px;
+	color: #a6e3a1;
+	white-space: pre-wrap;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 80px;
+	max-height: 180px;
+	line-height: 1.5;
+}
+
+/* ─── Status Bar ───────────────────────────────────────────────────── */
+#game_status {
+	background: #181825;
+	border: 1px solid #313244;
+	border-radius: 6px;
+	padding: 5px 10px;
+	font-size: 11px;
+	color: #6c7086;
+	text-align: center;
+}
+
+/* ─── Code Preview Modal ───────────────────────────────────────────── */
+#code_preview_modal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.7);
+	z-index: 9999;
+	align-items: center;
+	justify-content: center;
+}
+
+#code_preview_modal.visible {
+	display: flex;
+}
+
+#code_preview_box {
+	background: #1e1e2e;
+	border: 1px solid #45475a;
+	border-radius: 12px;
+	padding: 20px;
+	max-width: 600px;
+	width: 90%;
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+#code_preview_box h3 {
+	color: #cdd6f4;
+	margin: 0 0 12px 0;
+	font-size: 16px;
+}
+
+#code_preview_content {
+	background: #11111b;
+	border: 1px solid #313244;
+	border-radius: 8px;
+	padding: 12px;
+	color: #a6e3a1;
+	font-family: 'JetBrains Mono', 'Fira Code', monospace;
+	font-size: 12px;
+	white-space: pre-wrap;
+	overflow-x: auto;
+	margin-bottom: 12px;
+	line-height: 1.6;
+}
+
+#code_preview_box button {
+	background: #89b4fa;
+	color: #1e1e2e;
+	border: none;
+	border-radius: 8px;
+	padding: 8px 20px;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+#code_preview_box button:hover {
+	background: #b4d0fb;
+	transform: scale(1.03);
+}
+
+/* ─── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+	#game_editor_container.always-visible {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto auto;
+	}
+
+	#editor_panel {
+		min-height: 350px;
+	}
+
+	#preview_panel {
+		min-height: 300px;
+	}
+
+	.topbar-controls {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+	}
+}
+
+@media (max-width: 700px) {
+	#visual_editor_wrapper {
+		flex-direction: column;
+	}
+
+	#block_palette {
+		width: 100%;
+		min-width: 0;
+		max-height: 150px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		overflow-x: auto;
+	}
+
+	.palette-category {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 3px;
+		margin-bottom: 0;
+	}
+
+	.palette-category-title {
+		width: 100%;
+	}
+
+	#block_workspace {
+		min-height: 250px;
+	}
+
+	#game_editor_page h1 {
+		font-size: 17px;
+	}
+
+	#game_editor_page .subtitle {
+		font-size: 11px;
+	}
+}

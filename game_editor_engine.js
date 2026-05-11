@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// GAME ENGINE (inline, enhanced with show_text overlay support)
+// GAME ENGINE — Auto-start, always-on, smooth experimentation
 // ═══════════════════════════════════════════════════════════════════════════
 
 (function() {
@@ -20,6 +20,7 @@
 	var editor = document.getElementById('dsl_editor');
 	var outputDiv = document.getElementById('game_output');
 	var statusDiv = document.getElementById('game_status');
+	var camPlaceholder = document.getElementById('cam_placeholder');
 
 	// ─── Output helpers ─────────────────────────────────────────────────
 	function appendOutput(text) {
@@ -97,6 +98,9 @@
 				setTimeout(resolve, 2000);
 			});
 			syncOverlaySize();
+			// Hide placeholder, show video
+			if (camPlaceholder) camPlaceholder.style.display = 'none';
+			video.style.display = 'block';
 			return true;
 		} catch (e) {
 			webcamStream = null;
@@ -108,14 +112,12 @@
 
 	function syncOverlaySize() {
 		if (!overlayCanvas || !video) return;
-		// Use the video's intrinsic dimensions for the canvas drawing surface
 		var vw = video.videoWidth;
 		var vh = video.videoHeight;
 		if (vw > 0 && vh > 0) {
 			overlayCanvas.width = vw;
 			overlayCanvas.height = vh;
 		}
-		// Match the CSS display size to the video element's rendered size
 		overlayCanvas.style.width = video.clientWidth + 'px';
 		overlayCanvas.style.height = video.clientHeight + 'px';
 	}
@@ -126,6 +128,8 @@
 			webcamStream = null;
 		}
 		video.srcObject = null;
+		video.style.display = 'none';
+		if (camPlaceholder) camPlaceholder.style.display = 'flex';
 	}
 
 	// ─── Model loading ──────────────────────────────────────────────────
@@ -141,6 +145,9 @@
 			else gameLabels = [];
 		} catch (e) { gameLabels = []; }
 
+		// Show labels in topbar
+		showModelLabels(gameLabels);
+
 		try {
 			if (typeof tf === 'undefined') throw new Error("TensorFlow.js nicht geladen");
 			await tf.ready();
@@ -150,8 +157,8 @@
 			);
 			currentModelUuid = modelUuid;
 			isLoadingModel = false;
-			setStatus('Modell geladen ✓');
-			appendOutput("INFO: Modell geladen. Labels: [" + gameLabels.join(", ") + "]");
+			setStatus('Modell geladen ✓ — Spiel läuft!');
+			appendOutput("✅ Modell geladen. Erkannte Kategorien: [" + gameLabels.join(", ") + "]");
 			return true;
 		} catch (e) {
 			gameModel = null;
@@ -160,6 +167,43 @@
 			appendOutput("FEHLER: Modell konnte nicht geladen werden - " + (e.message || "Unbekannt"));
 			setStatus('Modell-Fehler');
 			return false;
+		}
+	}
+
+	function showModelLabels(labels) {
+		var container = document.getElementById('model_labels_chips');
+		var wrapper = document.getElementById('model_labels_info');
+		if (!container || !wrapper) return;
+		if (!labels || labels.length === 0) {
+			wrapper.style.display = 'none';
+			return;
+		}
+		wrapper.style.display = 'inline-flex';
+		container.innerHTML = '';
+		var colors = ['#4fc3f7', '#ffb74d', '#ba68c8', '#66bb6a', '#e57373', '#ff8a65'];
+		labels.forEach(function(label, idx) {
+			var chip = document.createElement('span');
+			chip.className = 'label-chip';
+			chip.style.background = colors[idx % colors.length];
+			chip.textContent = label;
+			container.appendChild(chip);
+		});
+
+		// Also populate palette labels category
+		var paletteCat = document.getElementById('palette_labels_category');
+		var paletteContainer = document.getElementById('palette_labels_container');
+		if (paletteCat && paletteContainer) {
+			paletteContainer.innerHTML = '';
+			labels.forEach(function(label) {
+				var block = document.createElement('div');
+				block.className = 'palette-block cat-labels';
+				block.setAttribute('data-block-type', 'label_value');
+				block.setAttribute('data-label', label);
+				block.setAttribute('draggable', 'true');
+				block.innerHTML = '🏷️ "' + label + '"<span class="block-hint">Kategorie-Name zum Vergleichen</span>';
+				paletteContainer.appendChild(block);
+			});
+			paletteCat.style.display = 'block';
 		}
 	}
 
@@ -232,53 +276,36 @@
 		} catch (e) { return []; }
 
 		try { return processOutput(res, shape[1], shape[0], confThreshold); }
-		catch (e) {
-			console.error("processOutput error:", e);
-			return [];
-		}
+		catch (e) { return []; }
 	}
 
-	// ─── Process model output (FIXED: matches main.js logic) ────────────
 	function processOutput(res, modelWidth, modelHeight, confThreshold) {
 		if (!res || !Array.isArray(res) || !Array.isArray(res[0]) || !Array.isArray(res[0][0])) return [];
 		var rawTensor = null, predTensor = null;
 		try {
 			rawTensor = tf.tensor3d(res);
 			var s = rawTensor.shape;
-			// s = [1, dim1, dim2]
-			// YOLO outputs [1, features, candidates] where features = 4 + numClasses
-			// We need to figure out which dimension is features vs candidates.
-			// Features (4+classes) is typically much smaller than candidates (e.g. 8400).
-			// So the SMALLER of s[1], s[2] is features.
-			
+
 			var FINAL_FEATURES = s[1];
 			var FINAL_CANDIDATES = s[2];
 
-			// If features > candidates, we need to transpose so that
-			// the tensor becomes [1, features, candidates] with features as dim1
 			if (FINAL_FEATURES > FINAL_CANDIDATES) {
-				// s[1] is candidates, s[2] is features — transpose to [1, features, candidates]
 				var transposed = rawTensor.transpose([0, 2, 1]);
 				rawTensor.dispose();
 				rawTensor = transposed;
-				// After transpose: dim1=features, dim2=candidates
 				FINAL_FEATURES = s[2];
 				FINAL_CANDIDATES = s[1];
 			}
-			// Now rawTensor is [1, features, candidates]
-			// where features = 4 + numClasses
 
 			var numClasses = FINAL_FEATURES - 4;
 			if (numClasses <= 0) { rawTensor.dispose(); return []; }
 
-			// Transpose to [1, candidates, features] for easy splitting
 			predTensor = rawTensor.transpose([0, 2, 1]);
-			// predTensor shape: [1, candidates, features]
 
 			var splits = tf.split(predTensor, [4, numClasses], 2);
 			var rawBoxes = splits[0], scores = splits[1];
-			var boxes = rawBoxes.squeeze();       // [candidates, 4]
-			var scoresSqueezed = scores.squeeze(); // [candidates, numClasses]
+			var boxes = rawBoxes.squeeze();
+			var scoresSqueezed = scores.squeeze();
 			var boxesArr = boxes.arraySync();
 			var scoresArr = scoresSqueezed.arraySync();
 
@@ -316,7 +343,6 @@
 		} catch (e) {
 			if (rawTensor) try { rawTensor.dispose(); } catch (x) {}
 			if (predTensor) try { predTensor.dispose(); } catch (x) {}
-			console.error("processOutput inner error:", e);
 			return [];
 		}
 	}
@@ -324,10 +350,7 @@
 	// ─── Draw detections on overlay ─────────────────────────────────────
 	function drawGameDetections(detections) {
 		if (!overlayCtx || !overlayCanvas) return;
-		
-		// Re-sync overlay size every frame in case video resized
 		syncOverlaySize();
-		
 		var w = overlayCanvas.width, h = overlayCanvas.height;
 		overlayCtx.clearRect(0, 0, w, h);
 		if (!detections || detections.length === 0) return;
@@ -340,25 +363,21 @@
 			var bh = (det.yMax - det.yMin) * h;
 			var color = colors[i % colors.length];
 
-			// Draw box
 			overlayCtx.strokeStyle = color;
 			overlayCtx.lineWidth = 3;
 			overlayCtx.strokeRect(x, y, bw, bh);
 
-			// Draw label background
 			var text = det.label + ' ' + (det.score * 100).toFixed(0) + '%';
 			overlayCtx.font = 'bold 14px "Nunito", sans-serif';
 			var tw = overlayCtx.measureText(text).width;
 			overlayCtx.fillStyle = color;
 			overlayCtx.fillRect(x, y - 22, tw + 10, 22);
-			
-			// Draw label text
 			overlayCtx.fillStyle = '#000';
 			overlayCtx.fillText(text, x + 5, y - 6);
 		}
 	}
 
-	// ─── DSL Parser & Interpreter ───────────────────────────────────────
+	// ─── DSL Parser & Interpreter (unchanged logic) ─────────────────────
 	function parsePrintArgument(line) {
 		if (!line.startsWith('print') && !line.startsWith('show_text')) return null;
 		var keyword = line.startsWith('show_text') ? 'show_text' : 'print';
@@ -406,11 +425,7 @@
 
 	function evaluateExpression(expr, context) {
 		expr = expr.trim();
-
-		// Only treat as a simple string literal if there's exactly one pair of quotes
-		// (no + concatenation outside the quotes)
 		if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
-			// Check if this is truly a single string literal (no unquoted + operators)
 			var quoteChar = expr[0];
 			var closed = false;
 			for (var ci = 1; ci < expr.length; ci++) {
@@ -418,7 +433,6 @@
 				else if (closed && expr[ci] === '+') { closed = false; break; }
 			}
 			if (closed) {
-				// It's a simple string literal with no concatenation
 				return expr.substring(1, expr.length - 1);
 			}
 		}
@@ -433,7 +447,7 @@
 			}
 		}
 
-		// Alle Detection-Builtins
+		// All detection builtins
 		var builtins = {
 			'leftmost_detection': context.leftmost_label,
 			'rightmost_detection': context.rightmost_label,
@@ -488,12 +502,10 @@
 			return false;
 		}
 
-		// Handle 'not'
 		if (condStr.startsWith('not ')) {
 			return !evaluateCondition(condStr.substring(4), context);
 		}
 
-		// Comparison operators
 		var operators = ['==', '!=', '>=', '<=', '>', '<'];
 		for (var i = 0; i < operators.length; i++) {
 			var op = operators[i];
@@ -515,7 +527,6 @@
 			}
 		}
 
-		// Truthy evaluation
 		var val = evaluateExpression(condStr, context);
 		return !!val && val !== "none" && val !== "0" && val !== "";
 	}
@@ -568,19 +579,15 @@
 				var line = lines[idx].text;
 				if (line === '') { idx++; continue; }
 
-				// IF
 				if (line.startsWith('if ')) {
 					idx = executeIfBlock(lines, idx);
 					continue;
 				}
 
-				// END
 				if (line === 'end') { return idx + 1; }
-
-				// ELIF / ELSE outside if-block
 				if (line.startsWith('elif ') || line === 'else') { return idx; }
 
-				// SHOW_TEXT (new command for overlay)
+				// SHOW_TEXT
 				if (line.startsWith('show_text ')) {
 					var showArgs = parseShowTextArgs(line);
 					if (showArgs) {
@@ -608,7 +615,6 @@
 					continue;
 				}
 
-				// Unknown — skip
 				idx++;
 			}
 			return idx;
@@ -737,9 +743,6 @@
 		var style = 'normal';
 		var styles = ['normal', 'winner', 'loser', 'draw'];
 
-		// Try to extract style from the very end of the line.
-		// The style keyword must be a standalone word at the end, separated by space,
-		// and NOT inside a string literal.
 		var lastSpace = -1;
 		var inStr = false, strChar = '';
 		for (var i = 0; i < afterCmd.length; i++) {
@@ -833,14 +836,13 @@
 		return context;
 	}
 
-	// ─── Game loop ──────────────────────────────────────────────────────
+	// ─── Game loop (always-on, never stops) ─────────────────────────────
 	async function gameStep() {
 		if (!gameRunning) return;
 
-		var modelUuid = document.getElementById('game_model_select').value;
 		var detections = [];
 
-		if (modelUuid !== 'none' && gameModel && webcamStream) {
+		if (gameModel && webcamStream && video.readyState >= 2) {
 			try {
 				detections = await runDetection();
 			} catch (e) {
@@ -880,56 +882,65 @@
 			' | Rechts: ' + context.rightmost_label);
 	}
 
-	// ─── Start / Stop game ──────────────────────────────────────────────
-	async function startGame() {
-		if (gameRunning) return;
+	// ─── Auto-start: triggered by model selection ───────────────────────
+	async function autoStart(modelUuid) {
+		// Stop any existing loop
+		if (gameLoop) { clearInterval(gameLoop); gameLoop = null; }
+		gameRunning = false;
 
-		var modelUuid = document.getElementById('game_model_select').value;
+		if (modelUuid === 'none') {
+			// No model — stop webcam, show placeholder
+			stopGameWebcam();
+			if (overlayCtx) overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+			clearTextOverlay();
+			setStatus('Wähle ein Modell zum Starten');
+			return;
+		}
 
 		setStatus('Kamera wird gestartet...');
 		var webcamOk = await startGameWebcam();
 		if (!webcamOk) {
 			setStatus('Kamera-Fehler');
-			appendOutput("FEHLER: Kamera konnte nicht gestartet werden. Prüfe die Berechtigungen.");
+			appendOutput("⚠️ Kamera konnte nicht gestartet werden. Prüfe die Berechtigungen.");
 			return;
 		}
 
-		if (modelUuid !== 'none') {
-			setStatus('Modell wird geladen...');
-			var modelOk = await loadGameModel(modelUuid);
-			if (!modelOk) {
-				setStatus('Modell-Fehler');
-				appendOutput("WARNUNG: Modell konnte nicht geladen werden. Spiel läuft ohne Erkennung.");
-			}
-		} else {
-			appendOutput("INFO: Kein Modell gewählt. Spiel läuft ohne Erkennung.");
+		setStatus('Modell wird geladen...');
+		var modelOk = await loadGameModel(modelUuid);
+		if (!modelOk) {
+			setStatus('Modell-Fehler');
+			appendOutput("⚠️ Modell konnte nicht geladen werden.");
 		}
 
+		// Start the game loop
 		gameRunning = true;
-		var btn = document.getElementById('btn_run_game');
-		btn.textContent = '⏸ Läuft...';
-		btn.classList.add('running');
-
-		var fps = parseInt(document.getElementById('game_fps').value) || 2;
+		var fps = parseInt(document.getElementById('game_fps').value) || 3;
 		gameLoop = setInterval(gameStep, Math.round(1000 / fps));
-
 		setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
-		appendOutput("=== 🎮 Spiel gestartet! ===");
+		appendOutput("🎮 Spiel läuft! Baue dein Programm links zusammen.");
 	}
 
-	function stopGame() {
-		gameRunning = false;
-		if (gameLoop) { clearInterval(gameLoop); gameLoop = null; }
+	// ─── Model select change: auto-start ────────────────────────────────
+	var modelSelect = document.getElementById('game_model_select');
+	if (modelSelect) {
+		modelSelect.addEventListener('change', function() {
+			var modelUuid = this.value;
+			autoStart(modelUuid);
+		});
+	}
 
-		var btn = document.getElementById('btn_run_game');
-		btn.textContent = '▶️ Spiel starten!';
-		btn.classList.remove('running');
-
-		stopGameWebcam();
-		if (overlayCtx) overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-		clearTextOverlay();
-		setStatus('Gestoppt');
-		appendOutput("=== ⏹ Spiel gestoppt ===");
+	// ─── Camera change: restart with new camera ─────────────────────────
+	var cameraSelect = document.getElementById('game_camera_select');
+	if (cameraSelect) {
+		cameraSelect.addEventListener('change', function() {
+			var modelUuid = document.getElementById('game_model_select').value;
+			if (modelUuid === 'none') return;
+			// Stop current webcam, restart
+			stopGameWebcam();
+			if (gameLoop) { clearInterval(gameLoop); gameLoop = null; }
+			gameRunning = false;
+			autoStart(modelUuid);
+		});
 	}
 
 	// ─── Confidence slider ──────────────────────────────────────────────
@@ -941,13 +952,74 @@
 		});
 	}
 
-	// ─── Bind buttons ───────────────────────────────────────────────────
-	document.getElementById('btn_run_game').addEventListener('click', function() {
-		if (gameRunning) stopGame();
-		else startGame();
-	});
-	document.getElementById('btn_stop_game').addEventListener('click', stopGame);
-	document.getElementById('btn_clear_output').addEventListener('click', clearOutput);
+	// ─── Button bindings ────────────────────────────────────────────────
+	var btnClearOutput = document.getElementById('btn_clear_output');
+	if (btnClearOutput) {
+		btnClearOutput.addEventListener('click', clearOutput);
+	}
+
+	var btnShowCode = document.getElementById('btn_show_code');
+	if (btnShowCode) {
+		btnShowCode.addEventListener('click', function() {
+			var code = editor.value || '(kein Programm)';
+			var previewContent = document.getElementById('code_preview_content');
+			var modal = document.getElementById('code_preview_modal');
+			if (previewContent) previewContent.textContent = code;
+			if (modal) modal.classList.add('visible');
+		});
+	}
+
+	var btnLoadExample = document.getElementById('btn_load_example');
+	if (btnLoadExample) {
+		btnLoadExample.addEventListener('click', function() {
+			// Build example using actual model labels if available
+			var exampleCode = '';
+			if (gameLabels && gameLabels.length >= 2) {
+				var l1 = gameLabels[0];
+				var l2 = gameLabels[1];
+				var l3 = gameLabels.length >= 3 ? gameLabels[2] : null;
+
+				exampleCode += 'links = leftmost_detection\n';
+				exampleCode += 'rechts = rightmost_detection\n';
+				exampleCode += '\n';
+				exampleCode += 'if links == "' + l1 + '" and rechts == "' + l2 + '"\n';
+				exampleCode += '  show_text "' + l1 + ' vs ' + l2 + ' — Links gewinnt! 🎉" winner\n';
+				exampleCode += '  print "Links (' + l1 + ') schlägt Rechts (' + l2 + ')!"\n';
+				exampleCode += 'elif links == "' + l2 + '" and rechts == "' + l1 + '"\n';
+				exampleCode += '  show_text "' + l2 + ' vs ' + l1 + ' — Rechts gewinnt! 🎉" winner\n';
+				exampleCode += '  print "Rechts (' + l1 + ') schlägt Links (' + l2 + ')!"\n';
+				exampleCode += 'elif links == rechts\n';
+				exampleCode += '  show_text "Gleichstand! 🤝" draw\n';
+				if (l3) {
+					exampleCode += 'elif links == "' + l3 + '"\n';
+					exampleCode += '  show_text "Links zeigt ' + l3 + '!" normal\n';
+				}
+				exampleCode += 'else\n';
+				exampleCode += '  show_text "Zeigt eure Hände! ✊✌️✋" normal\n';
+				exampleCode += 'end\n';
+			} else {
+				exampleCode += '# Wähle zuerst ein Modell mit Kategorien!\n';
+				exampleCode += 'links = leftmost_detection\n';
+				exampleCode += 'rechts = rightmost_detection\n';
+				exampleCode += 'if detection_count >= 2\n';
+				exampleCode += '  show_text "Links: " + links + " | Rechts: " + rechts winner\n';
+				exampleCode += 'elif detection_count == 1\n';
+				exampleCode += '  show_text "Ich sehe: " + links normal\n';
+				exampleCode += 'else\n';
+				exampleCode += '  show_text "Zeige etwas in die Kamera!" normal\n';
+				exampleCode += 'end\n';
+			}
+
+			// Trigger visual blocks to load this code
+			if (typeof window.loadCodeToBlocks === 'function') {
+				window.loadCodeToBlocks(exampleCode);
+			} else {
+				// Fallback: just set the textarea
+				editor.value = exampleCode;
+			}
+			appendOutput("💡 Beispiel-Programm geladen!");
+		});
+	}
 
 	// ─── FPS hot-swap ───────────────────────────────────────────────────
 	var gameFpsInput = document.getElementById('game_fps');
@@ -958,7 +1030,7 @@
 			clearTimeout(fpsDebounce);
 			fpsDebounce = setTimeout(function() {
 				clearInterval(gameLoop);
-				var fps = Math.max(1, Math.min(10, parseInt(gameFpsInput.value) || 2));
+				var fps = Math.max(1, Math.min(10, parseInt(gameFpsInput.value) || 3));
 				gameLoop = setInterval(gameStep, Math.round(1000 / fps));
 				setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
 			}, 300);
@@ -967,7 +1039,10 @@
 
 	// ─── Cleanup on unload ──────────────────────────────────────────────
 	window.addEventListener('beforeunload', function() {
-		if (gameRunning) stopGame();
+		gameRunning = false;
+		if (gameLoop) { clearInterval(gameLoop); gameLoop = null; }
+		stopGameWebcam();
 		if (gameModel) try { gameModel.dispose(); } catch (e) {}
 	});
+
 })();
