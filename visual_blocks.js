@@ -31,6 +31,46 @@
 	// BLOCK DEFINITIONS
 	// ═══════════════════════════════════════════════════════════════════
 	var BLOCK_DEFS = {
+		get_top: {
+			category: 'sensing', color: '#4fc3f7', label: '🎯',
+			fields: [
+				{ type: 'input', key: 'varname', default: 'oben', placeholder: 'Variablenname' }
+			],
+			labelAfter: '= was oben ist',
+			toDSL: function(f) { return (f.varname || 'oben') + ' = topmost_detection'; }
+		},
+		get_bottom: {
+			category: 'sensing', color: '#4fc3f7', label: '🎯',
+			fields: [
+				{ type: 'input', key: 'varname', default: 'unten', placeholder: 'Variablenname' }
+			],
+			labelAfter: '= was unten ist',
+			toDSL: function(f) { return (f.varname || 'unten') + ' = bottommost_detection'; }
+		},
+		get_largest: {
+			category: 'sensing', color: '#4fc3f7', label: '🎯',
+			fields: [
+				{ type: 'input', key: 'varname', default: 'groesstes', placeholder: 'Variablenname' }
+			],
+			labelAfter: '= größte Erkennung',
+			toDSL: function(f) { return (f.varname || 'groesstes') + ' = largest_detection'; }
+		},
+		get_smallest: {
+			category: 'sensing', color: '#4fc3f7', label: '🎯',
+			fields: [
+				{ type: 'input', key: 'varname', default: 'kleinstes', placeholder: 'Variablenname' }
+			],
+			labelAfter: '= kleinste Erkennung',
+			toDSL: function(f) { return (f.varname || 'kleinstes') + ' = smallest_detection'; }
+		},
+		get_best: {
+			category: 'sensing', color: '#4fc3f7', label: '🎯',
+			fields: [
+				{ type: 'input', key: 'varname', default: 'bestes', placeholder: 'Variablenname' }
+			],
+			labelAfter: '= sicherste Erkennung',
+			toDSL: function(f) { return (f.varname || 'bestes') + ' = highest_conf_detection'; }
+		},
 		get_left: {
 			category: 'sensing', color: '#4fc3f7', label: '🎯',
 			fields: [
@@ -143,19 +183,20 @@
 		var names = [], seen = {};
 		for (var i = 0; i < workspaceBlocks.length; i++) {
 			var b = workspaceBlocks[i], vn = null;
-			if (b.type === 'get_left' || b.type === 'get_right' || b.type === 'get_count') {
+			if (['get_left','get_right','get_count','get_top','get_bottom',
+				'get_largest','get_smallest','get_best'].indexOf(b.type) !== -1) {
 				vn = b.fields.varname;
 			} else if (b.type === 'set_var') {
 				vn = b.fields.varname;
 			}
 			if (vn && !seen[vn]) { seen[vn] = true; names.push(vn); }
 		}
-		// Always include common defaults
-		['left', 'right', 'count'].forEach(function(d) {
+		['links','rechts','oben','unten','anzahl','groesstes','kleinstes','bestes'].forEach(function(d) {
 			if (!seen[d]) names.push(d);
 		});
 		return names;
 	}
+
 
 	// ═══════════════════════════════════════════════════════════════════
 	// FETCH MODEL LABELS when model selection changes

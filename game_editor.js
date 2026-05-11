@@ -822,6 +822,12 @@
 		var modelUuid = document.getElementById('game_model_select').value;
 		var detections = [];
 
+		console.log("gameStep: modelUuid=", modelUuid,
+			"gameModel=", !!gameModel,
+			"webcamStream=", !!webcamStream,
+			"video.readyState=", video.readyState);
+
+
 		if (modelUuid !== 'none' && gameModel && webcamStream) {
 			try {
 				detections = await runDetection();

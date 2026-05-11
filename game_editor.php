@@ -744,6 +744,28 @@
 					<div class="palette-category-title" style="background:#66bb6a;">🏷️ KATEGORIEN</div>
 					<div id="palette_labels_container"></div>
 				</div>
+
+				<div class="palette-block cat-sensing" data-block-type="get_top" draggable="true">
+				    🎯 oben = was oben ist
+				    <span class="block-hint">Speichert was die Kamera oben sieht</span>
+				</div>
+				<div class="palette-block cat-sensing" data-block-type="get_bottom" draggable="true">
+				    🎯 unten = was unten ist
+				    <span class="block-hint">Speichert was die Kamera unten sieht</span>
+				</div>
+				<div class="palette-block cat-sensing" data-block-type="get_largest" draggable="true">
+				    🎯 größtes = größte Erkennung
+				    <span class="block-hint">Das größte erkannte Objekt</span>
+				</div>
+				<div class="palette-block cat-sensing" data-block-type="get_smallest" draggable="true">
+				    🎯 kleinstes = kleinste Erkennung
+				    <span class="block-hint">Das kleinste erkannte Objekt</span>
+				</div>
+				<div class="palette-block cat-sensing" data-block-type="get_best" draggable="true">
+				    🎯 bestes = sicherste Erkennung
+				    <span class="block-hint">Die Erkennung mit höchster Sicherheit</span>
+				</div>
+
 			</div>
 
 			<!-- Workspace -->
@@ -2026,12 +2048,31 @@
 				return result;
 			}
 		}
-		if (expr === 'leftmost_detection') return context.leftmost_label;
-		if (expr === 'rightmost_detection') return context.rightmost_label;
-		if (expr === 'leftmost_detection.probability') return context.leftmost_prob;
-		if (expr === 'rightmost_detection.probability') return context.rightmost_prob;
-		if (expr === 'detection_count') return context.detection_count;
+
+		// Alle Detection-Builtins
+		var builtins = {
+		'leftmost_detection': context.leftmost_label,
+			'rightmost_detection': context.rightmost_label,
+			'topmost_detection': context.topmost_label,
+			'bottommost_detection': context.bottommost_label,
+			'largest_detection': context.largest_label,
+			'smallest_detection': context.smallest_label,
+			'highest_conf_detection': context.highest_conf_label,
+			'leftmost_detection.probability': context.leftmost_prob,
+			'rightmost_detection.probability': context.rightmost_prob,
+			'topmost_detection.probability': context.topmost_prob,
+			'bottommost_detection.probability': context.bottommost_prob,
+			'largest_detection.probability': context.largest_prob,
+			'smallest_detection.probability': context.smallest_prob,
+			'highest_conf_detection.probability': context.highest_conf_prob,
+			'detection_count': context.detection_count
+		};
+
+		if (builtins.hasOwnProperty(expr)) return builtins[expr];
+
+		// User variables
 		if (context.vars.hasOwnProperty(expr)) return context.vars[expr];
+
 		return expr;
 	}
 
@@ -2344,29 +2385,70 @@
 	// ─── Build context from detections ──────────────────────────────────
 	function buildDSLContext(detections) {
 		var context = {
-			leftmost_label: "none",
+		leftmost_label: "none",
 			leftmost_prob: 0,
 			rightmost_label: "none",
 			rightmost_prob: 0,
 			detection_count: 0,
+			// NEU: Allgemeine Zugriffe
+			topmost_label: "none",
+			topmost_prob: 0,
+			bottommost_label: "none",
+			bottommost_prob: 0,
+			largest_label: "none",
+			largest_prob: 0,
+			smallest_label: "none",
+			smallest_prob: 0,
+			highest_conf_label: "none",
+			highest_conf_prob: 0,
+			// Alle Detections als Array
+			all_labels: [],
 			vars: {}
-		};
+	};
 
 		if (!detections || detections.length === 0) return context;
 
 		context.detection_count = detections.length;
+		context.all_labels = detections.map(function(d) { return d.label; });
 
 		var leftmost = detections[0];
 		var rightmost = detections[0];
+		var topmost = detections[0];
+		var bottommost = detections[0];
+		var largest = detections[0];
+		var smallest = detections[0];
+		var highestConf = detections[0];
+
 		for (var i = 1; i < detections.length; i++) {
-			if (detections[i].xMin < leftmost.xMin) leftmost = detections[i];
-			if (detections[i].xMax > rightmost.xMax) rightmost = detections[i];
+			var d = detections[i];
+			if (d.xMin < leftmost.xMin) leftmost = d;
+			if (d.xMax > rightmost.xMax) rightmost = d;
+			if (d.yMin < topmost.yMin) topmost = d;
+			if (d.yMax > bottommost.yMax) bottommost = d;
+
+			var area = (d.xMax - d.xMin) * (d.yMax - d.yMin);
+			var largestArea = (largest.xMax - largest.xMin) * (largest.yMax - largest.yMin);
+			var smallestArea = (smallest.xMax - smallest.xMin) * (smallest.yMax - smallest.yMin);
+
+			if (area > largestArea) largest = d;
+			if (area < smallestArea) smallest = d;
+			if (d.score > highestConf.score) highestConf = d;
 		}
 
 		context.leftmost_label = leftmost.label;
 		context.leftmost_prob = leftmost.score;
 		context.rightmost_label = rightmost.label;
 		context.rightmost_prob = rightmost.score;
+		context.topmost_label = topmost.label;
+		context.topmost_prob = topmost.score;
+		context.bottommost_label = bottommost.label;
+		context.bottommost_prob = bottommost.score;
+		context.largest_label = largest.label;
+		context.largest_prob = largest.score;
+		context.smallest_label = smallest.label;
+		context.smallest_prob = smallest.score;
+		context.highest_conf_label = highestConf.label;
+		context.highest_conf_prob = highestConf.score;
 
 		return context;
 	}
