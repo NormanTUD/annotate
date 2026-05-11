@@ -1,4 +1,5 @@
 <?php
+	$GLOBALS["no_home"] = 1;
 	include("header.php");
 	include_once("functions.php");
 	$available_models = get_list_of_models();

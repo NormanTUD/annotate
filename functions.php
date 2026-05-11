@@ -395,6 +395,9 @@
 	}
 
 	function get_home_string () {
+		if(isset($GLOBALS["no_home"])) {
+			return;
+		}
 		$annotated_imgs = get_number_of_annotated_imgs();
 		$unannotated_imgs = get_number_of_unannotated_imgs();
 		$curated_imgs = get_number_of_curated_imgs();
