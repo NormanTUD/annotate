@@ -5,6 +5,7 @@
 ?>
 
 <style>
+	/* ─── Layout ─────────────────────────────────────────────── */
 	#game_editor_container {
 		display: flex;
 		gap: 20px;
@@ -13,38 +14,247 @@
 	}
 
 	#editor_panel {
-		flex: 1;
-		min-width: 400px;
+		flex: 2;
+		min-width: 500px;
+		display: flex;
+		flex-direction: column;
 	}
 
 	#output_panel {
 		flex: 1;
-		min-width: 300px;
+		min-width: 280px;
 	}
 
-	#dsl_editor {
-		width: 100%;
-		height: 400px;
-		background: #1e1e2e;
-		color: #cdd6f4;
+	/* ─── Block Palette (left sidebar) ───────────────────────── */
+	#visual_editor_wrapper {
+		display: flex;
+		gap: 0;
 		border: 2px solid #45475a;
+		border-radius: 12px;
+		overflow: hidden;
+		min-height: 480px;
+		background: #1e1e2e;
+	}
+
+	#block_palette {
+		width: 240px;
+		min-width: 240px;
+		background: #181825;
+		border-right: 2px solid #45475a;
+		padding: 12px;
+		overflow-y: auto;
+		max-height: 520px;
+	}
+
+	.palette-category {
+		margin-bottom: 16px;
+	}
+
+	.palette-category-title {
+		font-size: 11px;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		margin-bottom: 8px;
+		padding: 4px 8px;
+		border-radius: 4px;
+		color: #1e1e2e;
+	}
+
+	.palette-block {
+		padding: 8px 12px;
+		margin: 4px 0;
 		border-radius: 8px;
-		padding: 16px;
-		font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-		font-size: 14px;
-		line-height: 1.6;
-		tab-size: 4;
-		resize: vertical;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: grab;
+		user-select: none;
+		color: #fff;
+		text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+		box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+		transition: transform 0.1s, box-shadow 0.1s;
+		position: relative;
+	}
+
+	.palette-block:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+	}
+
+	.palette-block:active {
+		cursor: grabbing;
+		transform: scale(0.97);
+	}
+
+	/* Category colors */
+	.cat-sensing { background: #4fc3f7; }
+	.cat-control { background: #ffb74d; }
+	.cat-output { background: #ba68c8; }
+	.cat-variables { background: #e57373; }
+	.cat-labels { background: #66bb6a; }
+
+	/* ─── Workspace (drop area) ──────────────────────────────── */
+	#block_workspace {
+		flex: 1;
+		background: #2b2b3d;
+		background-image:
+			radial-gradient(circle, #3b3b5050 1px, transparent 1px);
+		background-size: 24px 24px;
+		padding: 20px;
+		min-height: 480px;
+		max-height: 520px;
+		overflow-y: auto;
+		position: relative;
+	}
+
+	#block_workspace.drag-over {
+		background-color: #33335a;
+	}
+
+	#workspace_placeholder {
+		color: #6c7086;
+		font-size: 15px;
+		text-align: center;
+		padding-top: 180px;
+		pointer-events: none;
+	}
+
+	/* ─── Placed Blocks ──────────────────────────────────────── */
+	.workspace-block {
+		padding: 10px 14px;
+		margin: 6px 0;
+		border-radius: 10px;
+		font-size: 13px;
+		font-weight: 600;
+		color: #fff;
+		text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+		box-shadow: 0 2px 6px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12);
+		cursor: grab;
+		user-select: none;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+		position: relative;
+		transition: opacity 0.15s;
+	}
+
+	.workspace-block:active {
+		cursor: grabbing;
+	}
+
+	.workspace-block.dragging {
+		opacity: 0.4;
+	}
+
+	.workspace-block .block-input {
+		background: rgba(0,0,0,0.25);
+		border: 1px solid rgba(255,255,255,0.2);
+		border-radius: 14px;
+		padding: 3px 10px;
+		color: #fff;
+		font-size: 12px;
+		font-weight: 500;
+		min-width: 60px;
 		outline: none;
-		white-space: pre;
-		overflow: auto;
 	}
 
-	#dsl_editor:focus {
-		border-color: #cba6f7;
-		box-shadow: 0 0 0 2px rgba(203, 166, 247, 0.2);
+	.workspace-block .block-input:focus {
+		border-color: #fff;
+		background: rgba(0,0,0,0.4);
 	}
 
+	.workspace-block .block-select {
+		background: rgba(0,0,0,0.25);
+		border: 1px solid rgba(255,255,255,0.2);
+		border-radius: 14px;
+		padding: 3px 10px;
+		color: #fff;
+		font-size: 12px;
+		font-weight: 500;
+		outline: none;
+		cursor: pointer;
+	}
+
+	.workspace-block .block-select option {
+		background: #333;
+		color: #fff;
+	}
+
+	.workspace-block .block-delete {
+		position: absolute;
+		top: -6px;
+		right: -6px;
+		width: 20px;
+		height: 20px;
+		background: #f38ba8;
+		border: 2px solid #1e1e2e;
+		border-radius: 50%;
+		color: #1e1e2e;
+		font-size: 12px;
+		font-weight: 900;
+		cursor: pointer;
+		display: none;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
+		z-index: 10;
+	}
+
+	.workspace-block:hover .block-delete {
+		display: flex;
+	}
+
+	/* Indentation for blocks inside if/elif/else */
+	.workspace-block.indent-1 { margin-left: 30px; }
+	.workspace-block.indent-2 { margin-left: 60px; }
+	.workspace-block.indent-3 { margin-left: 90px; }
+
+	/* Drop indicator line */
+	.drop-indicator {
+		height: 4px;
+		background: #89b4fa;
+		border-radius: 2px;
+		margin: 2px 0;
+		transition: opacity 0.1s;
+	}
+
+	/* ─── Trash zone ─────────────────────────────────────────── */
+	#trash_zone {
+		position: absolute;
+		bottom: 10px;
+		right: 10px;
+		width: 60px;
+		height: 60px;
+		background: rgba(243, 139, 168, 0.15);
+		border: 2px dashed #f38ba8;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 24px;
+		opacity: 0;
+		transition: opacity 0.2s, transform 0.2s;
+		pointer-events: none;
+		z-index: 100;
+	}
+
+	#trash_zone.visible {
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	#trash_zone.hover {
+		background: rgba(243, 139, 168, 0.4);
+		transform: scale(1.15);
+	}
+
+	/* ─── Hidden DSL textarea (for interpreter) ──────────────── */
+	#dsl_editor {
+		display: none;
+	}
+
+	/* ─── Output panel ───────────────────────────────────────── */
 	#game_output {
 		width: 100%;
 		height: 400px;
@@ -60,6 +270,7 @@
 		white-space: pre-wrap;
 	}
 
+	/* ─── Controls bar ───────────────────────────────────────── */
 	.game-controls {
 		display: flex;
 		align-items: center;
@@ -102,25 +313,11 @@
 		cursor: not-allowed;
 	}
 
-	#btn_run_game {
-		background: #a6e3a1;
-		color: #1e1e2e;
-	}
-
-	#btn_run_game.running {
-		background: #f9e2af;
-		color: #1e1e2e;
-	}
-
-	#btn_stop_game {
-		background: #f38ba8;
-		color: #1e1e2e;
-	}
-
-	#btn_clear_output {
-		background: #89b4fa;
-		color: #1e1e2e;
-	}
+	#btn_run_game { background: #a6e3a1; color: #1e1e2e; }
+	#btn_run_game.running { background: #f9e2af; color: #1e1e2e; }
+	#btn_stop_game { background: #f38ba8; color: #1e1e2e; }
+	#btn_clear_output { background: #89b4fa; color: #1e1e2e; }
+	#btn_show_code { background: #cba6f7; color: #1e1e2e; }
 
 	#game_status {
 		margin-top: 10px;
@@ -134,41 +331,116 @@
 		min-height: 30px;
 	}
 
-	.dsl-help {
-		margin-top: 16px;
-		padding: 12px 16px;
-		background: #181825;
+	/* ─── Code preview modal ─────────────────────────────────── */
+	#code_preview_modal {
+		display: none;
+		position: fixed;
+		top: 0; left: 0; right: 0; bottom: 0;
+		background: rgba(0,0,0,0.6);
+		z-index: 9999;
+		align-items: center;
+		justify-content: center;
+	}
+
+	#code_preview_modal.visible {
+		display: flex;
+	}
+
+	#code_preview_box {
+		background: #1e1e2e;
+		border: 2px solid #cba6f7;
+		border-radius: 12px;
+		padding: 24px;
+		max-width: 600px;
+		width: 90%;
+		max-height: 70vh;
+		overflow-y: auto;
+	}
+
+	#code_preview_box h3 {
+		color: #cba6f7;
+		margin: 0 0 12px 0;
+	}
+
+	#code_preview_box pre {
+		background: #11111b;
+		color: #cdd6f4;
+		padding: 16px;
+		border-radius: 8px;
+		font-size: 13px;
+		overflow-x: auto;
+		white-space: pre-wrap;
+	}
+
+	#code_preview_box button {
+		margin-top: 12px;
+		padding: 8px 20px;
+		background: #cba6f7;
+		color: #1e1e2e;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		font-weight: 600;
+	}
+
+	/* ─── Label info bar ─────────────────────────────────────── */
+	#model_labels_info {
+		margin: 8px 0;
+		padding: 8px 14px;
+		background: #1e1e2e;
 		border: 1px solid #45475a;
 		border-radius: 8px;
-		color: #bac2de;
+		color: #a6adc8;
 		font-size: 12px;
+		display: none;
 	}
 
-	.dsl-help h4 {
-		color: #cba6f7;
-		margin: 0 0 8px 0;
+	#model_labels_info.visible {
+		display: block;
 	}
 
-	.dsl-help code {
-		background: #313244;
-		padding: 1px 5px;
-		border-radius: 3px;
-		color: #f9e2af;
-		font-size: 12px;
+	#model_labels_info .label-chip {
+		display: inline-block;
+		background: #66bb6a;
+		color: #1e1e2e;
+		padding: 2px 10px;
+		border-radius: 12px;
+		font-weight: 600;
+		font-size: 11px;
+		margin: 2px 4px 2px 0;
 	}
 
-	.dsl-help pre {
-		background: #1e1e2e;
-		padding: 10px;
-		border-radius: 6px;
-		overflow-x: auto;
-		color: #cdd6f4;
-		font-size: 12px;
+	/* ─── Label info bar ─────────────────────────────────────── */
+	#model_labels_info {
 		margin: 8px 0;
+		padding: 8px 14px;
+		background: #1e1e2e;
+		border: 1px solid #45475a;
+		border-radius: 8px;
+		color: #a6adc8;
+		font-size: 12px;
+		display: none;
 	}
+
+	#model_labels_info.visible {
+		display: block;
+	}
+
+	#model_labels_info .label-chip {
+		display: inline-block;
+		background: #66bb6a;
+		color: #1e1e2e;
+		padding: 2px 10px;
+		border-radius: 12px;
+		font-weight: 600;
+		font-size: 11px;
+		margin: 2px 4px 2px 0;
+	}
+
+	.cat-labels { background: #66bb6a; }
 </style>
 
-<h1>🎮 Game Logic Editor (DSL)</h1>
+<h1>🎮 Visual Game Editor</h1>
 
 <div class="game-controls">
 	<label>Model:
@@ -199,39 +471,93 @@
 
 	<button id="btn_run_game">▶ Run Game</button>
 	<button id="btn_stop_game">⏹ Stop</button>
-	<button id="btn_clear_output">🗑 Clear Output</button>
+	<button id="btn_clear_output">🗑 Clear</button>
+	<button id="btn_show_code">👁 Show Code</button>
+</div>
+
+<div id="model_labels_info">
+	<strong>🏷️ Model labels:</strong> <span id="model_labels_chips"></span>
+</div>
+
+<div id="model_labels_info">
+	<strong>🏷️ Model labels:</strong> <span id="model_labels_chips"></span>
 </div>
 
 <div id="game_editor_container">
 	<div id="editor_panel">
-		<h3 style="color: #cdd6f4; margin: 0 0 8px 0;">📝 Game Script</h3>
-		<textarea id="dsl_editor" spellcheck="false">
-# Rock Paper Scissors - Webcam Game
-# The webcam detects hand gestures on left and right sides
+		<h3 style="color: #cdd6f4; margin: 0 0 8px 0;">🧩 Drag blocks to build your game</h3>
+		<div id="visual_editor_wrapper">
+			<!-- Palette -->
+			<div id="block_palette">
+				<div class="palette-category">
+					<div class="palette-category-title" style="background:#4fc3f7;">📡 SENSING</div>
+					<div class="palette-block cat-sensing" data-block-type="get_left" draggable="true">
+						🎯 left = left detection
+					</div>
+					<div class="palette-block cat-sensing" data-block-type="get_right" draggable="true">
+						🎯 right = right detection
+					</div>
+					<div class="palette-block cat-sensing" data-block-type="get_count" draggable="true">
+						🔢 count = detection count
+					</div>
+				</div>
 
-# Get detections from webcam
-left = leftmost_detection
-right = rightmost_detection
+				<div class="palette-category">
+					<div class="palette-category-title" style="background:#ffb74d;">🔀 CONTROL</div>
+					<div class="palette-block cat-control" data-block-type="if" draggable="true">
+						🔶 if ___ then
+					</div>
+					<div class="palette-block cat-control" data-block-type="elif" draggable="true">
+						🔷 else if ___ then
+					</div>
+					<div class="palette-block cat-control" data-block-type="else" draggable="true">
+						⬜ else
+					</div>
+					<div class="palette-block cat-control" data-block-type="end" draggable="true">
+						🔚 end
+					</div>
+				</div>
 
-# Game logic
-if left == "rock" and right == "scissors"
-    print "Left wins! Rock beats Scissors"
-elif left == "scissors" and right == "paper"
-    print "Left wins! Scissors beats Paper"
-elif left == "paper" and right == "rock"
-    print "Left wins! Paper beats Rock"
-elif right == "rock" and left == "scissors"
-    print "Right wins! Rock beats Scissors"
-elif right == "scissors" and left == "paper"
-    print "Right wins! Scissors beats Paper"
-elif right == "paper" and left == "rock"
-    print "Right wins! Paper beats Rock"
-elif left == right and left != "none"
-    print "Draw! Both played " + left
-#else
-#    print "Waiting for two players..."
-end
-</textarea>
+				<div class="palette-category">
+					<div class="palette-category-title" style="background:#ba68c8;">💬 OUTPUT</div>
+					<div class="palette-block cat-output" data-block-type="print" draggable="true">
+						💬 print ___
+					</div>
+				</div>
+
+				<div class="palette-category">
+					<div class="palette-category-title" style="background:#e57373;">📦 VARIABLES</div>
+					<div class="palette-block cat-variables" data-block-type="set_var" draggable="true">
+						📦 set ___ = ___
+					</div>
+				</div>
+
+				<!-- Dynamic labels category - populated when model is selected -->
+				<div class="palette-category" id="palette_labels_category" style="display:none;">
+					<div class="palette-category-title" style="background:#66bb6a;">🏷️ MODEL LABELS</div>
+					<div id="palette_labels_container"></div>
+				</div>
+
+				<!-- Dynamic labels category - populated when model is selected -->
+				<div class="palette-category" id="palette_labels_category" style="display:none;">
+					<div class="palette-category-title" style="background:#66bb6a;">🏷️ MODEL LABELS</div>
+					<div id="palette_labels_container">
+						<!-- Label blocks inserted here dynamically -->
+					</div>
+				</div>
+			</div>
+
+			<!-- Workspace -->
+			<div id="block_workspace">
+				<div id="workspace_placeholder">
+					👆 Drag blocks here to build your game!<br><br>
+					<span style="font-size: 12px; color: #585b70;">
+						Tip: Select a model first to see its labels, then build conditions!
+					</span>
+				</div>
+				<div id="trash_zone">🗑️</div>
+			</div>
+		</div>
 	</div>
 
 	<div id="output_panel">
@@ -240,6 +566,9 @@ end
 </div>
 	</div>
 </div>
+
+<!-- Hidden textarea that the existing interpreter reads from -->
+<textarea id="dsl_editor" style="display:none;"></textarea>
 
 <div id="game_status">Status: Idle</div>
 
@@ -250,37 +579,17 @@ end
 	</div>
 </div>
 
-<div class="dsl-help">
-	<h4>📖 DSL Reference</h4>
-	<p>This is a simplified scripting language. <strong>Indentation/spaces don't cause errors</strong> — use them for readability only.</p>
-	<ul style="margin: 8px 0; padding-left: 20px;">
-		<li><code>leftmost_detection</code> — label of the leftmost detected object (or <code>"none"</code>)</li>
-		<li><code>rightmost_detection</code> — label of the rightmost detected object (or <code>"none"</code>)</li>
-		<li><code>leftmost_detection.probability</code> — confidence score (0.0 to 1.0)</li>
-		<li><code>rightmost_detection.probability</code> — confidence score (0.0 to 1.0)</li>
-		<li><code>detection_count</code> — number of current detections</li>
-		<li><code>if</code> / <code>elif</code> / <code>else</code> / <code>end</code> — conditionals (use <code>end</code> to close blocks)</li>
-		<li><code>and</code>, <code>or</code>, <code>not</code> — logical operators</li>
-		<li><code>==</code>, <code>!=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code> — comparisons</li>
-		<li><code>print "message"</code> or <code>print("message")</code> — output a line (parentheses optional)</li>
-		<li><code>print "text" + variable</code> — concatenation</li>
-		<li><code># comment</code> — comments (ignored)</li>
-		<li>Variables: <code>x = "value"</code> or <code>x = leftmost_detection</code></li>
-		<li><code>if</code> / <code>elif</code> / <code>else</code> / <code>end</code> — conditionals (use <code>end</code> or <code>}</code> to close blocks)</li>
-		<li><code>{</code> and <code>}</code> — optional C-style block delimiters (can be mixed with <code>end</code>)</li>
-	</ul>
-	<pre># Example: Count detections
-count = detection_count
-if count >= 2
-    print "Two or more objects detected!"
-elif count == 1
-    print "One object: " + leftmost_detection
-else
-    print "No objects detected"
-end</pre>
+<!-- Code preview modal -->
+<div id="code_preview_modal">
+	<div id="code_preview_box">
+		<h3>📝 Generated Code</h3>
+		<pre id="code_preview_content"></pre>
+		<button onclick="document.getElementById('code_preview_modal').classList.remove('visible');">Close</button>
+	</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js"></script>
+<script src="visual_blocks.js"></script>
 <script src="game_editor.js"></script>
 
 <?php
