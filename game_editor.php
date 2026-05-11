@@ -96,7 +96,7 @@
 					</div>
 					<div class="palette-block cat-sensing" data-block-type="get_count" draggable="true">
 						🔢 anzahl = wie viele?
-						<span class="block-hint">Zählt wie viele Hände sichtbar sind</span>
+						<span class="block-hint">Zählt wie viele Objekte sichtbar sind</span>
 					</div>
 				</div>
 
