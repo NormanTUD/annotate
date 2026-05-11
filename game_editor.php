@@ -1584,88 +1584,65 @@
 	}
 
 	function loadDefaultExample() {
-		workspaceBlocks = [];
+	    workspaceBlocks = [];
 
-		// Determine labels to use
-		var l1 = modelLabels.length > 0 ? modelLabels[0] : 'Stein';
-		var l2 = modelLabels.length > 1 ? modelLabels[1] : 'Schere';
-		var l3 = modelLabels.length > 2 ? modelLabels[2] : 'Papier';
+	    var l1 = modelLabels.length > 0 ? modelLabels[0] : 'Stein';
+	    var l2 = modelLabels.length > 1 ? modelLabels[1] : 'Schere';
+	    var l3 = modelLabels.length > 2 ? modelLabels[2] : 'Papier';
 
-		// Build a starter program:
-		// links = leftmost_detection
-		// rechts = rightmost_detection
-		// anzahl = detection_count
-		// if anzahl >= 2 then
-		//   if links == "Stein" and rechts == "Schere" then
-		//     show_text "🪨 schlägt ✌️ – Links gewinnt!" winner
-		//   elif links == "Schere" and rechts == "Papier" then
-		//     show_text "✌️ schlägt 📄 – Links gewinnt!" winner
-		//   elif links == "Papier" and rechts == "Stein" then
-		//     show_text "📄 schlägt 🪨 – Links gewinnt!" winner
-		//   elif links == rechts then
-		//     show_text "Gleichstand! Nochmal!" draw
-		//   else
-		//     show_text "Rechts gewinnt! 🎉" loser
-		//   end
-		// else
-		//   show_text "Zeigt beide Hände! ✋✋" normal
-		// end
+	    // anzahl = detection_count
+	    workspaceBlocks.push({ id: newBlockId(), type: 'get_count', fields: { varname: 'anzahl' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'get_left', fields: { varname: 'links' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'get_right', fields: { varname: 'rechts' } });
 
-		workspaceBlocks.push({ id: newBlockId(), type: 'get_left', fields: { varname: 'links' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'get_right', fields: { varname: 'rechts' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'get_count', fields: { varname: 'anzahl' } });
+	    // if anzahl == 1 → nur anzeigen was erkannt wurde
+	    workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: { left_val: 'anzahl', operator: '==', right_val: '1' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Erkannt: " + links + " – zeig noch eine Hand!"', style: 'normal' } });
 
-		// if anzahl >= 2
-		workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: { left_val: 'anzahl', operator: '>=', right_val: '2' } });
+	    // elif anzahl == 2 → Spiel auswerten
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'anzahl', operator: '==', right_val: '2' } });
 
-		// if links == l1 and rechts == l2
-		workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: {
-			left_val: 'links', operator: '==', right_val: l1,
-			logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l2
-		}});
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l1 + ' schlägt ' + l2 + ' – Links gewinnt! 🎉"', style: 'winner' } });
+	    // Nested: wer gewinnt?
+	    workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: {
+		left_val: 'links', operator: '==', right_val: l1,
+		logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l2
+	    }});
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l1 + ' schlägt ' + l2 + ' – Links gewinnt! 🎉"', style: 'winner' } });
 
-		// elif links == l2 and rechts == l3
-		workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
-			left_val: 'links', operator: '==', right_val: l2,
-			logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l3
-		}});
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l2 + ' schlägt ' + l3 + ' – Links gewinnt! 🎉"', style: 'winner' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
+		left_val: 'links', operator: '==', right_val: l2,
+		logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l3
+	    }});
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l2 + ' schlägt ' + l3 + ' – Links gewinnt! 🎉"', style: 'winner' } });
 
-		// elif links == l3 and rechts == l1
-		workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
-			left_val: 'links', operator: '==', right_val: l3,
-			logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l1
-		}});
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l3 + ' schlägt ' + l1 + ' – Links gewinnt! 🎉"', style: 'winner' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
+		left_val: 'links', operator: '==', right_val: l3,
+		logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l1
+	    }});
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l3 + ' schlägt ' + l1 + ' – Links gewinnt! 🎉"', style: 'winner' } });
 
-		// elif links == rechts (draw)
-		workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
-			left_val: 'links', operator: '==', right_val: 'rechts'
-		}});
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Gleichstand! 🤝 Nochmal!"', style: 'draw' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
+		left_val: 'links', operator: '==', right_val: 'rechts'
+	    }});
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Gleichstand! 🤝 Nochmal!"', style: 'draw' } });
 
-		// else (right wins)
-		workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Rechts gewinnt! 💪"', style: 'loser' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Rechts gewinnt! 💪"', style: 'loser' } });
 
-		// end inner if
-		workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} }); // end inner if
 
-		// else (not enough hands)
-		workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Zeigt beide Hände! ✋✋"', style: 'normal' } });
+	    // elif anzahl >= 3 → zu viele
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'anzahl', operator: '>=', right_val: '3' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Zu viele Hände! Nur 2 zeigen 🙈"', style: 'draw' } });
 
-		// end outer if
-		workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} });
+	    // else → nichts erkannt
+	    workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Zeigt eure Hände! ✋✋"', style: 'normal' } });
 
-		renderWorkspace();
+	    // end outer if
+	    workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} });
 
-		// Update help
-		var help = document.getElementById('setup_help');
-		if (help) {
-			help.innerHTML = '<span class="emoji-big">✅</span> <strong>Beispiel geladen!</strong> Du kannst jetzt Blöcke ändern, löschen oder neue hinzufügen. Klicke "▶️ Spiel starten!" wenn du bereit bist!';
-		}
+	    renderWorkspace();
 	}
 
 	// ─── Initialize ─────────────────────────────────────────────────────
