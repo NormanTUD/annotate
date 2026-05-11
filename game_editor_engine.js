@@ -406,8 +406,23 @@
 
 	function evaluateExpression(expr, context) {
 		expr = expr.trim();
-		if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'")))
-			return expr.substring(1, expr.length - 1);
+
+		// Only treat as a simple string literal if there's exactly one pair of quotes
+		// (no + concatenation outside the quotes)
+		if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
+			// Check if this is truly a single string literal (no unquoted + operators)
+			var quoteChar = expr[0];
+			var closed = false;
+			for (var ci = 1; ci < expr.length; ci++) {
+				if (expr[ci] === quoteChar) { closed = true; }
+				else if (closed && expr[ci] === '+') { closed = false; break; }
+			}
+			if (closed) {
+				// It's a simple string literal with no concatenation
+				return expr.substring(1, expr.length - 1);
+			}
+		}
+
 		if (!isNaN(expr) && expr !== '') return parseFloat(expr);
 		if (expr.indexOf('+') !== -1) {
 			var parts = splitOnPlus(expr);
