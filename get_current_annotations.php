@@ -13,7 +13,6 @@
 			where i.filename = ".esc($_GET["source"])."
 			and a.deleted = 0 and i.deleted = 0";
 
-		// Only filter by user if first_other is NOT set
 		if(!$first_other) {
 			$query .= " and u.name = ".esc($_COOKIE["annotate_userid"]);
 		}
@@ -35,43 +34,74 @@
 			];
 		}
 
-		// Group by base annotarius_id (strip the _N suffix)
+		// Group by the FULL annotarius_id (do NOT strip suffix).
+		// Multiple rows with the same annotarius_id are body tags
+		// for the same bounding box.
 		$grouped = [];
 
 		foreach ($raw_annotations as $entry) {
 			$annotarius_id = $entry['annotarius_id'];
 			$full = $entry['full'];
 
-			// Strip trailing _N (e.g., #uuid_1 -> #uuid, #uuid_2 -> #uuid)
-			$base_id = preg_replace('/_\d+$/', '', $annotarius_id);
-
-			if (!isset($grouped[$base_id])) {
-				// Use the first annotation as the template, but reset its id to the base
-				$full['id'] = $base_id;
-				$grouped[$base_id] = $full;
+			if (!isset($grouped[$annotarius_id])) {
+				$full['id'] = $annotarius_id;
+				$grouped[$annotarius_id] = $full;
 			} else {
-				// Merge body items from subsequent rows into the existing annotation
+				// Merge body tags from the same box
 				if (isset($full['body']) && is_array($full['body'])) {
 					foreach ($full['body'] as $body_item) {
-						// Avoid duplicates
-						$dominated = false;
-						foreach ($grouped[$base_id]['body'] as $existing_body) {
-							if (isset($existing_body['value']) && isset($body_item['value']) &&
-								$existing_body['value'] === $body_item['value']) {
-								$dominated = true;
+						$exists = false;
+						foreach ($grouped[$annotarius_id]['body'] as $existing) {
+							if (isset($existing['value']) && isset($body_item['value']) &&
+								$existing['value'] === $body_item['value']) {
+								$exists = true;
 								break;
 							}
 						}
-						if (!$dominated) {
-							$grouped[$base_id]['body'][] = $body_item;
+						if (!$exists) {
+							$grouped[$annotarius_id]['body'][] = $body_item;
 						}
 					}
 				}
 			}
 		}
 
-		// Return as a flat array of merged annotations
-		$jsons = array_values($grouped);
+		// Deduplicate by position: if two different annotarius_ids
+		// have the exact same bounding box, merge them into one.
+		$by_position = [];
+
+		foreach ($grouped as $annotation) {
+			$pos = isset($annotation['target']['selector']['value'])
+				? $annotation['target']['selector']['value']
+				: null;
+
+			if ($pos === null) {
+				$by_position[] = $annotation;
+				continue;
+			}
+
+			if (!isset($by_position[$pos])) {
+				$by_position[$pos] = $annotation;
+			} else {
+				if (isset($annotation['body']) && is_array($annotation['body'])) {
+					foreach ($annotation['body'] as $body_item) {
+						$exists = false;
+						foreach ($by_position[$pos]['body'] as $existing) {
+							if (isset($existing['value']) && isset($body_item['value']) &&
+								$existing['value'] === $body_item['value']) {
+								$exists = true;
+								break;
+							}
+						}
+						if (!$exists) {
+							$by_position[$pos]['body'][] = $body_item;
+						}
+					}
+				}
+			}
+		}
+
+		$jsons = array_values($by_position);
 
 		print json_encode($jsons, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 	} else {
