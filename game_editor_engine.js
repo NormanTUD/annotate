@@ -96,12 +96,7 @@
 				video.oncanplay = resolve;
 				setTimeout(resolve, 2000);
 			});
-			if (video.videoWidth > 0 && video.videoHeight > 0 && overlayCanvas) {
-				overlayCanvas.width = video.videoWidth;
-				overlayCanvas.height = video.videoHeight;
-				overlayCanvas.style.width = video.clientWidth + 'px';
-				overlayCanvas.style.height = video.clientHeight + 'px';
-			}
+			syncOverlaySize();
 			return true;
 		} catch (e) {
 			webcamStream = null;
@@ -109,6 +104,20 @@
 			appendOutput("FEHLER: Kamera konnte nicht gestartet werden - " + (e.message || "Unbekannt"));
 			return false;
 		}
+	}
+
+	function syncOverlaySize() {
+		if (!overlayCanvas || !video) return;
+		// Use the video's intrinsic dimensions for the canvas drawing surface
+		var vw = video.videoWidth;
+		var vh = video.videoHeight;
+		if (vw > 0 && vh > 0) {
+			overlayCanvas.width = vw;
+			overlayCanvas.height = vh;
+		}
+		// Match the CSS display size to the video element's rendered size
+		overlayCanvas.style.width = video.clientWidth + 'px';
+		overlayCanvas.style.height = video.clientHeight + 'px';
 	}
 
 	function stopGameWebcam() {
@@ -142,6 +151,7 @@
 			currentModelUuid = modelUuid;
 			isLoadingModel = false;
 			setStatus('Modell geladen ✓');
+			appendOutput("INFO: Modell geladen. Labels: [" + gameLabels.join(", ") + "]");
 			return true;
 		} catch (e) {
 			gameModel = null;
@@ -222,28 +232,55 @@
 		} catch (e) { return []; }
 
 		try { return processOutput(res, shape[1], shape[0], confThreshold); }
-		catch (e) { return []; }
+		catch (e) {
+			console.error("processOutput error:", e);
+			return [];
+		}
 	}
 
+	// ─── Process model output (FIXED: matches main.js logic) ────────────
 	function processOutput(res, modelWidth, modelHeight, confThreshold) {
 		if (!res || !Array.isArray(res) || !Array.isArray(res[0]) || !Array.isArray(res[0][0])) return [];
 		var rawTensor = null, predTensor = null;
 		try {
 			rawTensor = tf.tensor3d(res);
 			var s = rawTensor.shape;
-			if (s[1] > s[2]) {
+			// s = [1, dim1, dim2]
+			// YOLO outputs [1, features, candidates] where features = 4 + numClasses
+			// We need to figure out which dimension is features vs candidates.
+			// Features (4+classes) is typically much smaller than candidates (e.g. 8400).
+			// So the SMALLER of s[1], s[2] is features.
+			
+			var FINAL_FEATURES = s[1];
+			var FINAL_CANDIDATES = s[2];
+
+			// If features > candidates, we need to transpose so that
+			// the tensor becomes [1, features, candidates] with features as dim1
+			if (FINAL_FEATURES > FINAL_CANDIDATES) {
+				// s[1] is candidates, s[2] is features — transpose to [1, features, candidates]
 				var transposed = rawTensor.transpose([0, 2, 1]);
 				rawTensor.dispose();
 				rawTensor = transposed;
+				// After transpose: dim1=features, dim2=candidates
+				FINAL_FEATURES = s[2];
+				FINAL_CANDIDATES = s[1];
 			}
-			var numClasses = rawTensor.shape[2] - 4;
+			// Now rawTensor is [1, features, candidates]
+			// where features = 4 + numClasses
+
+			var numClasses = FINAL_FEATURES - 4;
 			if (numClasses <= 0) { rawTensor.dispose(); return []; }
 
+			// Transpose to [1, candidates, features] for easy splitting
 			predTensor = rawTensor.transpose([0, 2, 1]);
+			// predTensor shape: [1, candidates, features]
+
 			var splits = tf.split(predTensor, [4, numClasses], 2);
 			var rawBoxes = splits[0], scores = splits[1];
-			var boxes = rawBoxes.squeeze(), scoresSqueezed = scores.squeeze();
-			var boxesArr = boxes.arraySync(), scoresArr = scoresSqueezed.arraySync();
+			var boxes = rawBoxes.squeeze();       // [candidates, 4]
+			var scoresSqueezed = scores.squeeze(); // [candidates, numClasses]
+			var boxesArr = boxes.arraySync();
+			var scoresArr = scoresSqueezed.arraySync();
 
 			[rawTensor, predTensor, rawBoxes, scores, boxes, scoresSqueezed].forEach(function(t) {
 				if (t) try { t.dispose(); } catch (x) {}
@@ -279,13 +316,18 @@
 		} catch (e) {
 			if (rawTensor) try { rawTensor.dispose(); } catch (x) {}
 			if (predTensor) try { predTensor.dispose(); } catch (x) {}
+			console.error("processOutput inner error:", e);
 			return [];
 		}
 	}
 
 	// ─── Draw detections on overlay ─────────────────────────────────────
 	function drawGameDetections(detections) {
-		if (!overlayCtx) return;
+		if (!overlayCtx || !overlayCanvas) return;
+		
+		// Re-sync overlay size every frame in case video resized
+		syncOverlaySize();
+		
 		var w = overlayCanvas.width, h = overlayCanvas.height;
 		overlayCtx.clearRect(0, 0, w, h);
 		if (!detections || detections.length === 0) return;
@@ -298,15 +340,19 @@
 			var bh = (det.yMax - det.yMin) * h;
 			var color = colors[i % colors.length];
 
+			// Draw box
 			overlayCtx.strokeStyle = color;
 			overlayCtx.lineWidth = 3;
 			overlayCtx.strokeRect(x, y, bw, bh);
 
+			// Draw label background
 			var text = det.label + ' ' + (det.score * 100).toFixed(0) + '%';
 			overlayCtx.font = 'bold 14px "Nunito", sans-serif';
 			var tw = overlayCtx.measureText(text).width;
 			overlayCtx.fillStyle = color;
 			overlayCtx.fillRect(x, y - 22, tw + 10, 22);
+			
+			// Draw label text
 			overlayCtx.fillStyle = '#000';
 			overlayCtx.fillText(text, x + 5, y - 6);
 		}
@@ -374,7 +420,7 @@
 
 		// Alle Detection-Builtins
 		var builtins = {
-		'leftmost_detection': context.leftmost_label,
+			'leftmost_detection': context.leftmost_label,
 			'rightmost_detection': context.rightmost_label,
 			'topmost_detection': context.topmost_label,
 			'bottommost_detection': context.bottommost_label,
@@ -669,15 +715,12 @@
 
 	// ─── Parse show_text arguments ──────────────────────────────────────
 	function parseShowTextArgs(line) {
-		// show_text "message" style
-		// show_text variable style
 		var afterCmd = line.substring('show_text '.length).trim();
 		if (!afterCmd) return null;
 
 		var message = '';
 		var style = 'normal';
 
-		// Check if starts with a quote
 		if (afterCmd.startsWith('"') || afterCmd.startsWith("'")) {
 			var quoteChar = afterCmd[0];
 			var endQuote = afterCmd.indexOf(quoteChar, 1);
@@ -691,7 +734,6 @@
 				message = afterCmd;
 			}
 		} else {
-			// Not quoted — split on last space to find style
 			var parts = afterCmd.split(' ');
 			var lastPart = parts[parts.length - 1];
 			if (['normal', 'winner', 'loser', 'draw'].indexOf(lastPart) !== -1 && parts.length > 1) {
@@ -708,12 +750,11 @@
 	// ─── Build context from detections ──────────────────────────────────
 	function buildDSLContext(detections) {
 		var context = {
-		leftmost_label: "none",
+			leftmost_label: "none",
 			leftmost_prob: 0,
 			rightmost_label: "none",
 			rightmost_prob: 0,
 			detection_count: 0,
-			// NEU: Allgemeine Zugriffe
 			topmost_label: "none",
 			topmost_prob: 0,
 			bottommost_label: "none",
@@ -724,10 +765,9 @@
 			smallest_prob: 0,
 			highest_conf_label: "none",
 			highest_conf_prob: 0,
-			// Alle Detections als Array
 			all_labels: [],
 			vars: {}
-	};
+		};
 
 		if (!detections || detections.length === 0) return context;
 
@@ -801,14 +841,12 @@
 		try {
 			var results = interpretScript(parsed, context);
 
-			// Handle print output
 			if (results.output && results.output.length > 0) {
 				for (var i = 0; i < results.output.length; i++) {
 					appendOutput(results.output[i]);
 				}
 			}
 
-			// Handle show_text overlay
 			if (results.showTextCommands && results.showTextCommands.length > 0) {
 				var lastCmd = results.showTextCommands[results.showTextCommands.length - 1];
 				showTextOnVideo(lastCmd.message, lastCmd.style);
@@ -820,7 +858,6 @@
 			clearTextOverlay();
 		}
 
-		// Update status
 		setStatus('Läuft | Erkennungen: ' + detections.length +
 			' | Links: ' + context.leftmost_label +
 			' | Rechts: ' + context.rightmost_label);
