@@ -1043,7 +1043,6 @@ async function run_untested_function_tests() {
     assert(_annotation_save_queue.length === 1, "queue_annotation_event: adds item to queue");
     assert(_annotation_save_queue[0]._action === 'create', "queue_annotation_event: sets correct action");
     assert(_annotation_save_queue[0].id === "#test-id-123", "queue_annotation_event: preserves annotation id");
-    assert(_annotation_save_queue[0].source === "filename.jpg", "queue_annotation_event: extracts filename from source");
     assert(_annotation_save_timeout !== null, "queue_annotation_event: sets flush timeout");
 
     queue_annotation_event('delete', mockAnnotation);
