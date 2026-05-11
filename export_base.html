@@ -723,6 +723,28 @@
             .toolbar { gap: 6px; }
             .kbd-hint { display: none; }
         }
+
+	/* Edit Button in Card */
+	.card-info .btn-edit {
+	    font-size: 0.75rem;
+	    padding: 2px 8px;
+	    border-radius: var(--radius-sm);
+	    background: var(--accent-dim);
+	    color: var(--accent);
+	    text-decoration: none;
+	    font-weight: 700;
+	    margin-left: 6px;
+	    transition: var(--transition);
+	    cursor: pointer;
+	    border: 1px solid transparent;
+	}
+
+	.card-info .btn-edit:hover {
+	    background: var(--accent);
+	    color: white;
+	    border-color: var(--accent);
+	    transform: scale(1.1);
+	}
     </style>
 </head>
 <body class="show-labels">
@@ -916,57 +938,69 @@
         }
 
         // ===== ENHANCE CARDS =====
-        function enhanceCards() {
-            const cards = document.querySelectorAll('.container_div');
-            cards.forEach(card => {
-                // Wrap image + svg in img-area
-                const img = card.querySelector('.images');
-                const svg = card.querySelector('.a9s-annotationlayer');
+	    function enhanceCards() {
+		    const cards = document.querySelectorAll('.container_div');
+		    cards.forEach(card => {
+			    // Wrap image + svg in img-area
+			    const img = card.querySelector('.images');
+			    const svg = card.querySelector('.a9s-annotationlayer');
 
-                if (img && !card.querySelector('.img-area')) {
-                    const area = document.createElement('div');
-                    area.className = 'img-area';
-                    card.insertBefore(area, img);
-                    area.appendChild(img);
-                    if (svg) area.appendChild(svg);
-                }
+			    if (img && !card.querySelector('.img-area')) {
+				    const area = document.createElement('div');
+				    area.className = 'img-area';
+				    card.insertBefore(area, img);
+				    area.appendChild(img);
+				    if (svg) area.appendChild(svg);
+			    }
 
-                // Add info bar
-                if (!card.querySelector('.card-info')) {
-                    const info = document.createElement('div');
-                    info.className = 'card-info';
+			    // Add info bar
+			    if (!card.querySelector('.card-info')) {
+				    const info = document.createElement('div');
+				    info.className = 'card-info';
 
-                    // Labels from annotations
-                    const annos = card.querySelectorAll('.a9s-annotation');
-                    const labelSet = new Set();
-                    annos.forEach(a => {
-                        const l = a.getAttribute('data-label');
-                        if (l) labelSet.add(l);
-                    });
-                    labelSet.forEach(l => {
-                        const tag = document.createElement('span');
-                        tag.className = 'tag';
-                        tag.textContent = l;
-                        info.appendChild(tag);
-                    });
+				    // Labels from annotations
+				    const annos = card.querySelectorAll('.a9s-annotation');
+				    const labelSet = new Set();
+				    annos.forEach(a => {
+					    const l = a.getAttribute('data-label');
+					    if (l) labelSet.add(l);
+				    });
+				    labelSet.forEach(l => {
+					    const tag = document.createElement('span');
+					    tag.className = 'tag';
+					    tag.textContent = l;
+					    info.appendChild(tag);
+				    });
 
-                    // Filename
-                    const fn = getFilenameFromCard(card);
-                    if (fn) {
-                        const fname = document.createElement('span');
-                        fname.className = 'fname';
-                        fname.textContent = fn;
-                        fname.title = fn;
-                        info.appendChild(fname);
-                    }
+				    // Filename
+				    const fn = getFilenameFromCard(card);
+				    if (fn) {
+					    const fname = document.createElement('span');
+					    fname.className = 'fname';
+					    fname.textContent = fn;
+					    fname.title = fn;
+					    info.appendChild(fname);
 
-                    card.appendChild(info);
-                }
+					    // Edit-Button
+					    const editLink = document.createElement('a');
+					    editLink.className = 'btn-edit';
+					    editLink.href = 'index.php?edit=' + encodeURIComponent(fn);
+					    editLink.target = '_blank';
+					    editLink.textContent = '✎';
+					    editLink.title = 'Edit in new tab';
+					    editLink.addEventListener('click', (e) => {
+						    e.stopPropagation();
+					    });
+					    info.appendChild(editLink);
+				    }
 
-                // Click handler
-                card.addEventListener('click', () => handleCardClick(card));
-            });
-        }
+				    card.appendChild(info);
+			    }
+
+			    // Click handler
+			    card.addEventListener('click', () => handleCardClick(card));
+		    });
+	    }
 
         // ===== CARD CLICK HANDLER =====
         function handleCardClick(card) {
