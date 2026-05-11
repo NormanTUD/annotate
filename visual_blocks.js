@@ -1,159 +1,116 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// VISUAL BLOCKS ENGINE (inline, enhanced for new UI)
+// ═══════════════════════════════════════════════════════════════════════════
 (function() {
 	"use strict";
 
-	// ═══════════════════════════════════════════════════════════════════
-	// MODEL LABELS — populated when user selects a model
-	// ═══════════════════════════════════════════════════════════════════
-	var modelLabels = [];  // e.g. ["Stein", "Schere", "Papier"]
+	// ─── Model Labels ───────────────────────────────────────────────────
+	var modelLabels = [];
 
-	// ═══════════════════════════════════════════════════════════════════
-	// HELPER: format a value for DSL output
-	// ═══════════════════════════════════════════════════════════════════
 	function formatValueForDSL(val) {
 		if (val === undefined || val === null || val === '') return '"none"';
 		val = String(val);
-		// Already quoted
 		if ((val.startsWith('"') && val.endsWith('"')) ||
-			(val.startsWith("'") && val.endsWith("'"))) {
-			return val;
-		}
-		// Number
+			(val.startsWith("'") && val.endsWith("'"))) return val;
 		if (!isNaN(val) && val.trim() !== '') return val;
-		// Known model label → wrap in quotes
 		if (modelLabels.indexOf(val) !== -1) return '"' + val + '"';
-		// Looks like a variable name
 		if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(val)) return val;
-		// Otherwise wrap in quotes
 		return '"' + val + '"';
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// BLOCK DEFINITIONS
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Block Definitions ──────────────────────────────────────────────
 	var BLOCK_DEFS = {
-		get_top: {
-			category: 'sensing', color: '#4fc3f7', label: '🎯',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'oben', placeholder: 'Variablenname' }
-			],
-			labelAfter: '= was oben ist',
-			toDSL: function(f) { return (f.varname || 'oben') + ' = topmost_detection'; }
-		},
-		get_bottom: {
-			category: 'sensing', color: '#4fc3f7', label: '🎯',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'unten', placeholder: 'Variablenname' }
-			],
-			labelAfter: '= was unten ist',
-			toDSL: function(f) { return (f.varname || 'unten') + ' = bottommost_detection'; }
-		},
-		get_largest: {
-			category: 'sensing', color: '#4fc3f7', label: '🎯',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'groesstes', placeholder: 'Variablenname' }
-			],
-			labelAfter: '= größte Erkennung',
-			toDSL: function(f) { return (f.varname || 'groesstes') + ' = largest_detection'; }
-		},
-		get_smallest: {
-			category: 'sensing', color: '#4fc3f7', label: '🎯',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'kleinstes', placeholder: 'Variablenname' }
-			],
-			labelAfter: '= kleinste Erkennung',
-			toDSL: function(f) { return (f.varname || 'kleinstes') + ' = smallest_detection'; }
-		},
-		get_best: {
-			category: 'sensing', color: '#4fc3f7', label: '🎯',
-			fields: [
-				{ type: 'input', key: 'varname', default: 'bestes', placeholder: 'Variablenname' }
-			],
-			labelAfter: '= sicherste Erkennung',
-			toDSL: function(f) { return (f.varname || 'bestes') + ' = highest_conf_detection'; }
-		},
 		get_left: {
 			category: 'sensing', color: '#4fc3f7', label: '🎯',
 			fields: [
-				{ type: 'input', key: 'varname', default: 'left', placeholder: 'variable name' }
+				{ type: 'input', key: 'varname', default: 'links', placeholder: 'Variablenname' }
 			],
-			labelAfter: '= leftmost detection',
-			toDSL: function(f) { return (f.varname || 'left') + ' = leftmost_detection'; }
+			labelAfter: '= was links ist',
+			toDSL: function(f) { return (f.varname || 'links') + ' = leftmost_detection'; }
 		},
 		get_right: {
 			category: 'sensing', color: '#4fc3f7', label: '🎯',
 			fields: [
-				{ type: 'input', key: 'varname', default: 'right', placeholder: 'variable name' }
+				{ type: 'input', key: 'varname', default: 'rechts', placeholder: 'Variablenname' }
 			],
-			labelAfter: '= rightmost detection',
-			toDSL: function(f) { return (f.varname || 'right') + ' = rightmost_detection'; }
+			labelAfter: '= was rechts ist',
+			toDSL: function(f) { return (f.varname || 'rechts') + ' = rightmost_detection'; }
 		},
 		get_count: {
 			category: 'sensing', color: '#4fc3f7', label: '🔢',
 			fields: [
-				{ type: 'input', key: 'varname', default: 'count', placeholder: 'variable name' }
+				{ type: 'input', key: 'varname', default: 'anzahl', placeholder: 'Variablenname' }
 			],
-			labelAfter: '= detection count',
-			toDSL: function(f) { return (f.varname || 'count') + ' = detection_count'; }
+			labelAfter: '= wie viele Hände?',
+			toDSL: function(f) { return (f.varname || 'anzahl') + ' = detection_count'; }
 		},
 		'if': {
-			category: 'control', color: '#ffb74d', label: '🔶 if',
+			category: 'control', color: '#ffb74d', label: '🔶 wenn',
 			fields: [
-				{ type: 'label_or_var', key: 'left_val', default: 'left', placeholder: 'variable' },
+				{ type: 'label_or_var', key: 'left_val', default: 'links', placeholder: 'Variable' },
 				{ type: 'select', key: 'operator', options: ['==','!=','>','<','>=','<='], default: '==' },
-				{ type: 'label_or_input', key: 'right_val', default: '', placeholder: 'value' }
+				{ type: 'label_or_input', key: 'right_val', default: '', placeholder: 'Wert' }
 			],
-			labelAfter: 'then',
+			labelAfter: 'dann',
 			canHaveSecondCondition: true,
 			toDSL: function(f) {
-				var c = (f.left_val||'left') + ' ' + (f.operator||'==') + ' ' + formatValueForDSL(f.right_val);
+				var c = (f.left_val||'links') + ' ' + (f.operator||'==') + ' ' + formatValueForDSL(f.right_val);
 				if (f.logic && f.left_val2) {
-					c += ' ' + f.logic + ' ' + (f.left_val2||'right') + ' ' + (f.operator2||'==') + ' ' + formatValueForDSL(f.right_val2);
+					c += ' ' + f.logic + ' ' + (f.left_val2||'rechts') + ' ' + (f.operator2||'==') + ' ' + formatValueForDSL(f.right_val2);
 				}
 				return 'if ' + c;
 			}
 		},
 		'elif': {
-			category: 'control', color: '#ffa726', label: '🔷 else if',
+			category: 'control', color: '#ffa726', label: '🔷 sonst wenn',
 			fields: [
-				{ type: 'label_or_var', key: 'left_val', default: 'left', placeholder: 'variable' },
+				{ type: 'label_or_var', key: 'left_val', default: 'links', placeholder: 'Variable' },
 				{ type: 'select', key: 'operator', options: ['==','!=','>','<','>=','<='], default: '==' },
-				{ type: 'label_or_input', key: 'right_val', default: '', placeholder: 'value' }
+				{ type: 'label_or_input', key: 'right_val', default: '', placeholder: 'Wert' }
 			],
-			labelAfter: 'then',
+			labelAfter: 'dann',
 			canHaveSecondCondition: true,
 			toDSL: function(f) {
-				var c = (f.left_val||'left') + ' ' + (f.operator||'==') + ' ' + formatValueForDSL(f.right_val);
+				var c = (f.left_val||'links') + ' ' + (f.operator||'==') + ' ' + formatValueForDSL(f.right_val);
 				if (f.logic && f.left_val2) {
-					c += ' ' + f.logic + ' ' + (f.left_val2||'right') + ' ' + (f.operator2||'==') + ' ' + formatValueForDSL(f.right_val2);
+					c += ' ' + f.logic + ' ' + (f.left_val2||'rechts') + ' ' + (f.operator2||'==') + ' ' + formatValueForDSL(f.right_val2);
 				}
 				return 'elif ' + c;
 			}
 		},
 		'else': {
-			category: 'control', color: '#78909c', label: '⬜ else',
+			category: 'control', color: '#78909c', label: '⬜ sonst',
 			fields: [],
 			toDSL: function() { return 'else'; }
 		},
 		'end': {
-			category: 'control', color: '#90a4ae', label: '🔚 end',
+			category: 'control', color: '#90a4ae', label: '🔚 ende',
 			fields: [],
 			toDSL: function() { return 'end'; }
 		},
 		'print': {
-			category: 'output', color: '#ba68c8', label: '💬 print',
+			category: 'output', color: '#ba68c8', label: '💬 sag',
 			fields: [
-				{ type: 'input', key: 'message', default: '"Hello!"', placeholder: '"message" or variable', wide: true }
+				{ type: 'input', key: 'message', default: '"Hallo!"', placeholder: '"Nachricht" oder Variable', wide: true }
 			],
 			toDSL: function(f) { return 'print ' + (f.message || '""'); }
 		},
-		'set_var': {
-			category: 'variables', color: '#e57373', label: '📦 set',
+		'show_text': {
+			category: 'display', color: '#4dd0e1', label: '📺 zeige auf Bild',
 			fields: [
-				{ type: 'input', key: 'varname', default: 'x', placeholder: 'name' }
+				{ type: 'input', key: 'message', default: '"Bereit!"', placeholder: '"Text" oder Variable', wide: true },
+				{ type: 'select', key: 'style', options: ['normal','winner','loser','draw'], default: 'normal' }
+			],
+			toDSL: function(f) { return 'show_text ' + (f.message || '""') + ' ' + (f.style || 'normal'); }
+		},
+		'set_var': {
+			category: 'variables', color: '#e57373', label: '📦 setze',
+			fields: [
+				{ type: 'input', key: 'varname', default: 'x', placeholder: 'Name' }
 			],
 			labelMid: '=',
 			fields2: [
-				{ type: 'label_or_input', key: 'value', default: '', placeholder: 'value', wide: true }
+				{ type: 'label_or_input', key: 'value', default: '', placeholder: 'Wert', wide: true }
 			],
 			toDSL: function(f) {
 				return (f.varname || 'x') + ' = ' + formatValueForDSL(f.value);
@@ -161,9 +118,7 @@
 		}
 	};
 
-	// ═══════════════════════════════════════════════════════════════════
-	// STATE
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── State ──────────────────────────────────────────────────────────
 	var workspaceBlocks = [];
 	var blockIdCounter = 0;
 	var draggedBlockType = null;
@@ -176,57 +131,48 @@
 
 	function newBlockId() { return 'block_' + (++blockIdCounter); }
 
-	// ═══════════════════════════════════════════════════════════════════
-	// COLLECT VARIABLE NAMES from workspace (for variable dropdowns)
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Collect variable names ─────────────────────────────────────────
 	function collectVariableNames() {
 		var names = [], seen = {};
 		for (var i = 0; i < workspaceBlocks.length; i++) {
 			var b = workspaceBlocks[i], vn = null;
-			if (['get_left','get_right','get_count','get_top','get_bottom',
-				'get_largest','get_smallest','get_best'].indexOf(b.type) !== -1) {
+			if (b.type === 'get_left' || b.type === 'get_right' || b.type === 'get_count') {
 				vn = b.fields.varname;
 			} else if (b.type === 'set_var') {
 				vn = b.fields.varname;
 			}
 			if (vn && !seen[vn]) { seen[vn] = true; names.push(vn); }
 		}
-		['links','rechts','oben','unten','anzahl','groesstes','kleinstes','bestes'].forEach(function(d) {
+		['links', 'rechts', 'anzahl'].forEach(function(d) {
 			if (!seen[d]) names.push(d);
 		});
 		return names;
 	}
 
-
-	// ═══════════════════════════════════════════════════════════════════
-	// FETCH MODEL LABELS when model selection changes
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Fetch model labels ─────────────────────────────────────────────
 	function fetchModelLabels(modelUuid) {
 		if (!modelUuid || modelUuid === 'none') {
 			modelLabels = [];
 			updateLabelUI();
+			updateStepIndicators();
 			return;
 		}
 		fetch('labels.php?model_uuid=' + encodeURIComponent(modelUuid))
-			.then(function(r) {
-				if (!r.ok) throw new Error('Failed');
-				return r.json();
-			})
+			.then(function(r) { return r.ok ? r.json() : []; })
 			.then(function(labels) {
 				modelLabels = Array.isArray(labels) ? labels : [];
 				updateLabelUI();
+				updateStepIndicators();
 			})
 			.catch(function() {
 				modelLabels = [];
 				updateLabelUI();
+				updateStepIndicators();
 			});
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// UPDATE LABEL UI (info bar + palette label blocks)
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Update label UI ────────────────────────────────────────────────
 	function updateLabelUI() {
-		// Info bar
 		var infoBar = document.getElementById('model_labels_info');
 		var chips   = document.getElementById('model_labels_chips');
 		if (infoBar && chips) {
@@ -245,7 +191,6 @@
 			}
 		}
 
-		// Palette label blocks
 		var paletteCat = document.getElementById('palette_labels_category');
 		var paletteCon = document.getElementById('palette_labels_container');
 		if (paletteCat && paletteCon) {
@@ -259,7 +204,6 @@
 					block.setAttribute('data-label-value', label);
 					block.setAttribute('draggable', 'true');
 					block.textContent = '🏷️ "' + label + '"';
-
 					block.addEventListener('dragstart', function(e) {
 						draggedBlockType = 'label_value:' + label;
 						draggedWorkspaceIdx = null;
@@ -279,23 +223,46 @@
 				paletteCon.innerHTML = '';
 			}
 		}
-
-		// Re-render so dropdowns update
 		renderWorkspace();
+	}
+
+	// ─── Step indicators ────────────────────────────────────────────────
+	function updateStepIndicators() {
+		var step1 = document.getElementById('step1_indicator');
+		var step2 = document.getElementById('step2_indicator');
+		var step3 = document.getElementById('step3_indicator');
+
+		var modelSelected = document.getElementById('game_model_select').value !== 'none';
+		var hasBlocks = workspaceBlocks.length > 0;
+
+		if (step1) {
+			step1.className = 'step-item' + (modelSelected ? ' done' : ' active');
+		}
+		if (step2) {
+			step2.className = 'step-item' + (hasBlocks ? ' done' : (modelSelected ? ' active' : ''));
+		}
+		if (step3) {
+			step3.className = 'step-item' + (hasBlocks && modelSelected ? ' active' : '');
+		}
 	}
 
 	// Listen for model changes
 	var modelSelect = document.getElementById('game_model_select');
 	if (modelSelect) {
-		modelSelect.addEventListener('change', function() { fetchModelLabels(this.value); });
+		modelSelect.addEventListener('change', function() {
+			fetchModelLabels(this.value);
+			// Update help text
+			var help = document.getElementById('setup_help');
+			if (help && this.value !== 'none') {
+				help.innerHTML = '<span class="emoji-big">🎉</span> <strong>Super!</strong> Modell gewählt! Jetzt ziehe Blöcke in den Arbeitsbereich oder klicke "Beispiel laden" für einen Schnellstart.';
+			}
+		});
 		if (modelSelect.value && modelSelect.value !== 'none') {
 			fetchModelLabels(modelSelect.value);
 		}
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// RENDER WORKSPACE
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Render workspace ───────────────────────────────────────────────
 	function renderWorkspace() {
 		var existing = workspace.querySelectorAll('.workspace-block, .drop-indicator');
 		existing.forEach(function(el) { el.remove(); });
@@ -320,11 +287,10 @@
 			}
 		}
 		generateDSL();
+		updateStepIndicators();
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// CREATE BLOCK ELEMENT
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Create block element ───────────────────────────────────────────
 	function createBlockElement(block, index, indentLevel) {
 		var def = BLOCK_DEFS[block.type];
 		var el = document.createElement('div');
@@ -355,31 +321,28 @@
 			def.fields.forEach(function(fd) { el.appendChild(createFieldElement(block, fd)); });
 		}
 
-		// Label after
 		if (def.labelAfter) {
 			var s = document.createElement('span');
 			s.textContent = ' ' + def.labelAfter;
 			el.appendChild(s);
 		}
 
-		// Mid label
 		if (def.labelMid) {
 			var m = document.createElement('span');
 			m.textContent = ' ' + def.labelMid + ' ';
 			el.appendChild(m);
 		}
 
-		// Second fields
 		if (def.fields2) {
 			def.fields2.forEach(function(fd) { el.appendChild(createFieldElement(block, fd)); });
 		}
 
-		// ── Second condition toggle for if/elif ──
+		// Second condition toggle for if/elif
 		if (def.canHaveSecondCondition) {
 			var addBtn = document.createElement('button');
 			addBtn.textContent = block.fields.logic ? '➖' : '➕';
 			addBtn.style.cssText = 'background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:50%;width:22px;height:22px;color:#fff;cursor:pointer;font-size:11px;margin-left:4px;padding:0;';
-			addBtn.title = block.fields.logic ? 'Remove second condition' : 'Add second condition';
+			addBtn.title = block.fields.logic ? 'Zweite Bedingung entfernen' : 'Zweite Bedingung hinzufügen';
 			addBtn.addEventListener('click', function(e) {
 				e.stopPropagation();
 				if (block.fields.logic) {
@@ -389,7 +352,7 @@
 					delete block.fields.right_val2;
 				} else {
 					block.fields.logic = 'and';
-					block.fields.left_val2 = 'right';
+					block.fields.left_val2 = 'rechts';
 					block.fields.operator2 = '==';
 					block.fields.right_val2 = modelLabels.length > 0 ? modelLabels[0] : '';
 				}
@@ -397,14 +360,13 @@
 			});
 			el.appendChild(addBtn);
 
-			// Render second condition
 			if (block.fields.logic) {
 				var logicSel = document.createElement('select');
 				logicSel.className = 'block-select';
 				logicSel.style.marginLeft = '4px';
 				['and', 'or'].forEach(function(opt) {
 					var o = document.createElement('option');
-					o.value = opt; o.textContent = opt;
+					o.value = opt; o.textContent = opt === 'and' ? 'UND' : 'ODER';
 					if (block.fields.logic === opt) o.selected = true;
 					logicSel.appendChild(o);
 				});
@@ -416,15 +378,15 @@
 				el.appendChild(logicSel);
 
 				var c2 = [
-					{ type: 'label_or_var', key: 'left_val2', default: 'right', placeholder: 'variable' },
+					{ type: 'label_or_var', key: 'left_val2', default: 'rechts', placeholder: 'Variable' },
 					{ type: 'select', key: 'operator2', options: ['==','!=','>','<','>=','<='], default: '==' },
-					{ type: 'label_or_input', key: 'right_val2', default: modelLabels.length > 0 ? modelLabels[0] : '', placeholder: 'value' }
+					{ type: 'label_or_input', key: 'right_val2', default: modelLabels.length > 0 ? modelLabels[0] : '', placeholder: 'Wert' }
 				];
 				c2.forEach(function(fd) { el.appendChild(createFieldElement(block, fd)); });
 			}
 		}
 
-		// ── Drag events for reordering ──
+		// Drag events for reordering
 		el.addEventListener('dragstart', function(e) {
 			draggedWorkspaceIdx = index;
 			draggedBlockType = null;
@@ -453,53 +415,38 @@
 		return el;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// CREATE FIELD ELEMENT
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Create field element ───────────────────────────────────────────
 	function createFieldElement(block, fieldDef) {
-
-		// ── label_or_input: dropdown of model labels + custom ──
 		if (fieldDef.type === 'label_or_input') {
 			if (modelLabels.length > 0) {
 				var wrapper = document.createElement('span');
 				wrapper.style.cssText = 'display:inline-flex;align-items:center;gap:2px;';
-
-				var cur = block.fields[fieldDef.key] !== undefined
-					? block.fields[fieldDef.key] : (fieldDef.default || '');
-				if (block.fields[fieldDef.key] === undefined)
-					block.fields[fieldDef.key] = fieldDef.default || '';
-
+				var cur = block.fields[fieldDef.key] !== undefined ? block.fields[fieldDef.key] : (fieldDef.default || '');
+				if (block.fields[fieldDef.key] === undefined) block.fields[fieldDef.key] = fieldDef.default || '';
 				var isKnown = (modelLabels.indexOf(cur) !== -1) || cur === 'none' || cur === '';
 				var isCustom = !isKnown && cur !== '';
 
 				var sel = document.createElement('select');
 				sel.className = 'block-select';
-
-				// "none" option
 				var noneOpt = document.createElement('option');
-				noneOpt.value = 'none'; noneOpt.textContent = '— none —';
+				noneOpt.value = 'none'; noneOpt.textContent = '— keine —';
 				if (cur === '' || cur === 'none') noneOpt.selected = true;
 				sel.appendChild(noneOpt);
-
-				// Model labels
 				modelLabels.forEach(function(label) {
 					var o = document.createElement('option');
 					o.value = label; o.textContent = '🏷️ ' + label;
 					if (cur === label) o.selected = true;
 					sel.appendChild(o);
 				});
-
-				// Custom option
 				var custOpt = document.createElement('option');
-				custOpt.value = '__custom__'; custOpt.textContent = '✏️ custom...';
+				custOpt.value = '__custom__'; custOpt.textContent = '✏️ eigener Wert...';
 				if (isCustom) custOpt.selected = true;
 				sel.appendChild(custOpt);
 
-				// Custom input
 				var custIn = document.createElement('input');
 				custIn.type = 'text';
 				custIn.className = 'block-input';
-				custIn.placeholder = 'type value...';
+				custIn.placeholder = 'Wert eingeben...';
 				custIn.value = isCustom ? cur : '';
 				custIn.style.display = isCustom ? 'inline-block' : 'none';
 				custIn.style.minWidth = fieldDef.wide ? '120px' : '80px';
@@ -519,39 +466,30 @@
 					block.fields[fieldDef.key] = this.value;
 					generateDSL();
 				});
-
 				sel.addEventListener('mousedown', function(e) { e.stopPropagation(); });
 				custIn.addEventListener('mousedown', function(e) { e.stopPropagation(); });
 				custIn.addEventListener('dragstart', function(e) { e.preventDefault(); e.stopPropagation(); });
-
 				wrapper.appendChild(sel);
 				wrapper.appendChild(custIn);
 				return wrapper;
 			}
-			// Fallback: no labels loaded
 			return createPlainInput(block, fieldDef);
 		}
 
-		// ── label_or_var: dropdown of variable names + custom ──
 		if (fieldDef.type === 'label_or_var') {
 			var wrapper = document.createElement('span');
 			wrapper.style.cssText = 'display:inline-flex;align-items:center;gap:2px;';
-
-			var cur = block.fields[fieldDef.key] !== undefined
-				? block.fields[fieldDef.key] : (fieldDef.default || '');
-			if (block.fields[fieldDef.key] === undefined)
-				block.fields[fieldDef.key] = fieldDef.default || '';
-
+			var cur = block.fields[fieldDef.key] !== undefined ? block.fields[fieldDef.key] : (fieldDef.default || '');
+			if (block.fields[fieldDef.key] === undefined) block.fields[fieldDef.key] = fieldDef.default || '';
 			var varNames = collectVariableNames();
 			var isKnown = varNames.indexOf(cur) !== -1;
 			var isCustom = !isKnown && cur !== '';
 
 			var sel = document.createElement('select');
 			sel.className = 'block-select';
-
 			if (varNames.length === 0) {
 				var emptyOpt = document.createElement('option');
-				emptyOpt.value = ''; emptyOpt.textContent = '(no variables)';
+				emptyOpt.value = ''; emptyOpt.textContent = '(keine Variablen)';
 				sel.appendChild(emptyOpt);
 			} else {
 				varNames.forEach(function(vn) {
@@ -561,16 +499,15 @@
 					sel.appendChild(o);
 				});
 			}
-
 			var custOpt = document.createElement('option');
-			custOpt.value = '__custom__'; custOpt.textContent = '✏️ custom...';
+			custOpt.value = '__custom__'; custOpt.textContent = '✏️ eigener...';
 			if (isCustom) custOpt.selected = true;
 			sel.appendChild(custOpt);
 
 			var custIn = document.createElement('input');
 			custIn.type = 'text';
 			custIn.className = 'block-input';
-			custIn.placeholder = 'var name...';
+			custIn.placeholder = 'Name...';
 			custIn.value = isCustom ? cur : '';
 			custIn.style.display = isCustom ? 'inline-block' : 'none';
 			custIn.style.minWidth = '70px';
@@ -590,22 +527,18 @@
 				block.fields[fieldDef.key] = this.value;
 				generateDSL();
 			});
-
 			sel.addEventListener('mousedown', function(e) { e.stopPropagation(); });
 			custIn.addEventListener('mousedown', function(e) { e.stopPropagation(); });
 			custIn.addEventListener('dragstart', function(e) { e.preventDefault(); e.stopPropagation(); });
-
 			wrapper.appendChild(sel);
 			wrapper.appendChild(custIn);
 			return wrapper;
 		}
 
-		// ── Standard input ──
 		if (fieldDef.type === 'input' || fieldDef.type === 'condition') {
 			return createPlainInput(block, fieldDef);
 		}
 
-		// ── Standard select ──
 		if (fieldDef.type === 'select') {
 			var sel = document.createElement('select');
 			sel.className = 'block-select';
@@ -626,26 +559,19 @@
 			return sel;
 		}
 
-		// Fallback
 		var span = document.createElement('span');
 		span.textContent = fieldDef.default || '';
 		return span;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// PLAIN INPUT HELPER
-	// ═══════════════════════════════════════════════════════════════════
 	function createPlainInput(block, fieldDef) {
 		var input = document.createElement('input');
 		input.type = 'text';
 		input.className = 'block-input';
 		input.placeholder = fieldDef.placeholder || '';
-		input.value = block.fields[fieldDef.key] !== undefined
-			? block.fields[fieldDef.key] : (fieldDef.default || '');
+		input.value = block.fields[fieldDef.key] !== undefined ? block.fields[fieldDef.key] : (fieldDef.default || '');
 		if (fieldDef.wide) input.style.minWidth = '140px';
-		if (block.fields[fieldDef.key] === undefined)
-			block.fields[fieldDef.key] = fieldDef.default || '';
-
+		if (block.fields[fieldDef.key] === undefined) block.fields[fieldDef.key] = fieldDef.default || '';
 		input.addEventListener('input', function() {
 			block.fields[fieldDef.key] = this.value;
 			generateDSL();
@@ -655,12 +581,9 @@
 		return input;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// HANDLE DROP (from palette or reorder)
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Handle drop ────────────────────────────────────────────────────
 	function handleDrop(targetIndex, e) {
 		workspace.querySelectorAll('.drop-indicator').forEach(function(ind) { ind.remove(); });
-
 		if (draggedWorkspaceIdx !== null) {
 			if (draggedWorkspaceIdx === targetIndex) return;
 			var moved = workspaceBlocks.splice(draggedWorkspaceIdx, 1)[0];
@@ -674,7 +597,6 @@
 			renderWorkspace();
 			return;
 		}
-
 		if (draggedBlockType) {
 			var nb = createNewBlock(draggedBlockType);
 			if (nb) {
@@ -688,26 +610,14 @@
 		}
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// CREATE NEW BLOCK INSTANCE
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Create new block ───────────────────────────────────────────────
 	function createNewBlock(type) {
-		// Handle dynamic label_value blocks (dragged from palette labels)
 		if (type && type.startsWith('label_value:')) {
 			var labelName = type.substring('label_value:'.length);
-			return {
-				id: newBlockId(),
-				type: 'set_var',
-				fields: {
-					varname: 'label',
-					value: labelName
-				}
-			};
+			return { id: newBlockId(), type: 'set_var', fields: { varname: 'label', value: labelName } };
 		}
-
 		var def = BLOCK_DEFS[type];
 		if (!def) return null;
-
 		var fields = {};
 		if (def.fields) {
 			def.fields.forEach(function(f) {
@@ -735,9 +645,7 @@
 		};
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// GENERATE DSL CODE FROM BLOCKS
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Generate DSL code from blocks ──────────────────────────────────
 	function generateDSL() {
 		var lines = [];
 		for (var i = 0; i < workspaceBlocks.length; i++) {
@@ -751,15 +659,11 @@
 		return code;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// PALETTE DRAG EVENTS (static blocks)
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Palette drag events ────────────────────────────────────────────
 	function bindPaletteDragEvents() {
 		var paletteBlocks = document.querySelectorAll('#block_palette .palette-block');
 		paletteBlocks.forEach(function(paletteEl) {
-			// Skip dynamically created label blocks (they have their own handlers)
 			if (paletteEl.getAttribute('data-block-type') === 'label_value') return;
-
 			paletteEl.addEventListener('dragstart', function(e) {
 				draggedBlockType = paletteEl.getAttribute('data-block-type');
 				draggedWorkspaceIdx = null;
@@ -767,7 +671,6 @@
 				e.dataTransfer.effectAllowed = 'copy';
 				e.dataTransfer.setData('text/plain', 'palette:' + draggedBlockType);
 			});
-
 			paletteEl.addEventListener('dragend', function() {
 				draggedBlockType = null;
 				trashZone.classList.remove('visible');
@@ -775,12 +678,9 @@
 			});
 		});
 	}
-
 	bindPaletteDragEvents();
 
-	// ═══════════════════════════════════════════════════════════════════
-	// WORKSPACE DRAG/DROP EVENTS
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Workspace drag/drop events ─────────────────────────────────────
 	workspace.addEventListener('dragover', function(e) {
 		e.preventDefault();
 		workspace.classList.add('drag-over');
@@ -794,7 +694,6 @@
 	workspace.addEventListener('drop', function(e) {
 		e.preventDefault();
 		workspace.classList.remove('drag-over');
-
 		if (e.target === workspace || e.target === placeholder) {
 			if (draggedBlockType) {
 				var newBlock = createNewBlock(draggedBlockType);
@@ -812,9 +711,7 @@
 		}
 	});
 
-	// ═══════════════════════════════════════════════════════════════════
-	// TRASH ZONE
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Trash zone ─────────────────────────────────────────────────────
 	trashZone.addEventListener('dragover', function(e) {
 		e.preventDefault();
 		e.stopPropagation();
@@ -831,7 +728,6 @@
 		e.stopPropagation();
 		trashZone.classList.remove('hover');
 		trashZone.classList.remove('visible');
-
 		if (draggedWorkspaceIdx !== null) {
 			workspaceBlocks.splice(draggedWorkspaceIdx, 1);
 			draggedWorkspaceIdx = null;
@@ -840,34 +736,97 @@
 		draggedBlockType = null;
 	});
 
-	// ═══════════════════════════════════════════════════════════════════
-	// SHOW CODE BUTTON
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Show code button ───────────────────────────────────────────────
 	var showCodeBtn = document.getElementById('btn_show_code');
 	if (showCodeBtn) {
 		showCodeBtn.addEventListener('click', function() {
 			var code = generateDSL();
-			document.getElementById('code_preview_content').textContent = code || '(no blocks yet)';
+			document.getElementById('code_preview_content').textContent = code || '(noch keine Blöcke)';
 			document.getElementById('code_preview_modal').classList.add('visible');
 		});
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// CLOSE MODAL ON BACKGROUND CLICK
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Close modal on background click ────────────────────────────────
 	var modal = document.getElementById('code_preview_modal');
 	if (modal) {
 		modal.addEventListener('click', function(e) {
-			if (e.target === modal) {
-				modal.classList.remove('visible');
-			}
+			if (e.target === modal) modal.classList.remove('visible');
 		});
 	}
 
-	// ═══════════════════════════════════════════════════════════════════
-	// INITIALIZE — empty workspace, user builds from scratch
-	// ═══════════════════════════════════════════════════════════════════
+	// ─── Load Example Button ────────────────────────────────────────────
+	var loadExampleBtn = document.getElementById('btn_load_example');
+	if (loadExampleBtn) {
+		loadExampleBtn.addEventListener('click', function() {
+			loadDefaultExample();
+		});
+	}
+
+	function loadDefaultExample() {
+	    workspaceBlocks = [];
+
+	    var l1 = modelLabels.length > 0 ? modelLabels[0] : 'Stein';
+	    var l2 = modelLabels.length > 1 ? modelLabels[1] : 'Schere';
+	    var l3 = modelLabels.length > 2 ? modelLabels[2] : 'Papier';
+
+	    // anzahl = detection_count
+	    workspaceBlocks.push({ id: newBlockId(), type: 'get_count', fields: { varname: 'anzahl' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'get_left', fields: { varname: 'links' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'get_right', fields: { varname: 'rechts' } });
+
+	    // if anzahl == 1 → nur anzeigen was erkannt wurde
+	    workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: { left_val: 'anzahl', operator: '==', right_val: '1' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Erkannt: " + links + " – zeig noch eine Hand!"', style: 'normal' } });
+
+	    // elif anzahl == 2 → Spiel auswerten
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'anzahl', operator: '==', right_val: '2' } });
+
+	    // Nested: wer gewinnt?
+	    workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: {
+		left_val: 'links', operator: '==', right_val: l1,
+		logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l2
+	    }});
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l1 + ' schlägt ' + l2 + ' – Links gewinnt! 🎉"', style: 'winner' } });
+
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
+		left_val: 'links', operator: '==', right_val: l2,
+		logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l3
+	    }});
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l2 + ' schlägt ' + l3 + ' – Links gewinnt! 🎉"', style: 'winner' } });
+
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
+		left_val: 'links', operator: '==', right_val: l3,
+		logic: 'and', left_val2: 'rechts', operator2: '==', right_val2: l1
+	    }});
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"' + l3 + ' schlägt ' + l1 + ' – Links gewinnt! 🎉"', style: 'winner' } });
+
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: {
+		left_val: 'links', operator: '==', right_val: 'rechts'
+	    }});
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Gleichstand! 🤝 Nochmal!"', style: 'draw' } });
+
+	    workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Rechts gewinnt! 💪"', style: 'loser' } });
+
+	    workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} }); // end inner if
+
+	    // elif anzahl >= 3 → zu viele
+	    workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'anzahl', operator: '>=', right_val: '3' } });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Zu viele Hände! Nur 2 zeigen 🙈"', style: 'draw' } });
+
+	    // else → nichts erkannt
+	    workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
+	    workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Zeigt eure Hände! ✋✋"', style: 'normal' } });
+
+	    // end outer if
+	    workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} });
+
+	    renderWorkspace();
+	}
+
+	// ─── Initialize ─────────────────────────────────────────────────────
 	workspaceBlocks = [];
 	renderWorkspace();
 
 })();
+
