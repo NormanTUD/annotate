@@ -474,6 +474,7 @@
 			<a href='webcam.php'>Webcam</a>
 			<a href='models.php'>Models</a>
 			<a href='upload.php'>Upload Images</a>
+			<a href='game_editor.php'>Schere Stein Papier</a>
 			<a href='batch_upload.php'>Batch Import</a>
 			$overview	
 			$export_gui
