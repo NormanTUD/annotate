@@ -720,28 +720,30 @@
 
 		var message = '';
 		var style = 'normal';
+		var styles = ['normal', 'winner', 'loser', 'draw'];
 
-		if (afterCmd.startsWith('"') || afterCmd.startsWith("'")) {
-			var quoteChar = afterCmd[0];
-			var endQuote = afterCmd.indexOf(quoteChar, 1);
-			if (endQuote !== -1) {
-				message = afterCmd.substring(0, endQuote + 1);
-				var rest = afterCmd.substring(endQuote + 1).trim();
-				if (rest && ['normal', 'winner', 'loser', 'draw'].indexOf(rest) !== -1) {
-					style = rest;
-				}
+		// Try to extract style from the very end of the line.
+		// The style keyword must be a standalone word at the end, separated by space,
+		// and NOT inside a string literal.
+		var lastSpace = -1;
+		var inStr = false, strChar = '';
+		for (var i = 0; i < afterCmd.length; i++) {
+			var ch = afterCmd[i];
+			if (!inStr && (ch === '"' || ch === "'")) { inStr = true; strChar = ch; }
+			else if (inStr && ch === strChar) { inStr = false; }
+			else if (!inStr && ch === ' ') { lastSpace = i; }
+		}
+
+		if (!inStr && lastSpace !== -1) {
+			var candidate = afterCmd.substring(lastSpace + 1);
+			if (styles.indexOf(candidate) !== -1) {
+				style = candidate;
+				message = afterCmd.substring(0, lastSpace).trim();
 			} else {
 				message = afterCmd;
 			}
 		} else {
-			var parts = afterCmd.split(' ');
-			var lastPart = parts[parts.length - 1];
-			if (['normal', 'winner', 'loser', 'draw'].indexOf(lastPart) !== -1 && parts.length > 1) {
-				style = lastPart;
-				message = parts.slice(0, -1).join(' ');
-			} else {
-				message = afterCmd;
-			}
+			message = afterCmd;
 		}
 
 		return { message: message, style: style };

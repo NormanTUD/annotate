@@ -768,43 +768,32 @@
 		var l1 = modelLabels.length > 0 ? modelLabels[0] : 'KategorieA';
 		var l2 = modelLabels.length > 1 ? modelLabels[1] : 'KategorieB';
 
-		// anzahl = detection_count
+		// Sensing blocks
 		workspaceBlocks.push({ id: newBlockId(), type: 'get_count', fields: { varname: 'anzahl' } });
 		workspaceBlocks.push({ id: newBlockId(), type: 'get_left', fields: { varname: 'links' } });
 		workspaceBlocks.push({ id: newBlockId(), type: 'get_right', fields: { varname: 'rechts' } });
 
-		// if anzahl == 0 → nichts erkannt
+		// if anzahl == 0 → nothing detected
 		workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: { left_val: 'anzahl', operator: '==', right_val: '0' } });
 		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Nichts erkannt – halte etwas in die Kamera!"', style: 'normal' } });
 
-		// elif anzahl == 1 → eine Erkennung
+		// elif anzahl == 1 → one detection
 		workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'anzahl', operator: '==', right_val: '1' } });
+		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Ich sehe: " + links', style: 'winner' } });
 
-		// Check for first label
-		workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: { left_val: 'links', operator: '==', right_val: l1 } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Ich sehe: ' + l1 + '! 👍"', style: 'winner' } });
-
-		if (modelLabels.length > 1) {
-			workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'links', operator: '==', right_val: l2 } });
-			workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Ich sehe: ' + l2 + '! ✨"', style: 'winner' } });
-		}
-
-		workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Erkannt: " + links', style: 'normal' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} }); // end inner if
-
-		// elif anzahl == 2 → zwei Erkennungen, vergleichen
+		// elif anzahl == 2 → two detections, compare
 		workspaceBlocks.push({ id: newBlockId(), type: 'elif', fields: { left_val: 'anzahl', operator: '==', right_val: '2' } });
 
+		// inner if: same label?
 		workspaceBlocks.push({ id: newBlockId(), type: 'if', fields: { left_val: 'links', operator: '==', right_val: 'rechts' } });
-		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Beide gleich: " + links + " 🤝"', style: 'draw' } });
+		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Beide gleich: " + links', style: 'draw' } });
 
 		workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
 		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Links: " + links + " | Rechts: " + rechts', style: 'normal' } });
 
 		workspaceBlocks.push({ id: newBlockId(), type: 'end', fields: {} }); // end inner if
 
-		// else → viele Erkennungen
+		// else → many detections
 		workspaceBlocks.push({ id: newBlockId(), type: 'else', fields: {} });
 		workspaceBlocks.push({ id: newBlockId(), type: 'show_text', fields: { message: '"Ich sehe " + anzahl + " Objekte!"', style: 'normal' } });
 
