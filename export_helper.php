@@ -585,18 +585,31 @@ fi';
 		}
 
 		if ($format == "html") {
-			// First, get the paginated image filenames
-			$image_ids_subquery = "SELECT DISTINCT i.id FROM annotation a "
-				. "LEFT JOIN image i ON i.id = a.image_id "
-				. "LEFT JOIN category c ON c.id = a.category_id "
-				. "WHERE a.deleted = '0' AND i.deleted = 0 ";
-			// ... apply same filters (show_categories, curated, etc.) ...
-			$image_ids_subquery .= " ORDER BY i.filename "
-				. " LIMIT ".intval($offset).", ".intval($items_per_page);
+			// Build a subquery that paginates by DISTINCT image id
+			$image_page_subquery = "SELECT DISTINCT a2.image_id FROM annotation a2"
+				. " LEFT JOIN image i2 ON i2.id = a2.image_id"
+				. " LEFT JOIN category c2 ON c2.id = a2.category_id"
+				. " WHERE a2.deleted = '0' AND i2.deleted = 0";
 
-			// Then fetch all annotations for those images
-			$annotated_image_ids_query .= " AND i.id IN ($image_ids_subquery) ";
-			$annotated_image_ids_query .= " ORDER BY i.filename, a.modified ";
+			// Re-apply the same filters to the subquery
+			if ($show_categories && count($show_categories)) {
+				$image_page_subquery .= " AND c2.name IN (" . esc($show_categories) . ")";
+			}
+			if ($show_files && count($show_files)) {
+				$image_page_subquery .= " AND i2.filename IN (" . esc($show_files) . ")";
+			}
+			if ($only_uncurated) {
+				$image_page_subquery .= " AND (a2.curated IS NULL OR a2.curated = 0)";
+			}
+			if ($only_curated) {
+				$image_page_subquery .= " AND (a2.curated = 1)";
+			}
+
+			$image_page_subquery .= " ORDER BY i2.filename"
+				. " LIMIT " . intval($offset) . ", " . intval($items_per_page);
+
+			$annotated_image_ids_query .= " AND i.id IN (" . $image_page_subquery . ")";
+			$annotated_image_ids_query .= " ORDER BY i.filename, a.modified";
 		} else if($limit) {
 			$annotated_image_ids_query .= " order by rand()";
 			$annotated_image_ids_query .= " limit ".intval(get_get("limit"));
