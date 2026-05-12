@@ -396,66 +396,57 @@
     }
 
     // ─── Expression evaluator with arithmetic ───────────────────────────
-    function evaluateExpression(expr, vars) {
-        expr = expr.trim();
-        if (expr === '') return '';
+	function evaluateExpression(expr, vars) {
+		expr = expr.trim();
+		if (expr === '') return '';
 
-        // String literal
-        if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
-            // Check it's a complete string (no unmatched quotes in middle for concat)
-            var q = expr[0], closed = false, lastClose = -1;
-            for (var i = 1; i < expr.length; i++) {
-                if (expr[i] === q) { lastClose = i; }
-            }
-            if (lastClose === expr.length - 1) {
-                // Check for + after the string
-                // Actually let's just handle simple case
-                return expr.substring(1, expr.length - 1);
-            }
-        }
+		// Number literal (check early, no ambiguity)
+		if (/^-?\d+(\.\d+)?$/.test(expr)) return parseFloat(expr);
 
-        // Number literal
-        if (/^-?\d+(\.\d+)?$/.test(expr)) return parseFloat(expr);
+		// Parenthesized expression
+		if (expr.startsWith('(') && findMatchingParen(expr, 0) === expr.length - 1) {
+			return evaluateExpression(expr.substring(1, expr.length - 1), vars);
+		}
 
-        // Parenthesized expression
-        if (expr.startsWith('(') && findMatchingParen(expr, 0) === expr.length - 1) {
-            return evaluateExpression(expr.substring(1, expr.length - 1), vars);
-        }
+		// String concatenation / Addition — check BEFORE string literal!
+		var plusMinusResult = splitArithmetic(expr, ['+', '-']);
+		if (plusMinusResult) {
+			var left = evaluateExpression(plusMinusResult.left, vars);
+			var right = evaluateExpression(plusMinusResult.right, vars);
+			if (plusMinusResult.op === '+') {
+				if (typeof left === 'string' || typeof right === 'string') {
+					return String(left) + String(right);
+				}
+				return (parseFloat(left) || 0) + (parseFloat(right) || 0);
+			} else {
+				return (parseFloat(left) || 0) - (parseFloat(right) || 0);
+			}
+		}
 
-        // String concatenation / Addition (lowest precedence after comparison)
-        var plusMinusResult = splitArithmetic(expr, ['+', '-']);
-        if (plusMinusResult) {
-            var left = evaluateExpression(plusMinusResult.left, vars);
-            var right = evaluateExpression(plusMinusResult.right, vars);
-            if (plusMinusResult.op === '+') {
-                // If either side is a string, concatenate
-                if (typeof left === 'string' || typeof right === 'string') {
-                    return String(left) + String(right);
-                }
-                return (parseFloat(left) || 0) + (parseFloat(right) || 0);
-            } else { // '-'
-                return (parseFloat(left) || 0) - (parseFloat(right) || 0);
-            }
-        }
+		// Multiplication / Division / Modulo
+		var mulDivResult = splitArithmetic(expr, ['*', '/', '%']);
+		if (mulDivResult) {
+			var left = evaluateExpression(mulDivResult.left, vars);
+			var right = evaluateExpression(mulDivResult.right, vars);
+			var l = parseFloat(left) || 0;
+			var r = parseFloat(right) || 0;
+			if (mulDivResult.op === '*') return l * r;
+			if (mulDivResult.op === '/') return r !== 0 ? l / r : 0;
+			if (mulDivResult.op === '%') return r !== 0 ? l % r : 0;
+		}
 
-        // Multiplication / Division / Modulo
-        var mulDivResult = splitArithmetic(expr, ['*', '/', '%']);
-        if (mulDivResult) {
-            var left = evaluateExpression(mulDivResult.left, vars);
-            var right = evaluateExpression(mulDivResult.right, vars);
-            var l = parseFloat(left) || 0;
-            var r = parseFloat(right) || 0;
-            if (mulDivResult.op === '*') return l * r;
-            if (mulDivResult.op === '/') return r !== 0 ? l / r : 0;
-            if (mulDivResult.op === '%') return r !== 0 ? l % r : 0;
-        }
+		// String literal (only AFTER we've confirmed no + operator outside strings)
+		if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
+			return expr.substring(1, expr.length - 1);
+		}
 
-        // Built-in detection variables
-        if (vars.hasOwnProperty(expr)) return vars[expr];
+		// Variable lookup
+		if (vars.hasOwnProperty(expr)) return vars[expr];
 
-        // Unknown → return as string
-        return expr;
-    }
+		// Unknown → return as string
+		return expr;
+	}
+
 
     function findMatchingParen(str, openIdx) {
         var depth = 0, inStr = false, strChar = '';

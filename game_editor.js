@@ -460,45 +460,57 @@
 	    return results;
 	}
 
-	function evaluateExpression(expr, context) {
+	function evaluateExpression(expr, vars) {
 		expr = expr.trim();
+		if (expr === '') return '';
 
-		// String literal
+		// Number literal (check early, no ambiguity)
+		if (/^-?\d+(\.\d+)?$/.test(expr)) return parseFloat(expr);
+
+		// Parenthesized expression
+		if (expr.startsWith('(') && findMatchingParen(expr, 0) === expr.length - 1) {
+			return evaluateExpression(expr.substring(1, expr.length - 1), vars);
+		}
+
+		// String concatenation / Addition — check BEFORE string literal!
+		var plusMinusResult = splitArithmetic(expr, ['+', '-']);
+		if (plusMinusResult) {
+			var left = evaluateExpression(plusMinusResult.left, vars);
+			var right = evaluateExpression(plusMinusResult.right, vars);
+			if (plusMinusResult.op === '+') {
+				if (typeof left === 'string' || typeof right === 'string') {
+					return String(left) + String(right);
+				}
+				return (parseFloat(left) || 0) + (parseFloat(right) || 0);
+			} else {
+				return (parseFloat(left) || 0) - (parseFloat(right) || 0);
+			}
+		}
+
+		// Multiplication / Division / Modulo
+		var mulDivResult = splitArithmetic(expr, ['*', '/', '%']);
+		if (mulDivResult) {
+			var left = evaluateExpression(mulDivResult.left, vars);
+			var right = evaluateExpression(mulDivResult.right, vars);
+			var l = parseFloat(left) || 0;
+			var r = parseFloat(right) || 0;
+			if (mulDivResult.op === '*') return l * r;
+			if (mulDivResult.op === '/') return r !== 0 ? l / r : 0;
+			if (mulDivResult.op === '%') return r !== 0 ? l % r : 0;
+		}
+
+		// String literal (only AFTER we've confirmed no + operator outside strings)
 		if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
 			return expr.substring(1, expr.length - 1);
 		}
 
-		// Number literal
-		if (!isNaN(expr) && expr !== '') {
-			return parseFloat(expr);
-		}
+		// Variable lookup
+		if (vars.hasOwnProperty(expr)) return vars[expr];
 
-		// String concatenation with +
-		if (expr.indexOf('+') !== -1) {
-			var parts = splitOnPlus(expr);
-			if (parts.length > 1) {
-				var result = '';
-				for (var i = 0; i < parts.length; i++) {
-					var val = evaluateExpression(parts[i], context);
-					result += String(val);
-				}
-				return result;
-			}
-		}
-
-		// Built-in variables
-		if (expr === 'leftmost_detection') return context.leftmost_label;
-		if (expr === 'rightmost_detection') return context.rightmost_label;
-		if (expr === 'leftmost_detection.probability') return context.leftmost_prob;
-		if (expr === 'rightmost_detection.probability') return context.rightmost_prob;
-		if (expr === 'detection_count') return context.detection_count;
-
-		// User variables
-		if (context.vars.hasOwnProperty(expr)) return context.vars[expr];
-
-		// Unknown
+		// Unknown → return as string
 		return expr;
 	}
+
 
 	function splitOnPlus(expr) {
 		var parts = [];

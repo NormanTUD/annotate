@@ -96,6 +96,7 @@
 			oder klicke oben auf <strong>🎮 Beispiele</strong>
 		    </span>
 		</div>
+		</div>
         </div>
     </div>
 
