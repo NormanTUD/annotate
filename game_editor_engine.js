@@ -1275,38 +1275,6 @@
 			'end\n'
 		},
 		{
-		    id: 'duel',
-		    name: '⚔️ Links gegen Rechts',
-		    icon: '⚔️',
-		    difficulty: '⭐⭐',
-		    description: 'Zwei Spieler duellieren sich! Wer hält das Objekt sicherer in die Kamera?',
-		    preview: '⬅️ Spieler 1 vs Spieler 2 ➡️',
-		    color: '#ba68c8',
-		    code:
-			'# ══ LINKS vs RECHTS ══\n' +
-			'links = leftmost_detection\n' +
-			'rechts = rightmost_detection\n' +
-			'links_conf = leftmost_detection.probability\n' +
-			'rechts_conf = rightmost_detection.probability\n' +
-			'if detection_count < 2\n' +
-			'  show_text "⏳ Beide Spieler: Objekt zeigen!" normal\n' +
-			'elif links_conf > rechts_conf\n' +
-			'  score_links += 1\n' +
-			'  show_text "⬅️ LINKS gewinnt! Stand: " + score_links + " - " + score_rechts winner\n' +
-			'elif rechts_conf > links_conf\n' +
-			'  score_rechts += 1\n' +
-			'  show_text "➡️ RECHTS gewinnt! Stand: " + score_links + " - " + score_rechts winner\n' +
-			'else\n' +
-			'  show_text "🤝 Gleichstand!" draw\n' +
-			'end\n' +
-			'if score_links >= 10\n' +
-			'  show_text "🏆🏆🏆 LINKS IST CHAMPION! 🏆🏆🏆" winner\n' +
-			'end\n' +
-			'if score_rechts >= 10\n' +
-			'  show_text "🏆🏆🏆 RECHTS IST CHAMPION! 🏆🏆🏆" winner\n' +
-			'end\n'
-		},
-		{
 		    id: 'collect',
 		    name: '🎯 Sammel-Challenge',
 		    icon: '🎯',
