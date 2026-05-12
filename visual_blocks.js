@@ -52,7 +52,7 @@
 			help: '🎓 Diese Blöcke schauen, was die Kamera sieht!'
 		},
 		control: {
-			label: '🧠 Entscheiden',
+			label: '🤔 Entscheiden',
 			color: '#ffb74d',
 			blocks: [
 				{ type: 'if',    icon: '❓', text: 'Wenn ... dann ...' },
