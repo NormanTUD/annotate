@@ -9,23 +9,48 @@
 
 <div id="game_editor_page">
 
-<h1>✊✌️✋ Stein Schere Papier – KI-Spiel Baukasten</h1>
-<div id="game_output">🎮 Willkommen im KI-Spiel Baukasten!
-
-👋 So geht's:
-1️⃣ Wähle oben ein KI-Modell aus
-2️⃣ Klicke auf "🎮 Beispiele" für fertige Spiele
-3️⃣ Oder baue dein eigenes Programm mit den Blöcken links!
-
-💡 Tipp: Starte mit einem Beispiel und ändere es dann ab!
+<!-- 🌟 MASCOT & WELCOME -->
+<div id="welcome_hero">
+    <div class="mascot-container">
+        <div id="mascot">🤖</div>
+        <div class="speech-bubble" id="mascot_speech">
+            <strong>Hi! Ich bin Robi!</strong><br>
+            Lass uns zusammen ein Spiel bauen! 🎮✨
+        </div>
+    </div>
+    <h1>🎮 Mein KI-Spielplatz</h1>
+    <p class="hero-subtitle">Baue dein eigenes Kamera-Spiel – ganz einfach!</p>
 </div>
 
-<!-- Compact top bar -->
+<!-- 🎯 STEP-BY-STEP WIZARD (shows only on first visit) -->
+<div id="setup_wizard" class="wizard-visible">
+    <div class="wizard-steps">
+        <div class="wizard-step active" data-step="1">
+            <div class="step-number">1</div>
+            <div class="step-icon">🤖</div>
+            <div class="step-label">KI wählen</div>
+        </div>
+        <div class="wizard-connector"></div>
+        <div class="wizard-step" data-step="2">
+            <div class="step-number">2</div>
+            <div class="step-icon">🎮</div>
+            <div class="step-label">Spiel wählen</div>
+        </div>
+        <div class="wizard-connector"></div>
+        <div class="wizard-step" data-step="3">
+            <div class="step-number">3</div>
+            <div class="step-icon">🚀</div>
+            <div class="step-label">Spielen!</div>
+        </div>
+    </div>
+</div>
+
+<!-- ⚡ SIMPLIFIED TOP BAR — Only essentials visible -->
 <div class="topbar-controls">
-    <div class="topbar-item">
-        <label>🤖 Modell:</label>
-        <select id="game_model_select">
-            <option value="none">— Kein Modell —</option>
+    <div class="topbar-item topbar-model">
+        <label>🤖 Meine KI:</label>
+        <select id="game_model_select" class="big-select">
+            <option value="none">👆 Wähle deine KI!</option>
             <?php foreach ($available_models as $_model): ?>
                 <option value="<?php echo htmlspecialchars($_model[1]); ?>">
                     <?php echo htmlspecialchars($_model[0]); ?>
@@ -33,14 +58,14 @@
             <?php endforeach; ?>
         </select>
     </div>
-    <div class="topbar-item">
+    <div class="topbar-item topbar-camera" style="display:none;" id="camera_selector_wrapper">
         <label>📷</label>
         <select id="game_camera_select">
             <option value="">Kameras werden geladen...</option>
         </select>
     </div>
-    <div class="topbar-item">
-        <label>🎚️</label>
+    <div class="topbar-item topbar-confidence" style="display:none;" id="confidence_wrapper">
+        <label>🎚️ Genauigkeit:</label>
         <input type="range" id="game_conf_slider" min="0" max="1" step="0.01" value="0.3">
         <span id="game_conf_value">0.30</span>
     </div>
@@ -50,6 +75,22 @@
     <div class="topbar-item" id="model_labels_info" style="display:none;">
         <span id="model_labels_chips"></span>
     </div>
+    <!-- 🔊 Sound toggle -->
+    <div class="topbar-item">
+        <button id="btn_sound_toggle" class="icon-btn" title="Töne an/aus">🔊</button>
+    </div>
+</div>
+
+<!-- 🎮 BIG PLAY BUTTON (appears after model selected) -->
+<div id="quick_play_bar" style="display:none;">
+    <button id="btn_quick_play" class="mega-button">
+        <span class="mega-icon">🎮</span>
+        <span class="mega-text">Spiel starten!</span>
+    </button>
+    <button id="btn_show_examples" class="mega-button secondary">
+        <span class="mega-icon">🎲</span>
+        <span class="mega-text">Spiele-Galerie</span>
+    </button>
 </div>
 
 <!-- Main layout -->
@@ -58,27 +99,12 @@
     <!-- Left: Block Editor -->
     <div id="editor_panel">
         <div class="panel-header">
-            <h3>🧩 Dein Programm</h3>
+            <h3>🧩 Mein Programm</h3>
             <div class="editor-actions">
-		<!-- REPLACE the single 💡 button in .editor-actions with: -->
-		<div class="editor-actions">
-		    <button id="btn_show_examples" title="Beispiele">🎮 Beispiele</button>
-		    <button id="btn_show_code" title="Code anzeigen">👁</button>
-		</div>
-
-		<!-- ADD this modal BEFORE the code_preview_modal div: -->
-		<div id="example_gallery_modal">
-		    <div id="example_gallery_box">
-			<h2>🎮 Wähle ein Spiel!</h2>
-			<p class="gallery-subtitle">Klicke auf ein Spiel, um es zu laden. Du kannst es danach verändern!</p>
-			<div id="example_cards_container"></div>
-			<button class="gallery-close" onclick="document.getElementById('example_gallery_modal').classList.remove('visible');">
-			    Schließen ✕
-			</button>
-		    </div>
-		</div>
+                <button id="btn_show_examples_small" title="Beispiele">🎮</button>
+                <button id="btn_undo" title="Rückgängig">↩️</button>
                 <button id="btn_show_code" title="Code anzeigen">👁</button>
-                <button id="btn_clear_output" title="Ausgabe löschen">🗑</button>
+                <button id="btn_clear_workspace" title="Alles löschen">🗑</button>
             </div>
         </div>
         <div id="visual_editor_wrapper">
@@ -87,15 +113,21 @@
 
             <!-- Workspace -->
             <div id="block_workspace">
-		<div id="workspace_placeholder">
-		    <span class="big-arrow">🎮</span>
-		    <strong>Hier baust du dein Programm!</strong><br><br>
-		    <span style="font-size: 13px; color: #89b4fa;">
-			⬅️ Ziehe Blöcke von links hierher<br>
-			oder klicke oben auf <strong>🎮 Beispiele</strong>
-		    </span>
-		</div>
-		</div>
+                <div id="workspace_placeholder">
+                    <span class="big-arrow">🎮</span>
+                    <strong>Hier baust du dein Programm!</strong><br><br>
+                    <span class="placeholder-hint">
+                        ⬅️ Ziehe Blöcke von links hierher<br>
+                        oder klicke auf <strong>🎮 Spiele-Galerie</strong>
+                    </span>
+                    <button id="btn_placeholder_examples" class="placeholder-btn">
+                        🎲 Fertiges Spiel laden
+                    </button>
+                </div>
+            </div>
+
+            <!-- Trash zone -->
+            <div id="trash_zone">🗑️</div>
         </div>
     </div>
 
@@ -108,23 +140,60 @@
                 <div id="game_text_overlay"></div>
                 <div id="cam_placeholder">
                     <span>📷</span>
-                    <p>Wähle ein Modell um die Kamera zu starten</p>
+                    <p>Wähle oben eine KI – dann geht's los!</p>
+                    <div class="cam-placeholder-animation">
+                        <span>👆</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="preview-card output-card">
-            <h3>📋 Protokoll</h3>
-            <div id="game_output">Wähle ein Modell oben – die Kamera startet automatisch! 🚀
-</div>
+        <!-- 🏆 SCORE DISPLAY (always visible during game) -->
+        <div id="score_display" style="display:none;">
+            <div class="score-item">
+                <span class="score-label">⭐ Punkte</span>
+                <span class="score-value" id="score_points">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">🏆 Rekord</span>
+                <span class="score-value" id="score_record">0</span>
+            </div>
         </div>
 
-        <div id="game_status">Status: Wähle ein Modell zum Starten</div>
+        <div class="preview-card output-card">
+            <h3>📋 Was passiert?</h3>
+            <div id="game_output">🎮 Willkommen auf deinem KI-Spielplatz!
+
+👋 So einfach geht's:
+1️⃣ Wähle oben eine KI aus
+2️⃣ Klicke auf "🎮 Spiel starten!"
+3️⃣ Halte Dinge vor die Kamera – und spiele!
+
+💡 Tipp: Probiere die Spiele-Galerie aus!
+</div>
+            <button id="btn_clear_output" class="small-btn" title="Löschen">🗑 Leeren</button>
+        </div>
+
+        <div id="game_status">Status: Wähle oben eine KI zum Starten 👆</div>
     </div>
 </div>
 
 <!-- Hidden textarea for interpreter -->
 <textarea id="dsl_editor" style="display:none;"></textarea>
+
+<!-- 🎮 EXAMPLE GALLERY MODAL (redesigned) -->
+<div id="example_gallery_modal">
+    <div id="example_gallery_box">
+        <div class="gallery-header">
+            <h2>🎮 Wähle ein Spiel!</h2>
+            <p class="gallery-subtitle">Tippe auf ein Spiel um es zu laden. Du kannst es danach verändern!</p>
+        </div>
+        <div id="example_cards_container"></div>
+        <button class="gallery-close" onclick="document.getElementById('example_gallery_modal').classList.remove('visible'); playSound('pop');">
+            ✕ Schließen
+        </button>
+    </div>
+</div>
 
 <!-- Code preview modal -->
 <div id="code_preview_modal">
@@ -135,12 +204,27 @@
     </div>
 </div>
 
+<!-- 🎉 ACHIEVEMENT POPUP -->
+<div id="achievement_popup" class="hidden">
+    <div class="achievement-content">
+        <span class="achievement-icon">🏆</span>
+        <span class="achievement-text">Super gemacht!</span>
+    </div>
 </div>
 
+<!-- 💡 TOOLTIP SYSTEM -->
+<div id="floating_tooltip" class="hidden"></div>
+
+</div>
+
+<!-- Audio elements for sound effects -->
+<audio id="sfx_success" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==" type="audio/wav">
+</audio>
+
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js"></script>
+<script src="kid_helpers.js"></script>
 <script src="visual_blocks.js"></script>
 <script src="game_editor_engine.js"></script>
 
-<?php
-    include_once("footer.php");
-?>
+<?php include_once("footer.php"); ?>
