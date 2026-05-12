@@ -1327,8 +1327,8 @@
 		},
 		{
 		    id: 'reaction',
-		    name: '🧠 Reaktions-Test',
-		    icon: '🧠',
+		    name: '🤔 Reaktions-Test',
+		    icon: '🤔',
 		    difficulty: '⭐⭐⭐',
 		    description: 'Das Spiel sagt dir, was du zeigen sollst. Sei schnell!',
 		    preview: '⏱️ Zeige das richtige Objekt!',
