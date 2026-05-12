@@ -237,42 +237,42 @@
         return kept;
     }
 
-    async function runDetection() {
-        if (!gameModel || !webcamStream || video.readyState < 2) return [];
-        var shape = getModelInputShape();
-        var confThreshold = getGameConfThreshold();
-        var inputTensor = null, output = null;
+	async function runDetection() {
+		if (!gameModel || !webcamStream || video.readyState < 2) return [];
+		var shape = getModelInputShape();
+		var confThreshold = getGameConfThreshold();
+		var inputTensor = null, output = null;
 
-        try {
-            inputTensor = tf.tidy(function() {
-                return tf.browser.fromPixels(video)
-                    .resizeBilinear([shape[0], shape[1]])
-                    .div(255)
-                    .expandDims();
-            });
-        } catch (e) {
-            if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
-            return [];
-        }
+		try {
+			inputTensor = tf.tidy(function() {
+				return tf.browser.fromPixels(video)
+					.resizeBilinear([shape[0], shape[1]])
+					.div(255)
+					.expandDims();
+			});
+		} catch (e) {
+			if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
+			return [];
+		}
 
-        try { output = await gameModel.executeAsync(inputTensor); }
-        catch (e) { if (inputTensor) try { inputTensor.dispose(); } catch (x) {} return []; }
-        if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
+		try { output = gameModel.execute(inputTensor); }
+		catch (e) { if (inputTensor) try { inputTensor.dispose(); } catch (x) {} return []; }
+		if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
 
-        var res;
-        try {
-            if (output instanceof tf.Tensor) {
-                res = output.arraySync();
-                output.dispose();
-            } else if (Array.isArray(output)) {
-                res = output[0].arraySync();
-                output.forEach(function(t) { try { t.dispose(); } catch (x) {} });
-            } else { res = output; }
-        } catch (e) { return []; }
+		var res;
+		try {
+			if (output instanceof tf.Tensor) {
+				res = output.arraySync();
+				output.dispose();
+			} else if (Array.isArray(output)) {
+				res = output[0].arraySync();
+				output.forEach(function(t) { try { t.dispose(); } catch (x) {} });
+			} else { res = output; }
+		} catch (e) { return []; }
 
-        try { return processOutput(res, shape[1], shape[0], confThreshold); }
-        catch (e) { return []; }
-    }
+		try { return processOutput(res, shape[1], shape[0], confThreshold); }
+		catch (e) { return []; }
+	}
 
     function processOutput(res, modelWidth, modelHeight, confThreshold) {
         if (!res || !Array.isArray(res) || !Array.isArray(res[0]) || !Array.isArray(res[0][0])) return [];
