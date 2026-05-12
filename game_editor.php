@@ -64,7 +64,6 @@
 		<div class="editor-actions">
 		    <button id="btn_show_examples" title="Beispiele">🎮 Beispiele</button>
 		    <button id="btn_show_code" title="Code anzeigen">👁</button>
-		    <button id="btn_clear_output" title="Ausgabe löschen">🗑</button>
 		</div>
 
 		<!-- ADD this modal BEFORE the code_preview_modal div: -->
