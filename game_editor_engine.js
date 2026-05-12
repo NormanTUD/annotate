@@ -243,6 +243,8 @@
 		var confThreshold = getGameConfThreshold();
 		var inputTensor = null, output = null;
 
+		var numTensorsBefore = tf.memory().numTensors;
+
 		try {
 			inputTensor = tf.tidy(function() {
 				return tf.browser.fromPixels(video)
@@ -255,8 +257,14 @@
 			return [];
 		}
 
-		try { output = gameModel.execute(inputTensor); }
-		catch (e) { if (inputTensor) try { inputTensor.dispose(); } catch (x) {} return []; }
+		try {
+			output = gameModel.execute(inputTensor);
+		} catch (e) {
+			if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
+			return [];
+		}
+
+		// Dispose input immediately — no longer needed
 		if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
 
 		var res;
@@ -267,72 +275,122 @@
 			} else if (Array.isArray(output)) {
 				res = output[0].arraySync();
 				output.forEach(function(t) { try { t.dispose(); } catch (x) {} });
-			} else { res = output; }
-		} catch (e) { return []; }
+			} else {
+				res = output;
+			}
+		} catch (e) {
+			// Ensure output tensors are disposed on error
+			if (output instanceof tf.Tensor) {
+				try { output.dispose(); } catch (x) {}
+			} else if (Array.isArray(output)) {
+				output.forEach(function(t) { try { t.dispose(); } catch (x) {} });
+			}
+			return [];
+		}
 
-		try { return processOutput(res, shape[1], shape[0], confThreshold); }
-		catch (e) { return []; }
+		var detections;
+		try {
+			detections = processOutput(res, shape[1], shape[0], confThreshold);
+		} catch (e) {
+			detections = [];
+		}
+
+		// Safety net: if tensors leaked, log a warning (dev mode)
+		var numTensorsAfter = tf.memory().numTensors;
+		if (numTensorsAfter > numTensorsBefore + 2) {
+			console.warn('[TF Leak] Tensors before: ' + numTensorsBefore + ', after: ' + numTensorsAfter + ' (leaked ' + (numTensorsAfter - numTensorsBefore) + ')');
+		}
+
+		return detections;
 	}
 
-    function processOutput(res, modelWidth, modelHeight, confThreshold) {
-        if (!res || !Array.isArray(res) || !Array.isArray(res[0]) || !Array.isArray(res[0][0])) return [];
-        var rawTensor = null;
-        try {
-            rawTensor = tf.tensor3d(res);
-            var s = rawTensor.shape;
-            var FEATURES = s[1], CANDIDATES = s[2];
+	function processOutput(res, modelWidth, modelHeight, confThreshold) {
+		if (!res || !Array.isArray(res) || !Array.isArray(res[0]) || !Array.isArray(res[0][0])) return [];
 
-            if (FEATURES > CANDIDATES) {
-                var transposed = rawTensor.transpose([0, 2, 1]);
-                rawTensor.dispose();
-                rawTensor = transposed;
-                FEATURES = s[2]; CANDIDATES = s[1];
-            }
+		var tensorsToDispose = [];
 
-            var numClasses = FEATURES - 4;
-            if (numClasses <= 0) { rawTensor.dispose(); return []; }
+		try {
+			var rawTensor = tf.tensor3d(res);
+			tensorsToDispose.push(rawTensor);
 
-            var predTensor = rawTensor.transpose([0, 2, 1]);
-            var splits = tf.split(predTensor, [4, numClasses], 2);
-            var boxesArr = splits[0].squeeze().arraySync();
-            var scoresArr = splits[1].squeeze().arraySync();
+			var s = rawTensor.shape;
+			var FEATURES = s[1], CANDIDATES = s[2];
 
-            [rawTensor, predTensor, splits[0], splits[1]].forEach(function(t) {
-                if (t) try { t.dispose(); } catch (x) {}
-            });
+			if (FEATURES > CANDIDATES) {
+				var transposed = rawTensor.transpose([0, 2, 1]);
+				tensorsToDispose.push(transposed);
+				rawTensor = transposed;
+				FEATURES = s[2]; CANDIDATES = s[1];
+			}
 
-            var detections = [];
-            for (var i = 0; i < boxesArr.length; i++) {
-                var classScores = numClasses === 1 ? [scoresArr[i]] : scoresArr[i];
-                var bestScore = 0, bestClass = -1;
-                if (Array.isArray(classScores)) {
-                    for (var c = 0; c < classScores.length; c++) {
-                        if (classScores[c] > bestScore) { bestScore = classScores[c]; bestClass = c; }
-                    }
-                } else { bestScore = classScores; bestClass = 0; }
-                if (bestScore < confThreshold) continue;
+			var numClasses = FEATURES - 4;
+			if (numClasses <= 0) {
+				tensorsToDispose.forEach(function(t) { try { t.dispose(); } catch (x) {} });
+				return [];
+			}
 
-                var cx = boxesArr[i][0], cy = boxesArr[i][1], w = boxesArr[i][2], h = boxesArr[i][3];
-                var isPixel = cx > 2.0 || cy > 2.0;
-                var xMin, yMin, xMax, yMax;
-                if (isPixel) {
-                    xMin = (cx - w/2) / modelWidth; yMin = (cy - h/2) / modelHeight;
-                    xMax = (cx + w/2) / modelWidth; yMax = (cy + h/2) / modelHeight;
-                } else {
-                    xMin = cx - w/2; yMin = cy - h/2; xMax = cx + w/2; yMax = cy + h/2;
-                }
-                xMin = Math.max(0, xMin); yMin = Math.max(0, yMin);
-                xMax = Math.min(1, xMax); yMax = Math.min(1, yMax);
+			var predTensor = rawTensor.transpose([0, 2, 1]);
+			tensorsToDispose.push(predTensor);
 
-                var label = (gameLabels && gameLabels[bestClass]) ? gameLabels[bestClass] : ('class_' + bestClass);
-                detections.push({ xMin: xMin, yMin: yMin, xMax: xMax, yMax: yMax, score: bestScore, label: label });
-            }
-            return simpleNMS(detections, 0.5);
-        } catch (e) {
-            if (rawTensor) try { rawTensor.dispose(); } catch (x) {}
-            return [];
-        }
-    }
+			var splits = tf.split(predTensor, [4, numClasses], 2);
+			tensorsToDispose.push(splits[0]);
+			tensorsToDispose.push(splits[1]);
+
+			var squeezedBoxes = splits[0].squeeze();
+			tensorsToDispose.push(squeezedBoxes);
+
+			var squeezedScores = splits[1].squeeze();
+			tensorsToDispose.push(squeezedScores);
+
+			var boxesArr = squeezedBoxes.arraySync();
+			var scoresArr = squeezedScores.arraySync();
+
+			// Dispose ALL tensors now that we have the JS arrays
+			tensorsToDispose.forEach(function(t) {
+				if (t && !t.isDisposed) {
+					try { t.dispose(); } catch (x) {}
+				}
+			});
+			tensorsToDispose = [];
+
+			var detections = [];
+			for (var i = 0; i < boxesArr.length; i++) {
+				var classScores = numClasses === 1 ? [scoresArr[i]] : scoresArr[i];
+				var bestScore = 0, bestClass = -1;
+				if (Array.isArray(classScores)) {
+					for (var c = 0; c < classScores.length; c++) {
+						if (classScores[c] > bestScore) { bestScore = classScores[c]; bestClass = c; }
+					}
+				} else { bestScore = classScores; bestClass = 0; }
+				if (bestScore < confThreshold) continue;
+
+				var cx = boxesArr[i][0], cy = boxesArr[i][1], w = boxesArr[i][2], h = boxesArr[i][3];
+				var isPixel = cx > 2.0 || cy > 2.0;
+				var xMin, yMin, xMax, yMax;
+				if (isPixel) {
+					xMin = (cx - w / 2) / modelWidth; yMin = (cy - h / 2) / modelHeight;
+					xMax = (cx + w / 2) / modelWidth; yMax = (cy + h / 2) / modelHeight;
+				} else {
+					xMin = cx - w / 2; yMin = cy - h / 2; xMax = cx + w / 2; yMax = cy + h / 2;
+				}
+				xMin = Math.max(0, xMin); yMin = Math.max(0, yMin);
+				xMax = Math.min(1, xMax); yMax = Math.min(1, yMax);
+
+				var label = (gameLabels && gameLabels[bestClass]) ? gameLabels[bestClass] : ('class_' + bestClass);
+				detections.push({ xMin: xMin, yMin: yMin, xMax: xMax, yMax: yMax, score: bestScore, label: label });
+			}
+			return simpleNMS(detections, 0.5);
+
+		} catch (e) {
+			// Dispose anything we tracked on error
+			tensorsToDispose.forEach(function(t) {
+				if (t && !t.isDisposed) {
+					try { t.dispose(); } catch (x) {}
+				}
+			});
+			return [];
+		}
+	}
 
     // ─── Draw detections ────────────────────────────────────────────────
     function drawGameDetections(detections) {
@@ -1074,8 +1132,8 @@
 		drawGameDetections(detections);
 
 		// Nur neu parsen wenn sich der Code geändert hat (großer Performance-Gewinn!)
-		var code = editor.value;
-		if (code !== lastCode) {
+		var code = editor ? (editor.value || '') : '';
+		if (code !== lastCode || cachedParsed === null) {
 			cachedParsed = parseScript(code);
 			lastCode = code;
 		}
@@ -1126,7 +1184,11 @@
 
     // ─── Auto-start: triggered by model selection ───────────────────────
 	async function autoStart(modelUuid) {
-		if (gameInterval) { clearInterval(gameInterval); gameInterval = null; }
+		// ═══ CRITICAL: Always clear existing interval first ═══
+		if (gameInterval) {
+			clearInterval(gameInterval);
+			gameInterval = null;
+		}
 		gameRunning = false;
 		persistentVars = {};
 		cachedParsed = null;
@@ -1148,7 +1210,11 @@
 		}
 
 		setStatus('Modell wird geladen...');
-		await loadGameModel(modelUuid);
+		var modelOk = await loadGameModel(modelUuid);
+		if (!modelOk) {
+			setStatus('Modell-Fehler');
+			return;
+		}
 
 		gameRunning = true;
 		var fps = parseInt(document.getElementById('game_fps').value) || 3;
@@ -1168,14 +1234,32 @@
     // ─── Camera change ──────────────────────────────────────────────────
     var cameraSelect = document.getElementById('game_camera_select');
     if (cameraSelect) {
-        cameraSelect.addEventListener('change', function() {
-            var modelUuid = document.getElementById('game_model_select').value;
-            if (modelUuid === 'none') return;
-            stopGameWebcam();
-            if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
-            gameRunning = false;
-            autoStart(modelUuid);
-        });
+	    cameraSelect.addEventListener('change', function() {
+		    var modelUuid = document.getElementById('game_model_select').value;
+		    if (modelUuid === 'none') return;
+
+		    // ═══ Stop everything cleanly ═══
+		    gameRunning = false;
+
+		    // Clear the game interval (this was the bug — it wasn't cleared here)
+		    if (gameInterval) {
+			    clearInterval(gameInterval);
+			    gameInterval = null;
+		    }
+
+		    // Clear legacy animFrameId if it somehow exists
+		    if (animFrameId) {
+			    cancelAnimationFrame(animFrameId);
+			    animFrameId = null;
+		    }
+
+		    // Stop webcam so it can restart with new device
+		    stopGameWebcam();
+
+		    // Restart with new camera
+		    autoStart(modelUuid);
+	    });
+
     }
 
     // ─── Confidence slider ──────────────────────────────────────────────
