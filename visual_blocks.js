@@ -560,48 +560,74 @@
                 content.innerHTML = '<span class="bi">🎯</span> <strong>bestes</strong> = sicherste';
                 break;
 
-            case 'if':
-            case 'elif':
-                var keyword = type === 'if' ? 'wenn' : 'sonst wenn';
-                var icon = type === 'if' ? '🔶' : '🔷';
-                var condData = (data && data.condition) || {};
+		case 'if':
+		case 'elif':
+		    var keyword = type === 'if' ? 'wenn' : 'sonst wenn';
+		    var icon = type === 'if' ? '🔶' : '🔷';
+		    var condData = (data && data.condition) || {};
 
-                content.innerHTML = '<span class="bi">' + icon + '</span> <span class="bk">' + keyword + '</span> ';
+		    content.innerHTML = '<span class="bi">' + icon + '</span> <span class="bk">' + keyword + '</span> ';
 
-                var leftOpts = sensorVars.slice();
-                var leftSelect = buildSelect(leftOpts, condData.left || 'links', 'cond-left');
-                content.appendChild(leftSelect);
+		    // LEFT side: combo of select + free input
+		    var leftVal = condData.left || 'links';
+		    var leftOpts = sensorVars.slice();
+		    var leftIsCustom = !leftOpts.some(function(o) { return o.value === leftVal; });
+		    if (leftIsCustom) {
+			leftOpts.unshift({ value: leftVal, label: '📝 ' + leftVal });
+		    }
+		    var leftSelect = buildSelect(leftOpts, leftVal, 'cond-left');
+		    content.appendChild(leftSelect);
 
-                var opSelect = buildSelect(operators, condData.op || '==', 'cond-op');
-                content.appendChild(opSelect);
+		    var opSelect = buildSelect(operators, condData.op || '==', 'cond-op');
+		    content.appendChild(opSelect);
 
-                var rightSelect = buildSelect(getCompareValues(), condData.right || '"none"', 'cond-value');
-                content.appendChild(rightSelect);
+		    // RIGHT side: combo of select + free input
+		    var rightVal = condData.right || '"none"';
+		    var rightOpts = getCompareValues();
+		    var rightIsCustom = !rightOpts.some(function(o) { return o.value === rightVal; });
+		    if (rightIsCustom) {
+			rightOpts.unshift({ value: rightVal, label: '📝 ' + rightVal });
+		    }
+		    var rightSelect = buildSelect(rightOpts, rightVal, 'cond-value');
+		    content.appendChild(rightSelect);
 
-                var thenSpan = document.createElement('span');
-                thenSpan.className = 'bk';
-                thenSpan.textContent = ' dann';
-                content.appendChild(thenSpan);
-                break;
+		    var thenSpan = document.createElement('span');
+		    thenSpan.className = 'bk';
+		    thenSpan.textContent = ' dann';
+		    content.appendChild(thenSpan);
+		    break;
 
-            case 'while':
-                var wCondData = (data && data.condition) || {};
-                content.innerHTML = '<span class="bi">🔁</span> <span class="bk">solange</span> ';
+		case 'while':
+		    var wCondData = (data && data.condition) || {};
+		    content.innerHTML = '<span class="bi">🔁</span> <span class="bk">solange</span> ';
 
-                var wLeftSelect = buildSelect(sensorVars.slice(), wCondData.left || 'links', 'cond-left');
-                content.appendChild(wLeftSelect);
+		    var wLeftVal = wCondData.left || 'links';
+		    var wLeftOpts = sensorVars.slice();
+		    var wLeftIsCustom = !wLeftOpts.some(function(o) { return o.value === wLeftVal; });
+		    if (wLeftIsCustom) {
+			wLeftOpts.unshift({ value: wLeftVal, label: '📝 ' + wLeftVal });
+		    }
+		    var wLeftSelect = buildSelect(wLeftOpts, wLeftVal, 'cond-left');
+		    content.appendChild(wLeftSelect);
 
-                var wOpSelect = buildSelect(operators, wCondData.op || '!=', 'cond-op');
-                content.appendChild(wOpSelect);
+		    var wOpSelect = buildSelect(operators, wCondData.op || '!=', 'cond-op');
+		    content.appendChild(wOpSelect);
 
-                var wRightSelect = buildSelect(getCompareValues(), wCondData.right || '"none"', 'cond-value');
-                content.appendChild(wRightSelect);
+		    var wRightVal = wCondData.right || '"none"';
+		    var wRightOpts = getCompareValues();
+		    var wRightIsCustom = !wRightOpts.some(function(o) { return o.value === wRightVal; });
+		    if (wRightIsCustom) {
+			wRightOpts.unshift({ value: wRightVal, label: '📝 ' + wRightVal });
+		    }
+		    var wRightSelect = buildSelect(wRightOpts, wRightVal, 'cond-value');
+		    content.appendChild(wRightSelect);
 
-                var repeatSpan = document.createElement('span');
-                repeatSpan.className = 'bk';
-                repeatSpan.textContent = ' wiederhole';
-                content.appendChild(repeatSpan);
-                break;
+		    var repeatSpan = document.createElement('span');
+		    repeatSpan.className = 'bk';
+		    repeatSpan.textContent = ' wiederhole';
+		    content.appendChild(repeatSpan);
+		    break;
+
 
             case 'for':
                 content.innerHTML = '<span class="bi">🔄</span> <span class="bk">für</span> ';
