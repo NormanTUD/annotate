@@ -1390,48 +1390,6 @@
 				'  streak = 0\n' +
 				'  show_text "🔄 Schon gezeigt! Wechsle! Punkte: " + punkte draw\n' +
 				'end\n'
-			},
-			{
-				id: 'reaction',
-				name: '🤔 Reaktions-Test',
-				icon: '🤔',
-				difficulty: '⭐⭐⭐',
-				description: 'Das Spiel sagt dir, was du zeigen sollst. Sei schnell!',
-				preview: '⏱️ Zeige das richtige Objekt!',
-				color: '#e57373',
-				code:
-				'# ══ REAKTIONS-TEST ══\n' +
-				'timer += 1\n' +
-				'if ziel == "none" or ziel == 0\n' +
-				'  ziel = "' + l1 + '"\n' +
-				'  timer = 0\n' +
-				'end\n' +
-				'if timer > 30\n' +
-				'  verpasst += 1\n' +
-				'  timer = 0\n' +
-				'  if ziel == "' + l1 + '"\n' +
-				'    ziel = "' + l2 + '"\n' +
-				'  else\n' +
-				'    ziel = "' + l1 + '"\n' +
-				'  end\n' +
-				'  show_text "⏰ Zu langsam! Verpasst: " + verpasst loser\n' +
-				'end\n' +
-				'erkannt = highest_conf_detection\n' +
-				'if erkannt == ziel\n' +
-				'  treffer += 1\n' +
-				'  timer = 0\n' +
-				'  if ziel == "' + l1 + '"\n' +
-				'    ziel = "' + l2 + '"\n' +
-				'  else\n' +
-				'    ziel = "' + l1 + '"\n' +
-				'  end\n' +
-				'  show_text "✅ RICHTIG! Treffer: " + treffer winner\n' +
-				'elif erkannt != "none"\n' +
-				'  show_text "❌ Falsch! Zeige: " + ziel loser\n' +
-				'else\n' +
-				'  rest = 30 - timer\n' +
-				'  show_text "🎯 Zeige: " + ziel + " | ⏱️ " + rest normal\n' +
-				'end\n'
 			}
 		];
 	}
