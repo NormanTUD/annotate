@@ -26,14 +26,14 @@
         { value: 'detection_count', label: '🔢 anzahl' }
     ];
 
-    var operators = [
-        { value: '==', label: 'ist gleich' },
-        { value: '!=', label: 'ist nicht' },
-        { value: '>=', label: '≥' },
-        { value: '<=', label: '≤' },
-        { value: '>', label: '>' },
-        { value: '<', label: '<' }
-    ];
+	var operators = [
+		{ value: '==', label: 'ist gleich' },
+		{ value: '!=', label: 'ist nicht' },
+		{ value: '>=', label: 'ist größer oder gleich' },
+		{ value: '<=', label: 'ist kleiner oder gleich' },
+		{ value: '>', label: 'ist größer als' },
+		{ value: '<', label: 'ist kleiner als' }
+	];
 
     var modelLabels = [];
     var activeCategory = 'sensing'; // default open category
