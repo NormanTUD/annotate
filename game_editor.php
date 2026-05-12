@@ -10,7 +10,15 @@
 <div id="game_editor_page">
 
 <h1>✊✌️✋ Stein Schere Papier – KI-Spiel Baukasten</h1>
-<p class="subtitle">Trainiere dein KI-Modell und programmiere dein eigenes Spiel – ganz ohne Vorkenntnisse!</p>
+<div id="game_output">🎮 Willkommen im KI-Spiel Baukasten!
+
+👋 So geht's:
+1️⃣ Wähle oben ein KI-Modell aus
+2️⃣ Klicke auf "🎮 Beispiele" für fertige Spiele
+3️⃣ Oder baue dein eigenes Programm mit den Blöcken links!
+
+💡 Tipp: Starte mit einem Beispiel und ändere es dann ab!
+</div>
 
 <!-- Compact top bar -->
 <div class="topbar-controls">
@@ -52,7 +60,24 @@
         <div class="panel-header">
             <h3>🧩 Dein Programm</h3>
             <div class="editor-actions">
-                <button id="btn_load_example" title="Beispiel laden">💡</button>
+		<!-- REPLACE the single 💡 button in .editor-actions with: -->
+		<div class="editor-actions">
+		    <button id="btn_show_examples" title="Beispiele">🎮 Beispiele</button>
+		    <button id="btn_show_code" title="Code anzeigen">👁</button>
+		    <button id="btn_clear_output" title="Ausgabe löschen">🗑</button>
+		</div>
+
+		<!-- ADD this modal BEFORE the code_preview_modal div: -->
+		<div id="example_gallery_modal">
+		    <div id="example_gallery_box">
+			<h2>🎮 Wähle ein Spiel!</h2>
+			<p class="gallery-subtitle">Klicke auf ein Spiel, um es zu laden. Du kannst es danach verändern!</p>
+			<div id="example_cards_container"></div>
+			<button class="gallery-close" onclick="document.getElementById('example_gallery_modal').classList.remove('visible');">
+			    Schließen ✕
+			</button>
+		    </div>
+		</div>
                 <button id="btn_show_code" title="Code anzeigen">👁</button>
                 <button id="btn_clear_output" title="Ausgabe löschen">🗑</button>
             </div>
@@ -63,15 +88,14 @@
 
             <!-- Workspace -->
             <div id="block_workspace">
-                <div id="workspace_placeholder">
-                    <span class="big-arrow">⬅️</span>
-                    Ziehe Blöcke von links hierher!<br><br>
-                    <span style="font-size: 12px; color: #585b70;">
-                        💡 Klicke auf 💡 oben für einen Schnellstart!
-                    </span>
-                </div>
-                <div id="trash_zone">🗑️</div>
-            </div>
+		<div id="workspace_placeholder">
+		    <span class="big-arrow">🎮</span>
+		    <strong>Hier baust du dein Programm!</strong><br><br>
+		    <span style="font-size: 13px; color: #89b4fa;">
+			⬅️ Ziehe Blöcke von links hierher<br>
+			oder klicke oben auf <strong>🎮 Beispiele</strong>
+		    </span>
+		</div>
         </div>
     </div>
 

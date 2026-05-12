@@ -38,45 +38,50 @@
     var modelLabels = [];
     var activeCategory = 'sensing'; // default open category
 
-	// ─── Category definitions (KID-FRIENDLY & FUN) ─────────────────────────
+	// ─── Category definitions (SUPER KID-FRIENDLY) ─────────────────────────
 	var categories = {
 		sensing: {
-			label: '👀 Sehen',
+			label: '👀 Gucken',
 			color: '#4fc3f7',
 			blocks: [
-				{ type: 'get_best',    icon: '⭐', text: 'Was sehe ich?' },
-				{ type: 'get_count',   icon: '🔢', text: 'Wie viele sehe ich?' },
-				{ type: 'get_left',    icon: '👈', text: 'Was ist links?' },
-				{ type: 'get_right',   icon: '👉', text: 'Was ist rechts?' },
-			]
+				{ type: 'get_best',    icon: '⭐', text: 'Was sehe ich am besten?' },
+				{ type: 'get_count',   icon: '🔢', text: 'Wie viele Dinge sehe ich?' },
+				{ type: 'get_left',    icon: '👈', text: 'Was ist links im Bild?' },
+				{ type: 'get_right',   icon: '👉', text: 'Was ist rechts im Bild?' },
+			],
+			help: '🎓 Diese Blöcke schauen, was die Kamera sieht!'
 		},
 		control: {
-			label: '🤔 Denken',
+			label: '🧠 Entscheiden',
 			color: '#ffb74d',
 			blocks: [
-				{ type: 'if',    icon: '❓', text: 'Wenn ... dann' },
+				{ type: 'if',    icon: '❓', text: 'Wenn ... dann ...' },
 				{ type: 'elif',  icon: '🤔', text: 'Oder wenn ...' },
-				{ type: 'else',  icon: '🤷', text: 'Sonst' },
-				{ type: 'end',   icon: '✅', text: 'Fertig' },
-			]
+				{ type: 'else',  icon: '🤷', text: 'Ansonsten ...' },
+				{ type: 'end',   icon: '🏁', text: 'Ende der Entscheidung' },
+			],
+			help: '🎓 Hier entscheidet dein Programm, was es tun soll!'
 		},
 		output: {
-			label: '📢 Sagen',
+			label: '📢 Zeigen',
 			color: '#ba68c8',
 			blocks: [
-				{ type: 'show_text', icon: '🖥️', text: 'Zeige auf Bildschirm' },
-				{ type: 'print',     icon: '💬', text: 'Schreibe ins Protokoll' },
-			]
+				{ type: 'show_text', icon: '🖥️', text: 'Text auf dem Bild zeigen' },
+				{ type: 'print',     icon: '💬', text: 'Text ins Protokoll schreiben' },
+			],
+			help: '🎓 Zeige Nachrichten auf dem Bildschirm!'
 		},
 		variables: {
 			label: '🎒 Merken',
 			color: '#e57373',
 			blocks: [
-				{ type: 'set_var',    icon: '📝', text: 'Merke dir: ___ = ___' },
-				{ type: 'change_var', icon: '🔼', text: 'Zähle hoch um ___' },
-			]
+				{ type: 'set_var',    icon: '📝', text: 'Merke: Name = Wert' },
+				{ type: 'change_var', icon: '🔼', text: 'Zähle hoch / runter' },
+			],
+			help: '🎓 Speichere Punkte, Ergebnisse und mehr!'
 		}
 	};
+
 
 
     // ─── Build compact palette with tabs ────────────────────────────────
@@ -119,6 +124,13 @@
             block.innerHTML = '<span class="pb-icon">' + bDef.icon + '</span> ' + bDef.text;
             blockList.appendChild(block);
         }
+
+	    if (cat.help) {
+		    var helpDiv = document.createElement('div');
+		    helpDiv.className = 'palette-help-hint';
+		    helpDiv.textContent = cat.help;
+		    blockList.appendChild(helpDiv);
+	    }
 
 	    // ✅ ADD THIS instead:
 	    if (activeCategory === 'sensing' && modelLabels.length > 0) {
