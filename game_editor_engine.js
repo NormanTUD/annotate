@@ -1211,137 +1211,144 @@
 	// ═══════════════════════════════════════════════════════════════
 
 	function getExamplePrograms() {
-	    var l1 = (gameLabels && gameLabels.length >= 1) ? gameLabels[0] : 'ObjektA';
-	    var l2 = (gameLabels && gameLabels.length >= 2) ? gameLabels[1] : 'ObjektB';
-	    var l3 = (gameLabels && gameLabels.length >= 3) ? gameLabels[2] : 'ObjektC';
+		var l1 = (gameLabels && gameLabels.length >= 1) ? gameLabels[0] : 'ObjektA';
+		var l2 = (gameLabels && gameLabels.length >= 2) ? gameLabels[1] : 'ObjektB';
+		var l3 = (gameLabels && gameLabels.length >= 3) ? gameLabels[2] : 'ObjektC';
 
-	    return [
-		    {
-			    id: 'rps',
-			    name: '✊✌️✋ Schere Stein Papier',
-			    icon: '✊',
-			    difficulty: '⭐',
-			    description: 'Spiele gegen einen Freund! Haltet beide eure Hände in die Kamera.',
-			    preview: '👈 Spieler 1 | Spieler 2 👉',
-			    color: '#4fc3f7',
-			    code:
-			    '# ══ SCHERE STEIN PAPIER ══\n' +
-			    '# Regeln: Schere schneidet Papier,\n' +
-			    '# Papier wickelt Stein ein,\n' +
-			    '# Stein macht Schere kaputt.\n' +
-			    'spieler = leftmost_detection\n' +
-			    'gegner = rightmost_detection\n' +
-			    'if detection_count ist kleiner als 2\n' +
-			    '  show_text "Zeigt beide eure Hände! ✊✌️✋" normal\n' +
-			    'elif spieler ist gleich gegner\n' +
-			    '  show_text "UNENTSCHIEDEN! 🤝 Beide: " + spieler draw\n' +
-			    'elif spieler ist gleich "' + l1 + '" and gegner ist gleich "' + l3 + '"\n' +
-			    '  siege += 1\n' +
-			    '  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
-			    'elif spieler ist gleich "' + l3 + '" and gegner ist gleich "' + l2 + '"\n' +
-			    '  siege += 1\n' +
-			    '  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
-			    'elif spieler ist gleich "' + l2 + '" and gegner ist gleich "' + l1 + '"\n' +
-			    '  siege += 1\n' +
-			    '  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
-			    'else\n' +
-			    '  niederlagen += 1\n' +
-			    '  show_text "👉 SPIELER 2 GEWINNT! 💪 " + gegner + " schlägt " + spieler loser\n' +
-			    'end\n'
-		    },
-		{
-		    id: 'counter',
-		    name: '📊 Rekord-Jäger',
-		    icon: '🏆',
-		    difficulty: '⭐',
-		    description: 'Wie viele Objekte kannst du gleichzeitig zeigen? Jage den Rekord!',
-		    preview: '🏆 Zeige so viele Objekte wie möglich!',
-		    color: '#ffb74d',
-		    code:
-			'# ══ REKORD-JÄGER ══\n' +
-			'aktuell = detection_count\n' +
-			'if aktuell > 0\n' +
-			'  gesamt += aktuell\n' +
-			'end\n' +
-			'if aktuell > rekord\n' +
-			'  rekord = aktuell\n' +
-			'end\n' +
-			'if aktuell == 0\n' +
-			'  show_text "🔍 Zeige Objekte! Rekord: " + rekord normal\n' +
-			'elif aktuell == rekord\n' +
-			'  show_text "🏆 NEUER REKORD! " + rekord + " Objekte!" winner\n' +
-			'else\n' +
-			'  show_text "👀 Erkannt: " + aktuell + " | Rekord: " + rekord normal\n' +
-			'end\n'
-		},
-		{
-		    id: 'collect',
-		    name: '🎯 Sammel-Challenge',
-		    icon: '🎯',
-		    difficulty: '⭐⭐',
-		    description: 'Zeige verschiedene Objekte nacheinander! Gleiches Objekt zweimal = keine Punkte!',
-		    preview: '🔄 Immer wechseln für Punkte!',
-		    color: '#66bb6a',
-		    code:
-			'# ══ SAMMEL-CHALLENGE ══\n' +
-			'aktuell = highest_conf_detection\n' +
-			'if aktuell == "none"\n' +
-			'  show_text "🎯 Zeige ein Objekt! Punkte: " + punkte normal\n' +
-			'elif aktuell != letztes\n' +
-			'  punkte += 10\n' +
-			'  streak += 1\n' +
-			'  bonus = streak * 5\n' +
-			'  punkte += bonus\n' +
-			'  letztes = aktuell\n' +
-			'  show_text "✅ " + aktuell + "! +" + (10 + bonus) + " Pkt | Streak: " + streak + "x" winner\n' +
-			'else\n' +
-			'  streak = 0\n' +
-			'  show_text "🔄 Schon gezeigt! Wechsle! Punkte: " + punkte draw\n' +
-			'end\n'
-		},
-		{
-		    id: 'reaction',
-		    name: '🤔 Reaktions-Test',
-		    icon: '🤔',
-		    difficulty: '⭐⭐⭐',
-		    description: 'Das Spiel sagt dir, was du zeigen sollst. Sei schnell!',
-		    preview: '⏱️ Zeige das richtige Objekt!',
-		    color: '#e57373',
-		    code:
-			'# ══ REAKTIONS-TEST ══\n' +
-			'timer += 1\n' +
-			'if ziel == "none" or ziel == 0\n' +
-			'  ziel = "' + l1 + '"\n' +
-			'  timer = 0\n' +
-			'end\n' +
-			'if timer > 30\n' +
-			'  verpasst += 1\n' +
-			'  timer = 0\n' +
-			'  if ziel == "' + l1 + '"\n' +
-			'    ziel = "' + l2 + '"\n' +
-			'  else\n' +
-			'    ziel = "' + l1 + '"\n' +
-			'  end\n' +
-			'  show_text "⏰ Zu langsam! Verpasst: " + verpasst loser\n' +
-			'end\n' +
-			'erkannt = highest_conf_detection\n' +
-			'if erkannt == ziel\n' +
-			'  treffer += 1\n' +
-			'  timer = 0\n' +
-			'  if ziel == "' + l1 + '"\n' +
-			'    ziel = "' + l2 + '"\n' +
-			'  else\n' +
-			'    ziel = "' + l1 + '"\n' +
-			'  end\n' +
-			'  show_text "✅ RICHTIG! Treffer: " + treffer winner\n' +
-			'elif erkannt != "none"\n' +
-			'  show_text "❌ Falsch! Zeige: " + ziel loser\n' +
-			'else\n' +
-			'  rest = 30 - timer\n' +
-			'  show_text "🎯 Zeige: " + ziel + " | ⏱️ " + rest normal\n' +
-			'end\n'
-		}
-	    ];
+		return [
+			{
+				id: 'rps',
+				name: '✊✌️✋ Schere Stein Papier',
+				icon: '✊',
+				difficulty: '⭐',
+				description: 'Spiele gegen einen Freund! Haltet beide eure Hände in die Kamera.',
+				preview: '👈 Spieler 1 | Spieler 2 👉',
+				color: '#4fc3f7',
+				code:
+				'# ══ SCHERE STEIN PAPIER ══\n' +
+				'# Regeln: Schere schneidet Papier,\n' +
+				'# Papier wickelt Stein ein,\n' +
+				'# Stein macht Schere kaputt.\n' +
+				'spieler = leftmost_detection\n' +
+				'gegner = rightmost_detection\n' +
+				'if detection_count ist kleiner als 2\n' +
+				'  show_text "Zeigt beide eure Hände! ✊✌️✋" normal\n' +
+				'elif spieler ist gleich gegner\n' +
+				'  show_text "UNENTSCHIEDEN! 🤝 Beide: " + spieler draw\n' +
+				'elif spieler ist gleich "' + l1 + '" and gegner ist gleich "' + l3 + '"\n' +
+				'  siege += 1\n' +
+				'  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+				'elif spieler ist gleich "' + l3 + '" and gegner ist gleich "' + l2 + '"\n' +
+				'  siege += 1\n' +
+				'  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+				'elif spieler ist gleich "' + l2 + '" and gegner ist gleich "' + l1 + '"\n' +
+				'  siege += 1\n' +
+				'  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+				'else\n' +
+				'  niederlagen += 1\n' +
+				'  show_text "👉 SPIELER 2 GEWINNT! 💪 " + gegner + " schlägt " + spieler loser\n' +
+				'end\n'
+			},
+			{
+				id: 'counter',
+				name: '📊 Rekord-Jäger',
+				icon: '🏆',
+				difficulty: '⭐',
+				description: 'Wie viele Objekte kannst du gleichzeitig zeigen? Jage den Rekord!',
+				preview: '🏆 Zeige so viele Objekte wie möglich!',
+				color: '#ffb74d',
+				code:
+				'# ══ REKORD-JÄGER ══\n' +
+				'# Initialisierung beim ersten Start\n' +
+				'if rekord == "rekord"\n' +
+				'  rekord = 0\n' +
+				'end\n' +
+				'if gesamt == "gesamt"\n' +
+				'  gesamt = 0\n' +
+				'end\n' +
+				'aktuell = detection_count\n' +
+				'if aktuell > 0\n' +
+				'  gesamt += aktuell\n' +
+				'end\n' +
+				'if aktuell > rekord\n' +
+				'  rekord = aktuell\n' +
+				'end\n' +
+				'if aktuell == 0\n' +
+				'  show_text "🔍 Zeige Objekte! Rekord: " + rekord normal\n' +
+				'elif aktuell == rekord\n' +
+				'  show_text "🏆 NEUER REKORD! " + rekord + " Objekte!" winner\n' +
+				'else\n' +
+				'  show_text "👀 Erkannt: " + aktuell + " | Rekord: " + rekord normal\n' +
+				'end\n'
+			},
+			{
+				id: 'collect',
+				name: '🎯 Sammel-Challenge',
+				icon: '🎯',
+				difficulty: '⭐⭐',
+				description: 'Zeige verschiedene Objekte nacheinander! Gleiches Objekt zweimal = keine Punkte!',
+				preview: '🔄 Immer wechseln für Punkte!',
+				color: '#66bb6a',
+				code:
+				'# ══ SAMMEL-CHALLENGE ══\n' +
+				'aktuell = highest_conf_detection\n' +
+				'if aktuell == "none"\n' +
+				'  show_text "🎯 Zeige ein Objekt! Punkte: " + punkte normal\n' +
+				'elif aktuell != letztes\n' +
+				'  punkte += 10\n' +
+				'  streak += 1\n' +
+				'  bonus = streak * 5\n' +
+				'  punkte += bonus\n' +
+				'  letztes = aktuell\n' +
+				'  show_text "✅ " + aktuell + "! +" + (10 + bonus) + " Pkt | Streak: " + streak + "x" winner\n' +
+				'else\n' +
+				'  streak = 0\n' +
+				'  show_text "🔄 Schon gezeigt! Wechsle! Punkte: " + punkte draw\n' +
+				'end\n'
+			},
+			{
+				id: 'reaction',
+				name: '🤔 Reaktions-Test',
+				icon: '🤔',
+				difficulty: '⭐⭐⭐',
+				description: 'Das Spiel sagt dir, was du zeigen sollst. Sei schnell!',
+				preview: '⏱️ Zeige das richtige Objekt!',
+				color: '#e57373',
+				code:
+				'# ══ REAKTIONS-TEST ══\n' +
+				'timer += 1\n' +
+				'if ziel == "none" or ziel == 0\n' +
+				'  ziel = "' + l1 + '"\n' +
+				'  timer = 0\n' +
+				'end\n' +
+				'if timer > 30\n' +
+				'  verpasst += 1\n' +
+				'  timer = 0\n' +
+				'  if ziel == "' + l1 + '"\n' +
+				'    ziel = "' + l2 + '"\n' +
+				'  else\n' +
+				'    ziel = "' + l1 + '"\n' +
+				'  end\n' +
+				'  show_text "⏰ Zu langsam! Verpasst: " + verpasst loser\n' +
+				'end\n' +
+				'erkannt = highest_conf_detection\n' +
+				'if erkannt == ziel\n' +
+				'  treffer += 1\n' +
+				'  timer = 0\n' +
+				'  if ziel == "' + l1 + '"\n' +
+				'    ziel = "' + l2 + '"\n' +
+				'  else\n' +
+				'    ziel = "' + l1 + '"\n' +
+				'  end\n' +
+				'  show_text "✅ RICHTIG! Treffer: " + treffer winner\n' +
+				'elif erkannt != "none"\n' +
+				'  show_text "❌ Falsch! Zeige: " + ziel loser\n' +
+				'else\n' +
+				'  rest = 30 - timer\n' +
+				'  show_text "🎯 Zeige: " + ziel + " | ⏱️ " + rest normal\n' +
+				'end\n'
+			}
+		];
 	}
 
 	// ─── Galerie rendern ────────────────────────────────────────────────
