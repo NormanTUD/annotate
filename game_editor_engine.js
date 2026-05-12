@@ -687,7 +687,6 @@
                     continue;
                 }
 
-                if (line === 'end') { return idx + 1; }
                 if (line.startsWith('elif ') || line === 'else') { return idx; }
 
                 // ─── SHOW_TEXT ───────────────────────────────────
@@ -868,9 +867,6 @@
                     } else {
                         idx = skipBodyUntilElifElseEnd(idx, endIdx);
                     }
-                } else if (currentLine === 'end') {
-                    idx++;
-                    break;
                 } else {
                     break;
                 }
@@ -887,7 +883,6 @@
                 if (line.startsWith('while ')) { idx = executeWhile(idx, endIdx); continue; }
                 if (line.startsWith('for ')) { idx = executeFor(idx, endIdx); continue; }
 
-                if (line === 'end') return idx;
                 if (line.startsWith('elif ') || line === 'else') return idx;
 
                 // Execute single statement (reuse logic from execute())
@@ -952,12 +947,6 @@
             while (idx < endIdx) {
                 var line = parsedLines[idx].text;
                 if (line.startsWith('if ') || line.startsWith('while ') || line.startsWith('for ')) { depth++; idx++; continue; }
-                if (line === 'end') {
-                    if (depth === 0) return idx;
-                    depth--;
-                    idx++;
-                    continue;
-                }
                 if ((line.startsWith('elif ') || line === 'else') && depth === 0) {
                     return idx;
                 }
@@ -973,10 +962,6 @@
                 var line = parsedLines[i].text;
                 if (line.startsWith('if ') || line.startsWith('while ') || line.startsWith('for ')) {
                     depth++;
-                }
-                if (line === 'end') {
-                    if (depth === 0) return i;
-                    depth--;
                 }
             }
             return endIdx; // no matching end found
@@ -1338,8 +1323,7 @@
 				'  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
 				'else\n' +
 				'  niederlagen += 1\n' +
-				'  show_text "👉 SPIELER 2 GEWINNT! 💪 " + gegner + " schlägt " + spieler loser\n' +
-				'end\n'
+				'  show_text "👉 SPIELER 2 GEWINNT! 💪 " + gegner + " schlägt " + spieler loser\n'
 			},
 			{
 				id: 'counter',
@@ -1354,17 +1338,14 @@
 				'aktuell = detection_count\n' +
 				'if aktuell > rekord\n' +
 				'  rekord = aktuell\n' +
-				'end\n' +
 				'if aktuell > 0\n' +
 				'  gesamt += aktuell\n' +
-				'end\n' +
 				'if aktuell == 0\n' +
 				'  show_text "🔍 Zeige Objekte! Rekord: " + rekord normal\n' +
 				'elif aktuell == rekord\n' +
 				'  show_text "🏆 NEUER REKORD! " + rekord + " Objekte!" winner\n' +
 				'else\n' +
-				'  show_text "👀 Erkannt: " + aktuell + " | Rekord: " + rekord normal\n' +
-				'end\n'
+				'  show_text "👀 Erkannt: " + aktuell + " | Rekord: " + rekord normal\n'
 			},
 			{
 				id: 'collect',
@@ -1388,8 +1369,7 @@
 				'  show_text "✅ " + aktuell + "! +" + (10 + bonus) + " Pkt | Streak: " + streak + "x" winner\n' +
 				'else\n' +
 				'  streak = 0\n' +
-				'  show_text "🔄 Schon gezeigt! Wechsle! Punkte: " + punkte draw\n' +
-				'end\n'
+				'  show_text "🔄 Schon gezeigt! Wechsle! Punkte: " + punkte draw\n'
 			}
 		];
 	}

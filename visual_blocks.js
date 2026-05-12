@@ -234,76 +234,91 @@
     }
 
     // ─── Indentation calculation ────────────────────────────────────────
-    function recalcIndentation() {
-        var blocks = workspace.querySelectorAll('.workspace-block');
-        var indent = 0;
-        for (var i = 0; i < blocks.length; i++) {
-            var type = blocks[i].getAttribute('data-block-type');
+	function recalcIndentation() {
+		var blocks = workspace.querySelectorAll('.workspace-block');
+		var indent = 0;
+		for (var i = 0; i < blocks.length; i++) {
+			var type = blocks[i].getAttribute('data-block-type');
 
-            if (type === 'end' || type === 'elif' || type === 'else') {
-                indent = Math.max(0, indent - 1);
-            }
+			if (type === 'elif' || type === 'else') {
+				indent = Math.max(0, indent - 1);
+			}
 
-            blocks[i].setAttribute('data-indent', indent);
-            blocks[i].style.marginLeft = (indent * 28) + 'px';
+			blocks[i].setAttribute('data-indent', indent);
+			blocks[i].style.marginLeft = (indent * 28) + 'px';
 
-            if (type === 'if' || type === 'elif' || type === 'else' || type === 'while' || type === 'for') {
-                indent++;
-            }
-        }
-    }
+			if (type === 'if' || type === 'elif' || type === 'else' || type === 'while' || type === 'for') {
+				indent++;
+			}
+		}
+	}
 
     // ─── Snap validation ────────────────────────────────────────────────
-    function canSnap(blockType, targetBlock, position) {
-        if (!targetBlock) return true;
+	function canSnap(blockType, targetBlock, position) {
+		if (!targetBlock) return true;
 
-        var blocks = Array.from(workspace.querySelectorAll('.workspace-block'));
-        var targetIdx = blocks.indexOf(targetBlock);
+		var blocks = Array.from(workspace.querySelectorAll('.workspace-block'));
+		var targetIdx = blocks.indexOf(targetBlock);
 
-        if (blockType === 'elif' || blockType === 'else') {
-            var aboveIdx = position === 'above' ? targetIdx - 1 : targetIdx;
-            if (aboveIdx < 0) return false;
-            var depth = 0;
-            for (var i = aboveIdx; i >= 0; i--) {
-                var t = blocks[i].getAttribute('data-block-type');
-                if (t === 'end') depth++;
-                if (t === 'if' && depth === 0) return true;
-                if (t === 'elif' && depth === 0) return true;
-                if (t === 'else' && depth === 0) return (blockType === 'end');
-                if (t === 'if') depth--;
-            }
-            return false;
-        }
+		if (blockType === 'elif' || blockType === 'else') {
+			var aboveIdx = position === 'above' ? targetIdx - 1 : targetIdx;
+			if (aboveIdx < 0) return false;
+			var depth = 0;
+			for (var i = aboveIdx; i >= 0; i--) {
+				var t = blocks[i].getAttribute('data-block-type');
+				if (t === 'if' && depth === 0) return true;
+				if (t === 'elif' && depth === 0) return true;
+				if (t === 'else' && depth === 0) return false;
+				if (t === 'if') depth--;
+			}
+			return false;
+		}
 
-        if (blockType === 'end') {
-            var openBlocks = 0;
-            var checkIdx = position === 'above' ? targetIdx : targetIdx + 1;
-            for (var i = 0; i < checkIdx && i < blocks.length; i++) {
-                var t = blocks[i].getAttribute('data-block-type');
-                if (t === 'if' || t === 'while' || t === 'for') openBlocks++;
-                if (t === 'end') openBlocks--;
-            }
-            return openBlocks > 0;
-        }
-
-        return true;
-    }
+		return true;
+	}
 
     // ─── Sync blocks to DSL code ────────────────────────────────────────
-    function syncBlocksToDSL() {
-        recalcIndentation();
-        var blocks = workspace.querySelectorAll('.workspace-block');
-        var lines = [];
-        for (var i = 0; i < blocks.length; i++) {
-            var code = getBlockCode(blocks[i]);
-            if (code !== null) lines.push(code);
-        }
-        dslEditor.value = lines.join('\n');
+	function syncBlocksToDSL() {
+		recalcIndentation();
+		var blocks = workspace.querySelectorAll('.workspace-block');
+		var lines = [];
+		var indentStack = []; // track indent levels
 
-        if (placeholder) {
-            placeholder.style.display = blocks.length === 0 ? 'block' : 'none';
-        }
-    }
+		for (var i = 0; i < blocks.length; i++) {
+			var code = getBlockCode(blocks[i]);
+			if (code === null) continue;
+
+			var currentIndent = parseInt(blocks[i].getAttribute('data-indent')) || 0;
+
+			// Wenn die Einrückung sinkt, "end" einfügen
+			while (indentStack.length > 0 && indentStack[indentStack.length - 1] >= currentIndent) {
+				// Aber nicht vor elif/else — die gehören zum selben if-Block
+				var type = blocks[i].getAttribute('data-block-type');
+				if (type === 'elif' || type === 'else') break;
+				lines.push('end');
+				indentStack.pop();
+			}
+
+			lines.push(code);
+
+			var type = blocks[i].getAttribute('data-block-type');
+			if (type === 'if' || type === 'elif' || type === 'else' || type === 'while' || type === 'for') {
+				indentStack.push(currentIndent);
+			}
+		}
+
+		// Alle offenen Blöcke am Ende schließen
+		while (indentStack.length > 0) {
+			lines.push('end');
+			indentStack.pop();
+		}
+
+		dslEditor.value = lines.join('\n');
+
+		if (placeholder) {
+			placeholder.style.display = blocks.length === 0 ? 'block' : 'none';
+		}
+	}
 
     function getBlockCode(block) {
         var type = block.getAttribute('data-block-type');
@@ -340,7 +355,6 @@
                 return 'for ' + forVar + ' in range(' + forEnd + ')';
 
             case 'else': return 'else';
-            case 'end':  return 'end';
 
             case 'print':
                 return 'print ' + (getInputValue(inputs, 0) || '"Hallo!"');
@@ -513,21 +527,22 @@
         setTimeout(function() { block.classList.remove('shake'); }, 400);
     }
 
-    function getCategoryClass(type) {
-        var map = {
-            'get_left': 'cat-sensing', 'get_right': 'cat-sensing',
-            'get_count': 'cat-sensing', 'get_top': 'cat-sensing',
-            'get_bottom': 'cat-sensing', 'get_largest': 'cat-sensing',
-            'get_smallest': 'cat-sensing', 'get_best': 'cat-sensing',
-            'if': 'cat-control', 'elif': 'cat-control',
-            'else': 'cat-control', 'end': 'cat-control',
-            'while': 'cat-control', 'for': 'cat-control',
-            'print': 'cat-output', 'show_text': 'cat-display',
-            'set_var': 'cat-variables', 'change_var': 'cat-variables',
-            'label_value': 'cat-labels'
-        };
-        return map[type] || '';
-    }
+	function getCategoryClass(type) {
+		var map = {
+			'get_left': 'cat-sensing', 'get_right': 'cat-sensing',
+			'get_count': 'cat-sensing', 'get_top': 'cat-sensing',
+			'get_bottom': 'cat-sensing', 'get_largest': 'cat-sensing',
+			'get_smallest': 'cat-sensing', 'get_best': 'cat-sensing',
+			'if': 'cat-control', 'elif': 'cat-control',
+			'else': 'cat-control',
+			'while': 'cat-control', 'for': 'cat-control',
+			'print': 'cat-output', 'show_text': 'cat-display',
+			'set_var': 'cat-variables', 'change_var': 'cat-variables',
+			'label_value': 'cat-labels'
+		};
+		return map[type] || '';
+	}
+
 
     // ─── Build block DOM ────────────────────────────────────────────────
     function buildBlockDOM(block, type, data) {
@@ -654,10 +669,6 @@
 
             case 'else':
                 content.innerHTML = '<span class="bi">⬜</span> <span class="bk">sonst</span>';
-                break;
-
-            case 'end':
-                content.innerHTML = '<span class="bi">🔚</span> <span class="bk">ende</span>';
                 break;
 
             case 'print':
@@ -882,7 +893,7 @@
             return { type: 'elif', data: { condition: cond } };
         }
         if (line === 'else') return { type: 'else', data: {} };
-        if (line === 'end') return { type: 'end', data: {} };
+	if (line === 'end') return null; // wird ignoriert, Einrückung reicht
 
         // While loop
         if (line.startsWith('while ')) {
