@@ -237,102 +237,160 @@
         return kept;
     }
 
-    async function runDetection() {
-        if (!gameModel || !webcamStream || video.readyState < 2) return [];
-        var shape = getModelInputShape();
-        var confThreshold = getGameConfThreshold();
-        var inputTensor = null, output = null;
+	async function runDetection() {
+		if (!gameModel || !webcamStream || video.readyState < 2) return [];
+		var shape = getModelInputShape();
+		var confThreshold = getGameConfThreshold();
+		var inputTensor = null, output = null;
 
-        try {
-            inputTensor = tf.tidy(function() {
-                return tf.browser.fromPixels(video)
-                    .resizeBilinear([shape[0], shape[1]])
-                    .div(255)
-                    .expandDims();
-            });
-        } catch (e) {
-            if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
-            return [];
-        }
+		var numTensorsBefore = tf.memory().numTensors;
 
-        try { output = await gameModel.executeAsync(inputTensor); }
-        catch (e) { if (inputTensor) try { inputTensor.dispose(); } catch (x) {} return []; }
-        if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
+		try {
+			inputTensor = tf.tidy(function() {
+				return tf.browser.fromPixels(video)
+					.resizeBilinear([shape[0], shape[1]])
+					.div(255)
+					.expandDims();
+			});
+		} catch (e) {
+			if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
+			return [];
+		}
 
-        var res;
-        try {
-            if (output instanceof tf.Tensor) {
-                res = output.arraySync();
-                output.dispose();
-            } else if (Array.isArray(output)) {
-                res = output[0].arraySync();
-                output.forEach(function(t) { try { t.dispose(); } catch (x) {} });
-            } else { res = output; }
-        } catch (e) { return []; }
+		try {
+			output = gameModel.execute(inputTensor);
+		} catch (e) {
+			if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
+			return [];
+		}
 
-        try { return processOutput(res, shape[1], shape[0], confThreshold); }
-        catch (e) { return []; }
-    }
+		// Dispose input immediately — no longer needed
+		if (inputTensor) try { inputTensor.dispose(); } catch (x) {}
 
-    function processOutput(res, modelWidth, modelHeight, confThreshold) {
-        if (!res || !Array.isArray(res) || !Array.isArray(res[0]) || !Array.isArray(res[0][0])) return [];
-        var rawTensor = null;
-        try {
-            rawTensor = tf.tensor3d(res);
-            var s = rawTensor.shape;
-            var FEATURES = s[1], CANDIDATES = s[2];
+		var res;
+		try {
+			if (output instanceof tf.Tensor) {
+				res = output.arraySync();
+				output.dispose();
+			} else if (Array.isArray(output)) {
+				res = output[0].arraySync();
+				output.forEach(function(t) { try { t.dispose(); } catch (x) {} });
+			} else {
+				res = output;
+			}
+		} catch (e) {
+			// Ensure output tensors are disposed on error
+			if (output instanceof tf.Tensor) {
+				try { output.dispose(); } catch (x) {}
+			} else if (Array.isArray(output)) {
+				output.forEach(function(t) { try { t.dispose(); } catch (x) {} });
+			}
+			return [];
+		}
 
-            if (FEATURES > CANDIDATES) {
-                var transposed = rawTensor.transpose([0, 2, 1]);
-                rawTensor.dispose();
-                rawTensor = transposed;
-                FEATURES = s[2]; CANDIDATES = s[1];
-            }
+		var detections;
+		try {
+			detections = processOutput(res, shape[1], shape[0], confThreshold);
+		} catch (e) {
+			detections = [];
+		}
 
-            var numClasses = FEATURES - 4;
-            if (numClasses <= 0) { rawTensor.dispose(); return []; }
+		// Safety net: if tensors leaked, log a warning (dev mode)
+		var numTensorsAfter = tf.memory().numTensors;
+		if (numTensorsAfter > numTensorsBefore + 2) {
+			console.warn('[TF Leak] Tensors before: ' + numTensorsBefore + ', after: ' + numTensorsAfter + ' (leaked ' + (numTensorsAfter - numTensorsBefore) + ')');
+		}
 
-            var predTensor = rawTensor.transpose([0, 2, 1]);
-            var splits = tf.split(predTensor, [4, numClasses], 2);
-            var boxesArr = splits[0].squeeze().arraySync();
-            var scoresArr = splits[1].squeeze().arraySync();
+		return detections;
+	}
 
-            [rawTensor, predTensor, splits[0], splits[1]].forEach(function(t) {
-                if (t) try { t.dispose(); } catch (x) {}
-            });
+	function processOutput(res, modelWidth, modelHeight, confThreshold) {
+		if (!res || !Array.isArray(res) || !Array.isArray(res[0]) || !Array.isArray(res[0][0])) return [];
 
-            var detections = [];
-            for (var i = 0; i < boxesArr.length; i++) {
-                var classScores = numClasses === 1 ? [scoresArr[i]] : scoresArr[i];
-                var bestScore = 0, bestClass = -1;
-                if (Array.isArray(classScores)) {
-                    for (var c = 0; c < classScores.length; c++) {
-                        if (classScores[c] > bestScore) { bestScore = classScores[c]; bestClass = c; }
-                    }
-                } else { bestScore = classScores; bestClass = 0; }
-                if (bestScore < confThreshold) continue;
+		var tensorsToDispose = [];
 
-                var cx = boxesArr[i][0], cy = boxesArr[i][1], w = boxesArr[i][2], h = boxesArr[i][3];
-                var isPixel = cx > 2.0 || cy > 2.0;
-                var xMin, yMin, xMax, yMax;
-                if (isPixel) {
-                    xMin = (cx - w/2) / modelWidth; yMin = (cy - h/2) / modelHeight;
-                    xMax = (cx + w/2) / modelWidth; yMax = (cy + h/2) / modelHeight;
-                } else {
-                    xMin = cx - w/2; yMin = cy - h/2; xMax = cx + w/2; yMax = cy + h/2;
-                }
-                xMin = Math.max(0, xMin); yMin = Math.max(0, yMin);
-                xMax = Math.min(1, xMax); yMax = Math.min(1, yMax);
+		try {
+			var rawTensor = tf.tensor3d(res);
+			tensorsToDispose.push(rawTensor);
 
-                var label = (gameLabels && gameLabels[bestClass]) ? gameLabels[bestClass] : ('class_' + bestClass);
-                detections.push({ xMin: xMin, yMin: yMin, xMax: xMax, yMax: yMax, score: bestScore, label: label });
-            }
-            return simpleNMS(detections, 0.5);
-        } catch (e) {
-            if (rawTensor) try { rawTensor.dispose(); } catch (x) {}
-            return [];
-        }
-    }
+			var s = rawTensor.shape;
+			var FEATURES = s[1], CANDIDATES = s[2];
+
+			if (FEATURES > CANDIDATES) {
+				var transposed = rawTensor.transpose([0, 2, 1]);
+				tensorsToDispose.push(transposed);
+				rawTensor = transposed;
+				FEATURES = s[2]; CANDIDATES = s[1];
+			}
+
+			var numClasses = FEATURES - 4;
+			if (numClasses <= 0) {
+				tensorsToDispose.forEach(function(t) { try { t.dispose(); } catch (x) {} });
+				return [];
+			}
+
+			var predTensor = rawTensor.transpose([0, 2, 1]);
+			tensorsToDispose.push(predTensor);
+
+			var splits = tf.split(predTensor, [4, numClasses], 2);
+			tensorsToDispose.push(splits[0]);
+			tensorsToDispose.push(splits[1]);
+
+			var squeezedBoxes = splits[0].squeeze();
+			tensorsToDispose.push(squeezedBoxes);
+
+			var squeezedScores = splits[1].squeeze();
+			tensorsToDispose.push(squeezedScores);
+
+			var boxesArr = squeezedBoxes.arraySync();
+			var scoresArr = squeezedScores.arraySync();
+
+			// Dispose ALL tensors now that we have the JS arrays
+			tensorsToDispose.forEach(function(t) {
+				if (t && !t.isDisposed) {
+					try { t.dispose(); } catch (x) {}
+				}
+			});
+			tensorsToDispose = [];
+
+			var detections = [];
+			for (var i = 0; i < boxesArr.length; i++) {
+				var classScores = numClasses === 1 ? [scoresArr[i]] : scoresArr[i];
+				var bestScore = 0, bestClass = -1;
+				if (Array.isArray(classScores)) {
+					for (var c = 0; c < classScores.length; c++) {
+						if (classScores[c] > bestScore) { bestScore = classScores[c]; bestClass = c; }
+					}
+				} else { bestScore = classScores; bestClass = 0; }
+				if (bestScore < confThreshold) continue;
+
+				var cx = boxesArr[i][0], cy = boxesArr[i][1], w = boxesArr[i][2], h = boxesArr[i][3];
+				var isPixel = cx > 2.0 || cy > 2.0;
+				var xMin, yMin, xMax, yMax;
+				if (isPixel) {
+					xMin = (cx - w / 2) / modelWidth; yMin = (cy - h / 2) / modelHeight;
+					xMax = (cx + w / 2) / modelWidth; yMax = (cy + h / 2) / modelHeight;
+				} else {
+					xMin = cx - w / 2; yMin = cy - h / 2; xMax = cx + w / 2; yMax = cy + h / 2;
+				}
+				xMin = Math.max(0, xMin); yMin = Math.max(0, yMin);
+				xMax = Math.min(1, xMax); yMax = Math.min(1, yMax);
+
+				var label = (gameLabels && gameLabels[bestClass]) ? gameLabels[bestClass] : ('class_' + bestClass);
+				detections.push({ xMin: xMin, yMin: yMin, xMax: xMax, yMax: yMax, score: bestScore, label: label });
+			}
+			return simpleNMS(detections, 0.5);
+
+		} catch (e) {
+			// Dispose anything we tracked on error
+			tensorsToDispose.forEach(function(t) {
+				if (t && !t.isDisposed) {
+					try { t.dispose(); } catch (x) {}
+				}
+			});
+			return [];
+		}
+	}
 
     // ─── Draw detections ────────────────────────────────────────────────
     function drawGameDetections(detections) {
@@ -396,66 +454,65 @@
     }
 
     // ─── Expression evaluator with arithmetic ───────────────────────────
-    function evaluateExpression(expr, vars) {
-        expr = expr.trim();
-        if (expr === '') return '';
+	function evaluateExpression(expr, vars) {
+		expr = expr.trim();
+		if (expr === '') return '';
 
-        // String literal
-        if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
-            // Check it's a complete string (no unmatched quotes in middle for concat)
-            var q = expr[0], closed = false, lastClose = -1;
-            for (var i = 1; i < expr.length; i++) {
-                if (expr[i] === q) { lastClose = i; }
-            }
-            if (lastClose === expr.length - 1) {
-                // Check for + after the string
-                // Actually let's just handle simple case
-                return expr.substring(1, expr.length - 1);
-            }
-        }
+		// Number literal (check early, no ambiguity)
+		if (/^-?\d+(\.\d+)?$/.test(expr)) return parseFloat(expr);
 
-        // Number literal
-        if (/^-?\d+(\.\d+)?$/.test(expr)) return parseFloat(expr);
+		// Parenthesized expression
+		if (expr.startsWith('(') && findMatchingParen(expr, 0) === expr.length - 1) {
+			return evaluateExpression(expr.substring(1, expr.length - 1), vars);
+		}
 
-        // Parenthesized expression
-        if (expr.startsWith('(') && findMatchingParen(expr, 0) === expr.length - 1) {
-            return evaluateExpression(expr.substring(1, expr.length - 1), vars);
-        }
+		// String concatenation / Addition — check BEFORE string literal!
+		var plusMinusResult = splitArithmetic(expr, ['+', '-']);
+		if (plusMinusResult) {
+			var left = evaluateExpression(plusMinusResult.left, vars);
+			var right = evaluateExpression(plusMinusResult.right, vars);
+			if (plusMinusResult.op === '+') {
+				if (typeof left === 'string' || typeof right === 'string') {
+					return String(left) + String(right);
+				}
+				return (parseFloat(left) || 0) + (parseFloat(right) || 0);
+			} else {
+				return (parseFloat(left) || 0) - (parseFloat(right) || 0);
+			}
+		}
 
-        // String concatenation / Addition (lowest precedence after comparison)
-        var plusMinusResult = splitArithmetic(expr, ['+', '-']);
-        if (plusMinusResult) {
-            var left = evaluateExpression(plusMinusResult.left, vars);
-            var right = evaluateExpression(plusMinusResult.right, vars);
-            if (plusMinusResult.op === '+') {
-                // If either side is a string, concatenate
-                if (typeof left === 'string' || typeof right === 'string') {
-                    return String(left) + String(right);
-                }
-                return (parseFloat(left) || 0) + (parseFloat(right) || 0);
-            } else { // '-'
-                return (parseFloat(left) || 0) - (parseFloat(right) || 0);
-            }
-        }
+		// Multiplication / Division / Modulo
+		var mulDivResult = splitArithmetic(expr, ['*', '/', '%']);
+		if (mulDivResult) {
+			var left = evaluateExpression(mulDivResult.left, vars);
+			var right = evaluateExpression(mulDivResult.right, vars);
+			var l = parseFloat(left) || 0;
+			var r = parseFloat(right) || 0;
+			if (mulDivResult.op === '*') return l * r;
+			if (mulDivResult.op === '/') return r !== 0 ? l / r : 0;
+			if (mulDivResult.op === '%') return r !== 0 ? l % r : 0;
+		}
 
-        // Multiplication / Division / Modulo
-        var mulDivResult = splitArithmetic(expr, ['*', '/', '%']);
-        if (mulDivResult) {
-            var left = evaluateExpression(mulDivResult.left, vars);
-            var right = evaluateExpression(mulDivResult.right, vars);
-            var l = parseFloat(left) || 0;
-            var r = parseFloat(right) || 0;
-            if (mulDivResult.op === '*') return l * r;
-            if (mulDivResult.op === '/') return r !== 0 ? l / r : 0;
-            if (mulDivResult.op === '%') return r !== 0 ? l % r : 0;
-        }
+		// String literal (only AFTER we've confirmed no + operator outside strings)
+		if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
+			return expr.substring(1, expr.length - 1);
+		}
 
-        // Built-in detection variables
-        if (vars.hasOwnProperty(expr)) return vars[expr];
+		// Variable lookup
+		if (vars.hasOwnProperty(expr)) return vars[expr];
 
-        // Unknown → return as string
-        return expr;
-    }
+		// ═══ FIX: Check if it LOOKS like a variable name ═══
+		// If it matches a valid identifier pattern but isn't in vars,
+		// return 0 instead of the variable name as string.
+		// This prevents "rekord" showing up as text instead of 0.
+		if (/^[a-zA-Z_\u00C0-\u024F][a-zA-Z0-9_\u00C0-\u024F]*$/.test(expr)) {
+			return 0;
+		}
+
+		// Unknown → return as string
+		return expr;
+	}
+
 
     function findMatchingParen(str, openIdx) {
         var depth = 0, inStr = false, strChar = '';
@@ -501,56 +558,64 @@
         };
     }
 
-    // ─── Condition evaluator ────────────────────────────────────────────
-    function evaluateCondition(condStr, vars) {
-        condStr = condStr.trim();
+	// ─── Condition evaluator ────────────────────────────────────────────
+	function evaluateCondition(condStr, vars) {
+		condStr = condStr.trim();
 
-        // AND
-        var andParts = splitLogical(condStr, ' and ');
-        if (andParts.length > 1) {
-            for (var i = 0; i < andParts.length; i++) {
-                if (!evaluateCondition(andParts[i], vars)) return false;
-            }
-            return true;
-        }
+		// ═══ Deutsche Operatoren in Symbole umwandeln ═══
+		condStr = condStr.replace(/\bist größer oder gleich\b/g, '>=');
+		condStr = condStr.replace(/\bist kleiner oder gleich\b/g, '<=');
+		condStr = condStr.replace(/\bist größer als\b/g, '>');
+		condStr = condStr.replace(/\bist kleiner als\b/g, '<');
+		condStr = condStr.replace(/\bist gleich\b/g, '==');
+		condStr = condStr.replace(/\bist nicht\b/g, '!=');
 
-        // OR
-        var orParts = splitLogical(condStr, ' or ');
-        if (orParts.length > 1) {
-            for (var i = 0; i < orParts.length; i++) {
-                if (evaluateCondition(orParts[i], vars)) return true;
-            }
-            return false;
-        }
+		// AND
+		var andParts = splitLogical(condStr, ' and ');
+		if (andParts.length > 1) {
+			for (var i = 0; i < andParts.length; i++) {
+				if (!evaluateCondition(andParts[i], vars)) return false;
+			}
+			return true;
+		}
 
-        // NOT
-        if (condStr.startsWith('not ')) {
-            return !evaluateCondition(condStr.substring(4), vars);
-        }
+		// OR
+		var orParts = splitLogical(condStr, ' or ');
+		if (orParts.length > 1) {
+			for (var i = 0; i < orParts.length; i++) {
+				if (evaluateCondition(orParts[i], vars)) return true;
+			}
+			return false;
+		}
 
-        // Comparison operators
-        var operators = ['==', '!=', '>=', '<=', '>', '<'];
-        for (var i = 0; i < operators.length; i++) {
-            var op = operators[i];
-            var opIdx = findOperatorIndex(condStr, op);
-            if (opIdx !== -1) {
-                var leftVal = evaluateExpression(condStr.substring(0, opIdx).trim(), vars);
-                var rightVal = evaluateExpression(condStr.substring(opIdx + op.length).trim(), vars);
-                switch (op) {
-                    case '==': return leftVal == rightVal;
-                    case '!=': return leftVal != rightVal;
-                    case '>=': return parseFloat(leftVal) >= parseFloat(rightVal);
-                    case '<=': return parseFloat(leftVal) <= parseFloat(rightVal);
-                    case '>':  return parseFloat(leftVal) > parseFloat(rightVal);
-                    case '<':  return parseFloat(leftVal) < parseFloat(rightVal);
-                }
-            }
-        }
+		// NOT
+		if (condStr.startsWith('not ')) {
+			return !evaluateCondition(condStr.substring(4), vars);
+		}
 
-        // Truthy
-        var val = evaluateExpression(condStr, vars);
-        return !!val && val !== "none" && val !== 0 && val !== "0" && val !== "";
-    }
+		// Comparison operators
+		var operators = ['==', '!=', '>=', '<=', '>', '<'];
+		for (var i = 0; i < operators.length; i++) {
+			var op = operators[i];
+			var opIdx = findOperatorIndex(condStr, op);
+			if (opIdx !== -1) {
+				var leftVal = evaluateExpression(condStr.substring(0, opIdx).trim(), vars);
+				var rightVal = evaluateExpression(condStr.substring(opIdx + op.length).trim(), vars);
+				switch (op) {
+					case '==': return leftVal == rightVal;
+					case '!=': return leftVal != rightVal;
+					case '>=': return parseFloat(leftVal) >= parseFloat(rightVal);
+					case '<=': return parseFloat(leftVal) <= parseFloat(rightVal);
+					case '>':  return parseFloat(leftVal) > parseFloat(rightVal);
+					case '<':  return parseFloat(leftVal) < parseFloat(rightVal);
+				}
+			}
+		}
+
+		// Truthy
+		var val = evaluateExpression(condStr, vars);
+		return !!val && val !== "none" && val !== 0 && val !== "0" && val !== "";
+	}
 
     function findOperatorIndex(str, op) {
         var inStr = false, strChar = '', depth = 0;
@@ -622,7 +687,6 @@
                     continue;
                 }
 
-                if (line === 'end') { return idx + 1; }
                 if (line.startsWith('elif ') || line === 'else') { return idx; }
 
                 // ─── SHOW_TEXT ───────────────────────────────────
@@ -803,9 +867,6 @@
                     } else {
                         idx = skipBodyUntilElifElseEnd(idx, endIdx);
                     }
-                } else if (currentLine === 'end') {
-                    idx++;
-                    break;
                 } else {
                     break;
                 }
@@ -822,7 +883,6 @@
                 if (line.startsWith('while ')) { idx = executeWhile(idx, endIdx); continue; }
                 if (line.startsWith('for ')) { idx = executeFor(idx, endIdx); continue; }
 
-                if (line === 'end') return idx;
                 if (line.startsWith('elif ') || line === 'else') return idx;
 
                 // Execute single statement (reuse logic from execute())
@@ -887,12 +947,6 @@
             while (idx < endIdx) {
                 var line = parsedLines[idx].text;
                 if (line.startsWith('if ') || line.startsWith('while ') || line.startsWith('for ')) { depth++; idx++; continue; }
-                if (line === 'end') {
-                    if (depth === 0) return idx;
-                    depth--;
-                    idx++;
-                    continue;
-                }
                 if ((line.startsWith('elif ') || line === 'else') && depth === 0) {
                     return idx;
                 }
@@ -908,10 +962,6 @@
                 var line = parsedLines[i].text;
                 if (line.startsWith('if ') || line.startsWith('while ') || line.startsWith('for ')) {
                     depth++;
-                }
-                if (line === 'end') {
-                    if (depth === 0) return i;
-                    depth--;
                 }
             }
             return endIdx; // no matching end found
@@ -1046,116 +1096,117 @@
     // ─── Game loop (requestAnimationFrame based) ────────────────────────
     var evalInterval = 333; // ~3 fps default
 
-    async function gameStep(timestamp) {
-        if (!gameRunning) return;
+	// ─── Game loop (smooth fixed interval) ────────────────────────────────
+	var gameInterval = null;
+	var cachedParsed = null;
+	var lastCode = '';
 
-        // Throttle evaluation
-        if (timestamp - lastEvalTime < evalInterval) {
-            animFrameId = requestAnimationFrame(gameStep);
-            return;
-        }
-        lastEvalTime = timestamp;
+	async function gameStep() {
+		if (!gameRunning) return;
 
-        var detections = [];
+		var detections = [];
 
-        if (gameModel && webcamStream && video.readyState >= 2) {
-            try {
-                detections = await runDetection();
-            } catch (e) {
-                detections = [];
-            }
-        }
+		if (gameModel && webcamStream && video.readyState >= 2) {
+			try {
+				detections = await runDetection();
+			} catch (e) {
+				detections = [];
+			}
+		}
 
-        drawGameDetections(detections);
+		drawGameDetections(detections);
 
-        // Parse and run DSL script
-        var code = editor.value;
-        var parsed = parseScript(code);
-        var vars = buildDSLContext(detections);
+		// Nur neu parsen wenn sich der Code geändert hat (großer Performance-Gewinn!)
+		var code = editor ? (editor.value || '') : '';
+		if (code !== lastCode || cachedParsed === null) {
+			cachedParsed = parseScript(code);
+			lastCode = code;
+		}
 
-        try {
-            var results = interpretScript(parsed, vars);
+		var vars = buildDSLContext(detections);
 
-            // Save user-defined vars back to persistent storage
-            // (exclude detection builtins)
-            var builtinKeys = [
-                'detection_count',
-                'leftmost_detection', 'rightmost_detection',
-                'topmost_detection', 'bottommost_detection',
-                'largest_detection', 'smallest_detection',
-                'highest_conf_detection',
-                'leftmost_detection.probability', 'rightmost_detection.probability',
-                'topmost_detection.probability', 'bottommost_detection.probability',
-                'largest_detection.probability', 'smallest_detection.probability',
-                'highest_conf_detection.probability'
-            ];
-            for (var key in vars) {
-                if (vars.hasOwnProperty(key) && builtinKeys.indexOf(key) === -1) {
-                    persistentVars[key] = vars[key];
-                }
-            }
+		try {
+			var results = interpretScript(cachedParsed, vars);
 
-            if (results.output && results.output.length > 0) {
-                for (var i = 0; i < results.output.length; i++) {
-                    appendOutput(results.output[i]);
-                }
-            }
+			// Persistente Variablen speichern
+			var builtinKeys = [
+				'detection_count',
+				'leftmost_detection', 'rightmost_detection',
+				'topmost_detection', 'bottommost_detection',
+				'largest_detection', 'smallest_detection',
+				'highest_conf_detection',
+				'leftmost_detection.probability', 'rightmost_detection.probability',
+				'topmost_detection.probability', 'bottommost_detection.probability',
+				'largest_detection.probability', 'smallest_detection.probability',
+				'highest_conf_detection.probability'
+			];
+			for (var key in vars) {
+				if (vars.hasOwnProperty(key) && builtinKeys.indexOf(key) === -1) {
+					persistentVars[key] = vars[key];
+				}
+			}
 
-            if (results.showTextCommands && results.showTextCommands.length > 0) {
-                var lastCmd = results.showTextCommands[results.showTextCommands.length - 1];
-                showTextOnVideo(lastCmd.message, lastCmd.style);
-            } else {
-                clearTextOverlay();
-            }
-        } catch (e) {
-            appendOutput("FEHLER: " + (e.message || "Unbekannter Fehler"));
-            clearTextOverlay();
-        }
+			if (results.output && results.output.length > 0) {
+				for (var i = 0; i < results.output.length; i++) {
+					appendOutput(results.output[i]);
+				}
+			}
 
-        setStatus('Läuft | Erkennungen: ' + detections.length);
+			if (results.showTextCommands && results.showTextCommands.length > 0) {
+				var lastCmd = results.showTextCommands[results.showTextCommands.length - 1];
+				showTextOnVideo(lastCmd.message, lastCmd.style);
+			} else {
+				clearTextOverlay();
+			}
+		} catch (e) {
+			appendOutput("FEHLER: " + (e.message || "Unbekannter Fehler"));
+			clearTextOverlay();
+		}
 
-        // Schedule next frame
-        animFrameId = requestAnimationFrame(gameStep);
-    }
+		setStatus('Läuft | Erkennungen: ' + detections.length);
+	}
+
 
     // ─── Auto-start: triggered by model selection ───────────────────────
-    async function autoStart(modelUuid) {
-        if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
-        gameRunning = false;
-        persistentVars = {}; // Reset vars on model change
+	async function autoStart(modelUuid) {
+		// ═══ CRITICAL: Always clear existing interval first ═══
+		if (gameInterval) {
+			clearInterval(gameInterval);
+			gameInterval = null;
+		}
+		gameRunning = false;
+		persistentVars = {};
+		cachedParsed = null;
+		lastCode = '';
 
-        if (modelUuid === 'none') {
-            stopGameWebcam();
-            if (overlayCtx) overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            clearTextOverlay();
-            setStatus('Wähle ein Modell zum Starten');
-            return;
-        }
+		if (modelUuid === 'none') {
+			stopGameWebcam();
+			if (overlayCtx) overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+			clearTextOverlay();
+			setStatus('Wähle ein Modell zum Starten');
+			return;
+		}
 
-        setStatus('Kamera wird gestartet...');
-        var webcamOk = await startGameWebcam();
-        if (!webcamOk) {
-            setStatus('Kamera-Fehler');
-            appendOutput("⚠️ Kamera konnte nicht gestartet werden.");
-            return;
-        }
+		setStatus('Kamera wird gestartet...');
+		var webcamOk = await startGameWebcam();
+		if (!webcamOk) {
+			setStatus('Kamera-Fehler');
+			return;
+		}
 
-        setStatus('Modell wird geladen...');
-        var modelOk = await loadGameModel(modelUuid);
-        if (!modelOk) {
-            setStatus('Modell-Fehler');
-            appendOutput("⚠️ Modell konnte nicht geladen werden.");
-        }
+		setStatus('Modell wird geladen...');
+		var modelOk = await loadGameModel(modelUuid);
+		if (!modelOk) {
+			setStatus('Modell-Fehler');
+			return;
+		}
 
-        // Start the game loop with requestAnimationFrame
-        gameRunning = true;
-        var fps = parseInt(document.getElementById('game_fps').value) || 3;
-        evalInterval = Math.round(1000 / fps);
-        lastEvalTime = 0;
-        animFrameId = requestAnimationFrame(gameStep);
-        setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
-        appendOutput("🎮 Spiel läuft! Baue dein Programm links zusammen.");
-    }
+		gameRunning = true;
+		var fps = parseInt(document.getElementById('game_fps').value) || 3;
+		gameInterval = setInterval(gameStep, Math.round(1000 / fps));
+		setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
+		appendOutput("🎮 Spiel läuft!");
+	}
 
     // ─── Model select change ────────────────────────────────────────────
     var modelSelect = document.getElementById('game_model_select');
@@ -1168,14 +1219,32 @@
     // ─── Camera change ──────────────────────────────────────────────────
     var cameraSelect = document.getElementById('game_camera_select');
     if (cameraSelect) {
-        cameraSelect.addEventListener('change', function() {
-            var modelUuid = document.getElementById('game_model_select').value;
-            if (modelUuid === 'none') return;
-            stopGameWebcam();
-            if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
-            gameRunning = false;
-            autoStart(modelUuid);
-        });
+	    cameraSelect.addEventListener('change', function() {
+		    var modelUuid = document.getElementById('game_model_select').value;
+		    if (modelUuid === 'none') return;
+
+		    // ═══ Stop everything cleanly ═══
+		    gameRunning = false;
+
+		    // Clear the game interval (this was the bug — it wasn't cleared here)
+		    if (gameInterval) {
+			    clearInterval(gameInterval);
+			    gameInterval = null;
+		    }
+
+		    // Clear legacy animFrameId if it somehow exists
+		    if (animFrameId) {
+			    cancelAnimationFrame(animFrameId);
+			    animFrameId = null;
+		    }
+
+		    // Stop webcam so it can restart with new device
+		    stopGameWebcam();
+
+		    // Restart with new camera
+		    autoStart(modelUuid);
+	    });
+
     }
 
     // ─── Confidence slider ──────────────────────────────────────────────
@@ -1189,13 +1258,15 @@
 
     // ─── FPS hot-swap ───────────────────────────────────────────────────
     var gameFpsInput = document.getElementById('game_fps');
-    if (gameFpsInput) {
-        gameFpsInput.addEventListener('input', function() {
-            var fps = Math.max(1, Math.min(10, parseInt(this.value) || 3));
-            evalInterval = Math.round(1000 / fps);
-            setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
-        });
-    }
+	if (gameFpsInput) {
+		gameFpsInput.addEventListener('input', function() {
+			if (!gameRunning || !gameInterval) return;
+			clearInterval(gameInterval);
+			var fps = Math.max(1, Math.min(10, parseInt(this.value) || 3));
+			gameInterval = setInterval(gameStep, Math.round(1000 / fps));
+			setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
+		});
+	}
 
     // ─── Button bindings ────────────────────────────────────────────────
     var btnClearOutput = document.getElementById('btn_clear_output');
@@ -1212,223 +1283,179 @@
         });
     }
 
-	var btnLoadExample = document.getElementById('btn_load_example');
-	if (btnLoadExample) {
-	    // Zähler, um bei jedem Klick das nächste Beispiel zu laden
-	    var exampleIndex = 0;
+	// ═══════════════════════════════════════════════════════════════
+	// BEISPIEL-GALERIE — Ersetzt den alten rotierenden Button
+	// ═══════════════════════════════════════════════════════════════
 
-	    btnLoadExample.addEventListener('click', function() {
-		var examples = [];
+	function getExamplePrograms() {
 		var l1 = (gameLabels && gameLabels.length >= 1) ? gameLabels[0] : 'ObjektA';
 		var l2 = (gameLabels && gameLabels.length >= 2) ? gameLabels[1] : 'ObjektB';
 		var l3 = (gameLabels && gameLabels.length >= 3) ? gameLabels[2] : 'ObjektC';
 
-		// ═══════════════════════════════════════════════════════════════
-		// BEISPIEL 1: Schere-Stein-Papier
-		// Braucht ein Modell mit Labels: Schere, Stein, Papier
-		// ═══════════════════════════════════════════════════════════════
-		examples.push({
-		    name: '✊✌️✋ Schere-Stein-Papier',
-		    code:
-			'# ══ SCHERE STEIN PAPIER ══\n' +
-			'# Zeige links deine Hand, rechts die des Gegners\n' +
-			'\n' +
-			'spieler = leftmost_detection\n' +
-			'gegner = rightmost_detection\n' +
-			'\n' +
-			'if detection_count < 2\n' +
-			'  show_text "Zeigt beide eure Hände! ✊✌️✋" normal\n' +
-			'elif spieler == gegner\n' +
-			'  show_text "UNENTSCHIEDEN! Beide: " + spieler draw\n' +
-			'elif spieler == "' + l1 + '" and gegner == "' + l2 + '"\n' +
-			'  siege += 1\n' +
-			'  show_text "DU GEWINNST! 🎉 Siege: " + siege winner\n' +
-			'elif spieler == "' + l2 + '" and gegner == "' + l3 + '"\n' +
-			'  siege += 1\n' +
-			'  show_text "DU GEWINNST! 🎉 Siege: " + siege winner\n' +
-			'elif spieler == "' + l3 + '" and gegner == "' + l1 + '"\n' +
-			'  siege += 1\n' +
-			'  show_text "DU GEWINNST! 🎉 Siege: " + siege winner\n' +
-			'else\n' +
-			'  niederlagen += 1\n' +
-			'  show_text "VERLOREN! 😢 Niederlagen: " + niederlagen loser\n' +
-			'end\n'
-		});
+		return [
+			{
+				id: 'rps',
+				name: '✊✌️✋ Schere Stein Papier',
+				icon: '✊',
+				difficulty: '⭐',
+				description: 'Spiele gegen einen Freund! Haltet beide eure Hände in die Kamera.',
+				preview: '👈 Spieler 1 | Spieler 2 👉',
+				color: '#4fc3f7',
+				code:
+				'# ══ SCHERE STEIN PAPIER ══\n' +
+				'# Regeln: Schere schneidet Papier,\n' +
+				'# Papier wickelt Stein ein,\n' +
+				'# Stein macht Schere kaputt.\n' +
+				'spieler = leftmost_detection\n' +
+				'gegner = rightmost_detection\n' +
+				'if detection_count ist kleiner als 2\n' +
+				'  show_text "Zeigt beide eure Hände! ✊✌️✋" normal\n' +
+				'elif spieler ist gleich gegner\n' +
+				'  show_text "UNENTSCHIEDEN! 🤝 Beide: " + spieler draw\n' +
+				'elif spieler ist gleich "' + l1 + '" and gegner ist gleich "' + l3 + '"\n' +
+				'  siege += 1\n' +
+				'  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+				'elif spieler ist gleich "' + l3 + '" and gegner ist gleich "' + l2 + '"\n' +
+				'  siege += 1\n' +
+				'  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+				'elif spieler ist gleich "' + l2 + '" and gegner ist gleich "' + l1 + '"\n' +
+				'  siege += 1\n' +
+				'  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+				'else\n' +
+				'  niederlagen += 1\n' +
+				'  show_text "👉 SPIELER 2 GEWINNT! 💪 " + gegner + " schlägt " + spieler loser\n'
+			},
+			{
+				id: 'counter',
+				name: '📊 Rekord-Jäger',
+				icon: '🏆',
+				difficulty: '⭐',
+				description: 'Wie viele Objekte kannst du gleichzeitig zeigen? Jage den Rekord!',
+				preview: '🏆 Zeige so viele Objekte wie möglich!',
+				color: '#ffb74d',
+				code:
+				'# ══ REKORD-JÄGER ══\n' +
+				'aktuell = detection_count\n' +
+				'if aktuell > rekord\n' +
+				'  rekord = aktuell\n' +
+				'if aktuell > 0\n' +
+				'  gesamt += aktuell\n' +
+				'if aktuell == 0\n' +
+				'  show_text "🔍 Zeige Objekte! Rekord: " + rekord normal\n' +
+				'elif aktuell == rekord\n' +
+				'  show_text "🏆 NEUER REKORD! " + rekord + " Objekte!" winner\n' +
+				'else\n' +
+				'  show_text "👀 Erkannt: " + aktuell + " | Rekord: " + rekord normal\n'
+			},
+			{
+				id: 'collect',
+				name: '🎯 Sammel-Challenge',
+				icon: '🎯',
+				difficulty: '⭐⭐',
+				description: 'Zeige verschiedene Objekte nacheinander! Gleiches Objekt zweimal = keine Punkte!',
+				preview: '🔄 Immer wechseln für Punkte!',
+				color: '#66bb6a',
+				code:
+				'# ══ SAMMEL-CHALLENGE ══\n' +
+				'aktuell = highest_conf_detection\n' +
+				'if aktuell == "none"\n' +
+				'  show_text "🎯 Zeige ein Objekt! Punkte: " + punkte normal\n' +
+				'elif aktuell != letztes\n' +
+				'  punkte += 10\n' +
+				'  streak += 1\n' +
+				'  bonus = streak * 5\n' +
+				'  punkte += bonus\n' +
+				'  letztes = aktuell\n' +
+				'  show_text "✅ " + aktuell + "! +" + (10 + bonus) + " Pkt | Streak: " + streak + "x" winner\n' +
+				'else\n' +
+				'  streak = 0\n' +
+				'  show_text "🔄 Schon gezeigt! Wechsle! Punkte: " + punkte draw\n'
+			}
+		];
+	}
 
-		// ═══════════════════════════════════════════════════════════════
-		// BEISPIEL 2: YOLO Objekt-Zähler mit Statistik
-		// Funktioniert mit jedem Modell
-		// ═══════════════════════════════════════════════════════════════
-		examples.push({
-		    name: '📊 Objekt-Zähler & Statistik',
-		    code:
-			'# ══ OBJEKT-ZÄHLER MIT STATISTIK ══\n' +
-			'# Zählt Erkennungen über Zeit und zeigt Rekord\n' +
-			'\n' +
-			'aktuell = detection_count\n' +
-			'\n' +
-			'# Gesamtzähler hochzählen\n' +
-			'if aktuell > 0\n' +
-			'  gesamt += aktuell\n' +
-			'  frames += 1\n' +
-			'end\n' +
-			'\n' +
-			'# Rekord tracken\n' +
-			'if aktuell > rekord\n' +
-			'  rekord = aktuell\n' +
-			'end\n' +
-			'\n' +
-			'# Anzeige\n' +
-			'if aktuell == 0\n' +
-			'  show_text "Nichts erkannt... Rekord: " + rekord normal\n' +
-			'elif aktuell == rekord\n' +
-			'  show_text "🏆 NEUER REKORD! " + rekord + " Objekte!" winner\n' +
-			'else\n' +
-			'  show_text "Erkannt: " + aktuell + " | Rekord: " + rekord + " | Gesamt: " + gesamt normal\n' +
-			'end\n' +
-			'\n' +
-			'print "Aktuell: " + aktuell + " | Bestes: " + largest_detection + " (" + highest_conf_detection.probability + ")"\n'
-		});
+	// ─── Galerie rendern ────────────────────────────────────────────────
+	function renderExampleGallery() {
+	    var container = document.getElementById('example_cards_container');
+	    if (!container) return;
+	    container.innerHTML = '';
 
-		// ═══════════════════════════════════════════════════════════════
-		// BEISPIEL 3: Links-Rechts-Duell (2 Spieler)
-		// Wer hat das größere / konfidentere Objekt?
-		// ═══════════════════════════════════════════════════════════════
-		examples.push({
-		    name: '⚔️ Links-Rechts-Duell',
-		    code:
-			'# ══ LINKS vs RECHTS DUELL ══\n' +
-			'# Zwei Spieler halten Objekte in die Kamera\n' +
-			'# Wer das konfidentere Objekt hat, gewinnt!\n' +
-			'\n' +
-			'links = leftmost_detection\n' +
-			'rechts = rightmost_detection\n' +
-			'links_conf = leftmost_detection.probability\n' +
-			'rechts_conf = rightmost_detection.probability\n' +
-			'\n' +
-			'if detection_count < 2\n' +
-			'  runden += 1\n' +
-			'  show_text "⏳ Runde " + runden + " — Beide Spieler bereit?" normal\n' +
-			'elif links_conf > rechts_conf\n' +
-			'  score_links += 1\n' +
-			'  show_text "⬅️ LINKS gewinnt! " + links + " (" + links_conf + ") | Stand: " + score_links + " - " + score_rechts winner\n' +
-			'elif rechts_conf > links_conf\n' +
-			'  score_rechts += 1\n' +
-			'  show_text "➡️ RECHTS gewinnt! " + rechts + " (" + rechts_conf + ") | Stand: " + score_links + " - " + score_rechts winner\n' +
-			'else\n' +
-			'  show_text "GLEICHSTAND! Beide gleich stark 💪" draw\n' +
-			'end\n' +
-			'\n' +
-			'# Endspiel-Check\n' +
-			'if score_links >= 10\n' +
-			'  show_text "🏆🏆🏆 LINKS GEWINNT DAS SPIEL! 🏆🏆🏆" winner\n' +
-			'end\n' +
-			'if score_rechts >= 10\n' +
-			'  show_text "🏆🏆🏆 RECHTS GEWINNT DAS SPIEL! 🏆🏆🏆" winner\n' +
-			'end\n'
-		});
+	    var examples = getExamplePrograms();
 
-		// ═══════════════════════════════════════════════════════════════
-		// BEISPIEL 4: Sammelspiel / Catch-Game
-		// Sammle so viele verschiedene Objekte wie möglich
-		// ═══════════════════════════════════════════════════════════════
-		examples.push({
-		    name: '🎯 Sammelspiel',
-		    code:
-			'# ══ SAMMELSPIEL ══\n' +
-			'# Zeige verschiedene Objekte, um Punkte zu sammeln!\n' +
-			'# Gleiches Objekt zweimal hintereinander = keine Punkte\n' +
-			'\n' +
-			'aktuell = highest_conf_detection\n' +
-			'\n' +
-			'if aktuell == "none"\n' +
-			'  show_text "🎯 Zeige ein Objekt! Punkte: " + punkte normal\n' +
-			'elif aktuell != letztes_objekt\n' +
-			'  # Neues Objekt erkannt!\n' +
-			'  punkte += 10\n' +
-			'  streak += 1\n' +
-			'  bonus = streak * 5\n' +
-			'  punkte += bonus\n' +
-			'  letztes_objekt = aktuell\n' +
-			'  show_text "✅ " + aktuell + "! +" + (10 + bonus) + " Pkt | Streak: " + streak + "x | Total: " + punkte winner\n' +
-			'else\n' +
-			'  # Gleiches Objekt nochmal\n' +
-			'  streak = 0\n' +
-			'  show_text "🔄 " + aktuell + " schon gezeigt! Wechsle! Punkte: " + punkte draw\n' +
-			'end\n' +
-			'\n' +
-			'# Highscore\n' +
-			'if punkte > highscore\n' +
-			'  highscore = punkte\n' +
-			'end\n' +
-			'print "Punkte: " + punkte + " | Highscore: " + highscore + " | Streak: " + streak\n'
-		});
+	    for (var i = 0; i < examples.length; i++) {
+		(function(ex, index) {
+		    var card = document.createElement('div');
+		    card.className = 'example-card';
+		    card.style.borderColor = ex.color;
 
-		// ═══════════════════════════════════════════════════════════════
-		// BEISPIEL 5: Reaktionsspiel / Simon Says
-		// Das Spiel sagt, welches Objekt gezeigt werden soll
-		// ═══════════════════════════════════════════════════════════════
-		examples.push({
-		    name: '🧠 Reaktionsspiel',
-		    code:
-			'# ══ REAKTIONSSPIEL ══\n' +
-			'# Zeige das geforderte Objekt so schnell wie möglich!\n' +
-			'\n' +
-			'# Ziel wechseln alle paar Frames\n' +
-			'timer += 1\n' +
-			'\n' +
-			'# Neues Ziel setzen (wechselt zwischen Labels)\n' +
-			'if ziel == "none" or ziel == 0\n' +
-			'  ziel = "' + l1 + '"\n' +
-			'  timer = 0\n' +
-			'end\n' +
-			'\n' +
-			'# Timeout: Ziel wechseln nach 30 Frames (~10 Sek bei 3fps)\n' +
-			'if timer > 30\n' +
-			'  verpasst += 1\n' +
-			'  timer = 0\n' +
-			'  if ziel == "' + l1 + '"\n' +
-			'    ziel = "' + l2 + '"\n' +
-			'  else\n' +
-			'    ziel = "' + l1 + '"\n' +
-			'  end\n' +
-			'  show_text "⏰ Zu langsam! Verpasst: " + verpasst loser\n' +
-			'end\n' +
-			'\n' +
-			'# Prüfen ob richtiges Objekt gezeigt wird\n' +
-			'erkannt = highest_conf_detection\n' +
-			'\n' +
-			'if erkannt == ziel\n' +
-			'  treffer += 1\n' +
-			'  timer = 0\n' +
-			'  # Ziel wechseln\n' +
-			'  if ziel == "' + l1 + '"\n' +
-			'    ziel = "' + l2 + '"\n' +
-			'  else\n' +
-			'    ziel = "' + l1 + '"\n' +
-			'  end\n' +
-			'  show_text "✅ RICHTIG! Treffer: " + treffer winner\n' +
-			'elif erkannt != "none"\n' +
-			'  show_text "❌ Falsch! Zeige: " + ziel + " (nicht " + erkannt + ")" loser\n' +
-			'else\n' +
-			'  rest = 30 - timer\n' +
-			'  show_text "🎯 Zeige: " + ziel + " | Zeit: " + rest + " | Treffer: " + treffer normal\n' +
-			'end\n'
-		});
+		    card.innerHTML =
+			'<div class="example-card-icon" style="background:' + ex.color + '22; color:' + ex.color + '">' +
+			    '<span class="example-big-icon">' + ex.icon + '</span>' +
+			'</div>' +
+			'<div class="example-card-body">' +
+			    '<h3>' + ex.name + '</h3>' +
+			    '<div class="example-difficulty">' + ex.difficulty + '</div>' +
+			    '<p>' + ex.description + '</p>' +
+			    '<div class="example-preview">' + ex.preview + '</div>' +
+			'</div>';
 
-		// ─── Beispiel laden (rotierend) ─────────────────────────
-		var example = examples[exampleIndex % examples.length];
-		exampleIndex++;
+		    card.addEventListener('click', function() {
+			if (typeof window.loadCodeToBlocks === 'function') {
+			    window.loadCodeToBlocks(ex.code);
+			} else {
+			    editor.value = ex.code;
+			}
+			persistentVars = {}; // Reset variables
+			clearOutput();
+			appendOutput("🎮 " + ex.name + " geladen!");
+			appendOutput("   " + ex.description);
+			document.getElementById('example_gallery_modal').classList.remove('visible');
 
-		if (typeof window.loadCodeToBlocks === 'function') {
-		    window.loadCodeToBlocks(example.code);
-		} else {
-		    editor.value = example.code;
-		}
-		appendOutput("💡 Beispiel " + exampleIndex + "/5 geladen: " + example.name);
-		appendOutput("   (Nochmal klicken für nächstes Beispiel)");
+			// Confetti effect
+			showConfetti();
+		    });
+
+		    container.appendChild(card);
+		})(examples[i], i);
+	    }
+	}
+
+	// ─── Confetti-Effekt beim Laden ─────────────────────────────────────
+	function showConfetti() {
+	    var emojis = ['🎉', '⭐', '🎮', '🚀', '✨', '💫'];
+	    for (var i = 0; i < 12; i++) {
+		(function(delay) {
+		    setTimeout(function() {
+			var particle = document.createElement('div');
+			particle.className = 'confetti-particle';
+			particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+			particle.style.left = (Math.random() * 100) + '%';
+			particle.style.animationDuration = (1 + Math.random() * 2) + 's';
+			document.getElementById('game_editor_page').appendChild(particle);
+			setTimeout(function() { particle.remove(); }, 3000);
+		    }, delay * 80);
+		})(i);
+	    }
+	}
+
+	// ─── Button-Binding für Galerie ─────────────────────────────────────
+	var btnShowExamples = document.getElementById('btn_show_examples');
+	if (btnShowExamples) {
+	    btnShowExamples.addEventListener('click', function() {
+		renderExampleGallery();
+		document.getElementById('example_gallery_modal').classList.add('visible');
 	    });
 	}
+
+	// KEEP the old btn_load_example as fallback, but also make it open gallery:
+	var btnLoadExample = document.getElementById('btn_load_example');
+	if (btnLoadExample) {
+	    btnLoadExample.addEventListener('click', function() {
+		renderExampleGallery();
+		document.getElementById('example_gallery_modal').classList.add('visible');
+	    });
+	}
+
 
 
     // ─── Cleanup on unload ──────────────────────────────────────────────

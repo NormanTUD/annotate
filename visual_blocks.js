@@ -26,63 +26,63 @@
         { value: 'detection_count', label: '🔢 anzahl' }
     ];
 
-    var operators = [
-        { value: '==', label: 'ist gleich' },
-        { value: '!=', label: 'ist nicht' },
-        { value: '>=', label: '≥' },
-        { value: '<=', label: '≤' },
-        { value: '>', label: '>' },
-        { value: '<', label: '<' }
-    ];
+	var operators = [
+		{ value: '==', label: 'ist gleich' },
+		{ value: '!=', label: 'ist nicht' },
+		{ value: '>=', label: 'ist größer oder gleich' },
+		{ value: '<=', label: 'ist kleiner oder gleich' },
+		{ value: '>', label: 'ist größer als' },
+		{ value: '<', label: 'ist kleiner als' }
+	];
 
     var modelLabels = [];
     var activeCategory = 'sensing'; // default open category
 
-    // ─── Category definitions (compact) ─────────────────────────────────
-    var categories = {
-        sensing: {
-            label: '📡 Erkennung',
-            color: '#4fc3f7',
-            blocks: [
-                { type: 'get_left',     icon: '🎯', text: 'links = was links ist' },
-                { type: 'get_right',    icon: '🎯', text: 'rechts = was rechts ist' },
-                { type: 'get_count',    icon: '🔢', text: 'anzahl = wie viele?' },
-                { type: 'get_top',      icon: '🎯', text: 'oben = was oben ist' },
-                { type: 'get_bottom',   icon: '🎯', text: 'unten = was unten ist' },
-                { type: 'get_largest',  icon: '🎯', text: 'größtes = größte Erkennung' },
-                { type: 'get_smallest', icon: '🎯', text: 'kleinstes = kleinste' },
-                { type: 'get_best',     icon: '🎯', text: 'bestes = sicherste' }
-            ]
-        },
-        control: {
-            label: '🔀 Steuerung',
-            color: '#ffb74d',
-            blocks: [
-                { type: 'if',    icon: '🔶', text: 'wenn ___ dann' },
-                { type: 'elif',  icon: '🔷', text: 'sonst wenn ___' },
-                { type: 'else',  icon: '⬜', text: 'sonst' },
-                { type: 'end',   icon: '🔚', text: 'ende' },
-                { type: 'while', icon: '🔁', text: 'solange ___ wiederhole' },
-                { type: 'for',   icon: '🔄', text: 'für i von ___ bis ___' }
-            ]
-        },
-        output: {
-            label: '💬 Ausgabe',
-            color: '#ba68c8',
-            blocks: [
-                { type: 'print',     icon: '💬', text: 'sag ___' },
-                { type: 'show_text', icon: '📺', text: 'zeige auf Bild ___' }
-            ]
-        },
-        variables: {
-            label: '📦 Variablen',
-            color: '#e57373',
-            blocks: [
-                { type: 'set_var',      icon: '📦', text: 'setze ___ = ___' },
-                { type: 'change_var',   icon: '➕', text: 'ändere ___ um ___' }
-            ]
-        }
-    };
+	// ─── Category definitions (SUPER KID-FRIENDLY) ─────────────────────────
+	var categories = {
+		sensing: {
+			label: '👀 Gucken',
+			color: '#4fc3f7',
+			blocks: [
+				{ type: 'get_best',    icon: '⭐', text: 'Was sehe ich am besten?' },
+				{ type: 'get_count',   icon: '🔢', text: 'Wie viele Dinge sehe ich?' },
+				{ type: 'get_left',    icon: '👈', text: 'Was ist links im Bild?' },
+				{ type: 'get_right',   icon: '👉', text: 'Was ist rechts im Bild?' },
+			],
+			help: '🎓 Diese Blöcke schauen, was die Kamera sieht!'
+		},
+		control: {
+			label: '🤔 Entscheiden',
+			color: '#ffb74d',
+			blocks: [
+				{ type: 'if',    icon: '❓', text: 'Wenn ... dann ...' },
+				{ type: 'elif',  icon: '🤔', text: 'Oder wenn ...' },
+				{ type: 'else',  icon: '🤷', text: 'Ansonsten ...' },
+				{ type: 'end',   icon: '🏁', text: 'Ende der Entscheidung' },
+			],
+			help: '🎓 Hier entscheidet dein Programm, was es tun soll!'
+		},
+		output: {
+			label: '📢 Zeigen',
+			color: '#ba68c8',
+			blocks: [
+				{ type: 'show_text', icon: '🖥️', text: 'Text auf dem Bild zeigen' },
+				{ type: 'print',     icon: '💬', text: 'Text ins Protokoll schreiben' },
+			],
+			help: '🎓 Zeige Nachrichten auf dem Bildschirm!'
+		},
+		variables: {
+			label: '🎒 Merken',
+			color: '#e57373',
+			blocks: [
+				{ type: 'set_var',    icon: '📝', text: 'Merke: Name = Wert' },
+				{ type: 'change_var', icon: '🔼', text: 'Zähle hoch / runter' },
+			],
+			help: '🎓 Speichere Punkte, Ergebnisse und mehr!'
+		}
+	};
+
+
 
     // ─── Build compact palette with tabs ────────────────────────────────
     function buildPalette() {
@@ -125,23 +125,25 @@
             blockList.appendChild(block);
         }
 
-        // If sensing tab and we have model labels, show them too
-        if (activeCategory === 'sensing' && modelLabels.length > 0) {
-            var labelHeader = document.createElement('div');
-            labelHeader.className = 'palette-sublabel';
-            labelHeader.textContent = '🏷️ Kategorien';
-            blockList.appendChild(labelHeader);
+	    if (cat.help) {
+		    var helpDiv = document.createElement('div');
+		    helpDiv.className = 'palette-help-hint';
+		    helpDiv.textContent = cat.help;
+		    blockList.appendChild(helpDiv);
+	    }
 
-            for (var i = 0; i < modelLabels.length; i++) {
-                var lb = document.createElement('div');
-                lb.className = 'palette-block cat-labels';
-                lb.setAttribute('data-block-type', 'label_value');
-                lb.setAttribute('data-label', modelLabels[i]);
-                lb.setAttribute('draggable', 'true');
-                lb.innerHTML = '🏷️ "' + modelLabels[i] + '"';
-                blockList.appendChild(lb);
-            }
-        }
+	    // ✅ ADD THIS instead:
+	    if (activeCategory === 'sensing' && modelLabels.length > 0) {
+		    var hint = document.createElement('div');
+		    hint.className = 'palette-sublabel';
+		    hint.style.marginTop = '12px';
+		    hint.style.fontSize = '0.68rem';
+		    hint.style.color = '#a6adc8';
+		    hint.style.lineHeight = '1.4';
+		    hint.innerHTML = '💡 Dein Modell kennt: <strong>' + modelLabels.join(', ') + '</strong>';
+		    blockList.appendChild(hint);
+	    }
+
 
         palette.appendChild(blockList);
     }
@@ -232,76 +234,91 @@
     }
 
     // ─── Indentation calculation ────────────────────────────────────────
-    function recalcIndentation() {
-        var blocks = workspace.querySelectorAll('.workspace-block');
-        var indent = 0;
-        for (var i = 0; i < blocks.length; i++) {
-            var type = blocks[i].getAttribute('data-block-type');
+	function recalcIndentation() {
+		var blocks = workspace.querySelectorAll('.workspace-block');
+		var indent = 0;
+		for (var i = 0; i < blocks.length; i++) {
+			var type = blocks[i].getAttribute('data-block-type');
 
-            if (type === 'end' || type === 'elif' || type === 'else') {
-                indent = Math.max(0, indent - 1);
-            }
+			if (type === 'elif' || type === 'else') {
+				indent = Math.max(0, indent - 1);
+			}
 
-            blocks[i].setAttribute('data-indent', indent);
-            blocks[i].style.marginLeft = (indent * 28) + 'px';
+			blocks[i].setAttribute('data-indent', indent);
+			blocks[i].style.marginLeft = (indent * 28) + 'px';
 
-            if (type === 'if' || type === 'elif' || type === 'else' || type === 'while' || type === 'for') {
-                indent++;
-            }
-        }
-    }
+			if (type === 'if' || type === 'elif' || type === 'else' || type === 'while' || type === 'for') {
+				indent++;
+			}
+		}
+	}
 
     // ─── Snap validation ────────────────────────────────────────────────
-    function canSnap(blockType, targetBlock, position) {
-        if (!targetBlock) return true;
+	function canSnap(blockType, targetBlock, position) {
+		if (!targetBlock) return true;
 
-        var blocks = Array.from(workspace.querySelectorAll('.workspace-block'));
-        var targetIdx = blocks.indexOf(targetBlock);
+		var blocks = Array.from(workspace.querySelectorAll('.workspace-block'));
+		var targetIdx = blocks.indexOf(targetBlock);
 
-        if (blockType === 'elif' || blockType === 'else') {
-            var aboveIdx = position === 'above' ? targetIdx - 1 : targetIdx;
-            if (aboveIdx < 0) return false;
-            var depth = 0;
-            for (var i = aboveIdx; i >= 0; i--) {
-                var t = blocks[i].getAttribute('data-block-type');
-                if (t === 'end') depth++;
-                if (t === 'if' && depth === 0) return true;
-                if (t === 'elif' && depth === 0) return true;
-                if (t === 'else' && depth === 0) return (blockType === 'end');
-                if (t === 'if') depth--;
-            }
-            return false;
-        }
+		if (blockType === 'elif' || blockType === 'else') {
+			var aboveIdx = position === 'above' ? targetIdx - 1 : targetIdx;
+			if (aboveIdx < 0) return false;
+			var depth = 0;
+			for (var i = aboveIdx; i >= 0; i--) {
+				var t = blocks[i].getAttribute('data-block-type');
+				if (t === 'if' && depth === 0) return true;
+				if (t === 'elif' && depth === 0) return true;
+				if (t === 'else' && depth === 0) return false;
+				if (t === 'if') depth--;
+			}
+			return false;
+		}
 
-        if (blockType === 'end') {
-            var openBlocks = 0;
-            var checkIdx = position === 'above' ? targetIdx : targetIdx + 1;
-            for (var i = 0; i < checkIdx && i < blocks.length; i++) {
-                var t = blocks[i].getAttribute('data-block-type');
-                if (t === 'if' || t === 'while' || t === 'for') openBlocks++;
-                if (t === 'end') openBlocks--;
-            }
-            return openBlocks > 0;
-        }
-
-        return true;
-    }
+		return true;
+	}
 
     // ─── Sync blocks to DSL code ────────────────────────────────────────
-    function syncBlocksToDSL() {
-        recalcIndentation();
-        var blocks = workspace.querySelectorAll('.workspace-block');
-        var lines = [];
-        for (var i = 0; i < blocks.length; i++) {
-            var code = getBlockCode(blocks[i]);
-            if (code !== null) lines.push(code);
-        }
-        dslEditor.value = lines.join('\n');
+	function syncBlocksToDSL() {
+		recalcIndentation();
+		var blocks = workspace.querySelectorAll('.workspace-block');
+		var lines = [];
+		var indentStack = []; // track indent levels
 
-        if (placeholder) {
-            placeholder.style.display = blocks.length === 0 ? 'block' : 'none';
-        }
-    }
+		for (var i = 0; i < blocks.length; i++) {
+			var code = getBlockCode(blocks[i]);
+			if (code === null) continue;
+
+			var currentIndent = parseInt(blocks[i].getAttribute('data-indent')) || 0;
+
+			// Wenn die Einrückung sinkt, "end" einfügen
+			while (indentStack.length > 0 && indentStack[indentStack.length - 1] >= currentIndent) {
+				// Aber nicht vor elif/else — die gehören zum selben if-Block
+				var type = blocks[i].getAttribute('data-block-type');
+				if (type === 'elif' || type === 'else') break;
+				lines.push('end');
+				indentStack.pop();
+			}
+
+			lines.push(code);
+
+			var type = blocks[i].getAttribute('data-block-type');
+			if (type === 'if' || type === 'elif' || type === 'else' || type === 'while' || type === 'for') {
+				indentStack.push(currentIndent);
+			}
+		}
+
+		// Alle offenen Blöcke am Ende schließen
+		while (indentStack.length > 0) {
+			lines.push('end');
+			indentStack.pop();
+		}
+
+		dslEditor.value = lines.join('\n');
+
+		if (placeholder) {
+			placeholder.style.display = blocks.length === 0 ? 'block' : 'none';
+		}
+	}
 
     function getBlockCode(block) {
         var type = block.getAttribute('data-block-type');
@@ -338,7 +355,6 @@
                 return 'for ' + forVar + ' in range(' + forEnd + ')';
 
             case 'else': return 'else';
-            case 'end':  return 'end';
 
             case 'print':
                 return 'print ' + (getInputValue(inputs, 0) || '"Hallo!"');
@@ -511,21 +527,22 @@
         setTimeout(function() { block.classList.remove('shake'); }, 400);
     }
 
-    function getCategoryClass(type) {
-        var map = {
-            'get_left': 'cat-sensing', 'get_right': 'cat-sensing',
-            'get_count': 'cat-sensing', 'get_top': 'cat-sensing',
-            'get_bottom': 'cat-sensing', 'get_largest': 'cat-sensing',
-            'get_smallest': 'cat-sensing', 'get_best': 'cat-sensing',
-            'if': 'cat-control', 'elif': 'cat-control',
-            'else': 'cat-control', 'end': 'cat-control',
-            'while': 'cat-control', 'for': 'cat-control',
-            'print': 'cat-output', 'show_text': 'cat-display',
-            'set_var': 'cat-variables', 'change_var': 'cat-variables',
-            'label_value': 'cat-labels'
-        };
-        return map[type] || '';
-    }
+	function getCategoryClass(type) {
+		var map = {
+			'get_left': 'cat-sensing', 'get_right': 'cat-sensing',
+			'get_count': 'cat-sensing', 'get_top': 'cat-sensing',
+			'get_bottom': 'cat-sensing', 'get_largest': 'cat-sensing',
+			'get_smallest': 'cat-sensing', 'get_best': 'cat-sensing',
+			'if': 'cat-control', 'elif': 'cat-control',
+			'else': 'cat-control',
+			'while': 'cat-control', 'for': 'cat-control',
+			'print': 'cat-output', 'show_text': 'cat-display',
+			'set_var': 'cat-variables', 'change_var': 'cat-variables',
+			'label_value': 'cat-labels'
+		};
+		return map[type] || '';
+	}
+
 
     // ─── Build block DOM ────────────────────────────────────────────────
     function buildBlockDOM(block, type, data) {
@@ -558,48 +575,74 @@
                 content.innerHTML = '<span class="bi">🎯</span> <strong>bestes</strong> = sicherste';
                 break;
 
-            case 'if':
-            case 'elif':
-                var keyword = type === 'if' ? 'wenn' : 'sonst wenn';
-                var icon = type === 'if' ? '🔶' : '🔷';
-                var condData = (data && data.condition) || {};
+		case 'if':
+		case 'elif':
+		    var keyword = type === 'if' ? 'wenn' : 'sonst wenn';
+		    var icon = type === 'if' ? '🔶' : '🔷';
+		    var condData = (data && data.condition) || {};
 
-                content.innerHTML = '<span class="bi">' + icon + '</span> <span class="bk">' + keyword + '</span> ';
+		    content.innerHTML = '<span class="bi">' + icon + '</span> <span class="bk">' + keyword + '</span> ';
 
-                var leftOpts = sensorVars.slice();
-                var leftSelect = buildSelect(leftOpts, condData.left || 'links', 'cond-left');
-                content.appendChild(leftSelect);
+		    // LEFT side: combo of select + free input
+		    var leftVal = condData.left || 'links';
+		    var leftOpts = sensorVars.slice();
+		    var leftIsCustom = !leftOpts.some(function(o) { return o.value === leftVal; });
+		    if (leftIsCustom) {
+			leftOpts.unshift({ value: leftVal, label: '📝 ' + leftVal });
+		    }
+		    var leftSelect = buildSelect(leftOpts, leftVal, 'cond-left');
+		    content.appendChild(leftSelect);
 
-                var opSelect = buildSelect(operators, condData.op || '==', 'cond-op');
-                content.appendChild(opSelect);
+		    var opSelect = buildSelect(operators, condData.op || '==', 'cond-op');
+		    content.appendChild(opSelect);
 
-                var rightSelect = buildSelect(getCompareValues(), condData.right || '"none"', 'cond-value');
-                content.appendChild(rightSelect);
+		    // RIGHT side: combo of select + free input
+		    var rightVal = condData.right || '"none"';
+		    var rightOpts = getCompareValues();
+		    var rightIsCustom = !rightOpts.some(function(o) { return o.value === rightVal; });
+		    if (rightIsCustom) {
+			rightOpts.unshift({ value: rightVal, label: '📝 ' + rightVal });
+		    }
+		    var rightSelect = buildSelect(rightOpts, rightVal, 'cond-value');
+		    content.appendChild(rightSelect);
 
-                var thenSpan = document.createElement('span');
-                thenSpan.className = 'bk';
-                thenSpan.textContent = ' dann';
-                content.appendChild(thenSpan);
-                break;
+		    var thenSpan = document.createElement('span');
+		    thenSpan.className = 'bk';
+		    thenSpan.textContent = ' dann';
+		    content.appendChild(thenSpan);
+		    break;
 
-            case 'while':
-                var wCondData = (data && data.condition) || {};
-                content.innerHTML = '<span class="bi">🔁</span> <span class="bk">solange</span> ';
+		case 'while':
+		    var wCondData = (data && data.condition) || {};
+		    content.innerHTML = '<span class="bi">🔁</span> <span class="bk">solange</span> ';
 
-                var wLeftSelect = buildSelect(sensorVars.slice(), wCondData.left || 'links', 'cond-left');
-                content.appendChild(wLeftSelect);
+		    var wLeftVal = wCondData.left || 'links';
+		    var wLeftOpts = sensorVars.slice();
+		    var wLeftIsCustom = !wLeftOpts.some(function(o) { return o.value === wLeftVal; });
+		    if (wLeftIsCustom) {
+			wLeftOpts.unshift({ value: wLeftVal, label: '📝 ' + wLeftVal });
+		    }
+		    var wLeftSelect = buildSelect(wLeftOpts, wLeftVal, 'cond-left');
+		    content.appendChild(wLeftSelect);
 
-                var wOpSelect = buildSelect(operators, wCondData.op || '!=', 'cond-op');
-                content.appendChild(wOpSelect);
+		    var wOpSelect = buildSelect(operators, wCondData.op || '!=', 'cond-op');
+		    content.appendChild(wOpSelect);
 
-                var wRightSelect = buildSelect(getCompareValues(), wCondData.right || '"none"', 'cond-value');
-                content.appendChild(wRightSelect);
+		    var wRightVal = wCondData.right || '"none"';
+		    var wRightOpts = getCompareValues();
+		    var wRightIsCustom = !wRightOpts.some(function(o) { return o.value === wRightVal; });
+		    if (wRightIsCustom) {
+			wRightOpts.unshift({ value: wRightVal, label: '📝 ' + wRightVal });
+		    }
+		    var wRightSelect = buildSelect(wRightOpts, wRightVal, 'cond-value');
+		    content.appendChild(wRightSelect);
 
-                var repeatSpan = document.createElement('span');
-                repeatSpan.className = 'bk';
-                repeatSpan.textContent = ' wiederhole';
-                content.appendChild(repeatSpan);
-                break;
+		    var repeatSpan = document.createElement('span');
+		    repeatSpan.className = 'bk';
+		    repeatSpan.textContent = ' wiederhole';
+		    content.appendChild(repeatSpan);
+		    break;
+
 
             case 'for':
                 content.innerHTML = '<span class="bi">🔄</span> <span class="bk">für</span> ';
@@ -626,10 +669,6 @@
 
             case 'else':
                 content.innerHTML = '<span class="bi">⬜</span> <span class="bk">sonst</span>';
-                break;
-
-            case 'end':
-                content.innerHTML = '<span class="bi">🔚</span> <span class="bk">ende</span>';
                 break;
 
             case 'print':
@@ -854,7 +893,7 @@
             return { type: 'elif', data: { condition: cond } };
         }
         if (line === 'else') return { type: 'else', data: {} };
-        if (line === 'end') return { type: 'end', data: {} };
+	if (line === 'end') return null; // wird ignoriert, Einrückung reicht
 
         // While loop
         if (line.startsWith('while ')) {
