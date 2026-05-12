@@ -443,6 +443,14 @@
 		// Variable lookup
 		if (vars.hasOwnProperty(expr)) return vars[expr];
 
+		// ═══ FIX: Check if it LOOKS like a variable name ═══
+		// If it matches a valid identifier pattern but isn't in vars,
+		// return 0 instead of the variable name as string.
+		// This prevents "rekord" showing up as text instead of 0.
+		if (/^[a-zA-Z_\u00C0-\u024F][a-zA-Z0-9_\u00C0-\u024F]*$/.test(expr)) {
+			return 0;
+		}
+
 		// Unknown → return as string
 		return expr;
 	}
@@ -1259,19 +1267,12 @@
 				color: '#ffb74d',
 				code:
 				'# ══ REKORD-JÄGER ══\n' +
-				'# Initialisierung beim ersten Start\n' +
-				'if rekord == "rekord"\n' +
-				'  rekord = 0\n' +
-				'end\n' +
-				'if gesamt == "gesamt"\n' +
-				'  gesamt = 0\n' +
-				'end\n' +
 				'aktuell = detection_count\n' +
-				'if aktuell > 0\n' +
-				'  gesamt += aktuell\n' +
-				'end\n' +
 				'if aktuell > rekord\n' +
 				'  rekord = aktuell\n' +
+				'end\n' +
+				'if aktuell > 0\n' +
+				'  gesamt += aktuell\n' +
 				'end\n' +
 				'if aktuell == 0\n' +
 				'  show_text "🔍 Zeige Objekte! Rekord: " + rekord normal\n' +
