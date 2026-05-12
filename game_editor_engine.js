@@ -1071,6 +1071,8 @@
 			}
 		}
 
+		console.log('DETECTIONS:', detections.length, 'detection_count wird:', detections.length);
+
 		drawGameDetections(detections);
 
 		// Nur neu parsen wenn sich der Code geändert hat (großer Performance-Gewinn!)
