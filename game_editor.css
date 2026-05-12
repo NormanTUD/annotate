@@ -764,3 +764,45 @@
 @media print {
     #game_editor_page { display: none; }
 }
+
+
+
+/* ─── Kid-friendly palette enhancements ──────────────────────────────── */
+.palette-block {
+    font-size: 0.8rem;        /* slightly bigger for readability */
+    padding: 8px 10px;        /* more breathing room */
+    border-radius: 12px;      /* rounder = friendlier */
+    margin-bottom: 6px;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.palette-block:hover {
+    transform: translateX(4px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Fun bounce animation when dropping a block */
+@keyframes bounceIn {
+    0%   { transform: scale(0.8); opacity: 0; }
+    50%  { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.workspace-block {
+    animation: bounceIn 0.25s ease-out;
+}
+
+/* Friendly hint text styling */
+.palette-sublabel {
+    font-size: 0.72rem;
+    color: #a6adc8;
+    padding: 10px 6px 4px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+/* Tab emojis bigger for touch targets */
+.palette-tab {
+    font-size: 1.3rem;
+    padding: 8px 4px;
+}

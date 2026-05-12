@@ -38,51 +38,46 @@
     var modelLabels = [];
     var activeCategory = 'sensing'; // default open category
 
-    // ─── Category definitions (compact) ─────────────────────────────────
-    var categories = {
-        sensing: {
-            label: '📡 Erkennung',
-            color: '#4fc3f7',
-            blocks: [
-                { type: 'get_left',     icon: '🎯', text: 'links = was links ist' },
-                { type: 'get_right',    icon: '🎯', text: 'rechts = was rechts ist' },
-                { type: 'get_count',    icon: '🔢', text: 'anzahl = wie viele?' },
-                { type: 'get_top',      icon: '🎯', text: 'oben = was oben ist' },
-                { type: 'get_bottom',   icon: '🎯', text: 'unten = was unten ist' },
-                { type: 'get_largest',  icon: '🎯', text: 'größtes = größte Erkennung' },
-                { type: 'get_smallest', icon: '🎯', text: 'kleinstes = kleinste' },
-                { type: 'get_best',     icon: '🎯', text: 'bestes = sicherste' }
-            ]
-        },
-        control: {
-            label: '🔀 Steuerung',
-            color: '#ffb74d',
-            blocks: [
-                { type: 'if',    icon: '🔶', text: 'wenn ___ dann' },
-                { type: 'elif',  icon: '🔷', text: 'sonst wenn ___' },
-                { type: 'else',  icon: '⬜', text: 'sonst' },
-                { type: 'end',   icon: '🔚', text: 'ende' },
-                { type: 'while', icon: '🔁', text: 'solange ___ wiederhole' },
-                { type: 'for',   icon: '🔄', text: 'für i von ___ bis ___' }
-            ]
-        },
-        output: {
-            label: '💬 Ausgabe',
-            color: '#ba68c8',
-            blocks: [
-                { type: 'print',     icon: '💬', text: 'sag ___' },
-                { type: 'show_text', icon: '📺', text: 'zeige auf Bild ___' }
-            ]
-        },
-        variables: {
-            label: '📦 Variablen',
-            color: '#e57373',
-            blocks: [
-                { type: 'set_var',      icon: '📦', text: 'setze ___ = ___' },
-                { type: 'change_var',   icon: '➕', text: 'ändere ___ um ___' }
-            ]
-        }
-    };
+	// ─── Category definitions (KID-FRIENDLY & FUN) ─────────────────────────
+	var categories = {
+		sensing: {
+			label: '👀 Sehen',
+			color: '#4fc3f7',
+			blocks: [
+				{ type: 'get_best',    icon: '⭐', text: 'Was sehe ich?' },
+				{ type: 'get_count',   icon: '🔢', text: 'Wie viele sehe ich?' },
+				{ type: 'get_left',    icon: '👈', text: 'Was ist links?' },
+				{ type: 'get_right',   icon: '👉', text: 'Was ist rechts?' },
+			]
+		},
+		control: {
+			label: '🤔 Denken',
+			color: '#ffb74d',
+			blocks: [
+				{ type: 'if',    icon: '❓', text: 'Wenn ... dann' },
+				{ type: 'elif',  icon: '🤔', text: 'Oder wenn ...' },
+				{ type: 'else',  icon: '🤷', text: 'Sonst' },
+				{ type: 'end',   icon: '✅', text: 'Fertig' },
+			]
+		},
+		output: {
+			label: '📢 Sagen',
+			color: '#ba68c8',
+			blocks: [
+				{ type: 'show_text', icon: '🖥️', text: 'Zeige auf Bildschirm' },
+				{ type: 'print',     icon: '💬', text: 'Schreibe ins Protokoll' },
+			]
+		},
+		variables: {
+			label: '🎒 Merken',
+			color: '#e57373',
+			blocks: [
+				{ type: 'set_var',    icon: '📝', text: 'Merke dir: ___ = ___' },
+				{ type: 'change_var', icon: '🔼', text: 'Zähle hoch um ___' },
+			]
+		}
+	};
+
 
     // ─── Build compact palette with tabs ────────────────────────────────
     function buildPalette() {
@@ -125,23 +120,18 @@
             blockList.appendChild(block);
         }
 
-        // If sensing tab and we have model labels, show them too
-        if (activeCategory === 'sensing' && modelLabels.length > 0) {
-            var labelHeader = document.createElement('div');
-            labelHeader.className = 'palette-sublabel';
-            labelHeader.textContent = '🏷️ Kategorien';
-            blockList.appendChild(labelHeader);
+	    // ✅ ADD THIS instead:
+	    if (activeCategory === 'sensing' && modelLabels.length > 0) {
+		    var hint = document.createElement('div');
+		    hint.className = 'palette-sublabel';
+		    hint.style.marginTop = '12px';
+		    hint.style.fontSize = '0.68rem';
+		    hint.style.color = '#a6adc8';
+		    hint.style.lineHeight = '1.4';
+		    hint.innerHTML = '💡 Dein Modell kennt: <strong>' + modelLabels.join(', ') + '</strong>';
+		    blockList.appendChild(hint);
+	    }
 
-            for (var i = 0; i < modelLabels.length; i++) {
-                var lb = document.createElement('div');
-                lb.className = 'palette-block cat-labels';
-                lb.setAttribute('data-block-type', 'label_value');
-                lb.setAttribute('data-label', modelLabels[i]);
-                lb.setAttribute('draggable', 'true');
-                lb.innerHTML = '🏷️ "' + modelLabels[i] + '"';
-                blockList.appendChild(lb);
-            }
-        }
 
         palette.appendChild(blockList);
     }
