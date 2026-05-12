@@ -492,56 +492,64 @@
         };
     }
 
-    // ─── Condition evaluator ────────────────────────────────────────────
-    function evaluateCondition(condStr, vars) {
-        condStr = condStr.trim();
+	// ─── Condition evaluator ────────────────────────────────────────────
+	function evaluateCondition(condStr, vars) {
+		condStr = condStr.trim();
 
-        // AND
-        var andParts = splitLogical(condStr, ' and ');
-        if (andParts.length > 1) {
-            for (var i = 0; i < andParts.length; i++) {
-                if (!evaluateCondition(andParts[i], vars)) return false;
-            }
-            return true;
-        }
+		// ═══ Deutsche Operatoren in Symbole umwandeln ═══
+		condStr = condStr.replace(/\bist größer oder gleich\b/g, '>=');
+		condStr = condStr.replace(/\bist kleiner oder gleich\b/g, '<=');
+		condStr = condStr.replace(/\bist größer als\b/g, '>');
+		condStr = condStr.replace(/\bist kleiner als\b/g, '<');
+		condStr = condStr.replace(/\bist gleich\b/g, '==');
+		condStr = condStr.replace(/\bist nicht\b/g, '!=');
 
-        // OR
-        var orParts = splitLogical(condStr, ' or ');
-        if (orParts.length > 1) {
-            for (var i = 0; i < orParts.length; i++) {
-                if (evaluateCondition(orParts[i], vars)) return true;
-            }
-            return false;
-        }
+		// AND
+		var andParts = splitLogical(condStr, ' and ');
+		if (andParts.length > 1) {
+			for (var i = 0; i < andParts.length; i++) {
+				if (!evaluateCondition(andParts[i], vars)) return false;
+			}
+			return true;
+		}
 
-        // NOT
-        if (condStr.startsWith('not ')) {
-            return !evaluateCondition(condStr.substring(4), vars);
-        }
+		// OR
+		var orParts = splitLogical(condStr, ' or ');
+		if (orParts.length > 1) {
+			for (var i = 0; i < orParts.length; i++) {
+				if (evaluateCondition(orParts[i], vars)) return true;
+			}
+			return false;
+		}
 
-        // Comparison operators
-        var operators = ['==', '!=', '>=', '<=', '>', '<'];
-        for (var i = 0; i < operators.length; i++) {
-            var op = operators[i];
-            var opIdx = findOperatorIndex(condStr, op);
-            if (opIdx !== -1) {
-                var leftVal = evaluateExpression(condStr.substring(0, opIdx).trim(), vars);
-                var rightVal = evaluateExpression(condStr.substring(opIdx + op.length).trim(), vars);
-                switch (op) {
-                    case '==': return leftVal == rightVal;
-                    case '!=': return leftVal != rightVal;
-                    case '>=': return parseFloat(leftVal) >= parseFloat(rightVal);
-                    case '<=': return parseFloat(leftVal) <= parseFloat(rightVal);
-                    case '>':  return parseFloat(leftVal) > parseFloat(rightVal);
-                    case '<':  return parseFloat(leftVal) < parseFloat(rightVal);
-                }
-            }
-        }
+		// NOT
+		if (condStr.startsWith('not ')) {
+			return !evaluateCondition(condStr.substring(4), vars);
+		}
 
-        // Truthy
-        var val = evaluateExpression(condStr, vars);
-        return !!val && val !== "none" && val !== 0 && val !== "0" && val !== "";
-    }
+		// Comparison operators
+		var operators = ['==', '!=', '>=', '<=', '>', '<'];
+		for (var i = 0; i < operators.length; i++) {
+			var op = operators[i];
+			var opIdx = findOperatorIndex(condStr, op);
+			if (opIdx !== -1) {
+				var leftVal = evaluateExpression(condStr.substring(0, opIdx).trim(), vars);
+				var rightVal = evaluateExpression(condStr.substring(opIdx + op.length).trim(), vars);
+				switch (op) {
+					case '==': return leftVal == rightVal;
+					case '!=': return leftVal != rightVal;
+					case '>=': return parseFloat(leftVal) >= parseFloat(rightVal);
+					case '<=': return parseFloat(leftVal) <= parseFloat(rightVal);
+					case '>':  return parseFloat(leftVal) > parseFloat(rightVal);
+					case '<':  return parseFloat(leftVal) < parseFloat(rightVal);
+				}
+			}
+		}
+
+		// Truthy
+		var val = evaluateExpression(condStr, vars);
+		return !!val && val !== "none" && val !== 0 && val !== "0" && val !== "";
+	}
 
     function findOperatorIndex(str, op) {
         var inStr = false, strChar = '', depth = 0;
@@ -1037,116 +1045,109 @@
     // ─── Game loop (requestAnimationFrame based) ────────────────────────
     var evalInterval = 333; // ~3 fps default
 
-    async function gameStep(timestamp) {
-        if (!gameRunning) return;
+	// ─── Game loop (smooth fixed interval) ────────────────────────────────
+	var gameInterval = null;
+	var cachedParsed = null;
+	var lastCode = '';
 
-        // Throttle evaluation
-        if (timestamp - lastEvalTime < evalInterval) {
-            animFrameId = requestAnimationFrame(gameStep);
-            return;
-        }
-        lastEvalTime = timestamp;
+	async function gameStep() {
+		if (!gameRunning) return;
 
-        var detections = [];
+		var detections = [];
 
-        if (gameModel && webcamStream && video.readyState >= 2) {
-            try {
-                detections = await runDetection();
-            } catch (e) {
-                detections = [];
-            }
-        }
+		if (gameModel && webcamStream && video.readyState >= 2) {
+			try {
+				detections = await runDetection();
+			} catch (e) {
+				detections = [];
+			}
+		}
 
-        drawGameDetections(detections);
+		drawGameDetections(detections);
 
-        // Parse and run DSL script
-        var code = editor.value;
-        var parsed = parseScript(code);
-        var vars = buildDSLContext(detections);
+		// Nur neu parsen wenn sich der Code geändert hat (großer Performance-Gewinn!)
+		var code = editor.value;
+		if (code !== lastCode) {
+			cachedParsed = parseScript(code);
+			lastCode = code;
+		}
 
-        try {
-            var results = interpretScript(parsed, vars);
+		var vars = buildDSLContext(detections);
 
-            // Save user-defined vars back to persistent storage
-            // (exclude detection builtins)
-            var builtinKeys = [
-                'detection_count',
-                'leftmost_detection', 'rightmost_detection',
-                'topmost_detection', 'bottommost_detection',
-                'largest_detection', 'smallest_detection',
-                'highest_conf_detection',
-                'leftmost_detection.probability', 'rightmost_detection.probability',
-                'topmost_detection.probability', 'bottommost_detection.probability',
-                'largest_detection.probability', 'smallest_detection.probability',
-                'highest_conf_detection.probability'
-            ];
-            for (var key in vars) {
-                if (vars.hasOwnProperty(key) && builtinKeys.indexOf(key) === -1) {
-                    persistentVars[key] = vars[key];
-                }
-            }
+		try {
+			var results = interpretScript(cachedParsed, vars);
 
-            if (results.output && results.output.length > 0) {
-                for (var i = 0; i < results.output.length; i++) {
-                    appendOutput(results.output[i]);
-                }
-            }
+			// Persistente Variablen speichern
+			var builtinKeys = [
+				'detection_count',
+				'leftmost_detection', 'rightmost_detection',
+				'topmost_detection', 'bottommost_detection',
+				'largest_detection', 'smallest_detection',
+				'highest_conf_detection',
+				'leftmost_detection.probability', 'rightmost_detection.probability',
+				'topmost_detection.probability', 'bottommost_detection.probability',
+				'largest_detection.probability', 'smallest_detection.probability',
+				'highest_conf_detection.probability'
+			];
+			for (var key in vars) {
+				if (vars.hasOwnProperty(key) && builtinKeys.indexOf(key) === -1) {
+					persistentVars[key] = vars[key];
+				}
+			}
 
-            if (results.showTextCommands && results.showTextCommands.length > 0) {
-                var lastCmd = results.showTextCommands[results.showTextCommands.length - 1];
-                showTextOnVideo(lastCmd.message, lastCmd.style);
-            } else {
-                clearTextOverlay();
-            }
-        } catch (e) {
-            appendOutput("FEHLER: " + (e.message || "Unbekannter Fehler"));
-            clearTextOverlay();
-        }
+			if (results.output && results.output.length > 0) {
+				for (var i = 0; i < results.output.length; i++) {
+					appendOutput(results.output[i]);
+				}
+			}
 
-        setStatus('Läuft | Erkennungen: ' + detections.length);
+			if (results.showTextCommands && results.showTextCommands.length > 0) {
+				var lastCmd = results.showTextCommands[results.showTextCommands.length - 1];
+				showTextOnVideo(lastCmd.message, lastCmd.style);
+			} else {
+				clearTextOverlay();
+			}
+		} catch (e) {
+			appendOutput("FEHLER: " + (e.message || "Unbekannter Fehler"));
+			clearTextOverlay();
+		}
 
-        // Schedule next frame
-        animFrameId = requestAnimationFrame(gameStep);
-    }
+		setStatus('Läuft | Erkennungen: ' + detections.length);
+	}
+
 
     // ─── Auto-start: triggered by model selection ───────────────────────
-    async function autoStart(modelUuid) {
-        if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
-        gameRunning = false;
-        persistentVars = {}; // Reset vars on model change
+	async function autoStart(modelUuid) {
+		if (gameInterval) { clearInterval(gameInterval); gameInterval = null; }
+		gameRunning = false;
+		persistentVars = {};
+		cachedParsed = null;
+		lastCode = '';
 
-        if (modelUuid === 'none') {
-            stopGameWebcam();
-            if (overlayCtx) overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            clearTextOverlay();
-            setStatus('Wähle ein Modell zum Starten');
-            return;
-        }
+		if (modelUuid === 'none') {
+			stopGameWebcam();
+			if (overlayCtx) overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+			clearTextOverlay();
+			setStatus('Wähle ein Modell zum Starten');
+			return;
+		}
 
-        setStatus('Kamera wird gestartet...');
-        var webcamOk = await startGameWebcam();
-        if (!webcamOk) {
-            setStatus('Kamera-Fehler');
-            appendOutput("⚠️ Kamera konnte nicht gestartet werden.");
-            return;
-        }
+		setStatus('Kamera wird gestartet...');
+		var webcamOk = await startGameWebcam();
+		if (!webcamOk) {
+			setStatus('Kamera-Fehler');
+			return;
+		}
 
-        setStatus('Modell wird geladen...');
-        var modelOk = await loadGameModel(modelUuid);
-        if (!modelOk) {
-            setStatus('Modell-Fehler');
-            appendOutput("⚠️ Modell konnte nicht geladen werden.");
-        }
+		setStatus('Modell wird geladen...');
+		await loadGameModel(modelUuid);
 
-        // Start the game loop with requestAnimationFrame
-        gameRunning = true;
-        var fps = parseInt(document.getElementById('game_fps').value) || 3;
-        evalInterval = Math.round(1000 / fps);
-        lastEvalTime = 0;
-        animFrameId = requestAnimationFrame(gameStep);
-        setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
-        appendOutput("🎮 Spiel läuft! Baue dein Programm links zusammen.");
-    }
+		gameRunning = true;
+		var fps = parseInt(document.getElementById('game_fps').value) || 3;
+		gameInterval = setInterval(gameStep, Math.round(1000 / fps));
+		setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
+		appendOutput("🎮 Spiel läuft!");
+	}
 
     // ─── Model select change ────────────────────────────────────────────
     var modelSelect = document.getElementById('game_model_select');
@@ -1180,13 +1181,15 @@
 
     // ─── FPS hot-swap ───────────────────────────────────────────────────
     var gameFpsInput = document.getElementById('game_fps');
-    if (gameFpsInput) {
-        gameFpsInput.addEventListener('input', function() {
-            var fps = Math.max(1, Math.min(10, parseInt(this.value) || 3));
-            evalInterval = Math.round(1000 / fps);
-            setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
-        });
-    }
+	if (gameFpsInput) {
+		gameFpsInput.addEventListener('input', function() {
+			if (!gameRunning || !gameInterval) return;
+			clearInterval(gameInterval);
+			var fps = Math.max(1, Math.min(10, parseInt(this.value) || 3));
+			gameInterval = setInterval(gameStep, Math.round(1000 / fps));
+			setStatus('Spiel läuft mit ' + fps + ' Auswertungen/Sek');
+		});
+	}
 
     // ─── Button bindings ────────────────────────────────────────────────
     var btnClearOutput = document.getElementById('btn_clear_output');
@@ -1213,36 +1216,39 @@
 	    var l3 = (gameLabels && gameLabels.length >= 3) ? gameLabels[2] : 'ObjektC';
 
 	    return [
-		{
-		    id: 'rps',
-		    name: '✊✌️✋ Schere Stein Papier',
-		    icon: '✊',
-		    difficulty: '⭐',
-		    description: 'Spiele gegen einen Freund! Haltet beide eure Hände in die Kamera.',
-		    preview: '👈 Spieler 1 | Spieler 2 👉',
-		    color: '#4fc3f7',
-		    code:
-			'# ══ SCHERE STEIN PAPIER ══\n' +
-			'spieler = leftmost_detection\n' +
-			'gegner = rightmost_detection\n' +
-			'if detection_count < 2\n' +
-			'  show_text "Zeigt beide eure Hände! ✊✌️✋" normal\n' +
-			'elif spieler == gegner\n' +
-			'  show_text "UNENTSCHIEDEN! 🤝 Beide: " + spieler draw\n' +
-			'elif spieler == "' + l1 + '" and gegner == "' + l2 + '"\n' +
-			'  siege += 1\n' +
-			'  show_text "SPIELER 1 GEWINNT! 🎉 Siege: " + siege winner\n' +
-			'elif spieler == "' + l2 + '" and gegner == "' + l3 + '"\n' +
-			'  siege += 1\n' +
-			'  show_text "SPIELER 1 GEWINNT! 🎉 Siege: " + siege winner\n' +
-			'elif spieler == "' + l3 + '" and gegner == "' + l1 + '"\n' +
-			'  siege += 1\n' +
-			'  show_text "SPIELER 1 GEWINNT! 🎉 Siege: " + siege winner\n' +
-			'else\n' +
-			'  niederlagen += 1\n' +
-			'  show_text "SPIELER 2 GEWINNT! 💪 Siege P2: " + niederlagen loser\n' +
-			'end\n'
-		},
+		    {
+			    id: 'rps',
+			    name: '✊✌️✋ Schere Stein Papier',
+			    icon: '✊',
+			    difficulty: '⭐',
+			    description: 'Spiele gegen einen Freund! Haltet beide eure Hände in die Kamera.',
+			    preview: '👈 Spieler 1 | Spieler 2 👉',
+			    color: '#4fc3f7',
+			    code:
+			    '# ══ SCHERE STEIN PAPIER ══\n' +
+			    '# Regeln: Schere schneidet Papier,\n' +
+			    '# Papier wickelt Stein ein,\n' +
+			    '# Stein macht Schere kaputt.\n' +
+			    'spieler = leftmost_detection\n' +
+			    'gegner = rightmost_detection\n' +
+			    'if detection_count ist kleiner als 2\n' +
+			    '  show_text "Zeigt beide eure Hände! ✊✌️✋" normal\n' +
+			    'elif spieler ist gleich gegner\n' +
+			    '  show_text "UNENTSCHIEDEN! 🤝 Beide: " + spieler draw\n' +
+			    'elif spieler ist gleich "' + l1 + '" and gegner ist gleich "' + l3 + '"\n' +
+			    '  siege += 1\n' +
+			    '  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+			    'elif spieler ist gleich "' + l3 + '" and gegner ist gleich "' + l2 + '"\n' +
+			    '  siege += 1\n' +
+			    '  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+			    'elif spieler ist gleich "' + l2 + '" and gegner ist gleich "' + l1 + '"\n' +
+			    '  siege += 1\n' +
+			    '  show_text "👈 SPIELER 1 GEWINNT! 🎉 " + spieler + " schlägt " + gegner winner\n' +
+			    'else\n' +
+			    '  niederlagen += 1\n' +
+			    '  show_text "👉 SPIELER 2 GEWINNT! 💪 " + gegner + " schlägt " + spieler loser\n' +
+			    'end\n'
+		    },
 		{
 		    id: 'counter',
 		    name: '📊 Rekord-Jäger',
