@@ -47,8 +47,34 @@ async function flush_annotation_queue() {
     const queue = _annotation_save_queue.splice(0);
 
     const to_delete = queue.filter(item => item._action === 'delete');
-    const to_save = queue.filter(item => item._action !== 'delete');
+    const to_update = queue.filter(item => item._action === 'update');
+    const to_save   = queue.filter(item => item._action === 'create' || item._action === 'update');
 
+    // 1) Lösche zuerst alte Annotationen bei Updates UND explizite Deletes
+    const all_deletes = [...to_delete, ...to_update];
+    if (all_deletes.length > 0) {
+        try {
+            await $.ajax({
+                url: "delete_batch.php",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    annotations: all_deletes.map(item => ({
+                        position: item.position,
+                        body: item.body,
+                        id: item.id,
+                        source: item.source,
+                        full: item.full
+                    }))
+                }),
+                dataType: "html"
+            });
+        } catch (err) {
+            error("Batch Delete Failed", err.statusText || err);
+        }
+    }
+
+    // 2) Dann speichere neue/geänderte Annotationen
     if (to_save.length > 0) {
         const batch = to_save.map(item => ({
             position: item.position,
@@ -73,35 +99,9 @@ async function flush_annotation_queue() {
         }
     }
 
-    // Batch deletes too instead of one-by-one
-    if (to_delete.length > 0) {
-        try {
-            await $.ajax({
-                url: "delete_batch.php",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({
-                    annotations: to_delete.map(item => ({
-                        position: item.position,
-                        body: item.body,
-                        id: item.id,
-                        source: item.source,
-                        full: item.full
-                    }))
-                }),
-                dataType: "html"
-            });
-        } catch (err) {
-            error("Batch Delete Failed", err.statusText || err);
-        }
-    }
-
     invalidateAnnoCache();
-
-    // Single debounced UI refresh — not three separate calls
     load_dynamic_content_debounced();
     create_selects_from_annotation_debounced(1);
-    // Don't call watch_svg_auto here — it's called by update_overlay_and_image_size already
 }
 
 function queue_annotation_event(action, annotation) {
