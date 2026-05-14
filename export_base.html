@@ -1946,39 +1946,38 @@
 		    }
 
 
-		    // ===== INIT =====
-			    $(document).ready(function() {
-				    // FIX #2: Labels visible by default — add class on load
-				    document.body.classList.add('show-labels');
-				    document.getElementById('btnLabels').style.borderColor = 'var(--accent)';
+		    $(document).ready(function() {
+			    // FIX #2: Labels visible by default — add class on load
+			    document.body.classList.add('show-labels');
+			    document.getElementById('btnLabels').style.borderColor = 'var(--accent)';
 
-				    // Setup lazy loading
-				    setupLazyLoading();
+			    // Setup lazy loading
+			    setupLazyLoading();
 
-				    // Set initial mode cursor
-				    document.querySelectorAll('.container_div').forEach(card => {
-					    card.style.cursor = 'zoom-in';
-				    });
-
-				    enhanceCards();
-				    buildLabelFilterBar();
-
-				    // Update count
-				    updateCountDisplay();
-
-				    // Load home stats
-				    printHome();
-
-				    // Apply URL params for mode
-				    const params = new URLSearchParams(window.location.search);
-				    if (params.get('curate_on_click')) {
-					    document.querySelector('[data-mode="curate"]').click();
-				    } else if (params.get('delete_on_click')) {
-					    document.querySelector('[data-mode="delete"]').click();
-				    }
-
-				    console.log(`✨ Export page loaded: ${document.querySelectorAll('.container_div').length} cards`);
+			    // Set initial mode cursor
+			    document.querySelectorAll('.container_div').forEach(card => {
+				    card.style.cursor = 'zoom-in';
 			    });
+
+			    enhanceCards();
+			    buildLabelFilterBar();
+
+			    // Update count
+			    updateCountDisplay();
+
+			    // Load home stats
+			    printHome();
+
+			    // Apply URL params for mode
+			    const params = new URLSearchParams(window.location.search);
+			    if (params.get('curate_on_click')) {
+				    document.querySelector('[data-mode="curate"]').click();
+			    } else if (params.get('delete_on_click')) {
+				    document.querySelector('[data-mode="delete"]').click();
+			    }
+
+			    console.log(`✨ Export page loaded: ${document.querySelectorAll('.container_div').length} cards`);
+		    });
 
 	    })();
     </script>
