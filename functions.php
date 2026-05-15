@@ -24,16 +24,25 @@
 	$GLOBALS["db_port"] = 3306;
 	$GLOBALS['db_username'] = "root";
 
-	if(file_exists("/etc/dbuser")) {
-		$GLOBALS["db_username"] = trim(fgets(fopen("/etc/dbuser", 'r')));
+	if (file_exists("/etc/dbuser")) {
+		$line = trim(explode("\n", file_get_contents("/etc/dbuser"), 2)[0]);
+		if ($line !== "") {
+			$GLOBALS["db_username"] = $line;
+		}
 	}
 
-	if(file_exists("/etc/dbport")) {
-		$GLOBALS["db_port"] = trim(fgets(fopen("/etc/dbport", 'r')));
+	if (file_exists("/etc/dbport")) {
+		$line = trim(explode("\n", file_get_contents("/etc/dbport"), 2)[0]);
+		if ($line !== "") {
+			$GLOBALS["db_port"] = $line;
+		}
 	}
 
-	if(file_exists("/etc/dbpw")) {
-		$GLOBALS["db_password"] = trim(fgets(fopen("/etc/dbpw", 'r')));
+	if (file_exists("/etc/dbpw")) {
+		$line = trim(explode("\n", file_get_contents("/etc/dbpw"), 2)[0]);
+		if ($line !== "") {
+			$GLOBALS["db_password"] = $line;
+		}
 	} else {
 		die("<tt>/etc/dbpw</tt> not found! Cannot connect to database without.");
 	}
