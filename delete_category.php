@@ -45,8 +45,13 @@ if ($annotation_count > 0) {
     rquery("UPDATE annotation SET deleted = '1' WHERE category_id = $category_id");
 }
 
-// Also remove from model_labels if applicable
-rquery("DELETE FROM model_labels WHERE category_id = $category_id");
+// Get the category name first
+$cat_name_result = rquery("SELECT name FROM category WHERE id = $category_id");
+$cat_name_row = mysqli_fetch_assoc($cat_name_result);
+if ($cat_name_row) {
+    $cat_name = $cat_name_row['name'];
+    rquery("DELETE FROM model_labels WHERE label_name = " . esc($cat_name));
+}
 
 // Delete the category
 $result = rquery("DELETE FROM category WHERE id = $category_id");
