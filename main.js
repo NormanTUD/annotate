@@ -2244,9 +2244,13 @@ function filterByConfidence(boxes, scores, confThreshold) {
 /**
  * Applies NMS on pre-filtered arrays (multi-label aware).
  * 
- * FIX #3: After NMS, merge class labels from suppressed boxes that overlap
- * with kept boxes. This prevents losing label information when two nearly-identical
- * boxes carry different secondary labels.
+ * FIX #8: Tighten the merge threshold and only merge labels from suppressed
+ * boxes that share at least one class with the kept box. This prevents
+ * unrelated labels from being pulled in just because two boxes overlap.
+ * 
+ * Previously: any suppressed box with IoU > iouThreshold * 0.8 would have
+ * ALL its labels merged into the kept box, even if the labels were completely
+ * unrelated. This caused "Ausreißer" labels that the user never annotated.
  */
 function applyNMS(filtered, iouThreshold) {
     console.log("=== applyNMS (MULTI-LABEL) DEBUG ===");
@@ -2274,16 +2278,29 @@ function applyNMS(filtered, iouThreshold) {
 
     for (const ki of keptArray) {
         const mergedClasses = new Set(classes[ki]);
+        const keptClassSet = new Set(classes[ki]);
 
-        // FIX #3: Merge labels from suppressed boxes that heavily overlap with this kept box
+        // FIX #8: Only merge labels from suppressed boxes that:
+        // 1. Have IoU > iouThreshold (strict, not * 0.8)
+        // 2. Share at least one class with the kept box
+        // This prevents unrelated labels from being pulled in
         for (let j = 0; j < boxes.length; j++) {
             if (keptIndices.has(j)) continue; // skip other kept boxes
             const overlap = iou(boxes[ki], boxes[j]);
-            if (overlap > iouThreshold * 0.8) { // slightly lower bar for merging
-                for (const c of classes[j]) {
-                    mergedClasses.add(c);
+
+            if (overlap > iouThreshold) {
+                // Check if the suppressed box shares at least one class with the kept box
+                const suppressedClasses = classes[j];
+                const hasSharedClass = suppressedClasses.some(c => keptClassSet.has(c));
+
+                if (hasSharedClass) {
+                    for (const c of suppressedClasses) {
+                        mergedClasses.add(c);
+                    }
+                    console.log(`  Merged classes from suppressed box[${j}] (IoU=${overlap.toFixed(3)}, shared class) into kept box[${ki}]`);
+                } else {
+                    console.log(`  Skipped merge from suppressed box[${j}] (IoU=${overlap.toFixed(3)}, NO shared class) — would have caused label contamination`);
                 }
-                console.log(`  Merged classes from suppressed box[${j}] (IoU=${overlap.toFixed(3)}) into kept box[${ki}]`);
             }
         }
 
@@ -2294,7 +2311,10 @@ function applyNMS(filtered, iouThreshold) {
 
     console.log(`  NMS kept ${finalBoxes.length} boxes`);
     for (let i = 0; i < Math.min(5, finalBoxes.length); i++) {
-        console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, classes=[${finalClasses[i].join(',')}]`);
+        const classNames = finalClasses[i].map(c => {
+            return (typeof labels !== 'undefined' && labels[c]) ? labels[c] : `cls${c}`;
+        });
+        console.log(`  Final box[${i}]: [${finalBoxes[i].map(v => v.toFixed(6)).join(', ')}], score=${finalScores[i].toFixed(4)}, classes=[${classNames.join(', ')}]`);
     }
 
     boxesTensor.dispose();
@@ -2312,7 +2332,11 @@ async function handleAnnotations(boxes, scores, classes) {
         return;
     }
 
-    const image_filename = $("#image").attr("src").replace(/.*filename=/, "");
+    // FIX: Strip cache-buster from filename
+    const image_filename = $("#image").attr("src")
+        .replace(/.*?filename=/, "")
+        .replace(/&.*$/, "");
+
     if (image_filename) {
         try {
             await $.ajax({
@@ -2326,28 +2350,59 @@ async function handleAnnotations(boxes, scores, classes) {
 
     const anno_boxes = [];
     const this_labels = get_labels();
-    const img_width = $("#image").width();
-    const img_height = $("#image").height();
+
+    // FIX #7: Use naturalWidth/naturalHeight instead of displayed width/height
+    // The displayed size is affected by zoom_factor, which would cause
+    // incorrect bounding box coordinates (the "Ausreißer" bug).
+    const imgElement = document.getElementById("image");
+    const img_width = imgElement.naturalWidth;
+    const img_height = imgElement.naturalHeight;
+
+    if (!img_width || !img_height) {
+        error("ERROR", "Image has no natural dimensions");
+        return;
+    }
 
     if (!this_labels || Object.keys(this_labels).length === 0) {
         error("ERROR", "has no labels");
         return;
     }
 
+    console.log(`handleAnnotations: using naturalWidth=${img_width}, naturalHeight=${img_height} (displayed: ${imgElement.width}x${imgElement.height}, zoom: ${zoom_factor})`);
+
     for (let i = 0; i < boxes.length; i++) {
         const [xMin, yMin, xMax, yMax] = boxes[i];
-        const x = Math.round(xMin * img_width);
-        const y = Math.round(yMin * img_height);
-        const w = Math.round((xMax - xMin) * img_width);
-        const h = Math.round((yMax - yMin) * img_height);
+
+        // FIX: Clamp normalized coordinates to [0, 1] before scaling
+        const clampedXMin = clamp(xMin, 0, 1);
+        const clampedYMin = clamp(yMin, 0, 1);
+        const clampedXMax = clamp(xMax, 0, 1);
+        const clampedYMax = clamp(yMax, 0, 1);
+
+        // FIX #7: Use naturalWidth/naturalHeight instead of displayed width/height
+        // The displayed size is affected by zoom_factor, which would cause
+        // incorrect bounding box coordinates (the "Ausreißer" bug).
+        const imgElement = document.getElementById("image");
+        const img_width = imgElement.naturalWidth;
+        const img_height = imgElement.naturalHeight;
+
+        if (!img_width || !img_height) {
+            console.warn(`Skipping box[${i}]: image has no natural dimensions`);
+            continue;
+        }
+
+        const x = Math.round(clampedXMin * img_width);
+        const y = Math.round(clampedYMin * img_height);
+        const w = Math.round((clampedXMax - clampedXMin) * img_width);
+        const h = Math.round((clampedYMax - clampedYMin) * img_height);
 
         const class_indices = Array.isArray(classes[i]) ? classes[i] : [classes[i]];
         if (!class_indices || class_indices.length === 0) continue;
 
-        // *** CLASS FILTER: Skip box if none of its classes are in the selected set ***
+        // CLASS FILTER: Skip box if none of its classes are in the selected set
         if (model_selected_classes !== null) {
             const has_selected_class = class_indices.some(idx => model_selected_classes.includes(idx));
-            if (!has_selected_class) continue; // Skip this box entirely
+            if (!has_selected_class) continue;
         }
 
         const box_labels = [];

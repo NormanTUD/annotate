@@ -916,10 +916,12 @@
 	}
 
 	function parse_position ($str, $wimg, $himg) {
-		// FIX: Parse floating point values properly, then round to integers
-		// Pattern now captures optional decimal parts for all four values
+		// FIX #6: Parse floating point values properly, then round to integers
+		// The original regex only captured the integer part before the decimal,
+		// which could cause off-by-one errors. Also, negative floats like -0.5
+		// would be parsed as 0 by intval but could wrap around with INT UNSIGNED.
 		if(preg_match("/xywh=pixel:(-?[\d]+(?:\.\d+)?),(-?[\d]+(?:\.\d+)?),(-?[\d]+(?:\.\d+)?),(-?[\d]+(?:\.\d+)?)/", $str, $matches)) {
-			// FIX: Round first, THEN clamp to prevent unsigned integer overflow
+			// Round first, THEN clamp to prevent unsigned integer overflow
 			$x = intval(round(floatval($matches[1])));
 			$y = intval(round(floatval($matches[2])));
 			$w = intval(round(floatval($matches[3])));
@@ -935,15 +937,15 @@
 			if ($wimg > 0 && $w > $wimg) $w = $wimg;
 			if ($himg > 0 && $h > $himg) $h = $himg;
 
-			// Clamp x+w and y+h to not exceed image dimensions
+			// FIX: Clamp x+w and y+h to not exceed image dimensions
 			if ($wimg > 0 && ($x + $w) > $wimg) {
-				$w = $wimg - $x;
+				$w = max(0, $wimg - $x);
 			}
 			if ($himg > 0 && ($y + $h) > $himg) {
-				$h = $himg - $y;
+				$h = max(0, $himg - $y);
 			}
 
-			// Final safety: if clamping made w or h negative/zero, return null
+			// If clamping made w or h zero/negative, this is an invalid box
 			if ($w <= 0 || $h <= 0) {
 				return null;
 			}
@@ -955,11 +957,11 @@
 	}
 
 	function create_annotation ($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id, $used_model) {
-		// FIX: Clamp coordinates to non-negative integers to prevent INT UNSIGNED issues
-		$x_start = max(0, intval($x_start));
-		$y_start = max(0, intval($y_start));
-		$w = max(0, intval($w));
-		$h = max(0, intval($h));
+		// FIX #5: Clamp coordinates to non-negative integers to prevent INT UNSIGNED issues
+		$x_start = max(0, intval(round(floatval($x_start))));
+		$y_start = max(0, intval(round(floatval($y_start))));
+		$w = max(0, intval(round(floatval($w))));
+		$h = max(0, intval(round(floatval($h))));
 
 		$query = "INSERT INTO annotation (image_id, user_id, category_id, x_start, y_start, w, h, json, annotarius_id, model_uuid, modified) VALUES (".
 			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id, $used_model ? $used_model : null)).
