@@ -1356,9 +1356,15 @@
 		    // FIX #6: Delete a single annotation by its annotarius_id
 		    function deleteSingleAnno(annotariusId, callback) {
 			    $.ajax({
-				    url: 'delete_annotation.php',
+				    url: 'delete_batch.php',
 				    type: 'POST',
-				    data: { source: 'export', id: annotariusId },
+				    contentType: 'application/json',
+				    data: JSON.stringify({
+					    annotations: [{
+						    id: annotariusId,
+						    source: null
+					    }]
+				    }),
 				    success: function(data) {
 					    if (callback) callback(true);
 				    },
