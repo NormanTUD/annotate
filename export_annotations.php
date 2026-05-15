@@ -106,7 +106,6 @@
 
 		//if(file_exists($tmp_zip)) {
 		header("Content-type: application/zip");
-		header("Content-Disposition: attachment; filename=data.zip");
 		header("Content-Disposition: attachment; filename=\"yolo_export.zip\"");
 		header("Pragma: no-cache");
 		header("Expires: 0");
