@@ -1523,7 +1523,7 @@
 	function insert_directory_into_db($model_name, $dir_path, $uuid) {
 		$inserted_ids = [];
 		if (!is_dir($dir_path)) {
-			if($path) {
+			if($dir_path) {
 				echo "Path is not a folder: $dir_path<br>";
 			}
 
