@@ -47,11 +47,31 @@ async function flush_annotation_queue() {
 
     const queue = _annotation_save_queue.splice(0);
 
-    const to_delete = queue.filter(item => item._action === 'delete');
-    const to_update = queue.filter(item => item._action === 'update');
-    const to_save   = queue.filter(item => item._action === 'create' || item._action === 'update');
+    // Deduplicate: if the same annotation ID has multiple events, keep only the last one
+    // This prevents race conditions where create+update+delete happen in quick succession
+    const deduped = new Map();
+    for (const item of queue) {
+        const key = item.id;
+        // For the same ID, later events override earlier ones
+        // Exception: if last action was 'delete', it should win over create/update
+        const existing = deduped.get(key);
+        if (!existing || item._action === 'delete') {
+            deduped.set(key, item);
+        } else if (existing._action !== 'delete') {
+            deduped.set(key, item); // later event wins
+        }
+    }
 
-    // 1) Lösche zuerst alte Annotationen bei Updates UND explizite Deletes
+    const final_queue = Array.from(deduped.values());
+
+    const to_delete = final_queue.filter(item => item._action === 'delete');
+    const to_update = final_queue.filter(item => item._action === 'update');
+    const to_save   = final_queue.filter(item => item._action === 'create' || item._action === 'update');
+
+    // 1) Delete old annotations for updates AND explicit deletes
+    // FIX: For updates, we need to delete the OLD version first.
+    // The server-side delete_batch.php now handles suffix matching via LIKE,
+    // so sending the base ID is sufficient.
     const all_deletes = [...to_delete, ...to_update];
     if (all_deletes.length > 0) {
         try {
@@ -75,7 +95,7 @@ async function flush_annotation_queue() {
         }
     }
 
-    // 2) Dann speichere neue/geänderte Annotationen
+    // 2) Save new/changed annotations
     if (to_save.length > 0) {
         const batch = to_save.map(item => ({
             position: item.position,

@@ -916,31 +916,67 @@
 	}
 
 	function parse_position ($str, $wimg, $himg) {
-		if(preg_match("/xywh=pixel:(-?\d+)(?:\.\d+)?,(-?\d+)(?:\.\d+)?,(-?\d+)(?:\.\d+)?,(-?\d+)(?:\.\d+)?/", $str, $matches)) {
-			$x = $matches[1] < 0 ? 0 : $matches[1];
-			$y = $matches[2] < 0 ? 0 : $matches[2];
-			$w = $matches[3] > $wimg ? $wimg : $matches[3];
-			$h = $matches[4] > $himg ? $himg : $matches[4];
+		// FIX: Parse floating point values properly, then round to integers
+		// Pattern now captures optional decimal parts for all four values
+		if(preg_match("/xywh=pixel:(-?[\d]+(?:\.\d+)?),(-?[\d]+(?:\.\d+)?),(-?[\d]+(?:\.\d+)?),(-?[\d]+(?:\.\d+)?)/", $str, $matches)) {
+			// FIX: Round first, THEN clamp to prevent unsigned integer overflow
+			$x = intval(round(floatval($matches[1])));
+			$y = intval(round(floatval($matches[2])));
+			$w = intval(round(floatval($matches[3])));
+			$h = intval(round(floatval($matches[4])));
 
-			return array(
-				$x,
-				$y,
-				$w,
-				$h
-			);
+			// Clamp all values to non-negative (INT UNSIGNED safe)
+			$x = max(0, $x);
+			$y = max(0, $y);
+			$w = max(0, $w);
+			$h = max(0, $h);
+
+			// Clamp width/height to image bounds
+			if ($wimg > 0 && $w > $wimg) $w = $wimg;
+			if ($himg > 0 && $h > $himg) $h = $himg;
+
+			// Clamp x+w and y+h to not exceed image dimensions
+			if ($wimg > 0 && ($x + $w) > $wimg) {
+				$w = $wimg - $x;
+			}
+			if ($himg > 0 && ($y + $h) > $himg) {
+				$h = $himg - $y;
+			}
+
+			// Final safety: if clamping made w or h negative/zero, return null
+			if ($w <= 0 || $h <= 0) {
+				return null;
+			}
+
+			return array($x, $y, $w, $h);
 		} else {
 			return null;
 		}
 	}
 
 	function create_annotation ($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id, $used_model) {
-		/*
-		create table annotation (id int unsigned primary key auto_increment, user_id int unsigned, category_id int unsigned, x_start int unsigned, y_start int unsigned, w int unsigned, h int unsigned, json MEDIUMBLOB, foreign key (category_id) references category(id) on delete cascade, foreign key (user_id) references user(id) on delete cascade);
-		 */
+		// FIX: Clamp coordinates to non-negative integers to prevent INT UNSIGNED issues
+		$x_start = max(0, intval($x_start));
+		$y_start = max(0, intval($y_start));
+		$w = max(0, intval($w));
+		$h = max(0, intval($h));
 
-		$query = "insert into annotation (image_id, user_id, category_id, x_start, y_start, w, h, json, annotarius_id, model_uuid) values (".
+		$query = "INSERT INTO annotation (image_id, user_id, category_id, x_start, y_start, w, h, json, annotarius_id, model_uuid, modified) VALUES (".
 			esc(array($image_id, $user_id, $category_id, $x_start, $y_start, $w, $h, $json, $annotarius_id, $used_model ? $used_model : null)).
-			") on duplicate key update image_id = values(image_id), category_id = values(category_id), x_start = values(x_start), y_start = values(y_start), w = values(w), h = values(h), json = values(json), annotarius_id = values(annotarius_id), deleted = 0";
+			", NOW()".
+			") ON DUPLICATE KEY UPDATE ".
+			"image_id = VALUES(image_id), ".
+			"user_id = VALUES(user_id), ".
+			"category_id = VALUES(category_id), ".
+			"x_start = VALUES(x_start), ".
+			"y_start = VALUES(y_start), ".
+			"w = VALUES(w), ".
+			"h = VALUES(h), ".
+			"json = VALUES(json), ".
+			"annotarius_id = VALUES(annotarius_id), ".
+			"model_uuid = VALUES(model_uuid), ".
+			"modified = NOW(), ".
+			"deleted = 0";
 
 		rquery($query);
 

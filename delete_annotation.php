@@ -27,6 +27,11 @@
     $raw_id = $_POST["id"];
     $source = $_POST["source"];
 
+    // Clean source: strip print_image.php?filename= prefix and cache busters
+    $source = preg_replace("/^.*?print_image\.php\?filename=/", "", $source);
+    $source = preg_replace("/&_=.*/", "", $source);
+    $source = urldecode($source);
+
     // Resolve the image from the source parameter to scope deletion
     $image_id = get_image_id($source);
     if (!$image_id) {
@@ -35,27 +40,55 @@
         exit;
     }
 
-    // Build candidate annotarius_ids to try
-    $candidates = [$raw_id];
+    // --- FIX: Build candidate base IDs (with and without '#' prefix) ---
+    $base_ids = [$raw_id];
 
     if (strpos($raw_id, '#') === 0) {
-        $candidates[] = substr($raw_id, 1); // strip leading '#'
+        $base_ids[] = substr($raw_id, 1); // strip leading '#'
     } else {
-        $candidates[] = '#' . $raw_id;      // add leading '#'
+        $base_ids[] = '#' . $raw_id;      // add leading '#'
     }
 
+    // If the raw_id already has a suffix like _1, _2, also try the base without suffix
+    foreach ([$raw_id] as $rid) {
+        if (preg_match('/^(.+)_\d+$/', $rid, $m)) {
+            $stripped = $m[1];
+            $base_ids[] = $stripped;
+            if (strpos($stripped, '#') === 0) {
+                $base_ids[] = substr($stripped, 1);
+            } else {
+                $base_ids[] = '#' . $stripped;
+            }
+        }
+    }
+
+    $base_ids = array_unique($base_ids);
     $affected = 0;
 
-    foreach ($candidates as $candidate_id) {
-        // Verify ownership: annotation must belong to this user AND this image
+    foreach ($base_ids as $candidate_id) {
+        $escaped_candidate = my_mysqli_real_escape_string($candidate_id);
+
+        // FIX: Delete exact match AND all suffix variants (_1, _2, etc.)
+        // First check ownership on at least one matching row
         $check = rquery(
-            "SELECT id FROM annotation WHERE annotarius_id = " . esc($candidate_id) .
-            " AND user_id = " . esc($user_id) .
-            " AND image_id = " . esc($image_id)
+            "SELECT id FROM annotation WHERE (
+                annotarius_id = " . esc($candidate_id) . "
+                OR annotarius_id LIKE '" . $escaped_candidate . "\_%'
+            )
+            AND user_id = " . esc($user_id) . "
+            AND image_id = " . esc($image_id) . "
+            LIMIT 1"
         );
 
         if ($check && mysqli_num_rows($check) > 0) {
-            flag_deleted($candidate_id);
+            rquery(
+                "DELETE FROM annotation WHERE (
+                    annotarius_id = " . esc($candidate_id) . "
+                    OR annotarius_id LIKE '" . $escaped_candidate . "\_%'
+                )
+                AND user_id = " . esc($user_id) . "
+                AND image_id = " . esc($image_id)
+            );
             $affected = mysqli_affected_rows($GLOBALS['dbh']);
             if ($affected > 0) {
                 break;
