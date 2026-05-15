@@ -2566,18 +2566,14 @@ function filterByConfidence(boxes, scores, confThreshold) {
  * Applies NMS on pre-filtered arrays (multi-label aware).
  * 
  * FIX #8 (revised): Merge labels from suppressed boxes that overlap with kept boxes.
- * - If the suppressed box shares at least one class → merge all its labels (safe).
- * - If the suppressed box was directly suppressed by NMS (IoU > iouThreshold) 
- *   AND has no shared class → still merge, because NMS decided these boxes
- *   represent the same physical object. The different labels are complementary
- *   detections of the same region (e.g., "person" + "pedestrian").
+ * Any box that NMS suppressed due to high overlap with a kept box represents the
+ * same physical object, so its labels are complementary and should be merged
+ * regardless of whether classes overlap.
  * 
- * The original FIX #8 was too aggressive in blocking merges: it prevented
- * ALL cross-class merging, which broke the multi-label pipeline. The real
- * "Ausreißer" bug was caused by merging from boxes with LOW IoU overlap
- * (the old * 0.8 relaxation). By requiring strict IoU > iouThreshold
- * (no * 0.8 discount), we prevent contamination from loosely-overlapping
- * unrelated boxes while still allowing same-object label merging.
+ * The real "Ausreißer" bug was caused by the old * 0.8 IoU relaxation in FIX #3,
+ * which pulled in labels from loosely-overlapping unrelated boxes. By requiring
+ * strict IoU > iouThreshold (no * 0.8 discount), we prevent contamination while
+ * still allowing same-object label merging.
  */
 function applyNMS(filtered, iouThreshold) {
     console.log("=== applyNMS (MULTI-LABEL) DEBUG ===");
@@ -2612,12 +2608,11 @@ function applyNMS(filtered, iouThreshold) {
         // this kept box represents the same physical object, so its labels are
         // complementary and should be merged regardless of whether classes overlap.
         for (let j = 0; j < boxes.length; j++) {
-            if (keptIndices.has(j)) continue; // skip other kept boxes
+            if (keptIndices.has(j)) continue;
             const overlap = iou(boxes[ki], boxes[j]);
 
             if (overlap > iouThreshold) {
-                const suppressedClasses = classes[j];
-                for (const c of suppressedClasses) {
+                for (const c of classes[j]) {
                     mergedClasses.add(c);
                 }
                 console.log(`  Merged classes from suppressed box[${j}] (IoU=${overlap.toFixed(3)}) into kept box[${ki}]`);
