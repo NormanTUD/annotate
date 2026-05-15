@@ -633,7 +633,7 @@ fi';
 		}
 
 		ob_start();
-		system("mkdir -p $tmp_dir");
+		system("mkdir -p " . escapeshellarg($tmp_dir));
 		ob_clean();
 
 		return $tmp_dir;

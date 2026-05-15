@@ -101,7 +101,7 @@
 
 		$tmp_zip = "$tmp_dir/yolo_export.zip";
 		ob_start();
-		system("cd $tmp_dir; zip -r yolo_export.zip .");
+		system("cd " . escapeshellarg($tmp_dir) . " && zip -r yolo_export.zip .");
 		ob_clean();
 
 		//if(file_exists($tmp_zip)) {
@@ -120,7 +120,7 @@
 		}
 
 		ob_start();
-		system("rm -rf $tmp_dir");
+		system("rm -rf " . escapeshellarg($tmp_dir));
 		ob_clean();
 		//} else {
 		//	print("Could not create zip-file\n");
