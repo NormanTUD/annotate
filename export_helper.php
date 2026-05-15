@@ -401,7 +401,7 @@ for idx in "${!files[@]}"; do
 
   echo -e "\e[1;34m[$((idx+1))/$total] Downloading $file\e[0m"
   tmp_file=$(mktemp)
-  wget -q --show-progress "'.$GLOBALS['base_url'].'//print_image.php?filename=$file" -O "$tmp_file" 2>&1 | while read -r line; do
+  wget -q --show-progress "'.$GLOBALS['base_url'].'/print_image.php?filename=$file" -O "$tmp_file" 2>&1 | while read -r line; do
     if [[ $line =~ ([0-9]{1,3})% ]]; then
       percent="${BASH_REMATCH[1]}"
       printf "\r"
