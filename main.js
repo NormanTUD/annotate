@@ -2387,17 +2387,20 @@ function show_shortcut_help() {
 }
 
 async function skip_current_image() {
-	// 1. Aktuellen Dateinamen holen
+	// 1. Get current filename
 	var fn = $("#filename").html();
 	if (!fn) {
 		warn("Skip", "Kein Bild geladen");
 		return;
 	}
 
-	// 2. Annotorious-Annotationen entfernen + DB-Annotationen löschen
+	// 2. Add to skipped_images so the server won't serve it again
+	skipped_images.push(fn);
+
+	// 3. Remove Annotorious annotations + delete DB annotations
 	await remove_current_annos(fn);
 
-	// 3. Nächstes Bild laden
+	// 4. Load next image
 	await load_next_random_image();
 }
 
