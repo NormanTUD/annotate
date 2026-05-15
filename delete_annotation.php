@@ -3,7 +3,13 @@
 
     if(array_key_exists("source", $_POST)) {
         if(array_key_exists("id", $_POST)) {
-            $annotate_userid = $_COOKIE["annotate_userid"];
+            $annotate_userid = $_COOKIE["annotate_userid"] ?? null;
+
+            if (!$annotate_userid) {
+                http_response_code(400);
+                die("No user cookie set.");
+            }
+
             $user_id = get_or_create_user_id($annotate_userid);
 
             $raw_id = $_POST["id"];
