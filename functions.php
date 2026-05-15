@@ -771,7 +771,7 @@
 			}
 
 			if(isset($exif["Orientation"]) && $exif['Orientation'] == 6) {
-				list($width, $height) = array($width, $height);
+				list($width, $height) = array($height, $width);
 			}
 		} catch (\Throwable $e) {
 			mywarn("$e for file $path inside get_image_width_and_height_from_file");
