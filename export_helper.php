@@ -504,7 +504,7 @@ fi';
 
 			$annotations[] = '<g class="a9s-annotation" data-id="'.$esc_id.'" data-label="'.$esc_label.'">'
 			    . '<rect class="a9s-inner" x="'.$x.'" y="'.$y.'" width="'.$width.'" height="'.$height.'"></rect>'
-			    . '<text style="display: none" class="a9s-label" x="'.$text_x.'" y="'.$text_y.'" text-anchor="middle" alignment-baseline="baseline" font-size="12" style="pointer-events:auto;">'.$esc_label.'</text>'
+			    . '<text class="a9s-label" x="'.$text_x.'" y="'.$text_y.'" text-anchor="middle" alignment-baseline="baseline" font-size="12" style="display: none; pointer-events:auto;">'.$esc_label.'</text>'
 			    . '</g>';
 		    }
 
