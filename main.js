@@ -2565,13 +2565,19 @@ function filterByConfidence(boxes, scores, confThreshold) {
 /**
  * Applies NMS on pre-filtered arrays (multi-label aware).
  * 
- * FIX #8: Tighten the merge threshold and only merge labels from suppressed
- * boxes that share at least one class with the kept box. This prevents
- * unrelated labels from being pulled in just because two boxes overlap.
+ * FIX #8 (revised): Merge labels from suppressed boxes that overlap with kept boxes.
+ * - If the suppressed box shares at least one class → merge all its labels (safe).
+ * - If the suppressed box was directly suppressed by NMS (IoU > iouThreshold) 
+ *   AND has no shared class → still merge, because NMS decided these boxes
+ *   represent the same physical object. The different labels are complementary
+ *   detections of the same region (e.g., "person" + "pedestrian").
  * 
- * Previously: any suppressed box with IoU > iouThreshold * 0.8 would have
- * ALL its labels merged into the kept box, even if the labels were completely
- * unrelated. This caused "Ausreißer" labels that the user never annotated.
+ * The original FIX #8 was too aggressive in blocking merges: it prevented
+ * ALL cross-class merging, which broke the multi-label pipeline. The real
+ * "Ausreißer" bug was caused by merging from boxes with LOW IoU overlap
+ * (the old * 0.8 relaxation). By requiring strict IoU > iouThreshold
+ * (no * 0.8 discount), we prevent contamination from loosely-overlapping
+ * unrelated boxes while still allowing same-object label merging.
  */
 function applyNMS(filtered, iouThreshold) {
     console.log("=== applyNMS (MULTI-LABEL) DEBUG ===");
@@ -2599,29 +2605,22 @@ function applyNMS(filtered, iouThreshold) {
 
     for (const ki of keptArray) {
         const mergedClasses = new Set(classes[ki]);
-        const keptClassSet = new Set(classes[ki]);
 
-        // FIX #8: Only merge labels from suppressed boxes that:
-        // 1. Have IoU > iouThreshold (strict, not * 0.8)
-        // 2. Share at least one class with the kept box
-        // This prevents unrelated labels from being pulled in
+        // Merge labels from suppressed boxes that heavily overlap with this kept box.
+        // We use strict IoU > iouThreshold (not the old * 0.8 relaxation that caused
+        // the "Ausreißer" bug). Any box that NMS suppressed due to high overlap with
+        // this kept box represents the same physical object, so its labels are
+        // complementary and should be merged regardless of whether classes overlap.
         for (let j = 0; j < boxes.length; j++) {
             if (keptIndices.has(j)) continue; // skip other kept boxes
             const overlap = iou(boxes[ki], boxes[j]);
 
             if (overlap > iouThreshold) {
-                // Check if the suppressed box shares at least one class with the kept box
                 const suppressedClasses = classes[j];
-                const hasSharedClass = suppressedClasses.some(c => keptClassSet.has(c));
-
-                if (hasSharedClass) {
-                    for (const c of suppressedClasses) {
-                        mergedClasses.add(c);
-                    }
-                    console.log(`  Merged classes from suppressed box[${j}] (IoU=${overlap.toFixed(3)}, shared class) into kept box[${ki}]`);
-                } else {
-                    console.log(`  Skipped merge from suppressed box[${j}] (IoU=${overlap.toFixed(3)}, NO shared class) — would have caused label contamination`);
+                for (const c of suppressedClasses) {
+                    mergedClasses.add(c);
                 }
+                console.log(`  Merged classes from suppressed box[${j}] (IoU=${overlap.toFixed(3)}) into kept box[${ki}]`);
             }
         }
 
