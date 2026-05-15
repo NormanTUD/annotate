@@ -18,6 +18,7 @@
 		if ($line !== "") {
 			$GLOBALS["db_host"] = $line;
 		}
+		$GLOBALS["db_host"] = trim(fgets(fopen("/etc/dbhost", 'r')));
 	}
 
 	$GLOBALS["db_port"] = 3306;
@@ -25,10 +26,6 @@
 
 	if(file_exists("/etc/dbuser")) {
 		$GLOBALS["db_username"] = trim(fgets(fopen("/etc/dbuser", 'r')));
-	}
-
-	if(file_exists("/etc/dbhost")) {
-		$GLOBALS["db_host"] = trim(fgets(fopen("/etc/dbhost", 'r')));
 	}
 
 	if(file_exists("/etc/dbport")) {
