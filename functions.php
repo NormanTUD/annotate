@@ -765,7 +765,7 @@
 			$height = $imgsz[1];
 
 			try {
-				$exif = @exif_read_data("images/$file");
+				$exif = @exif_read_data("images/$path");
 			} catch (\Throwable $e) {
 				//;
 			}
