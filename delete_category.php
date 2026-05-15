@@ -18,15 +18,18 @@ if (!isset($_POST['id']) || !is_numeric($_POST['id'])) {
 $category_id = (int)$_POST['id'];
 
 // Check if category exists
-$result = rquery("SELECT id FROM category WHERE id = $category_id");
+$result = rquery("SELECT id, name FROM category WHERE id = " . esc($category_id));
 if ($result->num_rows === 0) {
     http_response_code(404);
     echo json_encode(["error" => "Category not found."]);
     exit;
 }
 
+$cat_row = mysqli_fetch_assoc($result);
+$category_name = $cat_row['name'];
+
 // Check for annotations referencing this category
-$anno_check = rquery("SELECT COUNT(*) as cnt FROM annotation WHERE category_id = $category_id AND deleted = '0'");
+$anno_check = rquery("SELECT COUNT(*) as cnt FROM annotation WHERE category_id = " . esc($category_id) . " AND deleted = '0'");
 $anno_row = mysqli_fetch_assoc($anno_check);
 $annotation_count = (int)$anno_row['cnt'];
 
@@ -42,19 +45,16 @@ if ($annotation_count > 0) {
     */
 
     // Option B: Soft-delete (flag as deleted) all annotations referencing this category
-    rquery("UPDATE annotation SET deleted = '1' WHERE category_id = $category_id");
+    rquery("UPDATE annotation SET deleted = '1' WHERE category_id = " . esc($category_id));
 }
 
-// Get the category name first
-$cat_name_result = rquery("SELECT name FROM category WHERE id = $category_id");
-$cat_name_row = mysqli_fetch_assoc($cat_name_result);
-if ($cat_name_row) {
-    $cat_name = $cat_name_row['name'];
-    rquery("DELETE FROM model_labels WHERE label_name = " . esc($cat_name));
-}
+// Also remove from model_labels if applicable
+// model_labels has no category_id column — it has (model_id, label_index, label_name)
+// So we delete by matching the label_name to the category name being deleted
+rquery("DELETE FROM model_labels WHERE label_name = " . esc($category_name));
 
 // Delete the category
-$result = rquery("DELETE FROM category WHERE id = $category_id");
+$result = rquery("DELETE FROM category WHERE id = " . esc($category_id));
 if ($result) {
     echo json_encode([
         "success" => true,
