@@ -21,25 +21,6 @@
 header('Content-Type: application/json');
 include_once("functions.php");
 
-// Ensure batch_upload table exists
-rquery("CREATE TABLE IF NOT EXISTS batch_upload (
-    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    batch_uuid VARCHAR(100) NOT NULL,
-    annotation_id INT UNSIGNED DEFAULT NULL,
-    image_id INT UNSIGNED DEFAULT NULL,
-    original_image_filename VARCHAR(500) DEFAULT NULL,
-    original_label_filename VARCHAR(500) DEFAULT NULL,
-    yaml_source VARCHAR(500) DEFAULT NULL,
-    upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    user_id INT UNSIGNED DEFAULT NULL,
-    FOREIGN KEY (annotation_id) REFERENCES annotation(id) ON DELETE SET NULL,
-    FOREIGN KEY (image_id) REFERENCES image(id) ON DELETE SET NULL,
-    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE SET NULL,
-    INDEX idx_batch_uuid (batch_uuid),
-    INDEX idx_batch_image (image_id),
-    INDEX idx_batch_annotation (annotation_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
 function json_ok($msg, $extra = []) {
     echo json_encode(array_merge(["ok" => true, "message" => $msg], $extra));
     exit(0);
