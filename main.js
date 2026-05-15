@@ -15,6 +15,7 @@ let _watch_svg_timeout = null;
 const _watch_svg_delay = 150;
 let _selects_timeout = null;
 const _selects_debounce_delay = 350;
+var model_selected_classes = null; // null = all, array = only these class indices
 
 let _annotation_dynamic_content_timeout = null;
 const _annotation_dynamic_content_delay = 500;
@@ -2503,9 +2504,6 @@ function renderTrainingOutput(rawText, containerElement) {
     const html = ansiToHtml(rawText);
     containerElement.innerHTML = html;
 }
-
-// --- Model class filter logic ---
-var model_selected_classes = null; // null = all, array = only these class indices
 
 function get_chosen_model_uuid() {
     var val = $("#chosen_model").val();
