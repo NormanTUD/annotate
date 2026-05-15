@@ -629,7 +629,7 @@ fi';
 		$tmp_dir = "/tmp/$tmp_name";
 		while (is_dir($tmp_dir)) {
 			$tmp_name = generateRandomString(20);
-			$tmp_dir = "tmp/$tmp_name";
+			$tmp_dir = "/tmp/$tmp_name";
 		}
 
 		ob_start();
