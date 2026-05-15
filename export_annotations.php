@@ -111,13 +111,11 @@
 		header("Expires: 0");
 		header("Content-Length: ".filesize($tmp_zip));
 
-		#readfile($tmp_zip);
-		$handle = @fopen($tmp_zip, "r");
+		$handle = @fopen($tmp_zip, "rb");
 		if ($handle) {
-			while (($buffer = fgets($handle, 4096)) !== false) {
-				echo $buffer;
+			while (!feof($handle)) {
+				echo fread($handle, 4096);
 			}
-
 			fclose($handle);
 		}
 
