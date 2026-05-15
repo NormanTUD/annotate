@@ -246,10 +246,6 @@ async function load_labels() {
 	}
 }
 
-function get_chosen_model_uuid() {
-	return $("#chosen_model").val();
-}
-
 async function load_model() {
 	if (!has_model()) {
 		console.info("Model doesn't exist. Not loading.");
