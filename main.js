@@ -16,6 +16,7 @@ const _watch_svg_delay = 150;
 let _selects_timeout = null;
 const _selects_debounce_delay = 350;
 var model_selected_classes = null; // null = all, array = only these class indices
+let _flush_in_progress = false; // Guard against concurrent flushes
 
 let _annotation_dynamic_content_timeout = null;
 const _annotation_dynamic_content_delay = 500;
@@ -41,115 +42,404 @@ function invalidateAnnoCache() {
     _anno_cache_time = 0;
 }
 
+// Add this near the top of main.js, after the queue variables are declared:
+window.addEventListener('beforeunload', function (e) {
+    if (_annotation_save_queue.length > 0) {
+        // Attempt synchronous flush via sendBeacon
+        const queue = _annotation_save_queue.splice(0);
+        const to_delete = queue.filter(item => item._action === 'delete');
+        const to_save = queue.filter(item => item._action === 'create' || item._action === 'update');
 
-async function flush_annotation_queue() {
-    if (_annotation_save_queue.length === 0) return;
-
-    const queue = _annotation_save_queue.splice(0);
-
-    // Deduplicate: if the same annotation ID has multiple events, keep only the last one
-    // This prevents race conditions where create+update+delete happen in quick succession
-    const deduped = new Map();
-    for (const item of queue) {
-        const key = item.id;
-        // For the same ID, later events override earlier ones
-        // Exception: if last action was 'delete', it should win over create/update
-        const existing = deduped.get(key);
-        if (!existing || item._action === 'delete') {
-            deduped.set(key, item);
-        } else if (existing._action !== 'delete') {
-            deduped.set(key, item); // later event wins
-        }
-    }
-
-    const final_queue = Array.from(deduped.values());
-
-    const to_delete = final_queue.filter(item => item._action === 'delete');
-    const to_update = final_queue.filter(item => item._action === 'update');
-    const to_save   = final_queue.filter(item => item._action === 'create' || item._action === 'update');
-
-    // 1) Delete old annotations for updates AND explicit deletes
-    // FIX: For updates, we need to delete the OLD version first.
-    // The server-side delete_batch.php now handles suffix matching via LIKE,
-    // so sending the base ID is sufficient.
-    const all_deletes = [...to_delete, ...to_update];
-    if (all_deletes.length > 0) {
-        try {
-            await $.ajax({
-                url: "delete_batch.php",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({
-                    annotations: all_deletes.map(item => ({
-                        position: item.position,
-                        body: item.body,
-                        id: item.id,
-                        source: item.source,
-                        full: item.full
-                    }))
-                }),
-                dataType: "html"
+        if (to_delete.length > 0) {
+            const payload = JSON.stringify({
+                annotations: to_delete.map(item => ({
+                    position: item.position || null,
+                    body: item.body || [],
+                    id: item.id,
+                    source: item.source,
+                    full: item.full || ''
+                }))
             });
-        } catch (err) {
-            error("Batch Delete Failed", err.statusText || err);
+            navigator.sendBeacon('delete_batch.php', new Blob([payload], { type: 'application/json' }));
         }
-    }
 
-    // 2) Save new/changed annotations
-    if (to_save.length > 0) {
-        const batch = to_save.map(item => ({
-            position: item.position,
-            body: item.body,
-            id: item.id,
-            source: item.source,
-            full: item.full,
-            used_model: item.used_model || null
-        }));
-
-        try {
-            const response = await $.ajax({
-                url: "submit_batch.php",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({ annotations: batch }),
-                dataType: "html"
+        if (to_save.length > 0) {
+            const payload = JSON.stringify({
+                annotations: to_save.map(item => ({
+                    position: item.position,
+                    body: item.body || [],
+                    id: item.id,
+                    source: item.source,
+                    full: item.full || '',
+                    used_model: item.used_model || null
+                }))
             });
-            success("Batch Save: OK", response);
-        } catch (err) {
-            error("Batch Save Failed", err.statusText || err);
+            navigator.sendBeacon('submit_batch.php', new Blob([payload], { type: 'application/json' }));
         }
+
+        // Show browser's "unsaved changes" dialog as fallback
+        e.preventDefault();
+        e.returnValue = '';
     }
+});
 
-    invalidateAnnoCache();
-    load_dynamic_content_debounced();
-    create_selects_from_annotation_debounced(1);
-}
-
+/**
+ * Queues an annotation event (create, update, delete) for batched processing.
+ * Includes extensive validation to ensure the event is properly recorded.
+ */
 function queue_annotation_event(action, annotation) {
-    // FIX: Strip both path prefix AND cache-buster from source
-    const cleanSource = annotation.target.source
-        .replace(/.*?filename=/, "")
-        .replace(/&.*$/, "");
+    // === GUARD: Validate action type ===
+    const VALID_ACTIONS = ['create', 'update', 'delete'];
+    if (!action || !VALID_ACTIONS.includes(action)) {
+        console.error('[queue_annotation_event] Invalid action:', action);
+        return;
+    }
 
-    _annotation_save_queue.push({
+    // === GUARD: Validate annotation object exists ===
+    if (!annotation) {
+        console.error('[queue_annotation_event] Annotation is null/undefined for action:', action);
+        return;
+    }
+
+    // === GUARD: Validate annotation has an ID ===
+    if (!annotation.id) {
+        console.error('[queue_annotation_event] Annotation has no ID. Action:', action, 'Annotation:', annotation);
+        return;
+    }
+
+    // === GUARD: Validate annotation has target and selector ===
+    if (!annotation.target) {
+        console.error('[queue_annotation_event] Annotation has no target. Action:', action, 'ID:', annotation.id);
+        return;
+    }
+
+    if (!annotation.target.source) {
+        console.error('[queue_annotation_event] Annotation target has no source. Action:', action, 'ID:', annotation.id);
+        return;
+    }
+
+    // === GUARD: For create/update, selector is required ===
+    if (action !== 'delete') {
+        if (!annotation.target.selector || !annotation.target.selector.value) {
+            console.error('[queue_annotation_event] Annotation has no selector value. Action:', action, 'ID:', annotation.id);
+            return;
+        }
+    }
+
+    // === Strip both path prefix AND cache-buster from source ===
+    let cleanSource = '';
+    try {
+        cleanSource = annotation.target.source
+            .replace(/.*?filename=/, "")
+            .replace(/&.*$/, "");
+    } catch (e) {
+        console.error('[queue_annotation_event] Failed to clean source:', e);
+        cleanSource = annotation.target.source || '';
+    }
+
+    if (!cleanSource) {
+        console.error('[queue_annotation_event] Clean source is empty after stripping. Raw source:', annotation.target.source);
+        return;
+    }
+
+    // === Build the queue item ===
+    const queueItem = {
         _action: action,
-        position: annotation.target.selector.value,
-        body: annotation.body,
+        _queued_at: Date.now(), // Timestamp for debugging
+        position: (annotation.target.selector && annotation.target.selector.value) || null,
+        body: annotation.body || [],
         id: annotation.id,
         source: cleanSource,
         full: JSON.stringify(annotation),
         used_model: used_model
-    });
+    };
 
-    // Reset the flush timer
+    // === GUARD: For delete, position can be null but ID must exist ===
+    if (action === 'delete' && !queueItem.id) {
+        console.error('[queue_annotation_event] Cannot delete without an ID');
+        return;
+    }
+
+    _annotation_save_queue.push(queueItem);
+
+    console.log(`[queue_annotation_event] Queued "${action}" for ID: ${annotation.id} (queue size: ${_annotation_save_queue.length})`);
+
+    // === Reset the flush timer ===
     if (_annotation_save_timeout) {
         clearTimeout(_annotation_save_timeout);
+        _annotation_save_timeout = null;
     }
 
     _annotation_save_timeout = setTimeout(async () => {
         _annotation_save_timeout = null;
-        await flush_annotation_queue();
+        try {
+            await flush_annotation_queue();
+        } catch (e) {
+            console.error('[queue_annotation_event] flush_annotation_queue threw:', e);
+        }
     }, _annotation_save_delay);
+}
+
+
+/**
+ * Flushes the annotation queue, sending batched create/update/delete requests.
+ * Includes extensive guards against race conditions, empty payloads, and network errors.
+ */
+async function flush_annotation_queue() {
+    // === GUARD: Don't flush if queue is empty ===
+    if (_annotation_save_queue.length === 0) {
+        console.log('[flush_annotation_queue] Queue is empty, nothing to flush.');
+        return;
+    }
+
+    // === GUARD: Prevent concurrent flushes ===
+    if (_flush_in_progress) {
+        console.warn('[flush_annotation_queue] Flush already in progress. Rescheduling...');
+        // Reschedule to try again after current flush completes
+        if (_annotation_save_timeout) {
+            clearTimeout(_annotation_save_timeout);
+        }
+        _annotation_save_timeout = setTimeout(async () => {
+            _annotation_save_timeout = null;
+            await flush_annotation_queue();
+        }, _annotation_save_delay);
+        return;
+    }
+
+    _flush_in_progress = true;
+
+    // === Atomically grab the queue contents ===
+    const queue = _annotation_save_queue.splice(0);
+    const queue_length = queue.length;
+
+    console.log(`[flush_annotation_queue] Flushing ${queue_length} queued events...`);
+
+    try {
+        // === Deduplicate: for the same annotation ID, keep only the final action ===
+        // Key insight: if an annotation is created then deleted in the same batch,
+        // we should send NEITHER (it never needs to exist on the server).
+        // If updated then deleted, we only need the delete.
+        // If created then updated, we only need the create (with latest data).
+        const deduped = new Map();
+
+        for (const item of queue) {
+            const key = item.id;
+
+            if (!key) {
+                console.warn('[flush_annotation_queue] Skipping item with no ID:', item);
+                continue;
+            }
+
+            const existing = deduped.get(key);
+
+            if (!existing) {
+                // First time seeing this ID
+                deduped.set(key, item);
+            } else if (item._action === 'delete') {
+                // Delete ALWAYS wins over any previous action
+                deduped.set(key, item);
+            } else if (existing._action === 'delete') {
+                // If we already have a delete queued, don't override it with create/update
+                // (delete is final)
+                console.log(`[flush_annotation_queue] Keeping delete for ID ${key}, ignoring subsequent ${item._action}`);
+            } else {
+                // Both are create/update — later event wins (has most recent data)
+                deduped.set(key, item);
+            }
+        }
+
+        // === Handle special case: created then deleted in same batch ===
+        // If an annotation was created AND deleted in the same flush window,
+        // it never existed on the server, so we can skip it entirely.
+        const created_ids_in_batch = new Set(
+            queue.filter(q => q._action === 'create').map(q => q.id)
+        );
+
+        const final_queue = [];
+        for (const [id, item] of deduped) {
+            if (item._action === 'delete' && created_ids_in_batch.has(id)) {
+                // This annotation was created and deleted in the same batch window
+                // No server action needed
+                console.log(`[flush_annotation_queue] Skipping ID ${id}: created and deleted in same batch`);
+                continue;
+            }
+            final_queue.push(item);
+        }
+
+        if (final_queue.length === 0) {
+            console.log('[flush_annotation_queue] After deduplication, nothing to send.');
+            _flush_in_progress = false;
+            return;
+        }
+
+        console.log(`[flush_annotation_queue] After dedup: ${final_queue.length} actions (from ${queue_length} raw events)`);
+
+        // === Separate by action type ===
+        const to_delete = final_queue.filter(item => item._action === 'delete');
+        const to_update = final_queue.filter(item => item._action === 'update');
+        const to_create = final_queue.filter(item => item._action === 'create');
+
+        console.log(`[flush_annotation_queue] Actions breakdown: ${to_delete.length} deletes, ${to_update.length} updates, ${to_create.length} creates`);
+
+        // === 1) DELETES: Send delete requests for explicit deletes AND updates ===
+        // For updates, we delete the old version first, then save the new version.
+        const all_deletes = [...to_delete, ...to_update];
+
+        if (all_deletes.length > 0) {
+            // === GUARD: Validate each delete item has required fields ===
+            const valid_deletes = all_deletes.filter(item => {
+                if (!item.id) {
+                    console.warn('[flush_annotation_queue] Delete item missing ID, skipping:', item);
+                    return false;
+                }
+                if (!item.source) {
+                    console.warn('[flush_annotation_queue] Delete item missing source, skipping:', item);
+                    return false;
+                }
+                return true;
+            });
+
+            if (valid_deletes.length > 0) {
+                const delete_payload = {
+                    annotations: valid_deletes.map(item => ({
+                        position: item.position || null,
+                        body: item.body || [],
+                        id: item.id,
+                        source: item.source,
+                        full: item.full || ''
+                    }))
+                };
+
+                console.log(`[flush_annotation_queue] Sending DELETE batch (${valid_deletes.length} items):`,
+                    valid_deletes.map(d => ({ id: d.id, action: d._action }))
+                );
+
+                try {
+                    const delete_response = await $.ajax({
+                        url: "delete_batch.php",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(delete_payload),
+                        dataType: "html",
+                        timeout: 15000 // 15 second timeout
+                    });
+
+                    console.log('[flush_annotation_queue] Delete batch response:', delete_response);
+                    success("Batch Delete: OK", `${valid_deletes.length} annotation(s) deleted`);
+                } catch (err) {
+                    const errMsg = err.statusText || err.responseText || err.message || String(err);
+                    console.error('[flush_annotation_queue] Delete batch FAILED:', err);
+                    console.error('[flush_annotation_queue] Delete payload was:', JSON.stringify(delete_payload));
+                    error("Batch Delete Failed", errMsg);
+
+                    // === RECOVERY: Re-queue failed deletes so they retry next flush ===
+                    for (const item of valid_deletes) {
+                        // Only re-queue explicit deletes (not updates, which will be re-saved below)
+                        if (item._action === 'delete') {
+                            console.warn(`[flush_annotation_queue] Re-queuing failed delete for ID: ${item.id}`);
+                            _annotation_save_queue.push(item);
+                        }
+                    }
+                }
+            } else {
+                console.warn('[flush_annotation_queue] All delete items were invalid, skipping delete batch.');
+            }
+        }
+
+        // === 2) SAVES: Send create/update requests ===
+        const to_save = [...to_create, ...to_update];
+
+        if (to_save.length > 0) {
+            // === GUARD: Validate each save item has required fields ===
+            const valid_saves = to_save.filter(item => {
+                if (!item.id) {
+                    console.warn('[flush_annotation_queue] Save item missing ID, skipping:', item);
+                    return false;
+                }
+                if (!item.source) {
+                    console.warn('[flush_annotation_queue] Save item missing source, skipping:', item);
+                    return false;
+                }
+                if (!item.position) {
+                    console.warn('[flush_annotation_queue] Save item missing position, skipping:', item);
+                    return false;
+                }
+                return true;
+            });
+
+            if (valid_saves.length > 0) {
+                const save_payload = {
+                    annotations: valid_saves.map(item => ({
+                        position: item.position,
+                        body: item.body || [],
+                        id: item.id,
+                        source: item.source,
+                        full: item.full || '',
+                        used_model: item.used_model || null
+                    }))
+                };
+
+                console.log(`[flush_annotation_queue] Sending SAVE batch (${valid_saves.length} items):`,
+                    valid_saves.map(s => ({ id: s.id, action: s._action }))
+                );
+
+                try {
+                    const save_response = await $.ajax({
+                        url: "submit_batch.php",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(save_payload),
+                        dataType: "html",
+                        timeout: 15000 // 15 second timeout
+                    });
+
+                    console.log('[flush_annotation_queue] Save batch response:', save_response);
+                    success("Batch Save: OK", save_response);
+                } catch (err) {
+                    const errMsg = err.statusText || err.responseText || err.message || String(err);
+                    console.error('[flush_annotation_queue] Save batch FAILED:', err);
+                    console.error('[flush_annotation_queue] Save payload was:', JSON.stringify(save_payload));
+                    error("Batch Save Failed", errMsg);
+
+                    // === RECOVERY: Re-queue failed saves ===
+                    for (const item of valid_saves) {
+                        console.warn(`[flush_annotation_queue] Re-queuing failed save for ID: ${item.id}`);
+                        _annotation_save_queue.push(item);
+                    }
+                }
+            } else {
+                console.warn('[flush_annotation_queue] All save items were invalid, skipping save batch.');
+            }
+        }
+
+    } catch (e) {
+        // === GUARD: Catch any unexpected errors in the flush logic itself ===
+        console.error('[flush_annotation_queue] Unexpected error during flush:', e);
+        console.error('[flush_annotation_queue] Stack:', e.stack);
+
+        // Re-queue everything that was in this batch so nothing is lost
+        for (const item of queue) {
+            _annotation_save_queue.push(item);
+        }
+        error("Flush Error", e.message || String(e));
+    } finally {
+        // === ALWAYS release the flush lock ===
+        _flush_in_progress = false;
+    }
+
+    // === Post-flush: invalidate cache and refresh UI ===
+    invalidateAnnoCache();
+    load_dynamic_content_debounced();
+    create_selects_from_annotation_debounced(1);
+
+    // === GUARD: If items were re-queued (from failures), schedule another flush ===
+    if (_annotation_save_queue.length > 0 && !_annotation_save_timeout) {
+        console.log(`[flush_annotation_queue] ${_annotation_save_queue.length} items remain in queue, scheduling retry...`);
+        _annotation_save_timeout = setTimeout(async () => {
+            _annotation_save_timeout = null;
+            await flush_annotation_queue();
+        }, _annotation_save_delay * 2); // Double delay for retries
+    }
 }
 
 function create_selects_from_annotation_debounced(force = 0) {
@@ -455,6 +745,37 @@ async function make_item_anno(elem, widgets = {}) {
 
 	// --- deleteAnnotation: queue instead of immediate AJAX ---
 	anno.on('deleteAnnotation', function (annotation) {
+		// === GUARD: Ensure annotation object is valid ===
+		if (!annotation) {
+			console.error('[deleteAnnotation] Event fired with null annotation!');
+			return;
+		}
+
+		if (!annotation.id) {
+			console.error('[deleteAnnotation] Annotation has no ID, cannot delete:', annotation);
+			return;
+		}
+
+		// === GUARD: Ensure target exists (for delete, we may need to reconstruct it) ===
+		if (!annotation.target || !annotation.target.source) {
+			console.warn('[deleteAnnotation] Annotation missing target.source, attempting to reconstruct from image element');
+			const imgElem = document.getElementById('image');
+			if (imgElem && imgElem.src) {
+				if (!annotation.target) {
+					annotation.target = {};
+				}
+				annotation.target.source = imgElem.src;
+				// Also set a minimal selector if missing
+				if (!annotation.target.selector) {
+					annotation.target.selector = { value: '' };
+				}
+			} else {
+				console.error('[deleteAnnotation] Cannot reconstruct target, no image element found');
+				return;
+			}
+		}
+
+		console.log(`[deleteAnnotation] Queuing delete for annotation ID: ${annotation.id}`);
 		queue_annotation_event('delete', annotation);
 	});
 
