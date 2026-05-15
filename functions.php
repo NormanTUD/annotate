@@ -303,6 +303,8 @@
 
 		shuffle($keys);
 
+		$new = [];
+
 		foreach($keys as $key) {
 			$new[$key] = $my_array[$key];
 		}
